@@ -1,0 +1,88 @@
+.page-header {
+  margin-bottom: 32px;
+
+  h1 {
+    font-size: 28px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: #666;
+  }
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #3f51b5;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 64px;
+  color: #666;
+
+  fa-icon {
+    color: #ccc;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #333;
+  }
+}
+
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.conversation-card {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+}
+
+.vietnamese-text {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  mat-chip {
+    fa-icon {
+      margin-right: 4px;
+    }
+  }
+}
+
+.difficulty-beginner {
+  background: #e3f2fd !important;
+  color: #1565c0 !important;
+}
+
+.difficulty-intermediate {
+  background: #fff3e0 !important;
+  color: #ef6c00 !important;
+}
+
+.difficulty-advanced {
+  background: #fce4ec !important;
+  color: #c2185b !important;
+}

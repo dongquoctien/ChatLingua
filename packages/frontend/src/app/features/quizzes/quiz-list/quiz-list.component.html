@@ -1,0 +1,72 @@
+<div class="page-header">
+  <h1>Quizzes</h1>
+  <p>Test your knowledge with timed quizzes</p>
+</div>
+
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+  </div>
+} @else if (quizzes().length === 0) {
+  <div class="empty-state">
+    <fa-icon [icon]="faQuestionCircle" size="4x"></fa-icon>
+    <h3>No quizzes yet</h3>
+    <p>Complete some exercises first to create quizzes!</p>
+  </div>
+} @else {
+  <div class="quiz-grid">
+    @for (quiz of quizzes(); track quiz.id) {
+      <mat-card class="quiz-card">
+        <mat-card-header>
+          <mat-card-title>{{ quiz.title }}</mat-card-title>
+          @if (quiz.description) {
+            <mat-card-subtitle>{{ quiz.description }}</mat-card-subtitle>
+          }
+        </mat-card-header>
+        <mat-card-content>
+          <div class="quiz-info">
+            <div class="info-item">
+              <fa-icon [icon]="faQuestionCircle"></fa-icon>
+              <span>{{ quiz.exerciseIds.length }} questions</span>
+            </div>
+            @if (quiz.timeLimitMinutes) {
+              <div class="info-item">
+                <fa-icon [icon]="faClock"></fa-icon>
+                <span>{{ quiz.timeLimitMinutes }} min</span>
+              </div>
+            }
+            <div class="info-item">
+              <fa-icon [icon]="faRedo"></fa-icon>
+              <span>{{ quiz.attemptCount || 0 }}/{{ quiz.maxAttempts }} attempts</span>
+            </div>
+          </div>
+          @if (quiz.bestScore !== undefined) {
+            <div class="best-score">
+              <fa-icon [icon]="faTrophy"></fa-icon>
+              Best: {{ quiz.bestScore }}%
+            </div>
+          }
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-raised-button color="primary" [routerLink]="['/quizzes', quiz.id, 'play']"
+                  [disabled]="(quiz.attemptCount || 0) >= quiz.maxAttempts">
+            @if ((quiz.attemptCount || 0) >= quiz.maxAttempts) {
+              Max attempts reached
+            } @else {
+              Start Quiz
+            }
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
+  </div>
+
+  <mat-paginator
+    [length]="total()"
+    [pageSize]="pageSize()"
+    [pageIndex]="page() - 1"
+    [pageSizeOptions]="[6, 12, 24]"
+    (page)="onPageChange($event)"
+    showFirstLastButtons>
+  </mat-paginator>
+}

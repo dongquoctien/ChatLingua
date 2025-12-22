@@ -1,0 +1,61 @@
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav #drawer mode="side" opened class="sidenav">
+    <div class="logo">
+      <fa-icon [icon]="faGraduationCap" size="lg"></fa-icon>
+      <span>ChatLingua</span>
+    </div>
+
+    <mat-nav-list>
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+        <fa-icon [icon]="faHome" matListItemIcon></fa-icon>
+        <span matListItemTitle>Dashboard</span>
+      </a>
+      <a mat-list-item routerLink="/conversations" routerLinkActive="active">
+        <fa-icon [icon]="faComments" matListItemIcon></fa-icon>
+        <span matListItemTitle>Conversations</span>
+      </a>
+      <a mat-list-item routerLink="/vocabulary" routerLinkActive="active">
+        <fa-icon [icon]="faLanguage" matListItemIcon></fa-icon>
+        <span matListItemTitle>Vocabulary</span>
+      </a>
+      <a mat-list-item routerLink="/exercises" routerLinkActive="active">
+        <fa-icon [icon]="faDumbbell" matListItemIcon></fa-icon>
+        <span matListItemTitle>Exercises</span>
+      </a>
+      <a mat-list-item routerLink="/quizzes" routerLinkActive="active">
+        <fa-icon [icon]="faQuestionCircle" matListItemIcon></fa-icon>
+        <span matListItemTitle>Quizzes</span>
+      </a>
+      <a mat-list-item routerLink="/reports" routerLinkActive="active">
+        <fa-icon [icon]="faChartLine" matListItemIcon></fa-icon>
+        <span matListItemTitle>Reports</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar color="primary">
+      <button mat-icon-button (click)="drawer.toggle()">
+        <fa-icon [icon]="faBars"></fa-icon>
+      </button>
+      <span class="spacer"></span>
+
+      @if (authService.currentUser(); as user) {
+        <button mat-button [matMenuTriggerFor]="userMenu">
+          <fa-icon [icon]="faUserCircle"></fa-icon>
+          {{ user.username }}
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <button mat-menu-item (click)="logout()">
+            <fa-icon [icon]="faSignOutAlt"></fa-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      }
+    </mat-toolbar>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

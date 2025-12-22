@@ -1,0 +1,296 @@
+.page-header {
+  margin-bottom: 24px;
+}
+
+.back-btn {
+  fa-icon {
+    margin-right: 8px;
+  }
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #666;
+}
+
+.error-state {
+  text-align: center;
+  padding: 48px;
+  color: #c62828;
+
+  button {
+    margin-top: 16px;
+  }
+}
+
+.conversation-detail-content {
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section {
+  margin-bottom: 24px;
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    fa-icon {
+      color: #3f51b5;
+    }
+  }
+}
+
+mat-divider {
+  margin: 24px 0 !important;
+}
+
+// Original text section
+.original-text {
+  .text-content.vietnamese {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #333;
+    padding: 16px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border-left: 4px solid #ff9800;
+  }
+}
+
+// Translation section
+.translation {
+  .translation-quote {
+    margin: 0;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #1565c0;
+    border-radius: 0 8px 8px 0;
+    font-size: 17px;
+    line-height: 1.6;
+    color: #1565c0;
+  }
+}
+
+// Vocabulary table
+.table-container {
+  overflow-x: auto;
+}
+
+.vocab-table,
+.phrases-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    background: #f5f5f5;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+
+  tbody tr:hover {
+    background: #fafafa;
+  }
+
+  .english-word {
+    color: #1565c0;
+    font-size: 15px;
+  }
+
+  .phonetic {
+    color: #666;
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .pos-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e8eaf6;
+    color: #3f51b5;
+    border-radius: 4px;
+    font-size: 12px;
+    text-transform: lowercase;
+  }
+
+  .mastery-indicator {
+    display: flex;
+    gap: 2px;
+
+    fa-icon {
+      font-size: 12px;
+      color: #ddd;
+
+      &.filled {
+        color: #ffc107;
+      }
+    }
+  }
+}
+
+.phrases-table {
+  .english {
+    color: #1565c0;
+    font-weight: 500;
+  }
+}
+
+// Grammar section
+.grammar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grammar-item {
+  padding: 16px 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  border-left: 4px solid #7b1fa2;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #7b1fa2;
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: #7b1fa2;
+      color: white;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+    }
+  }
+
+  .explanation {
+    margin: 0 0 8px;
+    color: #555;
+    line-height: 1.6;
+  }
+
+  .explanation-en {
+    margin: 0 0 8px;
+    color: #666;
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  .example {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: 6px;
+
+    strong {
+      color: #333;
+    }
+
+    .example-text {
+      color: #1565c0;
+      font-weight: 500;
+      margin-left: 6px;
+    }
+
+    .example-vi {
+      color: #666;
+      margin-left: 8px;
+    }
+  }
+}
+
+// AI Analysis
+.ai-analysis {
+  .analysis-content {
+    padding: 16px;
+    background: #f3e5f5;
+    border-radius: 8px;
+    line-height: 1.7;
+    color: #4a148c;
+  }
+}
+
+// Metadata
+.metadata {
+  margin-top: 32px;
+
+  .meta-chips {
+    display: flex;
+    justify-content: flex-end;
+
+    mat-chip {
+      fa-icon {
+        margin-right: 6px;
+      }
+    }
+
+    .difficulty-beginner {
+      background-color: #e8f5e9 !important;
+      color: #2e7d32 !important;
+    }
+
+    .difficulty-intermediate {
+      background-color: #fff3e0 !important;
+      color: #ef6c00 !important;
+    }
+
+    .difficulty-advanced {
+      background-color: #ffebee !important;
+      color: #c62828 !important;
+    }
+  }
+}
+
+.no-data {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 24px;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .conversation-detail-content {
+    padding: 16px;
+  }
+
+  .vocab-table,
+  .phrases-table {
+    font-size: 13px;
+
+    th,
+    td {
+      padding: 8px 12px;
+    }
+  }
+}

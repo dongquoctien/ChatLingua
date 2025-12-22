@@ -1,0 +1,145 @@
+<div class="page-header">
+  <h1>Learning Reports</h1>
+  <p>Track your progress over time</p>
+</div>
+
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+  </div>
+} @else {
+  <div class="overview-section">
+    <h2>Overview</h2>
+    <div class="stats-grid">
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faFire" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()?.currentStreak || 0 }}</div>
+        <div class="stat-label">Current Streak</div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faTrophy" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()?.longestStreak || 0 }}</div>
+        <div class="stat-label">Longest Streak</div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faCheckCircle" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()?.correctRate || 0 }}%</div>
+        <div class="stat-label">Accuracy</div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faLanguage" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()?.totalVocabulary || 0 }}</div>
+        <div class="stat-label">Words Learned</div>
+      </mat-card>
+    </div>
+  </div>
+
+  <mat-tab-group>
+    <mat-tab label="Weekly Report">
+      @if (weeklyReport()) {
+        <div class="report-content">
+          <div class="report-summary">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>This Week's Summary</mat-card-title>
+                <mat-card-subtitle>
+                  {{ weeklyReport()!.startDate | date:'MMM d' }} - {{ weeklyReport()!.endDate | date:'MMM d, yyyy' }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <span class="value">{{ weeklyReport()!.summary.totalDaysActive }}</span>
+                    <span class="label">Days Active</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ weeklyReport()!.summary.totalConversations }}</span>
+                    <span class="label">Conversations</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ weeklyReport()!.summary.totalVocabulary }}</span>
+                    <span class="label">Words Learned</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ weeklyReport()!.summary.totalExercises }}</span>
+                    <span class="label">Exercises</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ weeklyReport()!.summary.totalQuizzes }}</span>
+                    <span class="label">Quizzes</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ weeklyReport()!.summary.averageCorrectRate }}%</span>
+                    <span class="label">Accuracy</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <h3>Daily Breakdown</h3>
+          <div class="daily-breakdown">
+            @for (day of weeklyReport()!.dailyBreakdown; track day.date) {
+              <mat-card class="day-card">
+                <div class="day-header">{{ day.date | date:'EEE, MMM d' }}</div>
+                <div class="day-stats">
+                  <span><fa-icon [icon]="faComments"></fa-icon> {{ day.conversationsAdded }}</span>
+                  <span><fa-icon [icon]="faLanguage"></fa-icon> {{ day.vocabularyLearned }}</span>
+                  <span><fa-icon [icon]="faDumbbell"></fa-icon> {{ day.exercisesCompleted }}</span>
+                  <span><fa-icon [icon]="faQuestionCircle"></fa-icon> {{ day.quizzesCompleted }}</span>
+                </div>
+              </mat-card>
+            } @empty {
+              <p class="no-data">No activity this week</p>
+            }
+          </div>
+        </div>
+      }
+    </mat-tab>
+
+    <mat-tab label="Monthly Report">
+      @if (monthlyReport()) {
+        <div class="report-content">
+          <div class="report-summary">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>This Month's Summary</mat-card-title>
+                <mat-card-subtitle>
+                  {{ monthlyReport()!.startDate | date:'MMM d' }} - {{ monthlyReport()!.endDate | date:'MMM d, yyyy' }}
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <span class="value">{{ monthlyReport()!.summary.totalDaysActive }}</span>
+                    <span class="label">Days Active</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ monthlyReport()!.summary.totalConversations }}</span>
+                    <span class="label">Conversations</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ monthlyReport()!.summary.totalVocabulary }}</span>
+                    <span class="label">Words Learned</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ monthlyReport()!.summary.totalExercises }}</span>
+                    <span class="label">Exercises</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ monthlyReport()!.summary.totalQuizzes }}</span>
+                    <span class="label">Quizzes</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="value">{{ monthlyReport()!.summary.averageCorrectRate }}%</span>
+                    <span class="label">Accuracy</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      }
+    </mat-tab>
+  </mat-tab-group>
+}

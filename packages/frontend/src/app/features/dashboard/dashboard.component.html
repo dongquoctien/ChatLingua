@@ -1,0 +1,99 @@
+<div class="dashboard">
+  <div class="page-header">
+    <h1>Welcome back, {{ authService.currentUser()?.username }}!</h1>
+    <p>Continue your English learning journey</p>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-spinner">
+      <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    </div>
+  } @else if (stats()) {
+    <div class="stats-grid">
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faFire" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()!.currentStreak }}</div>
+        <div class="stat-label">Day Streak</div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faComments" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()!.totalConversations }}</div>
+        <div class="stat-label">Conversations</div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faLanguage" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()!.totalVocabulary }}</div>
+        <div class="stat-label">Words Learned</div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <fa-icon [icon]="faCheckCircle" class="stat-icon"></fa-icon>
+        <div class="stat-value">{{ stats()!.correctRate }}%</div>
+        <div class="stat-label">Accuracy</div>
+      </mat-card>
+    </div>
+
+    <div class="quick-actions">
+      <h2>Quick Actions</h2>
+      <div class="actions-grid">
+        <mat-card class="action-card" routerLink="/vocabulary/review">
+          <fa-icon [icon]="faGraduationCap" class="action-icon primary"></fa-icon>
+          <h3>Review Vocabulary</h3>
+          <p>Practice words you've learned</p>
+        </mat-card>
+
+        <mat-card class="action-card" routerLink="/exercises">
+          <fa-icon [icon]="faDumbbell" class="action-icon accent"></fa-icon>
+          <h3>Practice Exercises</h3>
+          <p>Test your knowledge</p>
+        </mat-card>
+
+        <mat-card class="action-card" routerLink="/quizzes">
+          <fa-icon [icon]="faQuestionCircle" class="action-icon warn"></fa-icon>
+          <h3>Take a Quiz</h3>
+          <p>Challenge yourself</p>
+        </mat-card>
+
+        <mat-card class="action-card" routerLink="/conversations">
+          <fa-icon [icon]="faHistory" class="action-icon"></fa-icon>
+          <h3>View Conversations</h3>
+          <p>Review past learning sessions</p>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <h2>Your Progress</h2>
+      <div class="progress-grid">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Exercises Completed</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="big-number">{{ stats()!.totalExercises }}</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Quizzes Taken</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="big-number">{{ stats()!.totalQuizzes }}</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Longest Streak</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="big-number">{{ stats()!.longestStreak }} days</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  }
+</div>

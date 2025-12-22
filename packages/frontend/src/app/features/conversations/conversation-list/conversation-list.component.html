@@ -1,0 +1,54 @@
+<div class="page-header">
+  <h1>Conversations</h1>
+  <p>Your learning sessions with Claude</p>
+</div>
+
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+  </div>
+} @else if (conversations().length === 0) {
+  <div class="empty-state">
+    <fa-icon [icon]="faComment" size="4x"></fa-icon>
+    <h3>No conversations yet</h3>
+    <p>Start a conversation with Claude to begin learning!</p>
+  </div>
+} @else {
+  <div class="conversation-list">
+    @for (conv of conversations(); track conv.id) {
+      <mat-card class="conversation-card" [routerLink]="['/conversations', conv.id]">
+        <mat-card-header>
+          <mat-card-title>{{ conv.topic || 'Untitled Conversation' }}</mat-card-title>
+          <mat-card-subtitle>{{ conv.createdAt | date:'medium' }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="vietnamese-text">{{ conv.vietnameseText | slice:0:200 }}{{ conv.vietnameseText.length > 200 ? '...' : '' }}</p>
+          <div class="stats">
+            <mat-chip-set>
+              <mat-chip>
+                <fa-icon [icon]="faLanguage"></fa-icon>
+                {{ conv.vocabularyCount }} words
+              </mat-chip>
+              <mat-chip>
+                <fa-icon [icon]="faSpellCheck"></fa-icon>
+                {{ conv.grammarCount }} grammar points
+              </mat-chip>
+              <mat-chip [class]="'difficulty-' + conv.difficultyLevel.toLowerCase()">
+                {{ conv.difficultyLevel }}
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+
+  <mat-paginator
+    [length]="total()"
+    [pageSize]="pageSize()"
+    [pageIndex]="page() - 1"
+    [pageSizeOptions]="[5, 10, 20]"
+    (page)="onPageChange($event)"
+    showFirstLastButtons>
+  </mat-paginator>
+}

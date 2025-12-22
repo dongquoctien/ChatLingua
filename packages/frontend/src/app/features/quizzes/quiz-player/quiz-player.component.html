@@ -1,0 +1,111 @@
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+  </div>
+} @else if (completed()) {
+  <mat-card class="results-card">
+    <mat-card-content>
+      <fa-icon [icon]="result()!.score >= 70 ? faTrophy : faFrown"
+               [class.success]="result()!.score >= 70"
+               [class.warning]="result()!.score < 70"
+               size="4x"></fa-icon>
+      <h2>Quiz Complete!</h2>
+      <div class="score">{{ result()!.score }}%</div>
+      <div class="score-detail">
+        {{ correctCount() }}/{{ result()!.totalQuestions }} correct
+      </div>
+      <div class="time-spent">
+        Time: {{ formatTime(timeSpent()) }}
+      </div>
+
+      <div class="results-breakdown">
+        <h3>Results</h3>
+        @for (r of result()!.results; track r.exerciseId; let i = $index) {
+          <div class="result-item" [class.correct]="r.isCorrect" [class.incorrect]="!r.isCorrect">
+            <span class="q-number">Q{{ i + 1 }}</span>
+            <fa-icon [icon]="r.isCorrect ? faCheckCircle : faTimesCircle"></fa-icon>
+            @if (!r.isCorrect) {
+              <span class="answer-info">Your: {{ r.userAnswer }} | Correct: {{ r.correctAnswer }}</span>
+            }
+          </div>
+        }
+      </div>
+
+      <button mat-raised-button color="primary" routerLink="/quizzes">
+        Back to Quizzes
+      </button>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <div class="quiz-header">
+    <h1>{{ quiz()?.title }}</h1>
+    <div class="timer" [class.warning]="timeRemaining() < 60">
+      <fa-icon [icon]="faClock"></fa-icon>
+      {{ formatTime(timeRemaining()) }}
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <mat-progress-bar mode="determinate" [value]="progressPercent()"></mat-progress-bar>
+    <span>Question {{ currentIndex() + 1 }} of {{ exercises().length }}</span>
+  </div>
+
+  <mat-card class="exercise-card">
+    @if (currentExercise(); as exercise) {
+      <mat-card-header>
+        <mat-card-title>
+          @switch (exercise.exerciseType) {
+            @case ('multiple_choice') { Multiple Choice }
+            @case ('fill_blank') { Fill in the Blank }
+            @case ('translation') { Translation }
+          }
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="question">{{ exercise.questionText }}</p>
+
+        @if (exercise.exerciseType === 'multiple_choice' && exercise.options) {
+          <mat-radio-group [ngModel]="getAnswer(exercise.id)" (ngModelChange)="setAnswer(exercise.id, $event)" class="options-list">
+            @for (option of exercise.options; track option) {
+              <mat-radio-button [value]="option">
+                {{ option }}
+              </mat-radio-button>
+            }
+          </mat-radio-group>
+        } @else {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Your answer</mat-label>
+            <input matInput [ngModel]="getAnswer(exercise.id)" (ngModelChange)="setAnswer(exercise.id, $event)">
+          </mat-form-field>
+        }
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button (click)="previousQuestion()" [disabled]="currentIndex() === 0">
+          <fa-icon [icon]="faArrowLeft"></fa-icon>
+          Previous
+        </button>
+        <span class="spacer"></span>
+        @if (currentIndex() < exercises().length - 1) {
+          <button mat-raised-button color="primary" (click)="nextQuestion()">
+            Next
+            <fa-icon [icon]="faArrowRight"></fa-icon>
+          </button>
+        } @else {
+          <button mat-raised-button color="warn" (click)="submitQuiz()">
+            Submit Quiz
+          </button>
+        }
+      </mat-card-actions>
+    }
+  </mat-card>
+
+  <div class="question-nav">
+    @for (ex of exercises(); track ex.id; let i = $index) {
+      <button mat-mini-fab [color]="hasAnswer(ex.id) ? 'primary' : 'basic'"
+              [class.current]="i === currentIndex()"
+              (click)="goToQuestion(i)">
+        {{ i + 1 }}
+      </button>
+    }
+  </div>
+}

@@ -1,0 +1,84 @@
+<div class="page-header">
+  <h1>Vocabulary</h1>
+  <p>Words you've learned from conversations</p>
+</div>
+
+<div class="filters">
+  <mat-form-field appearance="outline">
+    <mat-label>Search</mat-label>
+    <input matInput [(ngModel)]="searchTerm" (keyup.enter)="applyFilters()" placeholder="Search words...">
+    <fa-icon matSuffix [icon]="faSearch"></fa-icon>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Difficulty</mat-label>
+    <mat-select [(ngModel)]="difficulty" (selectionChange)="applyFilters()">
+      <mat-option value="">All</mat-option>
+      <mat-option value="beginner">Beginner</mat-option>
+      <mat-option value="intermediate">Intermediate</mat-option>
+      <mat-option value="advanced">Advanced</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Part of Speech</mat-label>
+    <mat-select [(ngModel)]="partOfSpeech" (selectionChange)="applyFilters()">
+      <mat-option value="">All</mat-option>
+      <mat-option value="noun">Noun</mat-option>
+      <mat-option value="verb">Verb</mat-option>
+      <mat-option value="adjective">Adjective</mat-option>
+      <mat-option value="adverb">Adverb</mat-option>
+      <mat-option value="preposition">Preposition</mat-option>
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+  </div>
+} @else if (vocabulary().length === 0) {
+  <div class="empty-state">
+    <fa-icon [icon]="faLanguage" size="4x"></fa-icon>
+    <h3>No vocabulary yet</h3>
+    <p>Have conversations with Claude to learn new words!</p>
+  </div>
+} @else {
+  <div class="vocabulary-grid">
+    @for (word of vocabulary(); track word.id) {
+      <mat-card class="vocabulary-card">
+        <mat-card-header>
+          <mat-card-title>{{ word.englishWord }}</mat-card-title>
+          <mat-card-subtitle>{{ word.vietnameseWord }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (word.phonetic) {
+            <p class="phonetic">/{{ word.phonetic }}/</p>
+          }
+          @if (word.partOfSpeech) {
+            <span class="part-of-speech">{{ word.partOfSpeech }}</span>
+          }
+          @if (word.exampleEn) {
+            <p class="example">"{{ word.exampleEn }}"</p>
+          }
+          <div class="mastery">
+            <span class="mastery-label">Mastery:</span>
+            <div class="mastery-bar">
+              <div class="mastery-fill" [style.width.%]="word.masteryLevel * 20"></div>
+            </div>
+            <span class="mastery-value">{{ word.masteryLevel }}/5</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+
+  <mat-paginator
+    [length]="total()"
+    [pageSize]="pageSize()"
+    [pageIndex]="page() - 1"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="onPageChange($event)"
+    showFirstLastButtons>
+  </mat-paginator>
+}

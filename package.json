@@ -1,0 +1,31 @@
+{
+  "name": "chatlingua",
+  "version": "1.0.0",
+  "description": "English learning platform with MCP integration for Claude Desktop",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "overrides": {
+    "rxjs": "7.8.2"
+  },
+  "scripts": {
+    "mcp:build": "npm run build -w @chatlingua/mcp-server",
+    "mcp:dev": "npm run dev -w @chatlingua/mcp-server",
+    "mcp:start": "npm run start -w @chatlingua/mcp-server",
+    "backend:build": "npm run build -w @chatlingua/backend",
+    "backend:dev": "npm run dev -w @chatlingua/backend",
+    "backend:start": "npm run start -w @chatlingua/backend",
+    "frontend:build": "npm run build -w @chatlingua/frontend",
+    "frontend:dev": "npm run dev -w @chatlingua/frontend",
+    "build:all": "npm run build -ws",
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

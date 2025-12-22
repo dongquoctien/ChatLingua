@@ -1,0 +1,143 @@
+<div class="page-header">
+  <div class="header-content">
+    <button mat-icon-button (click)="goBack()" class="back-button">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+    </button>
+    <div class="header-text">
+      <h1>
+        <fa-icon [icon]="faHistory"></fa-icon>
+        Exercise History
+      </h1>
+      <p>Review your past practice sessions</p>
+    </div>
+  </div>
+  <button mat-raised-button color="primary" (click)="startNewPractice()">
+    Start New Practice
+  </button>
+</div>
+
+<!-- Loading -->
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <p>Loading history...</p>
+  </div>
+}
+
+<!-- Error -->
+@if (error()) {
+  <mat-card class="error-card">
+    <mat-card-content>
+      <p class="error-message">{{ error() }}</p>
+      <button mat-button color="primary" (click)="loadHistory()">Try Again</button>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Empty State -->
+@if (isEmpty()) {
+  <mat-card class="empty-card">
+    <mat-card-content>
+      <fa-icon [icon]="faChartLine" size="4x" class="empty-icon"></fa-icon>
+      <h2>No Practice Sessions Yet</h2>
+      <p>Complete your first practice session to see your history here.</p>
+      <button mat-raised-button color="primary" (click)="startNewPractice()">
+        Start Your First Practice
+      </button>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Session List -->
+@if (!loading() && !isEmpty()) {
+  <div class="sessions-list">
+    @for (session of sessions(); track session.id) {
+      <mat-card class="session-card" [class.expanded]="isExpanded(session.id)">
+        <mat-card-header (click)="toggleSessionDetails(session.id)">
+          <div class="session-header">
+            <div class="session-score" [ngClass]="getScoreClass(session.scorePercentage)">
+              <fa-icon [icon]="session.scorePercentage >= 70 ? faTrophy : faFrown"></fa-icon>
+              <span class="percentage">{{ session.scorePercentage }}%</span>
+            </div>
+            <div class="session-info">
+              <div class="session-stats">
+                <span class="score">{{ session.correctAnswers }}/{{ session.totalQuestions }} correct</span>
+                <mat-chip [ngClass]="getStatusClass(session.status)">{{ session.status | titlecase }}</mat-chip>
+              </div>
+              <div class="session-meta">
+                <span class="time">
+                  <fa-icon [icon]="faClock"></fa-icon>
+                  {{ formatTime(session.totalTimeSeconds) }}
+                </span>
+                <span class="date">
+                  <fa-icon [icon]="faCalendarAlt"></fa-icon>
+                  {{ formatDate(session.startedAt) }}
+                </span>
+              </div>
+              <div class="exercise-types">
+                @for (type of session.exerciseTypes; track type) {
+                  <mat-chip class="type-chip">{{ type | titlecase }}</mat-chip>
+                }
+              </div>
+            </div>
+            <div class="expand-indicator">
+              <span>{{ isExpanded(session.id) ? 'Hide' : 'View' }} Details</span>
+            </div>
+          </div>
+        </mat-card-header>
+
+        @if (isExpanded(session.id)) {
+          <mat-card-content class="session-details">
+            <mat-divider></mat-divider>
+
+            @if (isLoadingDetails(session.id)) {
+              <div class="loading-details">
+                <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+                <span>Loading details...</span>
+              </div>
+            } @else {
+              @if (getSessionDetail(session.id); as detail) {
+                <h3>Question Review</h3>
+                <div class="questions-list">
+                  @for (answer of detail.results; track answer.exerciseId) {
+                    <div class="question-item" [class.correct]="answer.isCorrect" [class.incorrect]="!answer.isCorrect">
+                      <div class="question-header">
+                        <span class="question-num">Q{{ answer.questionOrder }}</span>
+                        <fa-icon [icon]="answer.isCorrect ? faCheckCircle : faTimesCircle"
+                                 [class.icon-correct]="answer.isCorrect"
+                                 [class.icon-incorrect]="!answer.isCorrect"></fa-icon>
+                        <mat-chip class="type-chip small">{{ answer.exerciseType | titlecase }}</mat-chip>
+                      </div>
+                      <p class="question-text">{{ answer.questionText }}</p>
+                      <div class="answer-details">
+                        <div class="your-answer">
+                          <strong>Your answer:</strong>
+                          <span [class.wrong]="!answer.isCorrect">{{ answer.userAnswer || '(no answer)' }}</span>
+                        </div>
+                        @if (!answer.isCorrect) {
+                          <div class="correct-answer">
+                            <strong>Correct:</strong>
+                            <span class="correct-text">{{ answer.correctAnswer }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </mat-card-content>
+        }
+      </mat-card>
+    }
+
+    <mat-paginator
+      [length]="totalSessions()"
+      [pageSize]="limit()"
+      [pageIndex]="page() - 1"
+      [pageSizeOptions]="[5, 10, 20]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+}

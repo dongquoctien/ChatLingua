@@ -1,0 +1,197 @@
+<div class="page-header">
+  <button mat-button routerLink="/conversations" class="back-btn">
+    <fa-icon [icon]="faArrowLeft"></fa-icon>
+    Back to Conversations
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+  </div>
+} @else if (error()) {
+  <div class="error-state">
+    <p>{{ error() }}</p>
+    <button mat-raised-button color="primary" routerLink="/conversations">
+      Back to Conversations
+    </button>
+  </div>
+} @else if (conversation()) {
+  <div class="conversation-detail-content">
+    <!-- Original Vietnamese Text -->
+    <section class="section original-text">
+      <h2>
+        <fa-icon [icon]="faComment"></fa-icon>
+        Nội dung gốc (Tiếng Việt)
+      </h2>
+      <div class="text-content vietnamese">
+        {{ conversation()!.vietnameseText }}
+      </div>
+    </section>
+
+    <!-- English Translation -->
+    <section class="section translation">
+      <h2>
+        <fa-icon [icon]="faLanguage"></fa-icon>
+        Bản dịch tiếng Anh
+      </h2>
+      <blockquote class="translation-quote">
+        <strong>"{{ conversation()!.englishTranslation }}"</strong>
+      </blockquote>
+    </section>
+
+    <mat-divider></mat-divider>
+
+    <!-- Vocabulary Table -->
+    <section class="section vocabulary">
+      <h2>
+        <fa-icon [icon]="faBook"></fa-icon>
+        Từ vựng mới ({{ conversation()!.vocabulary.length }} từ)
+      </h2>
+
+      @if (conversation()!.vocabulary.length > 0) {
+        <div class="table-container">
+          <table class="vocab-table">
+            <thead>
+              <tr>
+                <th>Tiếng Việt</th>
+                <th>Tiếng Anh</th>
+                <th>Phát âm</th>
+                <th>Loại từ</th>
+                <th>Mastery</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (word of conversation()!.vocabulary; track word.id) {
+                <tr>
+                  <td>{{ word.vietnameseWord }}</td>
+                  <td class="english-word"><strong>{{ word.englishWord }}</strong></td>
+                  <td class="phonetic">{{ word.phonetic ? '/' + word.phonetic + '/' : '-' }}</td>
+                  <td>
+                    <span class="pos-tag">{{ word.partOfSpeech || '-' }}</span>
+                  </td>
+                  <td>
+                    <div class="mastery-indicator" [class]="'level-' + word.masteryLevel">
+                      @for (star of [1,2,3,4,5]; track star) {
+                        <fa-icon [icon]="star <= word.masteryLevel ? faStar : faStarEmpty"
+                                 [class.filled]="star <= word.masteryLevel"></fa-icon>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="no-data">Chưa có từ vựng được trích xuất.</p>
+      }
+    </section>
+
+    <mat-divider></mat-divider>
+
+    <!-- Grammar Points -->
+    <section class="section grammar">
+      <h2>
+        <fa-icon [icon]="faSpellCheck"></fa-icon>
+        Ngữ pháp quan trọng
+      </h2>
+
+      @if (conversation()!.grammarPoints.length > 0) {
+        <div class="grammar-list">
+          @for (grammar of conversation()!.grammarPoints; track grammar.id; let i = $index) {
+            <div class="grammar-item">
+              <h3>
+                <span class="number">{{ i + 1 }}</span>
+                {{ grammar.rule }}
+              </h3>
+              @if (grammar.explanationVi) {
+                <p class="explanation">{{ grammar.explanationVi }}</p>
+              }
+              @if (grammar.explanationEn) {
+                <p class="explanation-en">{{ grammar.explanationEn }}</p>
+              }
+              @if (grammar.exampleEn) {
+                <div class="example">
+                  <strong>Ví dụ:</strong>
+                  <span class="example-text">"{{ grammar.exampleEn }}"</span>
+                  @if (grammar.exampleVi) {
+                    <span class="example-vi">= {{ grammar.exampleVi }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="no-data">Chưa có điểm ngữ pháp được trích xuất.</p>
+      }
+    </section>
+
+    <mat-divider></mat-divider>
+
+    <!-- Useful Phrases (from vocabulary with type=phrase) -->
+    @if (getPhrases().length > 0) {
+      <section class="section phrases">
+        <h2>
+          <fa-icon [icon]="faLightbulb"></fa-icon>
+          Câu hữu ích
+        </h2>
+        <div class="table-container">
+          <table class="phrases-table">
+            <thead>
+              <tr>
+                <th>Tiếng Anh</th>
+                <th>Tiếng Việt</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (phrase of getPhrases(); track phrase.id) {
+                <tr>
+                  <td class="english">{{ phrase.englishWord }}</td>
+                  <td>{{ phrase.vietnameseWord }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <mat-divider></mat-divider>
+    }
+
+    <!-- AI Analysis -->
+    @if (conversation()!.aiAnalysis) {
+      <section class="section ai-analysis">
+        <h2>
+          <fa-icon [icon]="faRobot"></fa-icon>
+          Phân tích AI
+        </h2>
+        <div class="analysis-content">
+          {{ conversation()!.aiAnalysis | json}}
+        </div>
+      </section>
+    }
+
+    <!-- Metadata -->
+    <section class="section metadata">
+      <div class="meta-chips">
+        <mat-chip-set>
+          <mat-chip [class]="'difficulty-' + conversation()!.difficultyLevel.toLowerCase()">
+            Level: {{ conversation()!.difficultyLevel }}
+          </mat-chip>
+          @if (conversation()!.topic) {
+            <mat-chip>
+              <fa-icon [icon]="faTag"></fa-icon>
+              {{ conversation()!.topic }}
+            </mat-chip>
+          }
+          <mat-chip>
+            <fa-icon [icon]="faClock"></fa-icon>
+            {{ conversation()!.createdAt | date:'medium' }}
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+    </section>
+  </div>
+}
