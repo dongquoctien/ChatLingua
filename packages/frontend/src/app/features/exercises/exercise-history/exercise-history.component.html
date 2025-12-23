@@ -19,7 +19,7 @@
 <!-- Loading -->
 @if (loading()) {
   <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
     <p>Loading history...</p>
   </div>
 }
@@ -38,7 +38,7 @@
 @if (isEmpty()) {
   <mat-card class="empty-card">
     <mat-card-content>
-      <fa-icon [icon]="faChartLine" size="4x" class="empty-icon"></fa-icon>
+      <fa-icon [icon]="faChartLine" class="empty-icon"></fa-icon>
       <h2>No Practice Sessions Yet</h2>
       <p>Complete your first practice session to see your history here.</p>
       <button mat-raised-button color="primary" (click)="startNewPractice()">

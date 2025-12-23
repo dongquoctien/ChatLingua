@@ -4,12 +4,14 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 interface ExerciseRow extends RowDataPacket {
   id: number;
   conversation_id: number | null;
-  vocabulary_id: number | null;
-  grammar_id: number | null;
+  user_id: number;
   exercise_type: 'multiple_choice' | 'fill_blank' | 'translation';
-  question_text: string;
-  options: string | null;
+  question: string;
+  options: string | string[] | null;
   correct_answer: string;
+  explanation: string | null;
+  related_vocabulary_ids: string | number[] | null;
+  related_grammar_ids: string | number[] | null;
   difficulty_level: string;
   created_at: Date;
 }
@@ -27,12 +29,13 @@ interface AttemptRow extends RowDataPacket {
 export interface Exercise {
   id: number;
   conversationId: number | null;
-  vocabularyId: number | null;
-  grammarId: number | null;
+  relatedVocabularyIds: number[] | null;
+  relatedGrammarIds: number[] | null;
   exerciseType: 'multiple_choice' | 'fill_blank' | 'translation';
   questionText: string;
   options: string[] | null;
   correctAnswer?: string; // Only included after answer is submitted
+  explanation?: string | null;
   difficultyLevel: string;
   createdAt: Date;
 }
@@ -57,10 +60,10 @@ export class ExerciseService {
     userId: number,
     page: number = 1,
     limit: number = 20,
-    filters: { exerciseType?: string; difficultyLevel?: string } = {}
+    filters: { exerciseType?: string; difficultyLevel?: string; conversationId?: number } = {}
   ): Promise<{ data: Exercise[]; total: number; page: number; limit: number }> {
     const offset = (page - 1) * limit;
-    const conditions: string[] = ['c.user_id = ?'];
+    const conditions: string[] = ['e.user_id = ?'];
     const params: (string | number)[] = [userId];
 
     if (filters.exerciseType) {
@@ -73,13 +76,16 @@ export class ExerciseService {
       params.push(filters.difficultyLevel);
     }
 
+    if (filters.conversationId) {
+      conditions.push('e.conversation_id = ?');
+      params.push(filters.conversationId);
+    }
+
     const whereClause = conditions.join(' AND ');
 
     // Get total count
     const [countResult] = await pool.execute<RowDataPacket[]>(
-      `SELECT COUNT(*) as total FROM exercises e
-       LEFT JOIN conversations c ON e.conversation_id = c.id
-       WHERE ${whereClause}`,
+      `SELECT COUNT(*) as total FROM exercises e WHERE ${whereClause}`,
       params
     );
     const total = countResult[0].total as number;
@@ -88,7 +94,6 @@ export class ExerciseService {
     // Note: Using query instead of execute because LIMIT/OFFSET don't work well with prepared statements
     const [rows] = await pool.query<ExerciseRow[]>(
       `SELECT e.* FROM exercises e
-       LEFT JOIN conversations c ON e.conversation_id = c.id
        WHERE ${whereClause}
        ORDER BY e.created_at DESC
        LIMIT ? OFFSET ?`,
@@ -106,9 +111,7 @@ export class ExerciseService {
     includeAnswer: boolean = false
   ): Promise<Exercise | null> {
     const [rows] = await pool.execute<ExerciseRow[]>(
-      `SELECT e.* FROM exercises e
-       LEFT JOIN conversations c ON e.conversation_id = c.id
-       WHERE e.id = ? AND c.user_id = ?`,
+      `SELECT * FROM exercises WHERE id = ? AND user_id = ?`,
       [exerciseId, userId]
     );
 
@@ -119,6 +122,7 @@ export class ExerciseService {
     const exercise = this.mapToExercise(rows[0]);
     if (includeAnswer) {
       exercise.correctAnswer = rows[0].correct_answer;
+      exercise.explanation = rows[0].explanation;
     }
 
     return exercise;
@@ -132,9 +136,7 @@ export class ExerciseService {
   ): Promise<{ isCorrect: boolean; correctAnswer: string; attempt: ExerciseAttempt }> {
     // Get exercise
     const [exercises] = await pool.execute<ExerciseRow[]>(
-      `SELECT e.* FROM exercises e
-       LEFT JOIN conversations c ON e.conversation_id = c.id
-       WHERE e.id = ? AND c.user_id = ?`,
+      `SELECT * FROM exercises WHERE id = ? AND user_id = ?`,
       [exerciseId, userId]
     );
 
@@ -153,15 +155,30 @@ export class ExerciseService {
     );
 
     // Update vocabulary mastery if applicable
-    if (exercise.vocabulary_id) {
+    let vocabularyIds: number[] = [];
+    if (exercise.related_vocabulary_ids) {
+      if (Array.isArray(exercise.related_vocabulary_ids)) {
+        vocabularyIds = exercise.related_vocabulary_ids;
+      } else if (typeof exercise.related_vocabulary_ids === 'string') {
+        try {
+          const parsed = JSON.parse(exercise.related_vocabulary_ids);
+          vocabularyIds = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          vocabularyIds = [];
+        }
+      }
+    }
+
+    if (vocabularyIds.length > 0) {
       const masteryDelta = isCorrect ? 1 : -1;
+      const placeholders = vocabularyIds.map(() => '?').join(', ');
       await pool.execute(
         `UPDATE vocabulary
          SET mastery_level = GREATEST(0, LEAST(5, mastery_level + ?)),
-             review_count = review_count + 1,
-             last_reviewed = NOW()
-         WHERE id = ?`,
-        [masteryDelta, exercise.vocabulary_id]
+             times_practiced = times_practiced + 1,
+             last_practiced_at = NOW()
+         WHERE id IN (${placeholders})`,
+        [masteryDelta, ...vocabularyIds]
       );
     }
 
@@ -239,8 +256,7 @@ export class ExerciseService {
 
     const [rows] = await pool.query<ExerciseRow[]>(
       `SELECT e.* FROM exercises e
-       LEFT JOIN conversations c ON e.conversation_id = c.id
-       WHERE c.user_id = ? ${typeFilter}
+       WHERE e.user_id = ? ${typeFilter}
        ORDER BY RAND()
        LIMIT ?`,
       params
@@ -248,6 +264,38 @@ export class ExerciseService {
 
     return rows.map(this.mapToExercise);
   }
+
+  async getExerciseCountsByConversation(
+    userId: number
+  ): Promise<{ conversationId: number | null; count: number }[]> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT conversation_id, COUNT(*) as count
+       FROM exercises
+       WHERE user_id = ?
+       GROUP BY conversation_id
+       ORDER BY count DESC`,
+      [userId]
+    );
+
+    return rows.map(row => ({
+      conversationId: row.conversation_id as number | null,
+      count: row.count as number,
+    }));
+  }
+
+  private parseJsonArray = (value: string | number[] | null): number[] | null => {
+    if (!value) return null;
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
 
   private mapToExercise = (row: ExerciseRow): Exercise => {
     let options: string[] | null = null;
@@ -270,10 +318,10 @@ export class ExerciseService {
     return {
       id: row.id,
       conversationId: row.conversation_id,
-      vocabularyId: row.vocabulary_id,
-      grammarId: row.grammar_id,
+      relatedVocabularyIds: this.parseJsonArray(row.related_vocabulary_ids),
+      relatedGrammarIds: this.parseJsonArray(row.related_grammar_ids),
       exerciseType: row.exercise_type,
-      questionText: row.question_text,
+      questionText: row.question,
       options,
       difficultyLevel: row.difficulty_level,
       createdAt: row.created_at,

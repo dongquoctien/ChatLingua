@@ -37,7 +37,7 @@
   padding: 24px;
 
   .stat-icon {
-    font-size: 48px;
+    font-size: var(--icon-3xl); // 48px - stat card icons
     color: #3f51b5;
     margin-bottom: 16px;
   }
@@ -82,7 +82,7 @@
   }
 
   .action-icon {
-    font-size: 36px;
+    font-size: var(--icon-xl); // 32px - action card icons
     margin-bottom: 16px;
     color: #666;
 

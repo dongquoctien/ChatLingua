@@ -11,12 +11,15 @@
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Difficulty</mat-label>
-    <mat-select [(ngModel)]="difficulty" (selectionChange)="applyFilters()">
-      <mat-option value="">All</mat-option>
-      <mat-option value="beginner">Beginner</mat-option>
-      <mat-option value="intermediate">Intermediate</mat-option>
-      <mat-option value="advanced">Advanced</mat-option>
+    <mat-label>CEFR Level</mat-label>
+    <mat-select [(ngModel)]="cefrLevel" (selectionChange)="applyFilters()">
+      <mat-option value="">All Levels</mat-option>
+      <mat-option value="A1">A1 - Beginner</mat-option>
+      <mat-option value="A2">A2 - Elementary</mat-option>
+      <mat-option value="B1">B1 - Intermediate</mat-option>
+      <mat-option value="B2">B2 - Upper Intermediate</mat-option>
+      <mat-option value="C1">C1 - Advanced</mat-option>
+      <mat-option value="C2">C2 - Proficiency</mat-option>
     </mat-select>
   </mat-form-field>
 
@@ -29,39 +32,79 @@
       <mat-option value="adjective">Adjective</mat-option>
       <mat-option value="adverb">Adverb</mat-option>
       <mat-option value="preposition">Preposition</mat-option>
+      <mat-option value="phrase">Phrase</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Difficulty</mat-label>
+    <mat-select [(ngModel)]="difficulty" (selectionChange)="applyFilters()">
+      <mat-option value="">All</mat-option>
+      <mat-option value="beginner">Beginner</mat-option>
+      <mat-option value="intermediate">Intermediate</mat-option>
+      <mat-option value="advanced">Advanced</mat-option>
     </mat-select>
   </mat-form-field>
 </div>
 
 @if (loading()) {
   <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
   </div>
 } @else if (vocabulary().length === 0) {
   <div class="empty-state">
-    <fa-icon [icon]="faLanguage" size="4x"></fa-icon>
+    <fa-icon [icon]="faLanguage"></fa-icon>
     <h3>No vocabulary yet</h3>
     <p>Have conversations with Claude to learn new words!</p>
   </div>
 } @else {
   <div class="vocabulary-grid">
     @for (word of vocabulary(); track word.id) {
-      <mat-card class="vocabulary-card">
-        <mat-card-header>
-          <mat-card-title>{{ word.englishWord }}</mat-card-title>
-          <mat-card-subtitle>{{ word.vietnameseWord }}</mat-card-subtitle>
-        </mat-card-header>
+      <mat-card class="vocabulary-card" (click)="openDictionary(word)">
         <mat-card-content>
+          <!-- Vietnamese word at top -->
+          <p class="vietnamese">{{ word.vietnameseWord }}</p>
+
+          <!-- English word + CEFR badge + part of speech -->
+          <div class="word-row">
+            <span class="english-word">{{ word.englishWord }}</span>
+             @if (word.partOfSpeech) {
+              <span class="pos-label">({{ formatPartOfSpeech(word.partOfSpeech) }})</span>
+            }
+            @if (word.cefrLevel) {
+              <span
+                class="cefr-badge"
+                [style.background-color]="getCefrColor(word.cefrLevel)"
+                [matTooltip]="'CEFR Level ' + word.cefrLevel"
+              >
+                {{ word.cefrLevel }}
+              </span>
+            }
+           
+          </div>
+
+          <!-- Phonetic with speaker -->
           @if (word.phonetic) {
-            <p class="phonetic">/{{ word.phonetic }}/</p>
+            <div class="phonetic-row">
+              <span class="phonetic">{{ word.phonetic }}</span>
+              <button
+                class="speak-btn"
+                (click)="speak(word.id, word.englishWord, $event)"
+                [disabled]="speakingWordId() === word.id"
+                matTooltip="Listen"
+              >
+                <fa-icon [icon]="faVolumeUp"></fa-icon>
+              </button>
+            </div>
           }
-          @if (word.partOfSpeech) {
-            <span class="part-of-speech">{{ word.partOfSpeech }}</span>
-          }
+
+          <!-- Example sentence -->
           @if (word.exampleEn) {
             <p class="example">"{{ word.exampleEn }}"</p>
           }
-          <div class="mastery">
+
+          <!-- Mastery bar -->
+          <div class="mastery-row">
             <span class="mastery-label">Mastery:</span>
             <div class="mastery-bar">
               <div class="mastery-fill" [style.width.%]="word.masteryLevel * 20"></div>

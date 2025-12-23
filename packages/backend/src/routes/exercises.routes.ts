@@ -21,16 +21,31 @@ const submitAnswerSchema = z.object({
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+    const conversationId = req.query.conversationId
+      ? parseInt(req.query.conversationId as string)
+      : undefined;
     const filters = {
       exerciseType: req.query.type as string | undefined,
       difficultyLevel: req.query.difficulty as string | undefined,
+      conversationId: conversationId && !isNaN(conversationId) ? conversationId : undefined,
     };
 
     const result = await exerciseService.getExercises(req.userId!, page, limit, filters);
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get exercises';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/exercises/counts-by-conversation
+router.get('/counts-by-conversation', async (req: AuthRequest, res: Response) => {
+  try {
+    const counts = await exerciseService.getExerciseCountsByConversation(req.userId!);
+    res.json(counts);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get exercise counts';
     res.status(500).json({ error: message });
   }
 });

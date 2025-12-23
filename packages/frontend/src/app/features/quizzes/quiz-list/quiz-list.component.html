@@ -1,15 +1,21 @@
 <div class="page-header">
-  <h1>Quizzes</h1>
-  <p>Test your knowledge with timed quizzes</p>
+  <div class="header-content">
+    <h1>Quizzes</h1>
+    <p>Test your knowledge with timed quizzes</p>
+  </div>
+  <button mat-raised-button color="primary" (click)="openCreateDialog()">
+    <fa-icon [icon]="faPlus"></fa-icon>
+    Create Quiz
+  </button>
 </div>
 
 @if (loading()) {
   <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
   </div>
 } @else if (quizzes().length === 0) {
   <div class="empty-state">
-    <fa-icon [icon]="faQuestionCircle" size="4x"></fa-icon>
+    <fa-icon [icon]="faQuestionCircle" class="empty-icon"></fa-icon>
     <h3>No quizzes yet</h3>
     <p>Complete some exercises first to create quizzes!</p>
   </div>

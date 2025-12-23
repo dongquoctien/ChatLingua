@@ -51,7 +51,8 @@ This is more efficient than calling save_exercise_result multiple times.`,
 };
 
 const inputSchema = z.object({
-  userId: z.number().optional().default(1),
+  userId: z.number().optional(),
+  _resolvedUserId: z.number().optional(), // Injected by handler from user context
   exercises: z.array(z.object({
     exerciseId: z.number(),
     userAnswer: z.string(),
@@ -83,6 +84,9 @@ export async function saveExerciseSession(
 }> {
   const input = inputSchema.parse(args);
 
+  // Use explicit userId if provided, otherwise use resolved userId from env auth, fallback to 1
+  const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
+
   const connection = await db.getConnection();
   await connection.beginTransaction();
 
@@ -106,7 +110,7 @@ export async function saveExerciseSession(
       `INSERT INTO exercise_sessions
        (user_id, total_questions, correct_answers, total_time_seconds, score_percentage, status, exercise_types, started_at, completed_at)
        VALUES (?, ?, ?, ?, ?, 'completed', ?, NOW(), NOW())`,
-      [input.userId, totalCount, correctCount, totalTime, percentage, JSON.stringify(exerciseTypes)]
+      [effectiveUserId, totalCount, correctCount, totalTime, percentage, JSON.stringify(exerciseTypes)]
     );
 
     const sessionId = sessionResult.insertId;
@@ -128,7 +132,7 @@ export async function saveExerciseSession(
       await connection.execute(
         `INSERT INTO exercise_attempts (exercise_id, user_id, user_answer, is_correct, time_spent_seconds)
          VALUES (?, ?, ?, ?, ?)`,
-        [exercise.exerciseId, input.userId, exercise.userAnswer, exercise.isCorrect, exercise.timeSpentSeconds || 0]
+        [exercise.exerciseId, effectiveUserId, exercise.userAnswer, exercise.isCorrect, exercise.timeSpentSeconds || 0]
       );
 
       results.push({
@@ -144,7 +148,7 @@ export async function saveExerciseSession(
        ON DUPLICATE KEY UPDATE
          total_exercises_completed = total_exercises_completed + ?,
          last_activity_date = CURDATE()`,
-      [input.userId, totalCount, totalCount]
+      [effectiveUserId, totalCount, totalCount]
     );
 
     // Update daily activity log
@@ -153,7 +157,7 @@ export async function saveExerciseSession(
        VALUES (?, CURDATE(), ?)
        ON DUPLICATE KEY UPDATE
          exercises_completed = exercises_completed + ?`,
-      [input.userId, totalCount, totalCount]
+      [effectiveUserId, totalCount, totalCount]
     );
 
     await connection.commit();

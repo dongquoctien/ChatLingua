@@ -25,7 +25,8 @@ Use this to show the user their progress, streak, and achievements.`,
 };
 
 const inputSchema = z.object({
-  userId: z.number().optional().default(1),
+  userId: z.number().optional(),
+  _resolvedUserId: z.number().optional(), // Injected by handler from user context
   period: z.enum(['today', 'week', 'month', 'all']).optional().default('all'),
 });
 
@@ -85,10 +86,13 @@ export async function getLearningSummary(
 }> {
   const input = inputSchema.parse(args);
 
+  // Use explicit userId if provided, otherwise use resolved userId from env auth, fallback to 1
+  const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
+
   // Get overall statistics
   const statsRows = await db.query<StatsRow[]>(
     `SELECT * FROM user_statistics WHERE user_id = ?`,
-    [input.userId]
+    [effectiveUserId]
   );
 
   const stats = statsRows[0] || {
@@ -126,7 +130,7 @@ export async function getLearningSummary(
      WHERE user_id = ? ${dateFilter}
      ORDER BY activity_date DESC
      LIMIT 30`,
-    [input.userId]
+    [effectiveUserId]
   );
 
   // Calculate period totals

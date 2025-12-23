@@ -5,11 +5,11 @@
 
 @if (loading()) {
   <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
   </div>
 } @else if (conversations().length === 0) {
   <div class="empty-state">
-    <fa-icon [icon]="faComment" size="4x"></fa-icon>
+    <fa-icon [icon]="faComment" class="empty-icon"></fa-icon>
     <h3>No conversations yet</h3>
     <p>Start a conversation with Claude to begin learning!</p>
   </div>

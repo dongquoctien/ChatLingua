@@ -55,6 +55,10 @@ export const routes: Routes = [
             path: '',
             loadComponent: () => import('./features/vocabulary/vocabulary-list/vocabulary-list.component').then(m => m.VocabularyListComponent),
           },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/vocabulary/vocabulary-detail/vocabulary-detail.component').then(m => m.VocabularyDetailComponent),
+          },
         ],
       },
       {

@@ -26,7 +26,8 @@ mat-card-header {
   gap: 12px;
   margin-bottom: 8px;
 
-  fa-icon {
+  .logo-icon {
+    font-size: var(--icon-2xl); // 40px - auth logo
     color: #3f51b5;
   }
 

@@ -1,0 +1,801 @@
+// Vocabulary Detail - Oxford Dictionary Style
+// Colors
+$primary: #3f51b5;
+$primary-light: #7986cb;
+$text-primary: #1a1a1a;
+$text-secondary: #555;
+$text-muted: #888;
+$bg-light: #f8f9fa;
+$border-color: #e0e0e0;
+$quote-color: #666;
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 16px;
+  color: $text-secondary;
+
+  fa-icon {
+    font-size: var(--icon-2xl); // 40px - loading spinner
+  }
+
+  .error-message {
+    color: #d32f2f;
+    font-size: 16px;
+  }
+}
+
+.dictionary-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.back-button {
+  margin-bottom: 16px;
+  color: $text-secondary;
+
+  fa-icon {
+    margin-right: 8px;
+  }
+}
+
+.dictionary-card {
+  padding: 0;
+  overflow: hidden;
+
+  mat-divider {
+    margin: 0;
+  }
+}
+
+// Header Section
+.entry-header {
+  padding: 24px;
+  background: linear-gradient(135deg, $bg-light 0%, #fff 100%);
+}
+
+.word-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.english-word {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.cefr-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pronunciation-row {
+  display: flex;
+  align-items: center;
+  // gap: 20px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.phonetic {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Lucida Sans Unicode', 'Arial Unicode MS', sans-serif;
+  font-size: 1.1rem;
+  color: $text-secondary;
+
+  &.us {
+    color: $text-muted;
+  }
+}
+
+.audio-btn {
+  // width: 32px;
+  // height: 32px;
+  color: $primary;
+  transition: opacity 0.2s;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+
+  &:hover:not(:disabled) {
+    color: darken($primary, 10%);
+  }
+}
+
+.accent-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  margin-right: 12px;
+}
+
+.pos-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.part-of-speech {
+  font-style: italic;
+  color: $primary;
+  font-size: 1rem;
+}
+
+.separator {
+  color: $text-muted;
+}
+
+.vietnamese-word {
+  font-size: 1.1rem;
+  color: $text-secondary;
+  font-weight: 500;
+}
+
+.register-badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  background: #fff3e0;
+  color: #e65100;
+  font-style: italic;
+}
+
+// Section Styles
+.section {
+  padding: 20px 24px;
+}
+
+.section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $primary;
+  letter-spacing: 1px;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+
+  fa-icon {
+    margin-right: 8px;
+  }
+
+  &.inline {
+    display: inline-block;
+    margin-right: 12px;
+    margin-bottom: 8px;
+  }
+}
+
+// Word Forms
+.word-forms-section {
+  background: $bg-light;
+}
+
+.word-forms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.word-form {
+  font-size: 0.9rem;
+  color: $text-secondary;
+
+  &::before {
+    content: '•';
+    margin-right: 6px;
+    color: $text-muted;
+  }
+}
+
+// Empty Dictionary State
+.empty-dictionary-section {
+  background: $bg-light;
+}
+
+.empty-dictionary {
+  text-align: center;
+  padding: 32px 16px;
+  color: $text-secondary;
+
+  .empty-icon {
+    font-size: var(--icon-3xl);
+    color: $text-muted;
+    margin-bottom: 16px;
+  }
+
+  h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+    max-width: 500px;
+    margin-inline: auto;
+  }
+}
+
+// Definitions
+.definition-item {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.definition-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.sense-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: $primary;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.grammar-label {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-family: monospace;
+}
+
+.register-label {
+  font-size: 0.85rem;
+  color: $text-muted;
+  font-style: italic;
+}
+
+.definition-text {
+  font-size: 1rem;
+  color: $text-primary;
+  margin: 0 0 4px 0;
+  line-height: 1.6;
+}
+
+.definition-vi {
+  font-size: 0.95rem;
+  color: $text-secondary;
+  margin: 0 0 12px 0;
+  font-style: italic;
+}
+
+// Examples
+.examples {
+  margin-top: 12px;
+  padding-left: 8px;
+}
+
+.examples-label {
+  font-size: 0.8rem;
+  color: $text-muted;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.example-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: $bg-light;
+  border-radius: 8px;
+  border-left: 3px solid $primary-light;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.quote-icon {
+  color: $primary-light;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.example-content {
+  flex: 1;
+}
+
+.example-en {
+  font-size: 0.95rem;
+  color: $text-primary;
+  margin: 0 0 4px 0;
+  line-height: 1.5;
+}
+
+.example-vi {
+  font-size: 0.9rem;
+  color: $text-secondary;
+  margin: 0;
+  font-style: italic;
+}
+
+// Patterns
+.patterns {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.patterns-label {
+  font-size: 0.8rem;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pattern-chip {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  background: #e8eaf6;
+  color: $primary;
+  font-family: monospace;
+}
+
+// Word Family
+.word-family-section {
+  background: linear-gradient(to right, #f3e5f5 0%, #fff 100%);
+}
+
+.word-family {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.family-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.family-pos {
+  font-size: 0.85rem;
+  color: $text-muted;
+  font-style: italic;
+  min-width: 70px;
+}
+
+.family-words {
+  font-size: 0.95rem;
+  color: $text-primary;
+}
+
+// Collocations
+.collocations-section {
+  background: linear-gradient(to right, #e8f5e9 0%, #fff 100%);
+}
+
+.collocations {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.collocation-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.collocation-type {
+  font-size: 0.85rem;
+  color: $text-muted;
+  font-style: italic;
+  min-width: 90px;
+}
+
+.collocation-words {
+  font-size: 0.95rem;
+  color: $text-primary;
+}
+
+// Synonyms & Antonyms
+.synonyms-section {
+  .synonym-row,
+  .antonym-row {
+    margin-bottom: 16px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.word-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.word-chip {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  background: #e3f2fd;
+  color: #1565c0;
+  cursor: default;
+
+  &.antonym {
+    background: #ffebee;
+    color: #c62828;
+  }
+}
+
+// Idioms
+.idioms-section {
+  background: linear-gradient(to right, #fff8e1 0%, #fff 100%);
+}
+
+.idiom-item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed $border-color;
+
+  &:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.idiom-phrase {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 4px 0;
+}
+
+.idiom-meaning {
+  font-size: 0.95rem;
+  color: $text-secondary;
+  margin: 0 0 4px 0;
+}
+
+.idiom-meaning-vi {
+  font-size: 0.9rem;
+  color: $text-muted;
+  font-style: italic;
+  margin: 0;
+}
+
+// Usage Notes
+.usage-notes-section {
+  background: #fffde7;
+}
+
+.usage-notes {
+  font-size: 0.95rem;
+  color: $text-secondary;
+  line-height: 1.6;
+  margin: 0;
+}
+
+// Word Origin
+.word-origin-section {
+  background: $bg-light;
+}
+
+.word-origin {
+  font-size: 0.95rem;
+  color: $text-secondary;
+  line-height: 1.6;
+  margin: 0;
+  font-style: italic;
+}
+
+// Topics
+.topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.topic-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  background: white;
+  border: 2px solid;
+  color: $text-secondary;
+}
+
+.topic-level {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+}
+
+// Learning Progress
+.progress-section {
+  background: linear-gradient(135deg, #e8eaf6 0%, #fff 100%);
+}
+
+.progress-content {
+  margin-bottom: 20px;
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.progress-label {
+  font-size: 0.9rem;
+  color: $text-secondary;
+  min-width: 70px;
+}
+
+.mastery-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+
+  ::ng-deep .mdc-linear-progress__bar-inner {
+    border-color: $primary;
+  }
+}
+
+.progress-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $primary;
+  min-width: 40px;
+}
+
+.progress-stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: $text-muted;
+}
+
+.stat-value {
+  font-size: 0.85rem;
+  color: $text-primary;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  button {
+    fa-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+// Related Words Card
+.related-card {
+  margin-top: 24px;
+  padding: 24px;
+}
+
+.related-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 20px 0;
+}
+
+.related-section {
+  margin-bottom: 20px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h4 {
+    font-size: 0.85rem;
+    color: $text-muted;
+    margin: 0 0 12px 0;
+    font-weight: 500;
+  }
+}
+
+.related-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.related-word-btn {
+  text-transform: none;
+  font-weight: 400;
+
+  .related-pos {
+    font-size: 0.75rem;
+    color: $text-muted;
+    font-style: italic;
+    margin-left: 6px;
+  }
+}
+
+// Contexts Section - Conversations where word appeared
+.contexts-section {
+  background: linear-gradient(to right, #e3f2fd 0%, #fff 100%);
+}
+
+.contexts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.context-item {
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid $border-color;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $primary-light;
+    box-shadow: 0 2px 8px rgba(63, 81, 181, 0.1);
+
+    .view-conversation {
+      color: $primary;
+    }
+  }
+}
+
+.context-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.context-vietnamese {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: $text-primary;
+}
+
+.context-date {
+  font-size: 0.8rem;
+  color: $text-muted;
+}
+
+.context-example {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: $bg-light;
+  border-radius: 6px;
+  margin-bottom: 8px;
+
+  .quote-icon.small {
+    font-size: 0.75rem;
+    color: $primary-light;
+  }
+
+  .example-text {
+    flex: 1;
+
+    .example-en {
+      font-size: 0.9rem;
+      color: $text-primary;
+      margin: 0 0 4px 0;
+      line-height: 1.4;
+    }
+
+    .example-vi {
+      font-size: 0.85rem;
+      color: $text-secondary;
+      font-style: italic;
+      margin: 0;
+    }
+  }
+}
+
+.view-conversation {
+  display: block;
+  font-size: 0.8rem;
+  color: $text-muted;
+  text-align: right;
+  transition: color 0.2s;
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .dictionary-page {
+    padding: 16px 8px;
+  }
+
+  .entry-header {
+    padding: 16px;
+  }
+
+  .english-word {
+    font-size: 2rem;
+  }
+
+  .section {
+    padding: 16px;
+  }
+
+  .pronunciation-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .progress-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+}

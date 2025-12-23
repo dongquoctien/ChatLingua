@@ -1,6 +1,6 @@
 @if (loading()) {
   <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
   </div>
 } @else if (completed()) {
   <mat-card class="results-card">
@@ -8,7 +8,7 @@
       <fa-icon [icon]="result()!.score >= 70 ? faTrophy : faFrown"
                [class.success]="result()!.score >= 70"
                [class.warning]="result()!.score < 70"
-               size="4x"></fa-icon>
+               class="result-icon"></fa-icon>
       <h2>Quiz Complete!</h2>
       <div class="score">{{ result()!.score }}%</div>
       <div class="score-detail">

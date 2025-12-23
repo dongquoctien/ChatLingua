@@ -35,7 +35,8 @@ Use this after the user answers an exercise to track their progress.`,
 };
 
 const inputSchema = z.object({
-  userId: z.number().optional().default(1),
+  userId: z.number().optional(),
+  _resolvedUserId: z.number().optional(), // Injected by handler from user context
   exerciseId: z.number(),
   userAnswer: z.string(),
   isCorrect: z.boolean(),
@@ -53,6 +54,9 @@ export async function saveExerciseResult(
 }> {
   const input = inputSchema.parse(args);
 
+  // Use explicit userId if provided, otherwise use resolved userId from env auth, fallback to 1
+  const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
+
   const connection = await db.getConnection();
   await connection.beginTransaction();
 
@@ -63,7 +67,7 @@ export async function saveExerciseResult(
        VALUES (?, ?, ?, ?, ?)`,
       [
         input.exerciseId,
-        input.userId,
+        effectiveUserId,
         input.userAnswer,
         input.isCorrect,
         input.timeSpentSeconds || null,
@@ -79,7 +83,7 @@ export async function saveExerciseResult(
        ON DUPLICATE KEY UPDATE
          total_exercises_completed = total_exercises_completed + 1,
          last_activity_date = CURDATE()`,
-      [input.userId]
+      [effectiveUserId]
     );
 
     // Update daily activity log
@@ -88,7 +92,7 @@ export async function saveExerciseResult(
        VALUES (?, CURDATE(), 1)
        ON DUPLICATE KEY UPDATE
          exercises_completed = exercises_completed + 1`,
-      [input.userId]
+      [effectiveUserId]
     );
 
     // If correct, update vocabulary mastery if related
@@ -100,7 +104,7 @@ export async function saveExerciseResult(
              v.times_practiced = v.times_practiced + 1,
              v.last_practiced_at = NOW()
          WHERE e.id = ? AND v.user_id = ?`,
-        [input.exerciseId, input.userId]
+        [input.exerciseId, effectiveUserId]
       );
     }
 

@@ -10,6 +10,7 @@ import {
 
 import { DatabaseConnection } from './database/connection';
 import { tools, handleToolCall } from './tools';
+import { userContext } from './auth/user-context';
 
 const server = new Server(
   {
@@ -36,7 +37,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
-    const result = await handleToolCall(name, args || {}, db);
+    // Get the resolved userId from user context
+    const resolvedUserId = userContext.getUserId();
+    const result = await handleToolCall(name, args || {}, db, resolvedUserId);
     return {
       content: [
         {
@@ -63,6 +66,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   try {
     await db.connect();
+
+    // Initialize user context (authenticate if credentials provided)
+    await userContext.initialize(db);
+
     console.error('ChatLingua MCP Server starting...');
 
     const transport = new StdioServerTransport();

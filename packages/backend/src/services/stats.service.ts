@@ -4,24 +4,24 @@ import type { RowDataPacket } from 'mysql2';
 interface StatsRow extends RowDataPacket {
   user_id: number;
   total_conversations: number;
-  total_vocabulary_learned: number;
-  total_grammar_learned: number;
+  total_vocabulary: number;
+  total_grammar_points: number;
   total_exercises_completed: number;
   total_correct_answers: number;
-  total_quizzes_completed: number;
-  current_streak: number;
-  longest_streak: number;
+  total_quizzes_taken: number;
+  current_streak_days: number;
+  longest_streak_days: number;
   last_activity_date: Date | null;
 }
 
 interface DailyLogRow extends RowDataPacket {
   activity_date: Date;
-  conversations_added: number;
-  vocabulary_learned: number;
+  conversations_count: number;
+  vocabulary_added: number;
   exercises_completed: number;
   correct_answers: number;
-  quizzes_completed: number;
-  time_spent_minutes: number;
+  quizzes_taken: number;
+  study_time_minutes: number;
 }
 
 export interface UserOverviewStats {
@@ -105,13 +105,13 @@ export class StatsService {
 
     return {
       totalConversations: stats.total_conversations,
-      totalVocabulary: stats.total_vocabulary_learned,
-      totalGrammar: stats.total_grammar_learned,
+      totalVocabulary: stats.total_vocabulary,
+      totalGrammar: stats.total_grammar_points,
       totalExercises: stats.total_exercises_completed,
-      totalQuizzes: stats.total_quizzes_completed,
+      totalQuizzes: stats.total_quizzes_taken,
       correctRate,
-      currentStreak: stats.current_streak,
-      longestStreak: stats.longest_streak,
+      currentStreak: stats.current_streak_days,
+      longestStreak: stats.longest_streak_days,
       lastActivityDate: stats.last_activity_date,
     };
   }
@@ -150,12 +150,12 @@ export class StatsService {
 
     const dailyBreakdown: DailyActivity[] = rows.map((row) => ({
       date: row.activity_date,
-      conversationsAdded: row.conversations_added,
-      vocabularyLearned: row.vocabulary_learned,
+      conversationsAdded: row.conversations_count,
+      vocabularyLearned: row.vocabulary_added,
       exercisesCompleted: row.exercises_completed,
       correctAnswers: row.correct_answers,
-      quizzesCompleted: row.quizzes_completed,
-      timeSpentMinutes: row.time_spent_minutes,
+      quizzesCompleted: row.quizzes_taken,
+      timeSpentMinutes: row.study_time_minutes,
     }));
 
     // Calculate summary
@@ -203,12 +203,12 @@ export class StatsService {
 
   async getTopQuizScores(quizId: number, limit: number = 10): Promise<LeaderboardEntry[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT qa.user_id, u.username, qa.score, qa.time_spent_seconds, qa.completed_at, q.title as quiz_title
+      `SELECT qa.user_id, u.username, qa.score, qa.time_taken_seconds, qa.completed_at, q.title as quiz_title
        FROM quiz_attempts qa
        JOIN users u ON qa.user_id = u.id
        JOIN quizzes q ON qa.quiz_id = q.id
        WHERE qa.quiz_id = ? AND qa.completed_at IS NOT NULL
-       ORDER BY qa.score DESC, qa.time_spent_seconds ASC
+       ORDER BY qa.score DESC, qa.time_taken_seconds ASC
        LIMIT ?`,
       [quizId, limit]
     );
@@ -219,19 +219,19 @@ export class StatsService {
       username: row.username,
       score: row.score,
       quizTitle: row.quiz_title,
-      timeSpentSeconds: row.time_spent_seconds,
+      timeSpentSeconds: row.time_taken_seconds,
       completedAt: row.completed_at,
     }));
   }
 
   async getFastestQuizCompletions(quizId: number, limit: number = 10): Promise<LeaderboardEntry[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT qa.user_id, u.username, qa.score, qa.time_spent_seconds, qa.completed_at, q.title as quiz_title
+      `SELECT qa.user_id, u.username, qa.score, qa.time_taken_seconds, qa.completed_at, q.title as quiz_title
        FROM quiz_attempts qa
        JOIN users u ON qa.user_id = u.id
        JOIN quizzes q ON qa.quiz_id = q.id
        WHERE qa.quiz_id = ? AND qa.completed_at IS NOT NULL AND qa.score >= 70
-       ORDER BY qa.time_spent_seconds ASC
+       ORDER BY qa.time_taken_seconds ASC
        LIMIT ?`,
       [quizId, limit]
     );
@@ -242,7 +242,7 @@ export class StatsService {
       username: row.username,
       score: row.score,
       quizTitle: row.quiz_title,
-      timeSpentSeconds: row.time_spent_seconds,
+      timeSpentSeconds: row.time_taken_seconds,
       completedAt: row.completed_at,
     }));
   }
@@ -252,14 +252,14 @@ export class StatsService {
 
     // Get last activity date
     const [stats] = await pool.execute<StatsRow[]>(
-      'SELECT last_activity_date, current_streak, longest_streak FROM user_statistics WHERE user_id = ?',
+      'SELECT last_activity_date, current_streak_days, longest_streak_days FROM user_statistics WHERE user_id = ?',
       [userId]
     );
 
     if (stats.length === 0) return;
 
     const lastActivity = stats[0].last_activity_date;
-    let currentStreak = stats[0].current_streak;
+    let currentStreak = stats[0].current_streak_days;
 
     if (lastActivity) {
       const lastDate = new Date(lastActivity).toISOString().split('T')[0];
@@ -282,11 +282,11 @@ export class StatsService {
       currentStreak = 1;
     }
 
-    const longestStreak = Math.max(currentStreak, stats[0].longest_streak);
+    const longestStreak = Math.max(currentStreak, stats[0].longest_streak_days);
 
     await pool.execute(
       `UPDATE user_statistics
-       SET current_streak = ?, longest_streak = ?, last_activity_date = ?
+       SET current_streak_days = ?, longest_streak_days = ?, last_activity_date = ?
        WHERE user_id = ?`,
       [currentStreak, longestStreak, today, userId]
     );

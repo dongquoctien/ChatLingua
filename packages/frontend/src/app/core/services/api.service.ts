@@ -29,18 +29,134 @@ export interface ConversationDetail extends Conversation {
 
 export interface Vocabulary {
   id: number;
-  conversationId: number;
   vietnameseWord: string;
   englishWord: string;
   phonetic: string | null;
   partOfSpeech: string | null;
-  exampleVi: string | null;
-  exampleEn: string | null;
   difficultyLevel: string;
   masteryLevel: number;
-  reviewCount: number;
-  lastReviewed: string | null;
+  timesPracticed: number;
+  lastPracticedAt: string | null;
   createdAt: string;
+  // Dictionary preview fields
+  cefrLevel?: string | null;
+  definitionCount?: number;
+  exampleCount?: number;
+  // Context-specific (from vocabulary_contexts when joined)
+  exampleVi?: string | null;
+  exampleEn?: string | null;
+}
+
+// Dictionary Types
+export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+export type Register = 'formal' | 'informal' | 'neutral' | 'slang' | 'technical';
+
+export interface DefinitionExample {
+  en: string;
+  vi: string;
+}
+
+export interface Definition {
+  senseId: number;
+  definition: string;
+  definitionVi: string;
+  grammar?: string;
+  register?: Register;
+  examples: DefinitionExample[];
+  patterns?: string[];
+  topics?: TopicTag[];
+}
+
+export interface TopicTag {
+  name: string;
+  level: CEFRLevel;
+}
+
+export interface WordForms {
+  plural?: string;
+  past?: string;
+  pastParticiple?: string;
+  presentParticiple?: string;
+  thirdPerson?: string;
+  comparative?: string;
+  superlative?: string;
+}
+
+export interface WordFamily {
+  noun?: string[];
+  verb?: string[];
+  adjective?: string[];
+  adverb?: string[];
+}
+
+export interface Collocations {
+  adjective?: string[];
+  verbContract?: string[];
+  contractVerb?: string[];
+  contractNoun?: string[];
+  preposition?: string[];
+  phrases?: string[];
+}
+
+export interface Idiom {
+  phrase: string;
+  meaning: string;
+  meaningVi: string;
+}
+
+export interface GrammarInfo {
+  countable?: boolean;
+  transitive?: boolean;
+  patterns?: string[];
+}
+
+export interface VocabularyContext {
+  id: number;
+  vocabularyId: number;
+  conversationId: number;
+  vietnameseWord: string;
+  exampleVi: string | null;
+  exampleEn: string | null;
+  createdAt: string;
+}
+
+export interface DictionaryEntry extends Vocabulary {
+  // Pronunciation
+  pronunciationUk: string | null;
+  pronunciationUs: string | null;
+  audioUkUrl: string | null;
+  audioUsUrl: string | null;
+  // Word forms and definitions
+  wordForms: WordForms | null;
+  definitions: Definition[] | null;
+  // Related vocabulary
+  wordFamily: WordFamily | null;
+  synonyms: string[] | null;
+  antonyms: string[] | null;
+  // Usage
+  collocations: Collocations | null;
+  idioms: Idiom[] | null;
+  usageNotes: string | null;
+  extraExamples: DefinitionExample[] | null;
+  // Grammar and classification
+  grammarInfo: GrammarInfo | null;
+  register: Register | null;
+  frequencyRank: number | null;
+  cefrLevel: CEFRLevel | null;
+  topics: TopicTag[] | null;
+  wordOrigin: string | null;
+  seeAlso: string[] | null;
+  // Computed
+  definitionCount: number;
+  exampleCount: number;
+  // Contexts (conversations where this word appeared)
+  contexts?: VocabularyContext[];
+}
+
+export interface RelatedWords {
+  wordFamily: Vocabulary[];
+  synonyms: Vocabulary[];
+  seeAlso: Vocabulary[];
 }
 
 export interface GrammarPoint {
@@ -55,6 +171,7 @@ export interface GrammarPoint {
 
 export interface Exercise {
   id: number;
+  conversationId: number | null;
   exerciseType: 'multiple_choice' | 'fill_blank' | 'translation';
   questionText: string;
   options: string[] | null;
@@ -209,19 +326,49 @@ export class ApiService {
     difficulty?: string;
     partOfSpeech?: string;
     mastery?: number;
+    cefr?: string;
     search?: string;
   }): Observable<PaginatedResponse<Vocabulary>> {
     let params = new HttpParams().set('page', page).set('limit', limit);
     if (filters?.difficulty) params = params.set('difficulty', filters.difficulty);
     if (filters?.partOfSpeech) params = params.set('partOfSpeech', filters.partOfSpeech);
     if (filters?.mastery !== undefined) params = params.set('mastery', filters.mastery);
+    if (filters?.cefr) params = params.set('cefr', filters.cefr);
     if (filters?.search) params = params.set('search', filters.search);
     return this.http.get<PaginatedResponse<Vocabulary>>(`${this.baseUrl}/vocabulary`, { params });
+  }
+
+  // NEW: Search vocabulary
+  searchVocabulary(query: string, options?: {
+    partOfSpeech?: string;
+    cefr?: string;
+    limit?: number;
+  }): Observable<Vocabulary[]> {
+    let params = new HttpParams().set('q', query);
+    if (options?.partOfSpeech) params = params.set('partOfSpeech', options.partOfSpeech);
+    if (options?.cefr) params = params.set('cefr', options.cefr);
+    if (options?.limit) params = params.set('limit', options.limit);
+    return this.http.get<Vocabulary[]>(`${this.baseUrl}/vocabulary/search`, { params });
   }
 
   getVocabularyForReview(limit = 10): Observable<Vocabulary[]> {
     const params = new HttpParams().set('limit', limit);
     return this.http.get<Vocabulary[]>(`${this.baseUrl}/vocabulary/review`, { params });
+  }
+
+  // NEW: Get full dictionary entry
+  getDictionaryEntry(id: number): Observable<DictionaryEntry> {
+    return this.http.get<DictionaryEntry>(`${this.baseUrl}/vocabulary/${id}/detail`);
+  }
+
+  // NEW: Get dictionary entry by word
+  getDictionaryByWord(word: string): Observable<DictionaryEntry> {
+    return this.http.get<DictionaryEntry>(`${this.baseUrl}/vocabulary/word/${encodeURIComponent(word)}`);
+  }
+
+  // NEW: Get related words
+  getRelatedWords(id: number): Observable<RelatedWords> {
+    return this.http.get<RelatedWords>(`${this.baseUrl}/vocabulary/${id}/related`);
   }
 
   reviewVocabulary(id: number, correct: boolean): Observable<Vocabulary> {
@@ -232,11 +379,19 @@ export class ApiService {
   getExercises(page = 1, limit = 20, filters?: {
     type?: string;
     difficulty?: string;
+    conversationId?: number;
   }): Observable<PaginatedResponse<Exercise>> {
     let params = new HttpParams().set('page', page).set('limit', limit);
     if (filters?.type) params = params.set('type', filters.type);
     if (filters?.difficulty) params = params.set('difficulty', filters.difficulty);
+    if (filters?.conversationId) params = params.set('conversationId', filters.conversationId.toString());
     return this.http.get<PaginatedResponse<Exercise>>(`${this.baseUrl}/exercises`, { params });
+  }
+
+  getExerciseCountsByConversation(): Observable<{ conversationId: number | null; count: number }[]> {
+    return this.http.get<{ conversationId: number | null; count: number }[]>(
+      `${this.baseUrl}/exercises/counts-by-conversation`
+    );
   }
 
   getRandomExercises(count = 10, types?: string[]): Observable<Exercise[]> {

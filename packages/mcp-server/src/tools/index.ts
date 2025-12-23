@@ -24,23 +24,27 @@ export const tools: Tool[] = [
 export async function handleToolCall(
   name: string,
   args: Record<string, unknown>,
-  db: DatabaseConnection
+  db: DatabaseConnection,
+  resolvedUserId: number
 ): Promise<unknown> {
+  // Inject the resolved userId into args (tools can still override if explicitly provided)
+  const argsWithUser = { ...args, _resolvedUserId: resolvedUserId };
+
   switch (name) {
     case 'analyze_conversation':
-      return analyzeConversation(args, db);
+      return analyzeConversation(argsWithUser, db);
     case 'get_vocabulary_list':
-      return getVocabularyList(args, db);
+      return getVocabularyList(argsWithUser, db);
     case 'generate_exercises':
-      return generateExercises(args, db);
+      return generateExercises(argsWithUser, db);
     case 'save_exercise_result':
-      return saveExerciseResult(args, db);
+      return saveExerciseResult(argsWithUser, db);
     case 'save_exercise_session':
-      return saveExerciseSession(args, db);
+      return saveExerciseSession(argsWithUser, db);
     case 'get_learning_summary':
-      return getLearningSummary(args, db);
+      return getLearningSummary(argsWithUser, db);
     case 'get_exercise_history':
-      return getExerciseHistory(args, db);
+      return getExerciseHistory(argsWithUser, db);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

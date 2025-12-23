@@ -19,7 +19,7 @@
   border-bottom: 1px solid #e0e0e0;
 
   fa-icon {
-    font-size: 24px;
+    font-size: var(--icon-lg); // 24px - logo icon
   }
 }
 
@@ -30,7 +30,8 @@ mat-nav-list {
     fa-icon {
       margin-right: 12px;
       color: #666;
-      width: 20px;
+      font-size: var(--icon-md); // 20px - menu icons
+      width: var(--icon-md);
     }
 
     &.active {
@@ -51,6 +52,7 @@ mat-nav-list {
 mat-toolbar {
   button {
     fa-icon {
+      font-size: var(--icon-md); // 20px - toolbar icons
       margin-right: 8px;
     }
   }
@@ -69,6 +71,7 @@ mat-toolbar {
 mat-menu {
   button {
     fa-icon {
+      font-size: var(--icon-sm); // 16px - menu item icons
       margin-right: 12px;
     }
   }

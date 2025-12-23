@@ -14,6 +14,10 @@
   align-items: center;
   min-height: 200px;
   color: #666;
+
+  fa-icon {
+    font-size: var(--icon-3xl); // 48px - loading spinner
+  }
 }
 
 .error-state {
@@ -48,6 +52,7 @@
     gap: 10px;
 
     fa-icon {
+      font-size: var(--icon-md); // 20px - section header icon
       color: #3f51b5;
     }
   }
@@ -67,6 +72,7 @@ mat-divider {
     background: #f5f5f5;
     border-radius: 8px;
     border-left: 4px solid #ff9800;
+    white-space: pre-line; // Preserve line breaks from database
   }
 }
 
@@ -81,6 +87,7 @@ mat-divider {
     font-size: 17px;
     line-height: 1.6;
     color: #1565c0;
+    white-space: pre-line; // Preserve line breaks from database
   }
 }
 
@@ -115,8 +122,19 @@ mat-divider {
   }
 
   .english-word {
-    color: #1565c0;
     font-size: 15px;
+
+    .vocab-link {
+      color: #1565c0;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: #0d47a1;
+        text-decoration: underline;
+      }
+    }
   }
 
   .phonetic {
@@ -140,7 +158,7 @@ mat-divider {
     gap: 2px;
 
     fa-icon {
-      font-size: 12px;
+      font-size: var(--icon-xs); // 12px - mastery stars
       color: #ddd;
 
       &.filled {

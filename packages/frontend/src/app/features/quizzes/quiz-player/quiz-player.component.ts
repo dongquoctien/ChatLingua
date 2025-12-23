@@ -105,7 +105,9 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
         this.apiService.startQuiz(quizId).subscribe({
           next: (response) => {
             this.attemptId.set(response.attemptId);
-            this.exercises.set(response.exercises);
+            // Shuffle questions and options
+            const shuffledExercises = this.shuffleExercises(response.exercises);
+            this.exercises.set(shuffledExercises);
             this.startTime = Date.now();
 
             if (quiz.timeLimitMinutes) {
@@ -124,6 +126,36 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
         this.router.navigate(['/quizzes']);
       }
     });
+  }
+
+  /**
+   * Shuffle questions order and multiple choice options
+   */
+  private shuffleExercises(exercises: Exercise[]): Exercise[] {
+    // Shuffle question order
+    const shuffled = this.shuffleArray([...exercises]);
+
+    // Shuffle options for multiple choice questions
+    return shuffled.map(exercise => {
+      if (exercise.exerciseType === 'multiple_choice' && exercise.options) {
+        return {
+          ...exercise,
+          options: this.shuffleArray([...exercise.options])
+        };
+      }
+      return exercise;
+    });
+  }
+
+  /**
+   * Fisher-Yates shuffle algorithm
+   */
+  private shuffleArray<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
   }
 
   startTimer() {

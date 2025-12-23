@@ -24,6 +24,31 @@ $chatlingua-theme: mat.m2-define-light-theme((
   box-sizing: border-box;
 }
 
+// ============================================
+// Icon Size System
+// ============================================
+// Use these CSS custom properties for consistent icon sizing
+:root {
+  --icon-xs: 12px;    // Small inline icons (badges, stats)
+  --icon-sm: 16px;    // Menu/list item icons
+  --icon-md: 20px;    // Button icons, form icons
+  --icon-lg: 24px;    // Logo, header icons
+  --icon-xl: 32px;    // Card action icons
+  --icon-2xl: 40px;   // Large stat icons
+  --icon-3xl: 48px;   // Hero/feature icons
+  --icon-4xl: 64px;   // Empty state icons
+}
+
+// Icon size utility classes
+.icon-xs { font-size: var(--icon-xs) !important; }
+.icon-sm { font-size: var(--icon-sm) !important; }
+.icon-md { font-size: var(--icon-md) !important; }
+.icon-lg { font-size: var(--icon-lg) !important; }
+.icon-xl { font-size: var(--icon-xl) !important; }
+.icon-2xl { font-size: var(--icon-2xl) !important; }
+.icon-3xl { font-size: var(--icon-3xl) !important; }
+.icon-4xl { font-size: var(--icon-4xl) !important; }
+
 html, body {
   height: 100%;
   font-family: Roboto, "Helvetica Neue", sans-serif;

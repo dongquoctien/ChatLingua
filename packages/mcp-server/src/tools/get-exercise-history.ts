@@ -29,7 +29,8 @@ Use this to review past performance or discuss learning progress with the user.`
 };
 
 const inputSchema = z.object({
-  userId: z.number().optional().default(1),
+  userId: z.number().optional(),
+  _resolvedUserId: z.number().optional(), // Injected by handler from user context
   limit: z.number().min(1).max(50).optional().default(10),
   includeDetails: z.boolean().optional().default(false),
 });
@@ -87,6 +88,9 @@ export async function getExerciseHistory(
 }> {
   const input = inputSchema.parse(args);
 
+  // Use explicit userId if provided, otherwise use resolved userId from env auth, fallback to 1
+  const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
+
   const connection = await db.getConnection();
 
   try {
@@ -96,7 +100,7 @@ export async function getExerciseHistory(
        WHERE user_id = ? AND status = 'completed'
        ORDER BY completed_at DESC
        LIMIT ?`,
-      [input.userId, input.limit]
+      [effectiveUserId, input.limit]
     );
 
     const sessions: {

@@ -14,24 +14,25 @@ interface ConversationRow extends RowDataPacket {
 
 interface VocabularyRow extends RowDataPacket {
   id: number;
-  conversation_id: number;
   vietnamese_word: string;
   english_word: string;
   phonetic: string | null;
   part_of_speech: string | null;
+  difficulty_level: string;
+  // From vocabulary_contexts join
+  context_vietnamese_word: string | null;
   example_sentence_vi: string | null;
   example_sentence_en: string | null;
-  difficulty_level: string;
 }
 
 interface GrammarRow extends RowDataPacket {
   id: number;
   conversation_id: number;
   grammar_rule: string;
-  explanation_vi: string | null;
-  explanation_en: string | null;
+  explanation: string;
   example_vi: string | null;
   example_en: string | null;
+  category: string | null;
   difficulty_level: string;
 }
 
@@ -61,10 +62,10 @@ export interface ConversationDetail extends ConversationSummary {
   grammarPoints: Array<{
     id: number;
     rule: string;
-    explanationVi: string | null;
-    explanationEn: string | null;
+    explanation: string;
     exampleVi: string | null;
     exampleEn: string | null;
+    category: string | null;
     difficultyLevel: string;
   }>;
 }
@@ -86,9 +87,10 @@ export class ConversationService {
 
     // Get conversations with counts
     // Note: Using query instead of execute because LIMIT/OFFSET don't work well with prepared statements
+    // vocabulary_contexts links vocabulary to conversations
     const [rows] = await pool.query<ConversationRow[]>(
       `SELECT c.*,
-        (SELECT COUNT(*) FROM vocabulary WHERE conversation_id = c.id) as vocabulary_count,
+        (SELECT COUNT(*) FROM vocabulary_contexts WHERE conversation_id = c.id) as vocabulary_count,
         (SELECT COUNT(*) FROM grammar_points WHERE conversation_id = c.id) as grammar_count
        FROM conversations c
        WHERE c.user_id = ?
@@ -127,9 +129,15 @@ export class ConversationService {
 
     const conv = conversations[0];
 
-    // Get vocabulary
+    // Get vocabulary via vocabulary_contexts junction table
     const [vocabulary] = await pool.execute<VocabularyRow[]>(
-      'SELECT * FROM vocabulary WHERE conversation_id = ? ORDER BY id',
+      `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic, v.part_of_speech, v.difficulty_level,
+              vc.vietnamese_word as context_vietnamese_word,
+              vc.example_sentence_vi, vc.example_sentence_en
+       FROM vocabulary_contexts vc
+       INNER JOIN vocabulary v ON vc.vocabulary_id = v.id
+       WHERE vc.conversation_id = ?
+       ORDER BY vc.id`,
       [conversationId]
     );
 
@@ -151,7 +159,7 @@ export class ConversationService {
       createdAt: conv.created_at,
       vocabulary: vocabulary.map((v) => ({
         id: v.id,
-        vietnameseWord: v.vietnamese_word,
+        vietnameseWord: v.context_vietnamese_word || v.vietnamese_word,
         englishWord: v.english_word,
         phonetic: v.phonetic,
         partOfSpeech: v.part_of_speech,
@@ -162,10 +170,10 @@ export class ConversationService {
       grammarPoints: grammarPoints.map((g) => ({
         id: g.id,
         rule: g.grammar_rule,
-        explanationVi: g.explanation_vi,
-        explanationEn: g.explanation_en,
+        explanation: g.explanation,
         exampleVi: g.example_vi,
         exampleEn: g.example_en,
+        category: g.category,
         difficultyLevel: g.difficulty_level,
       })),
     };

@@ -6,8 +6,23 @@ import { RowDataPacket } from 'mysql2/promise';
 export const generateExercisesTool: Tool = {
   name: 'generate_exercises',
   description: `Generate practice exercises from user's conversation vocabulary and grammar.
-This tool creates exercises that the AI should present to help the user practice.
+This tool creates exercises to help Vietnamese users learn ENGLISH.
 Supports: multiple choice, fill in blank, and translation exercises.
+
+=== EXERCISE TYPES ===
+
+1. **multiple_choice** - Various bilingual formats:
+   - English question → Vietnamese options: "What is the meaning of 'contract'?" → ["Hợp đồng", "Hóa đơn", "Giấy kết hôn", "Tài liệu"]
+   - Vietnamese question → English options: "Từ tiếng Anh nào có nghĩa 'Xin chào'?" → ["Hi", "Hello", "Goodbye", "Cả a và b đều đúng"]
+   - English question → English options: "Choose the synonym of 'happy'" → ["joyful", "sad", "angry", "tired"]
+
+2. **fill_blank** - Complete the English sentence:
+   - "I signed a _____ with the company." (contract)
+   - "She said _____ when she arrived." (hello)
+
+3. **translation** - Vietnamese to English:
+   - Question: "Dịch sang tiếng Anh: 'Tôi ký hợp đồng hôm qua'"
+   - Answer: "I signed a contract yesterday"
 
 IMPORTANT: For 'multiple_choice' type, you MUST provide 'options' array with at least 4 choices including the correct answer.
 
@@ -73,7 +88,8 @@ const exerciseSchema = z.object({
 });
 
 const inputSchema = z.object({
-  userId: z.number().optional().default(1),
+  userId: z.number().optional(),
+  _resolvedUserId: z.number().optional(), // Injected by handler from user context
   conversationIds: z.array(z.number()).min(1),
   exercises: z.array(exerciseSchema),
 });
@@ -92,6 +108,10 @@ export async function generateExercises(
   }[];
 }> {
   const input = inputSchema.parse(args);
+
+  // Use explicit userId if provided, otherwise use resolved userId from env auth, fallback to 1
+  const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
+
   const isCombined = input.conversationIds.length > 1;
 
   const connection = await db.getConnection();
@@ -110,7 +130,7 @@ export async function generateExercises(
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           isCombined ? null : input.conversationIds[0],
-          input.userId,
+          effectiveUserId,
           exercise.exerciseType,
           exercise.question,
           exercise.options ? JSON.stringify(exercise.options) : null,

@@ -7,7 +7,7 @@
 
 @if (loading()) {
   <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
   </div>
 } @else if (error()) {
   <div class="error-state">
@@ -65,8 +65,12 @@
               @for (word of conversation()!.vocabulary; track word.id) {
                 <tr>
                   <td>{{ word.vietnameseWord }}</td>
-                  <td class="english-word"><strong>{{ word.englishWord }}</strong></td>
-                  <td class="phonetic">{{ word.phonetic ? '/' + word.phonetic + '/' : '-' }}</td>
+                  <td class="english-word">
+                    <a [routerLink]="['/vocabulary', word.id]" class="vocab-link">
+                      {{ word.englishWord }}
+                    </a>
+                  </td>
+                  <td class="phonetic">{{ word.phonetic ?  word.phonetic  : '-' }}</td>
                   <td>
                     <span class="pos-tag">{{ word.partOfSpeech || '-' }}</span>
                   </td>

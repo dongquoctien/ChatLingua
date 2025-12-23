@@ -1,0 +1,464 @@
+<!-- Loading State -->
+@if (loading()) {
+  <div class="loading-container">
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+    <p>Loading dictionary entry...</p>
+  </div>
+}
+
+<!-- Error State -->
+@if (error()) {
+  <div class="error-container">
+    <p class="error-message">{{ error() }}</p>
+    <button mat-button (click)="goBack()">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+      Back to Vocabulary
+    </button>
+  </div>
+}
+
+<!-- Dictionary Entry -->
+@if (entry(); as entry) {
+  <div class="dictionary-page">
+    <!-- Back Navigation -->
+    <button mat-button class="back-button" (click)="goBack()">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+      Back to Vocabulary
+    </button>
+
+    <!-- Main Entry Card -->
+    <mat-card class="dictionary-card">
+      <!-- Header Section -->
+      <div class="entry-header">
+        <div class="word-row">
+          <h1 class="english-word">{{ entry.englishWord }}</h1>
+          @if (entry.cefrLevel) {
+            <span
+              class="cefr-badge"
+              [style.background-color]="getCefrColor(entry.cefrLevel)"
+            >
+              {{ entry.cefrLevel }}
+            </span>
+          }
+        </div>
+
+        <!-- Pronunciation -->
+        <div class="pronunciation-row">
+          @if (entry.pronunciationUk || entry.phonetic) {
+            <span class="phonetic">{{ entry.pronunciationUk || entry.phonetic }}</span>
+            <button
+              mat-icon-button
+              class="audio-btn"
+              matTooltip="UK pronunciation"
+              (click)="speak(entry.englishWord, 'uk')"
+              [disabled]="isSpeaking()"
+            >
+              <fa-icon [icon]="faVolumeUp"></fa-icon>
+            </button>
+            <span class="accent-label">UK</span>
+          }
+          @if (entry.pronunciationUs && entry.pronunciationUs !== entry.pronunciationUk) {
+            <span class="phonetic us">{{ entry.pronunciationUs }}</span>
+          }
+          <button
+            mat-icon-button
+            class="audio-btn"
+            matTooltip="US pronunciation"
+            (click)="speak(entry.englishWord, 'us')"
+            [disabled]="isSpeaking()"
+          >
+            <fa-icon [icon]="faVolumeUp"></fa-icon>
+          </button>
+          <span class="accent-label">US</span>
+        </div>
+
+        <!-- Part of Speech & Vietnamese -->
+        <div class="pos-row">
+          <span class="part-of-speech">{{ formatPartOfSpeech(entry.partOfSpeech) }}</span>
+          <span class="separator">·</span>
+          <span class="vietnamese-word">{{ entry.vietnameseWord }}</span>
+          @if (entry.register && entry.register !== 'neutral') {
+            <span class="register-badge">{{ entry.register }}</span>
+          }
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Word Forms Section -->
+      @if (entry.wordForms && formatWordForms(entry).length > 0) {
+        <div class="section word-forms-section">
+          <h3 class="section-title">WORD FORMS</h3>
+          <div class="word-forms">
+            @for (form of formatWordForms(entry); track form) {
+              <span class="word-form">{{ form }}</span>
+            }
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Definitions Section -->
+      @if (entry.definitions && entry.definitions.length > 0) {
+        <div class="section definitions-section">
+          <h3 class="section-title">DEFINITIONS</h3>
+          @for (def of entry.definitions; track def.senseId; let i = $index) {
+            <div class="definition-item">
+              <div class="definition-header">
+                <span class="sense-number">{{ def.senseId }}</span>
+                @if (def.grammar) {
+                  <span class="grammar-label">{{ def.grammar }}</span>
+                }
+                @if (def.register) {
+                  <span class="register-label">({{ def.register }})</span>
+                }
+              </div>
+              <p class="definition-text">{{ def.definition }}</p>
+              <p class="definition-vi">{{ def.definitionVi }}</p>
+
+              <!-- Examples -->
+              @if (def.examples && def.examples.length > 0) {
+                <div class="examples">
+                  <p class="examples-label">Examples:</p>
+                  @for (ex of def.examples; track ex.en) {
+                    <div class="example-item">
+                      <fa-icon [icon]="faQuoteLeft" class="quote-icon"></fa-icon>
+                      <div class="example-content">
+                        <p class="example-en">{{ ex.en }}</p>
+                        <p class="example-vi">{{ ex.vi }}</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Patterns -->
+              @if (def.patterns && def.patterns.length > 0) {
+                <div class="patterns">
+                  <span class="patterns-label">Patterns:</span>
+                  @for (pattern of def.patterns; track pattern) {
+                    <span class="pattern-chip">{{ pattern }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <mat-divider></mat-divider>
+      } @else if (entry.exampleEn) {
+        <!-- Fallback to simple example if no definitions -->
+        <div class="section definitions-section">
+          <h3 class="section-title">EXAMPLE</h3>
+          <div class="example-item">
+            <fa-icon [icon]="faQuoteLeft" class="quote-icon"></fa-icon>
+            <div class="example-content">
+              <p class="example-en">{{ entry.exampleEn }}</p>
+              @if (entry.exampleVi) {
+                <p class="example-vi">{{ entry.exampleVi }}</p>
+              }
+            </div>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+      } @else {
+        <!-- No dictionary data available -->
+        <div class="section empty-dictionary-section">
+          <div class="empty-dictionary">
+            <fa-icon [icon]="faBook" class="empty-icon"></fa-icon>
+            <h4>Dictionary data not available</h4>
+            <p>This vocabulary item was added before the dictionary feature. Talk to Claude about this word to get detailed dictionary information including definitions, examples, collocations, and more.</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Word Family Section -->
+      @if (hasWordFamily(entry)) {
+        <div class="section word-family-section">
+          <h3 class="section-title">WORD FAMILY</h3>
+          <div class="word-family">
+            @if (entry.wordFamily?.noun?.length) {
+              <div class="family-row">
+                <span class="family-pos">noun:</span>
+                <span class="family-words">{{ entry.wordFamily!.noun!.join(', ') }}</span>
+              </div>
+            }
+            @if (entry.wordFamily?.verb?.length) {
+              <div class="family-row">
+                <span class="family-pos">verb:</span>
+                <span class="family-words">{{ entry.wordFamily!.verb!.join(', ') }}</span>
+              </div>
+            }
+            @if (entry.wordFamily?.adjective?.length) {
+              <div class="family-row">
+                <span class="family-pos">adjective:</span>
+                <span class="family-words">{{ entry.wordFamily!.adjective!.join(', ') }}</span>
+              </div>
+            }
+            @if (entry.wordFamily?.adverb?.length) {
+              <div class="family-row">
+                <span class="family-pos">adverb:</span>
+                <span class="family-words">{{ entry.wordFamily!.adverb!.join(', ') }}</span>
+              </div>
+            }
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Collocations Section -->
+      @if (hasCollocations(entry)) {
+        <div class="section collocations-section">
+          <h3 class="section-title">COLLOCATIONS</h3>
+          <div class="collocations">
+            @if (entry.collocations?.adjective?.length) {
+              <div class="collocation-row">
+                <span class="collocation-type">adjectives:</span>
+                <span class="collocation-words">{{ entry.collocations!.adjective!.join(' · ') }}</span>
+              </div>
+            }
+            @if (entry.collocations?.verbContract?.length) {
+              <div class="collocation-row">
+                <span class="collocation-type">verbs:</span>
+                <span class="collocation-words">{{ entry.collocations!.verbContract!.join(' · ') }}</span>
+              </div>
+            }
+            @if (entry.collocations?.contractNoun?.length) {
+              <div class="collocation-row">
+                <span class="collocation-type">nouns:</span>
+                <span class="collocation-words">{{ entry.collocations!.contractNoun!.join(' · ') }}</span>
+              </div>
+            }
+            @if (entry.collocations?.preposition?.length) {
+              <div class="collocation-row">
+                <span class="collocation-type">prepositions:</span>
+                <span class="collocation-words">{{ entry.collocations!.preposition!.join(' · ') }}</span>
+              </div>
+            }
+            @if (entry.collocations?.phrases?.length) {
+              <div class="collocation-row">
+                <span class="collocation-type">phrases:</span>
+                <span class="collocation-words">{{ entry.collocations!.phrases!.join(' · ') }}</span>
+              </div>
+            }
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Synonyms & Antonyms -->
+      @if (entry.synonyms?.length || entry.antonyms?.length) {
+        <div class="section synonyms-section">
+          @if (entry.synonyms?.length) {
+            <div class="synonym-row">
+              <h3 class="section-title inline">SYNONYMS</h3>
+              <div class="word-chips">
+                @for (syn of entry.synonyms; track syn) {
+                  <span class="word-chip">{{ syn }}</span>
+                }
+              </div>
+            </div>
+          }
+          @if (entry.antonyms?.length) {
+            <div class="antonym-row">
+              <h3 class="section-title inline">ANTONYMS</h3>
+              <div class="word-chips">
+                @for (ant of entry.antonyms; track ant) {
+                  <span class="word-chip antonym">{{ ant }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Idioms Section -->
+      @if (entry.idioms && entry.idioms.length > 0) {
+        <div class="section idioms-section">
+          <h3 class="section-title">IDIOMS</h3>
+          @for (idiom of entry.idioms; track idiom.phrase) {
+            <div class="idiom-item">
+              <p class="idiom-phrase">{{ idiom.phrase }}</p>
+              <p class="idiom-meaning">{{ idiom.meaning }}</p>
+              <p class="idiom-meaning-vi">{{ idiom.meaningVi }}</p>
+            </div>
+          }
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Usage Notes -->
+      @if (entry.usageNotes) {
+        <div class="section usage-notes-section">
+          <h3 class="section-title">
+            <fa-icon [icon]="faLightbulb"></fa-icon>
+            USAGE NOTES
+          </h3>
+          <p class="usage-notes">{{ entry.usageNotes }}</p>
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Word Origin -->
+      @if (entry.wordOrigin) {
+        <div class="section word-origin-section">
+          <h3 class="section-title">WORD ORIGIN</h3>
+          <p class="word-origin">{{ entry.wordOrigin }}</p>
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Topics -->
+      @if (entry.topics && entry.topics.length > 0) {
+        <div class="section topics-section">
+          <h3 class="section-title">TOPICS</h3>
+          <div class="topics">
+            @for (topic of entry.topics; track topic.name) {
+              <span class="topic-chip" [style.border-color]="getCefrColor(topic.level)">
+                {{ topic.name }}
+                <span class="topic-level" [style.background-color]="getCefrColor(topic.level)">
+                  {{ topic.level }}
+                </span>
+              </span>
+            }
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+      }
+
+      <!-- Learning Progress Section -->
+      <div class="section progress-section">
+        <h3 class="section-title">
+          <fa-icon [icon]="faChartLine"></fa-icon>
+          YOUR LEARNING PROGRESS
+        </h3>
+        <div class="progress-content">
+          <div class="progress-item">
+            <span class="progress-label">Mastery:</span>
+            <mat-progress-bar
+              mode="determinate"
+              [value]="entry.masteryLevel"
+              class="mastery-bar"
+            ></mat-progress-bar>
+            <span class="progress-value">{{ entry.masteryLevel }}%</span>
+          </div>
+          <div class="progress-stats">
+            <div class="stat">
+              <span class="stat-label">Times practiced:</span>
+              <span class="stat-value">{{ entry.timesPracticed }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Last practiced:</span>
+              <span class="stat-value">{{ formatTimeSince(entry.lastPracticedAt) }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button mat-raised-button color="primary">
+            <fa-icon [icon]="faGraduationCap"></fa-icon>
+            Practice This Word
+          </button>
+          <button mat-stroked-button color="primary">
+            <fa-icon [icon]="faBook"></fa-icon>
+            Add to Quiz
+          </button>
+        </div>
+      </div>
+
+      <!-- Contexts Section - Conversations where this word appeared -->
+      @if (entry.contexts && entry.contexts.length > 0) {
+        <mat-divider></mat-divider>
+        <div class="section contexts-section">
+          <h3 class="section-title">
+            <fa-icon [icon]="faComments"></fa-icon>
+            APPEARED IN CONVERSATIONS ({{ entry.contexts.length }})
+          </h3>
+          <div class="contexts-list">
+            @for (ctx of entry.contexts; track ctx.id) {
+              <div class="context-item" (click)="navigateToConversation(ctx.conversationId)">
+                <div class="context-header">
+                  <span class="context-vietnamese">{{ ctx.vietnameseWord }}</span>
+                  <span class="context-date">{{ formatDate(ctx.createdAt) }}</span>
+                </div>
+                @if (ctx.exampleEn) {
+                  <div class="context-example">
+                    <fa-icon [icon]="faQuoteLeft" class="quote-icon small"></fa-icon>
+                    <div class="example-text">
+                      <p class="example-en">{{ ctx.exampleEn }}</p>
+                      @if (ctx.exampleVi) {
+                        <p class="example-vi">{{ ctx.exampleVi }}</p>
+                      }
+                    </div>
+                  </div>
+                }
+                <span class="view-conversation">View conversation →</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </mat-card>
+
+    <!-- Related Words Section -->
+    @if (relatedWords(); as related) {
+      @if (related.wordFamily.length || related.synonyms.length || related.seeAlso.length) {
+        <mat-card class="related-card">
+          <h3 class="related-title">Related Words in Your Vocabulary</h3>
+
+          @if (related.wordFamily.length) {
+            <div class="related-section">
+              <h4>Word Family</h4>
+              <div class="related-words">
+                @for (word of related.wordFamily; track word.id) {
+                  <button
+                    mat-stroked-button
+                    class="related-word-btn"
+                    (click)="navigateToWord(word)"
+                  >
+                    {{ word.englishWord }}
+                    <span class="related-pos">{{ formatPartOfSpeech(word.partOfSpeech) }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (related.synonyms.length) {
+            <div class="related-section">
+              <h4>Synonyms</h4>
+              <div class="related-words">
+                @for (word of related.synonyms; track word.id) {
+                  <button
+                    mat-stroked-button
+                    class="related-word-btn"
+                    (click)="navigateToWord(word)"
+                  >
+                    {{ word.englishWord }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (related.seeAlso.length) {
+            <div class="related-section">
+              <h4>See Also</h4>
+              <div class="related-words">
+                @for (word of related.seeAlso; track word.id) {
+                  <button
+                    mat-stroked-button
+                    class="related-word-btn"
+                    (click)="navigateToWord(word)"
+                  >
+                    {{ word.englishWord }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </mat-card>
+      }
+    }
+  </div>
+}

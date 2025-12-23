@@ -7,7 +7,7 @@
 @if (state() === 'start') {
   <mat-card class="start-card">
     <mat-card-content>
-      <fa-icon [icon]="faDumbbell" size="4x" class="start-icon"></fa-icon>
+      <fa-icon [icon]="faDumbbell" class="start-icon"></fa-icon>
       <h2>Ready to Practice?</h2>
       <p>You'll get 10 random exercises to test your knowledge.</p>
       <p class="hint">Answer all questions then submit to see your results.</p>
@@ -32,7 +32,7 @@
 <!-- Loading -->
 @if (state() === 'loading' || state() === 'submitting') {
   <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin" size="3x"></fa-icon>
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
     <p>{{ state() === 'loading' ? 'Loading exercises...' : 'Submitting answers...' }}</p>
   </div>
 }
@@ -144,8 +144,7 @@
       <div class="results-header">
         <fa-icon [icon]="result()!.percentage >= 70 ? faTrophy : faFrown"
                  [class.success]="result()!.percentage >= 70"
-                 [class.warning]="result()!.percentage < 70"
-                 size="4x"></fa-icon>
+                 [class.warning]="result()!.percentage < 70"></fa-icon>
         <h2>
           @if (result()!.percentage >= 90) {
             Excellent!

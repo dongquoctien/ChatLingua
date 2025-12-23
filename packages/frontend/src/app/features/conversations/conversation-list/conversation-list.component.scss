@@ -18,6 +18,10 @@
   align-items: center;
   min-height: 200px;
   color: #3f51b5;
+
+  fa-icon {
+    font-size: var(--icon-3xl); // 48px - loading spinner
+  }
 }
 
 .empty-state {
@@ -25,7 +29,8 @@
   padding: 64px;
   color: #666;
 
-  fa-icon {
+  .empty-icon {
+    font-size: var(--icon-4xl); // 64px - empty state icon
     color: #ccc;
     margin-bottom: 24px;
   }

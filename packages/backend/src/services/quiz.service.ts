@@ -6,8 +6,8 @@ interface QuizRow extends RowDataPacket {
   user_id: number;
   title: string;
   description: string | null;
-  exercise_ids: string;
-  time_limit_minutes: number | null;
+  exercise_ids: string | number[]; // JSON column can be parsed automatically
+  time_limit_seconds: number | null;
   max_attempts: number;
   created_at: Date;
 }
@@ -16,12 +16,15 @@ interface QuizAttemptRow extends RowDataPacket {
   id: number;
   quiz_id: number;
   user_id: number;
+  attempt_number: number;
   started_at: Date;
   completed_at: Date | null;
   score: number;
   total_questions: number;
-  time_spent_seconds: number;
+  correct_answers: number;
+  time_taken_seconds: number;
   answers: string | null;
+  is_passed: boolean;
 }
 
 export interface Quiz {
@@ -112,11 +115,12 @@ export class QuizService {
 
   async createQuiz(userId: number, input: CreateQuizInput): Promise<Quiz> {
     const { title, description, exerciseIds, timeLimitMinutes, maxAttempts = 3 } = input;
+    const timeLimitSeconds = timeLimitMinutes ? timeLimitMinutes * 60 : null;
 
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO quizzes (user_id, title, description, exercise_ids, time_limit_minutes, max_attempts)
+      `INSERT INTO quizzes (user_id, title, description, exercise_ids, time_limit_seconds, max_attempts)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, title, description || null, JSON.stringify(exerciseIds), timeLimitMinutes || null, maxAttempts]
+      [userId, title, description || null, JSON.stringify(exerciseIds), timeLimitSeconds, maxAttempts]
     );
 
     return {
@@ -160,11 +164,14 @@ export class QuizService {
       // Resume existing attempt
       attemptId = ongoing[0].id;
     } else {
-      // Create new attempt
+      // Get next attempt number
+      const attemptNumber = (attempts[0].count as number) + 1;
+
+      // Create new attempt with all required fields
       const [result] = await pool.execute<ResultSetHeader>(
-        `INSERT INTO quiz_attempts (quiz_id, user_id, total_questions)
-         VALUES (?, ?, ?)`,
-        [quizId, userId, quiz.exerciseIds.length]
+        `INSERT INTO quiz_attempts (quiz_id, user_id, attempt_number, score, total_questions, correct_answers, time_taken_seconds, answers, started_at, is_passed)
+         VALUES (?, ?, ?, 0, ?, 0, 0, '{}', NOW(), 0)`,
+        [quizId, userId, attemptNumber, quiz.exerciseIds.length]
       );
       attemptId = result.insertId;
     }
@@ -172,7 +179,7 @@ export class QuizService {
     // Get exercises (without correct answers)
     const placeholders = quiz.exerciseIds.map(() => '?').join(', ');
     const [exercises] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, exercise_type, question_text, options, difficulty_level
+      `SELECT id, exercise_type, question, options, difficulty_level
        FROM exercises WHERE id IN (${placeholders})`,
       quiz.exerciseIds
     );
@@ -197,7 +204,7 @@ export class QuizService {
         return {
           id: e.id,
           exerciseType: e.exercise_type,
-          questionText: e.question_text,
+          questionText: e.question,
           options,
           difficultyLevel: e.difficulty_level,
         };
@@ -249,28 +256,31 @@ export class QuizService {
     });
 
     const score = Math.round((correctCount / exercises.length) * 100);
+    const isPassed = score >= 70 ? 1 : 0;
 
     // Update attempt
     await pool.execute(
       `UPDATE quiz_attempts
-       SET completed_at = NOW(), score = ?, time_spent_seconds = ?, answers = ?
+       SET completed_at = NOW(), score = ?, correct_answers = ?, time_taken_seconds = ?, answers = ?, is_passed = ?
        WHERE id = ?`,
-      [score, input.timeSpentSeconds, JSON.stringify(input.answers), attemptId]
+      [score, correctCount, input.timeSpentSeconds, JSON.stringify(input.answers), isPassed, attemptId]
     );
 
     // Update user statistics
     await pool.execute(
       `UPDATE user_statistics
-       SET total_quizzes_completed = total_quizzes_completed + 1
+       SET total_quizzes_taken = total_quizzes_taken + 1,
+           average_quiz_score = (average_quiz_score * (total_quizzes_taken - 1) + ?) / total_quizzes_taken,
+           best_quiz_score = GREATEST(best_quiz_score, ?)
        WHERE user_id = ?`,
-      [userId]
+      [score, score, userId]
     );
 
     // Log daily activity
     await pool.execute(
-      `INSERT INTO daily_activity_log (user_id, activity_date, quizzes_completed)
+      `INSERT INTO daily_activity_log (user_id, activity_date, quizzes_taken)
        VALUES (?, CURDATE(), 1)
-       ON DUPLICATE KEY UPDATE quizzes_completed = quizzes_completed + 1`,
+       ON DUPLICATE KEY UPDATE quizzes_taken = quizzes_taken + 1`,
       [userId]
     );
 
@@ -305,7 +315,7 @@ export class QuizService {
         completedAt: row.completed_at,
         score: row.score,
         totalQuestions: row.total_questions,
-        timeSpentSeconds: row.time_spent_seconds,
+        timeSpentSeconds: row.time_taken_seconds,
         answers,
       };
     });
@@ -322,11 +332,16 @@ export class QuizService {
 
   private mapToQuiz(row: QuizRow & { attempt_count?: number; best_score?: number }): Quiz {
     let exerciseIds: number[] = [];
-    try {
-      const parsed = JSON.parse(row.exercise_ids);
-      exerciseIds = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      exerciseIds = [];
+    // Handle both cases: JSON column returns array directly, or string needs parsing
+    if (Array.isArray(row.exercise_ids)) {
+      exerciseIds = row.exercise_ids;
+    } else if (typeof row.exercise_ids === 'string') {
+      try {
+        const parsed = JSON.parse(row.exercise_ids);
+        exerciseIds = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        exerciseIds = [];
+      }
     }
 
     return {
@@ -334,7 +349,7 @@ export class QuizService {
       title: row.title,
       description: row.description,
       exerciseIds,
-      timeLimitMinutes: row.time_limit_minutes,
+      timeLimitMinutes: row.time_limit_seconds ? Math.round(row.time_limit_seconds / 60) : null,
       maxAttempts: row.max_attempts,
       attemptCount: row.attempt_count,
       bestScore: row.best_score ?? undefined,
