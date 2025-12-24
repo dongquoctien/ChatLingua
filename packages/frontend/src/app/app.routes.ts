@@ -90,6 +90,10 @@ export const routes: Routes = [
             path: ':id/play',
             loadComponent: () => import('./features/quizzes/quiz-player/quiz-player.component').then(m => m.QuizPlayerComponent),
           },
+          {
+            path: ':id/history',
+            loadComponent: () => import('./features/quizzes/quiz-history/quiz-history.component').then(m => m.QuizHistoryComponent),
+          },
         ],
       },
       {

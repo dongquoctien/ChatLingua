@@ -1,0 +1,154 @@
+<div class="page-header">
+  <div class="header-content">
+    <button mat-icon-button (click)="goBack()" class="back-button">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+    </button>
+    <div class="header-text">
+      <h1>
+        <fa-icon [icon]="faHistory"></fa-icon>
+        Quiz History
+      </h1>
+      <p>Review your past quiz attempts</p>
+    </div>
+  </div>
+  <button mat-raised-button color="primary" (click)="startNewQuiz()">
+    <fa-icon [icon]="faPlay"></fa-icon>
+    Start New Quiz
+  </button>
+</div>
+
+<!-- Loading -->
+@if (loading()) {
+  <div class="loading-spinner">
+    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+    <p>Loading history...</p>
+  </div>
+}
+
+<!-- Error -->
+@if (error()) {
+  <mat-card class="error-card">
+    <mat-card-content>
+      <p class="error-message">{{ error() }}</p>
+      <button mat-button color="primary" (click)="loadAttempts()">Try Again</button>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Empty State -->
+@if (isEmpty()) {
+  <mat-card class="empty-card">
+    <mat-card-content>
+      <fa-icon [icon]="faHistory" class="empty-icon"></fa-icon>
+      <h2>No Quiz Attempts Yet</h2>
+      <p>Complete your first quiz attempt to see your history here.</p>
+      <button mat-raised-button color="primary" (click)="startNewQuiz()">
+        <fa-icon [icon]="faPlay"></fa-icon>
+        Start Your First Quiz
+      </button>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- Attempts List -->
+@if (!loading() && !isEmpty()) {
+  <div class="attempts-list">
+    @for (attempt of completedAttempts(); track attempt.id; let i = $index) {
+      <mat-card class="attempt-card" [class.expanded]="isExpanded(attempt.id)">
+        <mat-card-header (click)="toggleAttemptDetails(attempt.id)">
+          <div class="attempt-header">
+            <div class="attempt-score" [ngClass]="getScoreClass(attempt.score)">
+              <fa-icon [icon]="attempt.score >= 70 ? faTrophy : faFrown"></fa-icon>
+              <span class="percentage">{{ attempt.score }}%</span>
+            </div>
+            <div class="attempt-info">
+              <div class="attempt-stats">
+                <span class="score">{{ attempt.correctAnswers }}/{{ attempt.totalQuestions }} correct</span>
+                <mat-chip [class.passed]="attempt.isPassed" [class.failed]="!attempt.isPassed">
+                  {{ attempt.isPassed ? 'Passed' : 'Failed' }}
+                </mat-chip>
+              </div>
+              <div class="attempt-meta">
+                <span class="time">
+                  <fa-icon [icon]="faClock"></fa-icon>
+                  {{ formatTime(attempt.timeSpentSeconds) }}
+                </span>
+                <span class="date">
+                  <fa-icon [icon]="faCalendarAlt"></fa-icon>
+                  {{ formatDate(attempt.completedAt!) }}
+                </span>
+              </div>
+              <div class="attempt-number">
+                <mat-chip class="number-chip">Attempt #{{ completedAttempts().length - i }}</mat-chip>
+              </div>
+            </div>
+            <div class="expand-indicator">
+              <span>{{ isExpanded(attempt.id) ? 'Hide' : 'View' }} Details</span>
+            </div>
+          </div>
+        </mat-card-header>
+
+        @if (isExpanded(attempt.id)) {
+          <mat-card-content class="attempt-details">
+            <mat-divider></mat-divider>
+
+            @if (isLoadingDetails(attempt.id)) {
+              <div class="loading-details">
+                <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+                <span>Loading details...</span>
+              </div>
+            } @else {
+              @if (getAttemptDetail(attempt.id); as detail) {
+                <h3>Question Review</h3>
+                <div class="questions-list">
+                  @for (result of detail.results; track result.exerciseId; let j = $index) {
+                    <div class="question-item" [class.correct]="result.isCorrect" [class.incorrect]="!result.isCorrect">
+                      <div class="question-header">
+                        <span class="question-num">Q{{ j + 1 }}</span>
+                        <fa-icon [icon]="result.isCorrect ? faCheckCircle : faTimesCircle"
+                                 [class.icon-correct]="result.isCorrect"
+                                 [class.icon-incorrect]="!result.isCorrect"></fa-icon>
+                        <mat-chip class="type-chip small">{{ formatExerciseType(result.exerciseType) }}</mat-chip>
+                      </div>
+                      <p class="question-text">{{ result.questionText }}</p>
+
+                      @if (result.options && result.options.length > 0) {
+                        <div class="options-list">
+                          @for (option of result.options; track option) {
+                            <div class="option"
+                                 [class.correct-option]="option === result.correctAnswer"
+                                 [class.wrong-option]="option === result.userAnswer && option !== result.correctAnswer">
+                              @if (option === result.correctAnswer) {
+                                <fa-icon [icon]="faCheckCircle" class="option-icon correct"></fa-icon>
+                              } @else if (option === result.userAnswer && option !== result.correctAnswer) {
+                                <fa-icon [icon]="faTimesCircle" class="option-icon incorrect"></fa-icon>
+                              }
+                              <span>{{ option }}</span>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <div class="answer-details">
+                          <div class="your-answer">
+                            <strong>Your answer:</strong>
+                            <span [class.wrong]="!result.isCorrect">{{ result.userAnswer || '(no answer)' }}</span>
+                          </div>
+                          @if (!result.isCorrect) {
+                            <div class="correct-answer">
+                              <strong>Correct:</strong>
+                              <span class="correct-text">{{ result.correctAnswer }}</span>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </mat-card-content>
+        }
+      </mat-card>
+    }
+  </div>
+}

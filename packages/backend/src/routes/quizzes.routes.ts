@@ -149,6 +149,30 @@ router.get('/:id/attempts', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/quizzes/:id/attempts/:attemptId
+router.get('/:id/attempts/:attemptId', async (req: AuthRequest, res: Response) => {
+  try {
+    const quizId = parseInt(req.params.id);
+    const attemptId = parseInt(req.params.attemptId);
+    if (isNaN(quizId) || isNaN(attemptId)) {
+      res.status(400).json({ error: 'Invalid quiz ID or attempt ID' });
+      return;
+    }
+
+    const attemptDetail = await quizService.getAttemptDetail(req.userId!, quizId, attemptId);
+
+    if (!attemptDetail) {
+      res.status(404).json({ error: 'Attempt not found or not completed' });
+      return;
+    }
+
+    res.json(attemptDetail);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get attempt details';
+    res.status(500).json({ error: message });
+  }
+});
+
 // DELETE /api/quizzes/:id
 router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {

@@ -17,6 +17,8 @@ interface VocabularyRow extends RowDataPacket {
   vietnamese_word: string;
   english_word: string;
   phonetic: string | null;
+  pronunciation_uk: string | null;
+  pronunciation_us: string | null;
   part_of_speech: string | null;
   difficulty_level: string;
   // From vocabulary_contexts join
@@ -131,7 +133,8 @@ export class ConversationService {
 
     // Get vocabulary via vocabulary_contexts junction table
     const [vocabulary] = await pool.execute<VocabularyRow[]>(
-      `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic, v.part_of_speech, v.difficulty_level,
+      `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic, v.pronunciation_uk, v.pronunciation_us,
+              v.part_of_speech, v.difficulty_level,
               vc.vietnamese_word as context_vietnamese_word,
               vc.example_sentence_vi, vc.example_sentence_en
        FROM vocabulary_contexts vc
@@ -161,7 +164,7 @@ export class ConversationService {
         id: v.id,
         vietnameseWord: v.context_vietnamese_word || v.vietnamese_word,
         englishWord: v.english_word,
-        phonetic: v.phonetic,
+        phonetic: v.pronunciation_uk || v.phonetic,
         partOfSpeech: v.part_of_speech,
         exampleVi: v.example_sentence_vi,
         exampleEn: v.example_sentence_en,

@@ -128,7 +128,9 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     this.apiService.startExerciseSession(10).subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
-        this.exercises.set(response.exercises);
+        // Shuffle exercises and their options
+        const shuffledExercises = this.shuffleExercises(response.exercises);
+        this.exercises.set(shuffledExercises);
         this.currentIndex.set(0);
         this.answers.set({});
         this.result.set(null);
@@ -140,6 +142,31 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
         this.state.set('start');
       }
     });
+  }
+
+  // Shuffle array using Fisher-Yates algorithm
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  // Shuffle exercises and their options
+  private shuffleExercises(exercises: SessionExercise[]): SessionExercise[] {
+    // Shuffle the order of exercises
+    const shuffledExercises = this.shuffleArray(exercises);
+
+    // Shuffle options for each multiple_choice exercise
+    return shuffledExercises.map((exercise, index) => ({
+      ...exercise,
+      questionOrder: index + 1, // Update question order after shuffle
+      options: exercise.exerciseType === 'multiple_choice' && exercise.options
+        ? this.shuffleArray(exercise.options)
+        : exercise.options,
+    }));
   }
 
   goToQuestion(index: number) {

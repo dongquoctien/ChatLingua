@@ -5,9 +5,16 @@ import { RowDataPacket } from 'mysql2/promise';
 
 export const generateExercisesTool: Tool = {
   name: 'generate_exercises',
-  description: `Generate practice exercises from user's conversation vocabulary and grammar.
+  description: `[STEP 3 of 3] Generate practice exercises from conversation vocabulary.
+
+This is the THIRD step of the learning flow:
+1. analyze_conversation → Already completed
+2. enrich_vocabulary → Already completed (or can skip)
+3. generate_exercises (this tool) → Create practice exercises
+
 This tool creates exercises to help Vietnamese users learn ENGLISH.
 Supports: multiple choice, fill in blank, and translation exercises.
+Can run in PARALLEL with enrich_vocabulary (doesn't require enriched data).
 
 === EXERCISE TYPES ===
 

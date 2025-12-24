@@ -14,6 +14,10 @@ import {
   faTrophy,
   faSpinner,
   faPlus,
+  faListOl,
+  faChevronDown,
+  faChevronUp,
+  faHistory,
 } from '../../../shared/icons';
 import { ApiService, Quiz } from '../../../core/services/api.service';
 import { CreateQuizDialogComponent } from '../create-quiz-dialog/create-quiz-dialog.component';
@@ -45,12 +49,17 @@ export class QuizListComponent implements OnInit {
   faTrophy = faTrophy;
   faSpinner = faSpinner;
   faPlus = faPlus;
+  faListOl = faListOl;
+  faChevronDown = faChevronDown;
+  faChevronUp = faChevronUp;
+  faHistory = faHistory;
 
   quizzes = signal<Quiz[]>([]);
   total = signal(0);
   page = signal(1);
   pageSize = signal(12);
   loading = signal(true);
+  expandedQuizzes = signal<Set<number>>(new Set());
 
   ngOnInit() {
     this.loadQuizzes();
@@ -87,5 +96,35 @@ export class QuizListComponent implements OnInit {
         this.loadQuizzes();
       }
     });
+  }
+
+  togglePreview(quizId: number) {
+    this.expandedQuizzes.update(set => {
+      const newSet = new Set(set);
+      if (newSet.has(quizId)) {
+        newSet.delete(quizId);
+      } else {
+        newSet.add(quizId);
+      }
+      return newSet;
+    });
+  }
+
+  isExpanded(quizId: number): boolean {
+    return this.expandedQuizzes().has(quizId);
+  }
+
+  truncateQuestion(text: string, maxLength: number = 60): string {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  }
+
+  formatExerciseType(type: string): string {
+    const labels: Record<string, string> = {
+      multiple_choice: 'MC',
+      fill_blank: 'Fill',
+      translation: 'Trans',
+    };
+    return labels[type] || type;
   }
 }

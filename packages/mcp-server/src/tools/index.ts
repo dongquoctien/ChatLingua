@@ -2,6 +2,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { DatabaseConnection } from '../database/connection';
 
 import { analyzeConversation, analyzeConversationTool } from './analyze-conversation';
+import { enrichVocabulary, enrichVocabularyTool } from './enrich-vocabulary';
 import { getVocabularyList, getVocabularyListTool } from './get-vocabulary-list';
 import { generateExercises, generateExercisesTool } from './generate-exercises';
 import { saveExerciseResult, saveExerciseResultTool } from './save-exercise-result';
@@ -10,10 +11,15 @@ import { getExerciseHistory, getExerciseHistoryTool } from './get-exercise-histo
 import { saveExerciseSession, saveExerciseSessionTool } from './save-exercise-session';
 
 // Export all tool definitions
+// Order matters for Claude's understanding of the flow:
+// 1. analyze_conversation (Step 1)
+// 2. enrich_vocabulary (Step 2)
+// 3. generate_exercises (Step 3)
 export const tools: Tool[] = [
   analyzeConversationTool,
-  getVocabularyListTool,
+  enrichVocabularyTool,
   generateExercisesTool,
+  getVocabularyListTool,
   saveExerciseResultTool,
   saveExerciseSessionTool,
   getLearningSummaryTool,
@@ -33,6 +39,8 @@ export async function handleToolCall(
   switch (name) {
     case 'analyze_conversation':
       return analyzeConversation(argsWithUser, db);
+    case 'enrich_vocabulary':
+      return enrichVocabulary(argsWithUser, db);
     case 'get_vocabulary_list':
       return getVocabularyList(argsWithUser, db);
     case 'generate_exercises':

@@ -27,6 +27,12 @@ interface QuizAttemptRow extends RowDataPacket {
   is_passed: boolean;
 }
 
+export interface QuestionPreview {
+  id: number;
+  questionText: string;
+  exerciseType: string;
+}
+
 export interface Quiz {
   id: number;
   title: string;
@@ -37,6 +43,7 @@ export interface Quiz {
   attemptCount?: number;
   bestScore?: number;
   createdAt: Date;
+  questionPreviews?: QuestionPreview[];
 }
 
 export interface QuizAttempt {
@@ -46,8 +53,25 @@ export interface QuizAttempt {
   completedAt: Date | null;
   score: number;
   totalQuestions: number;
+  correctAnswers: number;
+  isPassed: boolean;
   timeSpentSeconds: number;
   answers: Record<number, string> | null;
+}
+
+export interface AttemptDetailResult {
+  exerciseId: number;
+  questionText: string;
+  exerciseType: string;
+  options: string[] | null;
+  userAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+}
+
+export interface QuizAttemptDetail extends QuizAttempt {
+  quizTitle: string;
+  results: AttemptDetailResult[];
 }
 
 export interface CreateQuizInput {
@@ -91,9 +115,33 @@ export class QuizService {
       [userId, Number(limit), Number(offset)]
     );
 
-    const data = rows.map((row) => this.mapToQuiz(row));
+    // Map quizzes and fetch question previews
+    const data = await Promise.all(
+      rows.map(async (row) => {
+        const quiz = this.mapToQuiz(row);
+        quiz.questionPreviews = await this.getQuestionPreviews(quiz.exerciseIds);
+        return quiz;
+      })
+    );
 
     return { data, total, page, limit };
+  }
+
+  // Get question previews (just question text, no answers)
+  private async getQuestionPreviews(exerciseIds: number[]): Promise<QuestionPreview[]> {
+    if (exerciseIds.length === 0) return [];
+
+    const placeholders = exerciseIds.map(() => '?').join(', ');
+    const [exercises] = await pool.execute<RowDataPacket[]>(
+      `SELECT id, exercise_type, question FROM exercises WHERE id IN (${placeholders})`,
+      exerciseIds
+    );
+
+    return exercises.map((e) => ({
+      id: e.id,
+      questionText: e.question,
+      exerciseType: e.exercise_type,
+    }));
   }
 
   async getQuizById(userId: number, quizId: number): Promise<Quiz | null> {
@@ -303,7 +351,7 @@ export class QuizService {
       let answers: Record<number, string> | null = null;
       if (row.answers) {
         try {
-          answers = JSON.parse(row.answers);
+          answers = typeof row.answers === 'string' ? JSON.parse(row.answers) : row.answers;
         } catch {
           answers = null;
         }
@@ -315,10 +363,94 @@ export class QuizService {
         completedAt: row.completed_at,
         score: row.score,
         totalQuestions: row.total_questions,
+        correctAnswers: row.correct_answers,
+        isPassed: row.is_passed,
         timeSpentSeconds: row.time_taken_seconds,
         answers,
       };
     });
+  }
+
+  async getAttemptDetail(userId: number, quizId: number, attemptId: number): Promise<QuizAttemptDetail | null> {
+    // Get the attempt
+    const [attempts] = await pool.execute<QuizAttemptRow[]>(
+      `SELECT * FROM quiz_attempts WHERE id = ? AND quiz_id = ? AND user_id = ?`,
+      [attemptId, quizId, userId]
+    );
+
+    if (attempts.length === 0 || !attempts[0].completed_at) {
+      return null;
+    }
+
+    const attempt = attempts[0];
+
+    // Get quiz info
+    const quiz = await this.getQuizById(userId, quizId);
+    if (!quiz) {
+      return null;
+    }
+
+    // Parse user answers
+    let userAnswers: Record<number, string> = {};
+    if (attempt.answers) {
+      try {
+        userAnswers = typeof attempt.answers === 'string' ? JSON.parse(attempt.answers) : attempt.answers;
+      } catch {
+        userAnswers = {};
+      }
+    }
+
+    // Get exercises with correct answers
+    const placeholders = quiz.exerciseIds.map(() => '?').join(', ');
+    const [exercises] = await pool.execute<RowDataPacket[]>(
+      `SELECT id, exercise_type, question, options, correct_answer FROM exercises WHERE id IN (${placeholders})`,
+      quiz.exerciseIds
+    );
+
+    // Build results array
+    const results: AttemptDetailResult[] = exercises.map((e) => {
+      const userAnswer = userAnswers[e.id] || '';
+      const isCorrect = userAnswer.trim().toLowerCase() === e.correct_answer.trim().toLowerCase();
+
+      let options: string[] | null = null;
+      if (e.options) {
+        if (Array.isArray(e.options)) {
+          options = e.options;
+        } else if (typeof e.options === 'string') {
+          try {
+            const parsed = JSON.parse(e.options);
+            options = Array.isArray(parsed) ? parsed : null;
+          } catch {
+            options = null;
+          }
+        }
+      }
+
+      return {
+        exerciseId: e.id,
+        questionText: e.question,
+        exerciseType: e.exercise_type,
+        options,
+        userAnswer,
+        correctAnswer: e.correct_answer,
+        isCorrect,
+      };
+    });
+
+    return {
+      id: attempt.id,
+      quizId: attempt.quiz_id,
+      quizTitle: quiz.title,
+      startedAt: attempt.started_at,
+      completedAt: attempt.completed_at,
+      score: attempt.score,
+      totalQuestions: attempt.total_questions,
+      correctAnswers: attempt.correct_answers,
+      isPassed: attempt.is_passed,
+      timeSpentSeconds: attempt.time_taken_seconds,
+      answers: userAnswers,
+      results,
+    };
   }
 
   async deleteQuiz(userId: number, quizId: number): Promise<boolean> {

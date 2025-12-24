@@ -5,45 +5,43 @@ import { DatabaseConnection } from '../database/connection';
 // Tool definition for MCP
 export const analyzeConversationTool: Tool = {
   name: 'analyze_conversation',
-  description: `Analyze Vietnamese text from user's daily conversation and extract English learning content.
+  description: `[STEP 1 of 3] Quick analyze Vietnamese text and save basic vocabulary.
 
-This tool will:
-1. Store the Vietnamese text as a conversation
-2. Provide English translation
-3. Extract vocabulary (Vietnamese word, English word, phonetic, part of speech, examples)
-4. Identify grammar points (rules, explanations, examples)
-5. Assess difficulty level
+This is the FIRST step of the learning flow:
+1. analyze_conversation (this tool) → Save conversation + basic vocabulary
+2. enrich_vocabulary → Add dictionary data (call AFTER this tool)
+3. generate_exercises → Create practice exercises
 
-Use this when user tells you about their day in Vietnamese and wants to learn English from it.
+=== WHAT THIS TOOL DOES ===
+- Stores the Vietnamese conversation text
+- Extracts BASIC vocabulary (quick save)
+- Identifies grammar points
+- Returns vocabularyIds[] for enrichment step
 
-=== DICTIONARY DATA (Oxford Learner's Dictionary format) ===
+=== BASIC VOCABULARY FIELDS (required) ===
+For quick processing, provide these essential fields:
+- vietnameseWord: Vietnamese translation (required)
+- englishWord: English word (required)
+- partOfSpeech: noun, verb, adjective, etc. (required)
+- phonetic: IPA pronunciation e.g. "/ˈkɒntrækt/" (required)
+- pronunciationUk: UK IPA e.g. "/ˈkɒntrækt/" (required)
+- pronunciationUs: US IPA e.g. "/ˈkɑːntrækt/" (optional, if different from UK)
+- cefrLevel: A1, A2, B1, B2, C1, C2 (required)
 
-For EACH vocabulary word, you MUST provide ALL these fields for rich dictionary entries:
+Note: difficulty_level is inherited from conversation. mastery_level, times_practiced, last_practiced_at are auto-managed by the system.
 
-1. PRONUNCIATION: pronunciationUk with UK IPA (e.g., "/ˈkɒntrækt/"), pronunciationUs if different
+=== AFTER THIS TOOL ===
+ALWAYS call enrich_vocabulary with the returned vocabularyIds to add:
+- Pronunciation, definitions, examples
+- Word family, synonyms, collocations
+- Grammar info, usage notes
 
-2. WORD FORMS: For nouns: plural. For verbs: past, pastParticiple, presentParticiple, thirdPerson. For adjectives: comparative, superlative
+=== EXAMPLE BASIC VOCABULARY ===
+{"vietnameseWord":"hợp đồng","englishWord":"contract","partOfSpeech":"noun","phonetic":"/ˈkɒntrækt/","pronunciationUk":"/ˈkɒntrækt/","pronunciationUs":"/ˈkɑːntrækt/","cefrLevel":"B2"}
+{"vietnameseWord":"ký","englishWord":"sign","partOfSpeech":"verb","phonetic":"/saɪn/","pronunciationUk":"/saɪn/","cefrLevel":"A2"}
 
-3. DEFINITIONS (provide 2-3 senses): Each with definition, definitionVi, grammar label, register, 2+ examples with translations, patterns
-
-4. COLLOCATIONS (REQUIRED): adjective (adjectives that go with word), verbContract (verb + this word), contractNoun (this word + noun), preposition, phrases - these help learners use words naturally
-
-5. WORD FAMILY (REQUIRED): noun, verb, adjective, adverb forms of the word
-
-6. SYNONYMS (REQUIRED) & ANTONYMS: List related words that learner can use interchangeably
-
-7. GRAMMAR INFO: countable (for nouns), transitive (for verbs), patterns
-
-8. CEFR LEVEL: A1, A2, B1, B2, C1, or C2
-
-9. USAGE NOTES: Common mistakes, British vs American, formal vs informal
-
-10. TOPICS: Array of { name: "Business", level: "B2" }
-
-11. EXTRA EXAMPLES (REQUIRED - 3-5 sentences): Additional example sentences showing the word in different contexts. This is CRITICAL for learners to understand real-world usage!
-
-=== EXAMPLE ===
-{"englishWord":"contract","vietnameseWord":"hop dong","partOfSpeech":"noun","pronunciationUk":"/ˈkɒntrækt/","pronunciationUs":"/ˈkɑːntrækt/","cefrLevel":"B2","wordForms":{"plural":"contracts"},"definitions":[{"definition":"an official written agreement","definitionVi":"thoa thuan chinh thuc","grammar":"[countable]","register":"formal","examples":[{"en":"They signed a five-year contract.","vi":"Ho ky hop dong 5 nam."}],"patterns":["contract with sb","under contract"]}],"collocations":{"adjective":["written","legal","binding"],"verbContract":["sign","negotiate","break"],"phrases":["breach of contract","under contract"]},"wordFamily":{"noun":["contract","contractor","contraction"],"verb":["contract"],"adjective":["contractual","contracted"]},"synonyms":["agreement","deal","arrangement"],"grammarInfo":{"countable":true},"usageNotes":"More formal than agreement in legal contexts","topics":[{"name":"Law","level":"C1"}],"extraExamples":[{"en":"The company won a contract to build the new stadium.","vi":"Công ty đã giành được hợp đồng xây dựng sân vận động mới."},{"en":"Her contract expires at the end of the year.","vi":"Hợp đồng của cô ấy hết hạn vào cuối năm."},{"en":"Read the contract carefully before you sign it.","vi":"Đọc kỹ hợp đồng trước khi ký."},{"en":"They were sued for breach of contract.","vi":"Họ bị kiện vì vi phạm hợp đồng."}]}`,
+Note: Dictionary fields (definitions, wordFamily, synonyms, collocations, etc.) are OPTIONAL here.
+They will be added in the enrich_vocabulary step for better performance.`,
   inputSchema: {
     type: 'object',
     properties: {
@@ -199,7 +197,7 @@ For EACH vocabulary word, you MUST provide ALL these fields for rich dictionary 
               },
             },
           },
-          required: ['vietnameseWord', 'englishWord', 'partOfSpeech', 'pronunciationUk', 'definitions', 'cefrLevel', 'wordFamily', 'synonyms', 'antonyms', 'collocations', 'grammarInfo', 'usageNotes', 'extraExamples'],
+          required: ['vietnameseWord', 'englishWord', 'partOfSpeech', 'phonetic', 'pronunciationUk', 'cefrLevel'],
         },
       },
       grammarPoints: {
@@ -262,13 +260,13 @@ const inputSchema = z.object({
   vocabulary: z.array(z.object({
     vietnameseWord: z.string(),
     englishWord: z.string(),
-    phonetic: z.string().optional(),
+    phonetic: z.string(), // Required: IPA pronunciation
     partOfSpeech: z.enum(['noun', 'verb', 'adjective', 'adverb', 'preposition', 'conjunction', 'pronoun', 'interjection', 'phrase']),
     exampleSentenceVi: z.string().optional(),
     exampleSentenceEn: z.string().optional(),
-    // New dictionary fields
-    pronunciationUk: z.string().optional(),
-    pronunciationUs: z.string().optional(),
+    // Pronunciation fields
+    pronunciationUk: z.string(), // Required: UK IPA
+    pronunciationUs: z.string().optional(), // Optional: US IPA if different
     wordForms: z.object({
       plural: z.string().optional(),
       past: z.string().optional(),
@@ -300,7 +298,7 @@ const inputSchema = z.object({
       transitive: z.boolean().optional(),
       patterns: z.array(z.string()).optional(),
     }).optional(),
-    cefrLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).optional(),
+    cefrLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']), // Required: CEFR level
     register: z.enum(['formal', 'informal', 'neutral', 'slang', 'technical']).optional(),
     usageNotes: z.string().optional(),
     topics: z.array(topicSchema).optional(),
@@ -323,12 +321,20 @@ export async function analyzeConversation(
 ): Promise<{
   success: boolean;
   conversationId: number;
+  vocabularyIds: number[];
+  grammarPointIds: number[];
   message: string;
   summary: {
     vocabularyCount: number;
     grammarPointsCount: number;
     difficultyLevel: string;
     topic: string;
+    pendingEnrichment: boolean;
+  };
+  nextStep: {
+    tool: string;
+    description: string;
+    vocabularyIds: number[];
   };
 }> {
   // Validate input
@@ -361,6 +367,10 @@ export async function analyzeConversation(
     );
 
     const conversationId = (conversationResult as { insertId: number }).insertId;
+
+    // Collect IDs for return
+    const vocabularyIds: number[] = [];
+    const grammarPointIds: number[] = [];
 
     // 2. UPSERT vocabulary items with dictionary fields
     // New schema: vocabulary is unique per (user_id, english_word, part_of_speech)
@@ -395,32 +405,36 @@ export async function analyzeConversation(
       const extraExamplesJson = vocab.extraExamples && vocab.extraExamples.length > 0
         ? JSON.stringify(vocab.extraExamples) : null;
 
-      // First, try to INSERT with basic fields only (to handle unique constraint)
-      // Then UPDATE with dictionary data
+      // First, try to INSERT with all required fields (to handle unique constraint)
+      // mastery_level, times_practiced, last_practiced_at use DB defaults (0, 0, NULL)
       await connection.execute(
         `INSERT INTO vocabulary (
           user_id, vietnamese_word, english_word, phonetic,
           part_of_speech, difficulty_level,
-          pronunciation_uk, pronunciation_us, cefr_level, register
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          pronunciation_uk, pronunciation_us, cefr_level, register,
+          mastery_level, times_practiced, last_practiced_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           vietnamese_word = VALUES(vietnamese_word),
-          phonetic = COALESCE(VALUES(phonetic), phonetic),
-          pronunciation_uk = COALESCE(VALUES(pronunciation_uk), pronunciation_uk),
+          phonetic = VALUES(phonetic),
+          pronunciation_uk = VALUES(pronunciation_uk),
           pronunciation_us = COALESCE(VALUES(pronunciation_us), pronunciation_us),
-          cefr_level = COALESCE(VALUES(cefr_level), cefr_level),
+          cefr_level = VALUES(cefr_level),
           updated_at = CURRENT_TIMESTAMP`,
         [
           effectiveUserId,
           vocab.vietnameseWord,
           vocab.englishWord,
-          vocab.phonetic || vocab.pronunciationUk || null,
-          vocab.partOfSpeech,
-          input.difficultyLevel,
-          vocab.pronunciationUk || vocab.phonetic || null,
-          vocab.pronunciationUs || null,
-          vocab.cefrLevel || null,
+          vocab.phonetic, // Required
+          vocab.partOfSpeech, // Required
+          input.difficultyLevel, // From conversation
+          vocab.pronunciationUk, // Required
+          vocab.pronunciationUs || null, // Optional
+          vocab.cefrLevel, // Required
           vocab.register || 'neutral',
+          0, // mastery_level: starts at 0
+          0, // times_practiced: starts at 0
+          null, // last_practiced_at: not practiced yet
         ]
       );
 
@@ -430,6 +444,7 @@ export async function analyzeConversation(
         [effectiveUserId, vocab.englishWord, vocab.partOfSpeech]
       );
       const vocabularyId = (vocabIdRows as { id: number }[])[0].id;
+      vocabularyIds.push(vocabularyId);
 
       // Update dictionary fields separately (ensures they get set even on existing records)
       if (wordFamilyJson || synonymsJson || definitionsJson || extraExamplesJson || collocationsJson) {
@@ -491,7 +506,7 @@ export async function analyzeConversation(
 
     // 3. Insert grammar points
     for (const grammar of input.grammarPoints) {
-      await connection.execute(
+      const [grammarResult] = await connection.execute(
         `INSERT INTO grammar_points (conversation_id, user_id, grammar_rule, explanation, example_vi, example_en, category, difficulty_level)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -505,6 +520,7 @@ export async function analyzeConversation(
           input.difficultyLevel,
         ]
       );
+      grammarPointIds.push((grammarResult as { insertId: number }).insertId);
     }
 
     // 4. Update user statistics
@@ -538,15 +554,30 @@ export async function analyzeConversation(
     await connection.commit();
     connection.release();
 
+    // Check if vocabulary needs enrichment (no definitions yet)
+    const needsEnrichment = input.vocabulary.some(v => !v.definitions || v.definitions.length === 0);
+
     return {
       success: true,
       conversationId,
-      message: `Successfully analyzed conversation and saved ${input.vocabulary.length} vocabulary items and ${input.grammarPoints.length} grammar points.`,
+      vocabularyIds,
+      grammarPointIds,
+      message: `Successfully analyzed conversation and saved ${input.vocabulary.length} vocabulary items and ${input.grammarPoints.length} grammar points.${needsEnrichment ? ' Call enrich_vocabulary next to add dictionary data.' : ''}`,
       summary: {
         vocabularyCount: input.vocabulary.length,
         grammarPointsCount: input.grammarPoints.length,
         difficultyLevel: input.difficultyLevel,
         topic: input.topic,
+        pendingEnrichment: needsEnrichment,
+      },
+      nextStep: needsEnrichment ? {
+        tool: 'enrich_vocabulary',
+        description: 'Call enrich_vocabulary with vocabularyIds to add dictionary data (definitions, examples, word family, etc.)',
+        vocabularyIds,
+      } : {
+        tool: 'generate_exercises',
+        description: 'All vocabulary enriched. Call generate_exercises to create practice exercises.',
+        vocabularyIds: [],
       },
     };
   } catch (error) {

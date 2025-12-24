@@ -60,7 +60,7 @@ export class VocabularyDetailComponent implements OnInit {
   relatedWords = signal<RelatedWords | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
-  isSpeaking = signal(false);
+  speakingAccent = signal<'uk' | 'us' | null>(null);
 
   // CEFR level colors
   cefrColors: Record<string, string> = {
@@ -150,7 +150,7 @@ export class VocabularyDetailComponent implements OnInit {
   }
 
   speak(word: string, accent: 'uk' | 'us') {
-    if (this.isSpeaking()) {
+    if (this.speakingAccent()) {
       speechSynthesis.cancel();
     }
 
@@ -167,9 +167,9 @@ export class VocabularyDetailComponent implements OnInit {
       utterance.lang = accent === 'uk' ? 'en-GB' : 'en-US';
     }
 
-    utterance.onstart = () => this.isSpeaking.set(true);
-    utterance.onend = () => this.isSpeaking.set(false);
-    utterance.onerror = () => this.isSpeaking.set(false);
+    utterance.onstart = () => this.speakingAccent.set(accent);
+    utterance.onend = () => this.speakingAccent.set(null);
+    utterance.onerror = () => this.speakingAccent.set(null);
 
     speechSynthesis.speak(utterance);
   }

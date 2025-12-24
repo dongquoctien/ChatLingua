@@ -126,6 +126,10 @@ export class VocabularyListComponent implements OnInit {
     return pos ? labels[pos] || pos : '';
   }
 
+  getPronunciation(word: Vocabulary): string | null {
+    return word.phonetic || word.pronunciationUk || word.pronunciationUs || null;
+  }
+
   speak(wordId: number, wordText: string, event: Event) {
     event.stopPropagation(); // Prevent card click
     if (this.speakingWordId()) {

@@ -51,7 +51,7 @@
               class="audio-btn"
               matTooltip="UK pronunciation"
               (click)="speak(entry.englishWord, 'uk')"
-              [disabled]="isSpeaking()"
+              [disabled]="speakingAccent() === 'uk'"
             >
               <fa-icon [icon]="faVolumeUp"></fa-icon>
             </button>
@@ -65,7 +65,7 @@
             class="audio-btn"
             matTooltip="US pronunciation"
             (click)="speak(entry.englishWord, 'us')"
-            [disabled]="isSpeaking()"
+            [disabled]="speakingAccent() === 'us'"
           >
             <fa-icon [icon]="faVolumeUp"></fa-icon>
           </button>

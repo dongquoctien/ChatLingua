@@ -32,6 +32,8 @@ export interface Vocabulary {
   vietnameseWord: string;
   englishWord: string;
   phonetic: string | null;
+  pronunciationUk: string | null;
+  pronunciationUs: string | null;
   partOfSpeech: string | null;
   difficultyLevel: string;
   masteryLevel: number;
@@ -121,9 +123,7 @@ export interface VocabularyContext {
 }
 
 export interface DictionaryEntry extends Vocabulary {
-  // Pronunciation
-  pronunciationUk: string | null;
-  pronunciationUs: string | null;
+  // Audio URLs (pronunciation text is inherited from Vocabulary)
   audioUkUrl: string | null;
   audioUsUrl: string | null;
   // Word forms and definitions
@@ -191,6 +191,12 @@ export interface ExerciseResult {
   };
 }
 
+export interface QuestionPreview {
+  id: number;
+  questionText: string;
+  exerciseType: string;
+}
+
 export interface Quiz {
   id: number;
   title: string;
@@ -201,6 +207,7 @@ export interface Quiz {
   attemptCount?: number;
   bestScore?: number;
   createdAt: string;
+  questionPreviews?: QuestionPreview[];
 }
 
 export interface QuizStartResponse {
@@ -217,6 +224,33 @@ export interface QuizSubmitResponse {
     correctAnswer: string;
     isCorrect: boolean;
   }[];
+}
+
+export interface QuizAttempt {
+  id: number;
+  quizId: number;
+  startedAt: string;
+  completedAt: string | null;
+  score: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  isPassed: boolean;
+  timeSpentSeconds: number;
+}
+
+export interface AttemptDetailResult {
+  exerciseId: number;
+  questionText: string;
+  exerciseType: string;
+  options: string[] | null;
+  userAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+}
+
+export interface QuizAttemptDetail extends QuizAttempt {
+  quizTitle: string;
+  results: AttemptDetailResult[];
 }
 
 // Exercise Session types
@@ -469,6 +503,14 @@ export class ApiService {
 
   deleteQuiz(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/quizzes/${id}`);
+  }
+
+  getQuizAttempts(quizId: number): Observable<QuizAttempt[]> {
+    return this.http.get<QuizAttempt[]>(`${this.baseUrl}/quizzes/${quizId}/attempts`);
+  }
+
+  getQuizAttemptDetail(quizId: number, attemptId: number): Observable<QuizAttemptDetail> {
+    return this.http.get<QuizAttemptDetail>(`${this.baseUrl}/quizzes/${quizId}/attempts/${attemptId}`);
   }
 
   // Stats

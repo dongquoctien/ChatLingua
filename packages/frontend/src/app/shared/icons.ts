@@ -35,11 +35,13 @@ import {
   faLightbulb,
   faCalendarAlt,
   faListUl,
+  faListOl,
   faQuoteLeft,
   faPlus,
   faChevronDown,
   faChevronUp,
   faTrash,
+  faPlay,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -86,11 +88,13 @@ export const icons = {
   faLightbulb,
   faCalendarAlt,
   faListUl,
+  faListOl,
   faQuoteLeft,
   faPlus,
   faChevronDown,
   faChevronUp,
   faTrash,
+  faPlay,
 };
 
 // Re-export for individual imports
@@ -133,9 +137,11 @@ export {
   faLightbulb,
   faCalendarAlt,
   faListUl,
+  faListOl,
   faQuoteLeft,
   faPlus,
   faChevronDown,
   faChevronUp,
   faTrash,
+  faPlay,
 };

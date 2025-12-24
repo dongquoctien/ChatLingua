@@ -84,9 +84,9 @@
           </div>
 
           <!-- Phonetic with speaker -->
-          @if (word.phonetic) {
+          @if (getPronunciation(word)) {
             <div class="phonetic-row">
-              <span class="phonetic">{{ word.phonetic }}</span>
+              <span class="phonetic">{{ getPronunciation(word) }}</span>
               <button
                 class="speak-btn"
                 (click)="speak(word.id, word.englishWord, $event)"

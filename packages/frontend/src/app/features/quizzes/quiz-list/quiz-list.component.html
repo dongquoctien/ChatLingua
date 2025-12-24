@@ -52,6 +52,26 @@
               Best: {{ quiz.bestScore }}%
             </div>
           }
+          @if (quiz.questionPreviews && quiz.questionPreviews.length > 0) {
+            <div class="question-previews">
+              <div class="preview-header" (click)="togglePreview(quiz.id)">
+                <fa-icon [icon]="faListOl"></fa-icon>
+                <span>Preview Questions</span>
+                <fa-icon [icon]="isExpanded(quiz.id) ? faChevronUp : faChevronDown" class="expand-icon"></fa-icon>
+              </div>
+              @if (isExpanded(quiz.id)) {
+                <div class="preview-list">
+                  @for (preview of quiz.questionPreviews; track preview.id; let i = $index) {
+                    <div class="preview-item">
+                      <span class="preview-number">{{ i + 1 }}.</span>
+                      <span class="preview-text">{{ truncateQuestion(preview.questionText) }}</span>
+                      <span class="preview-type">{{ formatExerciseType(preview.exerciseType) }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
         </mat-card-content>
         <mat-card-actions>
           <button mat-raised-button color="primary" [routerLink]="['/quizzes', quiz.id, 'play']"
@@ -62,6 +82,12 @@
               Start Quiz
             }
           </button>
+          @if ((quiz.attemptCount || 0) > 0) {
+            <button mat-button [routerLink]="['/quizzes', quiz.id, 'history']">
+              <fa-icon [icon]="faHistory"></fa-icon>
+              History
+            </button>
+          }
         </mat-card-actions>
       </mat-card>
     }

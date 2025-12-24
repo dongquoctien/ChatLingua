@@ -61,6 +61,8 @@ export interface VocabularyItem {
   vietnameseWord: string;
   englishWord: string;
   phonetic: string | null;
+  pronunciationUk: string | null;
+  pronunciationUs: string | null;
   partOfSpeech: string | null;
   difficultyLevel: string;
   masteryLevel: number;
@@ -76,9 +78,7 @@ export interface VocabularyItem {
 }
 
 export interface DictionaryEntry extends VocabularyItem {
-  // Pronunciation
-  pronunciationUk: string | null;
-  pronunciationUs: string | null;
+  // Audio URLs (pronunciation text is inherited from VocabularyItem)
   audioUkUrl: string | null;
   audioUsUrl: string | null;
   // Word forms and definitions
@@ -179,6 +179,7 @@ export class VocabularyService {
     // Get vocabulary with pagination
     const [rows] = await pool.query<VocabularyRow[]>(
       `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic,
+              v.pronunciation_uk, v.pronunciation_us,
               v.part_of_speech, v.difficulty_level, v.mastery_level,
               v.times_practiced, v.last_practiced_at, v.created_at,
               v.cefr_level, v.definitions
@@ -200,6 +201,7 @@ export class VocabularyService {
   ): Promise<VocabularyItem | null> {
     const [rows] = await pool.execute<VocabularyRow[]>(
       `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic,
+              v.pronunciation_uk, v.pronunciation_us,
               v.part_of_speech, v.difficulty_level, v.mastery_level,
               v.times_practiced, v.last_practiced_at, v.created_at,
               v.cefr_level, v.definitions
@@ -314,6 +316,7 @@ export class VocabularyService {
 
     const [rows] = await pool.query<VocabularyRow[]>(
       `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic,
+              v.pronunciation_uk, v.pronunciation_us,
               v.part_of_speech, v.difficulty_level, v.mastery_level,
               v.times_practiced, v.last_practiced_at, v.created_at,
               v.cefr_level, v.definitions
@@ -358,6 +361,7 @@ export class VocabularyService {
         const placeholders = familyWords.map(() => '?').join(',');
         const [rows] = await pool.query<VocabularyRow[]>(
           `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic,
+                  v.pronunciation_uk, v.pronunciation_us,
                   v.part_of_speech, v.difficulty_level, v.mastery_level,
                   v.times_practiced, v.last_practiced_at, v.created_at,
                   v.cefr_level, v.definitions
@@ -374,6 +378,7 @@ export class VocabularyService {
       const placeholders = entry.synonyms.map(() => '?').join(',');
       const [rows] = await pool.query<VocabularyRow[]>(
         `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic,
+                v.pronunciation_uk, v.pronunciation_us,
                 v.part_of_speech, v.difficulty_level, v.mastery_level,
                 v.times_practiced, v.last_practiced_at, v.created_at,
                 v.cefr_level, v.definitions
@@ -389,6 +394,7 @@ export class VocabularyService {
       const placeholders = entry.seeAlso.map(() => '?').join(',');
       const [rows] = await pool.query<VocabularyRow[]>(
         `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic,
+                v.pronunciation_uk, v.pronunciation_us,
                 v.part_of_speech, v.difficulty_level, v.mastery_level,
                 v.times_practiced, v.last_practiced_at, v.created_at,
                 v.cefr_level, v.definitions
@@ -409,6 +415,7 @@ export class VocabularyService {
     // Get vocabulary that needs review (low mastery or not reviewed recently)
     const [rows] = await pool.query<VocabularyRow[]>(
       `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic,
+              v.pronunciation_uk, v.pronunciation_us,
               v.part_of_speech, v.difficulty_level, v.mastery_level,
               v.times_practiced, v.last_practiced_at, v.created_at,
               v.cefr_level, v.definitions
@@ -604,6 +611,8 @@ export class VocabularyService {
       vietnameseWord: row.vietnamese_word,
       englishWord: row.english_word,
       phonetic: row.phonetic,
+      pronunciationUk: row.pronunciation_uk,
+      pronunciationUs: row.pronunciation_us,
       partOfSpeech: row.part_of_speech,
       difficultyLevel: row.difficulty_level,
       masteryLevel: row.mastery_level,

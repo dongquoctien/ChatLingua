@@ -65,15 +65,38 @@ MCP server uses same DB variables plus optional auth:
 
 The MCP server (`packages/mcp-server/src/tools/`) exposes these tools to Claude Desktop:
 
+### Learning Flow (3 Steps)
+
+```
+User Input → analyze_conversation → enrich_vocabulary → generate_exercises
+                   (Step 1)            (Step 2)            (Step 3)
+                   ~5-10s              ~10-15s/batch        ~5-10s
+```
+
+| Tool | Step | Purpose |
+|------|------|---------|
+| `analyze_conversation` | 1 | Quick save: conversation + basic vocabulary |
+| `enrich_vocabulary` | 2 | Add dictionary data (definitions, examples, etc.) |
+| `generate_exercises` | 3 | Create practice exercises (can run parallel with Step 2) |
+
+### Other Tools
+
 | Tool | Purpose |
 |------|---------|
-| `analyze_conversation` | Analyze Vietnamese text → extract vocabulary, grammar, translation |
 | `get_vocabulary_list` | Retrieve user's vocabulary with filters |
-| `generate_exercises` | Create exercises from conversations |
 | `save_exercise_result` | Record individual exercise attempt |
 | `save_exercise_session` | Record batch of exercise results from a session |
 | `get_exercise_history` | Get user's exercise attempt history |
 | `get_learning_summary` | Get learning statistics and progress |
+
+### Recommended Usage Flow
+
+1. **analyze_conversation**: Extract basic vocabulary (quick)
+   - Returns `vocabularyIds[]` for next step
+2. **enrich_vocabulary**: Add dictionary data in batches of 3-5 words
+   - Retry once on failure, then skip
+3. **generate_exercises**: Create exercises from conversation
+   - Can run in parallel with Step 2
 
 ## Database
 
