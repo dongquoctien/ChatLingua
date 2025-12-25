@@ -7,3 +7,4 @@ export * from './types/grammar';
 export * from './types/exercise';
 export * from './types/quiz';
 export * from './types/stats';
+export * from './types/review';

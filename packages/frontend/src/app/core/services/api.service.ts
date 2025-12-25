@@ -313,6 +313,124 @@ export interface UserStats {
   lastActivityDate: string | null;
 }
 
+// ============================================================
+// Spaced Repetition / Review Types
+// ============================================================
+
+export type ReviewStatus = 'new' | 'learning' | 'reviewing' | 'mastered';
+export type ReviewType = 'flashcard' | 'quiz' | 'exercise';
+export type FlashcardDirection = 'vi_to_en' | 'en_to_vi' | 'mixed';
+export type QueuePriority = 'overdue' | 'due' | 'new';
+export type ReviewRating = 'again' | 'hard' | 'good' | 'easy';
+
+export interface QueueItem {
+  id: number;
+  englishWord: string;
+  vietnameseWord: string;
+  phonetic: string | null;
+  pronunciationUk: string | null;
+  pronunciationUs: string | null;
+  partOfSpeech: string | null;
+  difficultyLevel: string;
+  cefrLevel: string | null;
+  definitions: Definition[] | null;
+  reviewStatus: ReviewStatus;
+  easeFactor: number;
+  reviewInterval: number;
+  nextReviewAt: Date | null;
+  priority: QueuePriority;
+}
+
+export interface QueueStats {
+  due: number;
+  overdue: number;
+  new: number;
+  completed: number;
+  total: number;
+}
+
+export interface ReviewResult {
+  success: boolean;
+  nextReviewAt: Date;
+  newInterval: number;
+  newEaseFactor: number;
+  newStatus: ReviewStatus;
+  intervalText: string;
+}
+
+export interface BatchReviewResult {
+  success: boolean;
+  processed: number;
+  results: Array<{
+    vocabularyId: number;
+    nextReviewAt: Date;
+    newStatus: ReviewStatus;
+  }>;
+}
+
+export interface ReviewStats {
+  dueToday: number;
+  overdueCount: number;
+  newAvailable: number;
+  completedToday: number;
+  totalReviews: number;
+  averageEaseFactor: number;
+  masteredCount: number;
+  learningCount: number;
+  reviewingCount: number;
+}
+
+export interface ReviewHistoryItem {
+  id: number;
+  vocabularyId: number;
+  englishWord: string;
+  vietnameseWord: string;
+  quality: number;
+  qualityLabel: string;
+  easeFactorBefore: number;
+  easeFactorAfter: number;
+  intervalBefore: number;
+  intervalAfter: number;
+  reviewType: ReviewType;
+  direction: 'vi_to_en' | 'en_to_vi';
+  timeSpentSeconds: number;
+  reviewedAt: Date;
+}
+
+export interface ReviewHistoryResponse {
+  data: ReviewHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface ReviewStreak {
+  currentStreak: number;
+  longestStreak: number;
+  lastReviewDate: Date | null;
+  streakStartDate: Date | null;
+  totalReviewDays: number;
+}
+
+export interface LearningGoals {
+  id: number;
+  userId: number;
+  dailyNewWords: number;
+  dailyReviews: number;
+  reminderEnabled: boolean;
+  reminderTime: string;
+  preferredDirection: FlashcardDirection;
+  isActive: boolean;
+}
+
+export interface LearningGoalsUpdate {
+  dailyNewWords?: number;
+  dailyReviews?: number;
+  reminderEnabled?: boolean;
+  reminderTime?: string;
+  preferredDirection?: FlashcardDirection;
+}
+
 export interface PeriodReport {
   period: string;
   startDate: string;
@@ -524,5 +642,70 @@ export class ApiService {
 
   getMonthlyReport(): Observable<PeriodReport> {
     return this.http.get<PeriodReport>(`${this.baseUrl}/stats/monthly`);
+  }
+
+  // ============================================================
+  // Spaced Repetition / Review API
+  // ============================================================
+
+  // Get today's review queue
+  getReviewQueue(includeCompleted = false): Observable<QueueItem[]> {
+    const params = new HttpParams().set('includeCompleted', includeCompleted);
+    return this.http.get<QueueItem[]>(`${this.baseUrl}/review/queue`, { params });
+  }
+
+  // Get queue statistics
+  getQueueStats(): Observable<QueueStats> {
+    return this.http.get<QueueStats>(`${this.baseUrl}/review/queue/stats`);
+  }
+
+  // Rebuild daily queue
+  rebuildQueue(): Observable<{ message: string; stats: QueueStats }> {
+    return this.http.post<{ message: string; stats: QueueStats }>(`${this.baseUrl}/review/queue/rebuild`, {});
+  }
+
+  // Submit a single review
+  submitReview(data: {
+    vocabularyId: number;
+    rating: ReviewRating;
+    direction?: 'vi_to_en' | 'en_to_vi';
+    timeSpentSeconds?: number;
+    reviewType?: ReviewType;
+  }): Observable<ReviewResult> {
+    return this.http.post<ReviewResult>(`${this.baseUrl}/review/submit`, data);
+  }
+
+  // Submit batch reviews
+  submitBatchReviews(data: {
+    reviews: Array<{ vocabularyId: number; rating: ReviewRating; timeSpentSeconds?: number }>;
+    reviewType?: ReviewType;
+  }): Observable<BatchReviewResult> {
+    return this.http.post<BatchReviewResult>(`${this.baseUrl}/review/submit-batch`, data);
+  }
+
+  // Get review statistics
+  getReviewStats(): Observable<ReviewStats> {
+    return this.http.get<ReviewStats>(`${this.baseUrl}/review/stats`);
+  }
+
+  // Get review history
+  getReviewHistory(page = 1, limit = 20): Observable<ReviewHistoryResponse> {
+    const params = new HttpParams().set('page', page).set('limit', limit);
+    return this.http.get<ReviewHistoryResponse>(`${this.baseUrl}/review/history`, { params });
+  }
+
+  // Get review streak
+  getReviewStreak(): Observable<ReviewStreak> {
+    return this.http.get<ReviewStreak>(`${this.baseUrl}/review/streak`);
+  }
+
+  // Get learning goals
+  getLearningGoals(): Observable<LearningGoals> {
+    return this.http.get<LearningGoals>(`${this.baseUrl}/review/goals`);
+  }
+
+  // Update learning goals
+  updateLearningGoals(data: LearningGoalsUpdate): Observable<LearningGoals> {
+    return this.http.put<LearningGoals>(`${this.baseUrl}/review/goals`, data);
   }
 }

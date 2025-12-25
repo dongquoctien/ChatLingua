@@ -1,0 +1,185 @@
+<div class="flashcard-page">
+  <!-- Header -->
+  <div class="flashcard-header">
+    <button mat-icon-button (click)="goBack()" matTooltip="Back to Review">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+    </button>
+
+    <div class="session-info">
+      <div class="timer">
+        <fa-icon [icon]="faStopwatch"></fa-icon>
+        {{ formatTime(elapsedSeconds()) }}
+      </div>
+      <div class="progress-text">
+        {{ currentIndex() + 1 }} / {{ queue().length }}
+      </div>
+    </div>
+
+    <div class="session-stats">
+      <span class="correct">{{ sessionStats().correct }}</span>
+      <span class="separator">/</span>
+      <span class="total">{{ sessionStats().completed }}</span>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <mat-progress-bar mode="determinate" [value]="progress()"></mat-progress-bar>
+
+  @if (loading()) {
+    <div class="loading-spinner">
+      <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+      <p>Loading review cards...</p>
+    </div>
+  } @else if (showCompletion()) {
+    <!-- Completion Screen -->
+    <div class="completion-screen">
+      <div class="completion-icon">
+        <fa-icon [icon]="faTrophy"></fa-icon>
+      </div>
+      <h2>Session Complete!</h2>
+
+      <div class="completion-stats">
+        <div class="stat">
+          <span class="value">{{ sessionStats().completed }}</span>
+          <span class="label">Cards Reviewed</span>
+        </div>
+        <div class="stat">
+          <span class="value">{{ getAccuracy() }}%</span>
+          <span class="label">Accuracy</span>
+        </div>
+        <div class="stat">
+          <span class="value">{{ formatTime(elapsedSeconds()) }}</span>
+          <span class="label">Time Spent</span>
+        </div>
+      </div>
+
+      <div class="completion-actions">
+        <button mat-raised-button color="primary" (click)="restartSession()">
+          <fa-icon [icon]="faRedo"></fa-icon>
+          Review More
+        </button>
+        <button mat-stroked-button (click)="goBack()">
+          Back to Dashboard
+        </button>
+      </div>
+    </div>
+  } @else if (queue().length === 0) {
+    <!-- Empty Queue -->
+    <div class="empty-queue">
+      <fa-icon [icon]="faCheck" class="empty-icon"></fa-icon>
+      <h2>No cards to review!</h2>
+      <p>You're all caught up. Check back later for more reviews.</p>
+      <button mat-raised-button color="primary" (click)="goBack()">
+        Back to Dashboard
+      </button>
+    </div>
+  } @else if (currentCard()) {
+    <!-- Flashcard -->
+    <div class="flashcard-container" (click)="!currentCard()!.isFlipped && flipCard()">
+      <div class="flashcard" [class.flipped]="currentCard()!.isFlipped">
+        <!-- Front Side -->
+        <div class="card-face front">
+          <div class="direction-badge">
+            {{ currentCard()!.direction === 'vi_to_en' ? 'VI → EN' : 'EN → VI' }}
+          </div>
+
+          <div class="card-content">
+            <h2 class="main-word">{{ getFrontText() }}</h2>
+
+            @if (currentCard()!.direction === 'en_to_vi' && getPhonetic()) {
+              <div class="phonetic">
+                {{ getPhonetic() }}
+                <button mat-icon-button class="speak-btn" (click)="speak(getFrontText()); $event.stopPropagation()">
+                  <fa-icon [icon]="faVolumeUp" [class.speaking]="speaking()"></fa-icon>
+                </button>
+              </div>
+            }
+
+            @if (currentCard()!.item.partOfSpeech) {
+              <div class="part-of-speech">{{ currentCard()!.item.partOfSpeech }}</div>
+            }
+          </div>
+
+          <div class="tap-hint">Tap to reveal answer</div>
+        </div>
+
+        <!-- Back Side -->
+        <div class="card-face back">
+          <div class="card-content">
+            <div class="front-reminder">{{ getFrontText() }}</div>
+
+            <div class="answer-section">
+              <h2 class="answer-word">{{ getBackText() }}</h2>
+
+              @if (currentCard()!.direction === 'vi_to_en' && getPhonetic()) {
+                <div class="phonetic">
+                  {{ getPhonetic() }}
+                  <button mat-icon-button class="speak-btn" (click)="speak(getBackText()); $event.stopPropagation()">
+                    <fa-icon [icon]="faVolumeUp" [class.speaking]="speaking()"></fa-icon>
+                  </button>
+                </div>
+              }
+            </div>
+
+            @if (getFirstDefinition()) {
+              <div class="definition">{{ getFirstDefinition() }}</div>
+            }
+
+            @if (currentCard()!.item.cefrLevel) {
+              <div class="cefr-badge">{{ currentCard()!.item.cefrLevel }}</div>
+            }
+          </div>
+
+          <!-- Rating Buttons -->
+          <div class="rating-buttons" (click)="$event.stopPropagation()">
+            <button
+              mat-raised-button
+              class="rating-btn again"
+              [disabled]="submitting()"
+              (click)="submitRating('again')"
+            >
+              <span class="rating-label">Again</span>
+              <span class="rating-interval">{{ getIntervalText('again') }}</span>
+            </button>
+
+            <button
+              mat-raised-button
+              class="rating-btn hard"
+              [disabled]="submitting()"
+              (click)="submitRating('hard')"
+            >
+              <span class="rating-label">Hard</span>
+              <span class="rating-interval">{{ getIntervalText('hard') }}</span>
+            </button>
+
+            <button
+              mat-raised-button
+              class="rating-btn good"
+              [disabled]="submitting()"
+              (click)="submitRating('good')"
+            >
+              <span class="rating-label">Good</span>
+              <span class="rating-interval">{{ getIntervalText('good') }}</span>
+            </button>
+
+            <button
+              mat-raised-button
+              class="rating-btn easy"
+              [disabled]="submitting()"
+              (click)="submitRating('easy')"
+            >
+              <span class="rating-label">Easy</span>
+              <span class="rating-interval">{{ getIntervalText('easy') }}</span>
+            </button>
+          </div>
+
+          @if (lastResult()) {
+            <div class="result-feedback">
+              Next review: {{ lastResult()!.intervalText }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

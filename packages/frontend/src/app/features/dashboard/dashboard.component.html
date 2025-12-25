@@ -35,13 +35,60 @@
       </mat-card>
     </div>
 
+    <!-- Daily Review Widget -->
+    @if (queueStats()) {
+      <div class="review-widget-section">
+        <mat-card class="review-widget" routerLink="/review">
+          <div class="review-header">
+            <div class="review-title">
+              <fa-icon [icon]="faBrain" class="review-icon"></fa-icon>
+              <h3>Daily Review</h3>
+            </div>
+            @if (streak() && streak()!.currentStreak > 0) {
+              <div class="streak-badge">
+                <fa-icon [icon]="faFire"></fa-icon>
+                {{ streak()!.currentStreak }} day streak
+              </div>
+            }
+          </div>
+
+          <div class="review-stats">
+            <div class="review-stat">
+              <span class="number due">{{ queueStats()!.due + queueStats()!.overdue }}</span>
+              <span class="label">Due</span>
+            </div>
+            <div class="review-stat">
+              <span class="number new">{{ queueStats()!.new }}</span>
+              <span class="label">New</span>
+            </div>
+            <div class="review-stat">
+              <span class="number done">{{ queueStats()!.completed }}</span>
+              <span class="label">Done</span>
+            </div>
+          </div>
+
+          @if (getTotalDue() > 0) {
+            <button mat-raised-button color="primary" class="start-review-btn">
+              <fa-icon [icon]="faPlay"></fa-icon>
+              Start Review ({{ getTotalDue() }} cards)
+            </button>
+          } @else {
+            <div class="all-done-message">
+              <fa-icon [icon]="faCheckCircle"></fa-icon>
+              All caught up for today!
+            </div>
+          }
+        </mat-card>
+      </div>
+    }
+
     <div class="quick-actions">
       <h2>Quick Actions</h2>
       <div class="actions-grid">
-        <mat-card class="action-card" routerLink="/vocabulary/review">
+        <mat-card class="action-card" routerLink="/review">
           <fa-icon [icon]="faGraduationCap" class="action-icon primary"></fa-icon>
-          <h3>Review Vocabulary</h3>
-          <p>Practice words you've learned</p>
+          <h3>Spaced Review</h3>
+          <p>Practice with flashcards</p>
         </mat-card>
 
         <mat-card class="action-card" routerLink="/exercises">

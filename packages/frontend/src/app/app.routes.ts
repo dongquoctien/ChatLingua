@@ -100,6 +100,23 @@ export const routes: Routes = [
         path: 'reports',
         loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent),
       },
+      {
+        path: 'review',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/review/daily-review/daily-review.component').then(m => m.DailyReviewComponent),
+          },
+          {
+            path: 'flashcard',
+            loadComponent: () => import('./features/review/flashcard/flashcard.component').then(m => m.FlashcardComponent),
+          },
+          {
+            path: 'stats',
+            loadComponent: () => import('./features/review/review-stats/review-stats.component').then(m => m.ReviewStatsComponent),
+          },
+        ],
+      },
     ],
   },
   {

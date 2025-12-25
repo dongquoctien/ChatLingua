@@ -46,12 +46,15 @@
               <span>{{ quiz.attemptCount || 0 }}/{{ quiz.maxAttempts }} attempts</span>
             </div>
           </div>
-          @if (quiz.bestScore !== undefined) {
-            <div class="best-score">
+          <div class="score-badge" [class.has-score]="quiz.bestScore !== undefined" [class.no-score]="quiz.bestScore === undefined">
+            @if (quiz.bestScore !== undefined) {
               <fa-icon [icon]="faTrophy"></fa-icon>
               Best: {{ quiz.bestScore }}%
-            </div>
-          }
+            } @else {
+              <fa-icon [icon]="faPlay"></fa-icon>
+              Ready to start
+            }
+          </div>
           @if (quiz.questionPreviews && quiz.questionPreviews.length > 0) {
             <div class="question-previews">
               <div class="preview-header" (click)="togglePreview(quiz.id)">

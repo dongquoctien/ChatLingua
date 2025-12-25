@@ -1,0 +1,180 @@
+<div class="review-stats">
+  <div class="page-header">
+    <button mat-icon-button (click)="goBack()">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+    </button>
+    <h1>Review Statistics</h1>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-spinner">
+      <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+    </div>
+  } @else {
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+      @if (streak()) {
+        <mat-card class="stat-card">
+          <fa-icon [icon]="faFire" class="stat-icon fire"></fa-icon>
+          <div class="stat-value">{{ streak()!.currentStreak }}</div>
+          <div class="stat-label">Current Streak</div>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <fa-icon [icon]="faTrophy" class="stat-icon trophy"></fa-icon>
+          <div class="stat-value">{{ streak()!.longestStreak }}</div>
+          <div class="stat-label">Best Streak</div>
+        </mat-card>
+
+        <mat-card class="stat-card">
+          <fa-icon [icon]="faCalendarAlt" class="stat-icon calendar"></fa-icon>
+          <div class="stat-value">{{ streak()!.totalReviewDays }}</div>
+          <div class="stat-label">Total Review Days</div>
+        </mat-card>
+      }
+
+      @if (stats()) {
+        <mat-card class="stat-card">
+          <fa-icon [icon]="faCheck" class="stat-icon check"></fa-icon>
+          <div class="stat-value">{{ stats()!.totalReviews }}</div>
+          <div class="stat-label">Total Reviews</div>
+        </mat-card>
+      }
+    </div>
+
+    <!-- Mastery Distribution -->
+    @if (stats()) {
+      <mat-card class="mastery-section">
+        <h3>
+          <fa-icon [icon]="faChartPie"></fa-icon>
+          Vocabulary Mastery
+        </h3>
+
+        <div class="mastery-overview">
+          <div class="mastery-circle" [style]="getDonutChartStyle()">
+            <div class="inner-circle">
+              <div class="percentage">{{ getMasteryPercentage() }}%</div>
+              <div class="label">Mastered</div>
+            </div>
+          </div>
+
+          <div class="mastery-breakdown">
+            <div class="mastery-item mastered">
+              <span class="dot"></span>
+              <span class="name">Mastered</span>
+              <span class="count">{{ stats()!.masteredCount }}</span>
+            </div>
+            <div class="mastery-item reviewing">
+              <span class="dot"></span>
+              <span class="name">Reviewing</span>
+              <span class="count">{{ stats()!.reviewingCount }}</span>
+            </div>
+            <div class="mastery-item learning">
+              <span class="dot"></span>
+              <span class="name">Learning</span>
+              <span class="count">{{ stats()!.learningCount }}</span>
+            </div>
+            <div class="mastery-item new">
+              <span class="dot"></span>
+              <span class="name">New</span>
+              <span class="count">{{ stats()!.newAvailable }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mastery-bar">
+          <div class="segment mastered" [style.width.%]="stats()!.masteredCount / getTotalVocabulary() * 100"></div>
+          <div class="segment reviewing" [style.width.%]="stats()!.reviewingCount / getTotalVocabulary() * 100"></div>
+          <div class="segment learning" [style.width.%]="stats()!.learningCount / getTotalVocabulary() * 100"></div>
+          <div class="segment new" [style.width.%]="stats()!.newAvailable / getTotalVocabulary() * 100"></div>
+        </div>
+      </mat-card>
+
+      <!-- Today's Stats -->
+      <mat-card class="today-section">
+        <h3>Today's Activity</h3>
+        <div class="today-grid">
+          <div class="today-stat">
+            <span class="value">{{ stats()!.dueToday }}</span>
+            <span class="label">Due</span>
+          </div>
+          <div class="today-stat">
+            <span class="value">{{ stats()!.overdueCount }}</span>
+            <span class="label">Overdue</span>
+          </div>
+          <div class="today-stat">
+            <span class="value">{{ stats()!.completedToday }}</span>
+            <span class="label">Completed</span>
+          </div>
+          <div class="today-stat">
+            <span class="value">{{ (stats()!.averageEaseFactor).toFixed(2) }}</span>
+            <span class="label">Avg Ease</span>
+          </div>
+        </div>
+      </mat-card>
+    }
+
+    <!-- Review History -->
+    <mat-card class="history-section">
+      <h3>
+        <fa-icon [icon]="faHistory"></fa-icon>
+        Recent Reviews
+      </h3>
+
+      @if (history().length > 0) {
+        <div class="table-container">
+          <table mat-table [dataSource]="history()">
+            <ng-container matColumnDef="word">
+              <th mat-header-cell *matHeaderCellDef>Word</th>
+              <td mat-cell *matCellDef="let item">
+                <div class="word-cell">
+                  <span class="english">{{ item.englishWord }}</span>
+                  <span class="vietnamese">{{ item.vietnameseWord }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="quality">
+              <th mat-header-cell *matHeaderCellDef>Rating</th>
+              <td mat-cell *matCellDef="let item">
+                <span class="quality-badge" [style.background-color]="getQualityColor(item.quality)">
+                  {{ item.qualityLabel }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="interval">
+              <th mat-header-cell *matHeaderCellDef>Next</th>
+              <td mat-cell *matCellDef="let item">{{ formatInterval(item.intervalAfter) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef>Type</th>
+              <td mat-cell *matCellDef="let item">{{ item.reviewType }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef>Date</th>
+              <td mat-cell *matCellDef="let item">{{ formatDate(item.reviewedAt) }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [length]="historyTotal()"
+          [pageSize]="historyPageSize()"
+          [pageSizeOptions]="[5, 10, 20]"
+          (page)="onPageChange($event)"
+          showFirstLastButtons
+        ></mat-paginator>
+      } @else {
+        <div class="empty-history">
+          <p>No review history yet. Start reviewing to see your progress!</p>
+        </div>
+      }
+    </mat-card>
+  }
+</div>

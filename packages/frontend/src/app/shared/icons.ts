@@ -42,6 +42,17 @@ import {
   faChevronUp,
   faTrash,
   faPlay,
+  faBrain,
+  faSyncAlt,
+  faCog,
+  faExclamationTriangle,
+  faThumbsUp,
+  faThumbsDown,
+  faBolt,
+  faLayerGroup,
+  faExchangeAlt,
+  faStopwatch,
+  faChartPie,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -95,6 +106,17 @@ export const icons = {
   faChevronUp,
   faTrash,
   faPlay,
+  faBrain,
+  faSyncAlt,
+  faCog,
+  faExclamationTriangle,
+  faThumbsUp,
+  faThumbsDown,
+  faBolt,
+  faLayerGroup,
+  faExchangeAlt,
+  faStopwatch,
+  faChartPie,
 };
 
 // Re-export for individual imports
@@ -144,4 +166,15 @@ export {
   faChevronUp,
   faTrash,
   faPlay,
+  faBrain,
+  faSyncAlt,
+  faCog,
+  faExclamationTriangle,
+  faThumbsUp,
+  faThumbsDown,
+  faBolt,
+  faLayerGroup,
+  faExchangeAlt,
+  faStopwatch,
+  faChartPie,
 };

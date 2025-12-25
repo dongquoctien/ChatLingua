@@ -1,0 +1,143 @@
+<div class="daily-review">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Daily Review</h1>
+      <p>Keep your learning streak going!</p>
+    </div>
+    <div class="header-actions">
+      <button mat-icon-button (click)="rebuildQueue()" [disabled]="rebuilding()" matTooltip="Rebuild Queue">
+        <fa-icon [icon]="faSyncAlt" [animation]="rebuilding() ? 'spin' : undefined"></fa-icon>
+      </button>
+      <button mat-icon-button (click)="openSettings()" matTooltip="Learning Goals">
+        <fa-icon [icon]="faCog"></fa-icon>
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-spinner">
+      <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+    </div>
+  } @else {
+    <!-- Streak Banner -->
+    @if (streak()) {
+      <mat-card class="streak-banner" [class.has-streak]="streak()!.currentStreak > 0">
+        <div class="streak-content">
+          <fa-icon [icon]="faFire" class="streak-icon"></fa-icon>
+          <div class="streak-info">
+            <span class="streak-number">{{ streak()!.currentStreak }}</span>
+            <span class="streak-label">day streak</span>
+          </div>
+        </div>
+        @if (streak()!.longestStreak > streak()!.currentStreak) {
+          <div class="best-streak">
+            Best: {{ streak()!.longestStreak }} days
+          </div>
+        }
+      </mat-card>
+    }
+
+    <!-- Queue Stats -->
+    @if (queueStats()) {
+      <div class="stats-grid">
+        <mat-card class="stat-card overdue" [class.has-items]="queueStats()!.overdue > 0">
+          <fa-icon [icon]="faExclamationTriangle" class="stat-icon"></fa-icon>
+          <div class="stat-value">{{ queueStats()!.overdue }}</div>
+          <div class="stat-label">Overdue</div>
+        </mat-card>
+
+        <mat-card class="stat-card due">
+          <fa-icon [icon]="faBrain" class="stat-icon"></fa-icon>
+          <div class="stat-value">{{ queueStats()!.due }}</div>
+          <div class="stat-label">Due Today</div>
+        </mat-card>
+
+        <mat-card class="stat-card new">
+          <fa-icon [icon]="faLayerGroup" class="stat-icon"></fa-icon>
+          <div class="stat-value">{{ queueStats()!.new }}</div>
+          <div class="stat-label">New Words</div>
+        </mat-card>
+
+        <mat-card class="stat-card completed">
+          <fa-icon [icon]="faCheckCircle" class="stat-icon"></fa-icon>
+          <div class="stat-value">{{ queueStats()!.completed }}</div>
+          <div class="stat-label">Completed</div>
+        </mat-card>
+      </div>
+
+      <!-- Progress Section -->
+      <mat-card class="progress-card">
+        <h3>Today's Progress</h3>
+        <mat-progress-bar
+          mode="determinate"
+          [value]="progressPercentage()"
+          [color]="progressPercentage() >= 100 ? 'accent' : 'primary'"
+        ></mat-progress-bar>
+        <div class="progress-info">
+          <span>{{ queueStats()!.completed }} / {{ goals()?.dailyReviews || 20 }} reviews</span>
+          <span class="percentage">{{ progressPercentage() }}%</span>
+        </div>
+      </mat-card>
+
+      <!-- Start Review Button -->
+      <div class="action-section">
+        @if (hasDueCards()) {
+          <button mat-raised-button color="primary" class="start-button" (click)="startReview()">
+            <fa-icon [icon]="faPlay"></fa-icon>
+            Start Review
+            <span class="card-count">({{ queueStats()!.overdue + queueStats()!.due + queueStats()!.new }} cards)</span>
+          </button>
+        } @else {
+          <div class="all-done">
+            <fa-icon [icon]="faCheckCircle" class="done-icon"></fa-icon>
+            <h3>All caught up!</h3>
+            <p>You've completed all your reviews for today. Great job!</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Mastery Overview -->
+    @if (reviewStats()) {
+      <mat-card class="mastery-card">
+        <div class="mastery-header">
+          <h3>Vocabulary Mastery</h3>
+          <button mat-button color="primary" (click)="viewStats()">
+            <fa-icon [icon]="faChartLine"></fa-icon>
+            View Details
+          </button>
+        </div>
+        <div class="mastery-bars">
+          <div class="mastery-row">
+            <span class="mastery-label">Mastered</span>
+            <div class="mastery-bar-container">
+              <div class="mastery-bar mastered" [style.width.%]="getMasteryPercentage()"></div>
+            </div>
+            <span class="mastery-count">{{ reviewStats()!.masteredCount }}</span>
+          </div>
+          <div class="mastery-row">
+            <span class="mastery-label">Reviewing</span>
+            <div class="mastery-bar-container">
+              <div class="mastery-bar reviewing" [style.width.%]="reviewStats()!.reviewingCount / (reviewStats()!.masteredCount + reviewStats()!.learningCount + reviewStats()!.reviewingCount + reviewStats()!.newAvailable) * 100"></div>
+            </div>
+            <span class="mastery-count">{{ reviewStats()!.reviewingCount }}</span>
+          </div>
+          <div class="mastery-row">
+            <span class="mastery-label">Learning</span>
+            <div class="mastery-bar-container">
+              <div class="mastery-bar learning" [style.width.%]="reviewStats()!.learningCount / (reviewStats()!.masteredCount + reviewStats()!.learningCount + reviewStats()!.reviewingCount + reviewStats()!.newAvailable) * 100"></div>
+            </div>
+            <span class="mastery-count">{{ reviewStats()!.learningCount }}</span>
+          </div>
+          <div class="mastery-row">
+            <span class="mastery-label">New</span>
+            <div class="mastery-bar-container">
+              <div class="mastery-bar new" [style.width.%]="reviewStats()!.newAvailable / (reviewStats()!.masteredCount + reviewStats()!.learningCount + reviewStats()!.reviewingCount + reviewStats()!.newAvailable) * 100"></div>
+            </div>
+            <span class="mastery-count">{{ reviewStats()!.newAvailable }}</span>
+          </div>
+        </div>
+      </mat-card>
+    }
+  }
+</div>

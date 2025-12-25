@@ -18,6 +18,7 @@ import {
   faChevronDown,
   faChevronUp,
   faHistory,
+  faPlay,
 } from '../../../shared/icons';
 import { ApiService, Quiz } from '../../../core/services/api.service';
 import { CreateQuizDialogComponent } from '../create-quiz-dialog/create-quiz-dialog.component';
@@ -53,6 +54,7 @@ export class QuizListComponent implements OnInit {
   faChevronDown = faChevronDown;
   faChevronUp = faChevronUp;
   faHistory = faHistory;
+  faPlay = faPlay;
 
   quizzes = signal<Quiz[]>([]);
   total = signal(0);

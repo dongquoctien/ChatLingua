@@ -89,6 +89,13 @@ User Input → analyze_conversation → enrich_vocabulary → generate_exercises
 | `get_exercise_history` | Get user's exercise attempt history |
 | `get_learning_summary` | Get learning statistics and progress |
 
+### Spaced Repetition Tools
+
+| Tool | Purpose |
+|------|---------|
+| `get_review_queue` | Get today's vocabulary review queue (overdue, due, new items) |
+| `submit_review` | Submit vocabulary review with quality rating (0-5), triggers SM2 calculation |
+
 ### Recommended Usage Flow
 
 1. **analyze_conversation**: Extract basic vocabulary (quick)
@@ -100,7 +107,17 @@ User Input → analyze_conversation → enrich_vocabulary → generate_exercises
 
 ## Database
 
-MySQL database with tables: `users`, `conversations`, `vocabulary`, `grammar_points`, `exercises`, `exercise_attempts`, `exercise_sessions`, `quizzes`, `quiz_attempts`, `user_statistics`, `daily_activity_log`.
+MySQL database with tables: `users`, `conversations`, `vocabulary`, `grammar_points`, `exercises`, `exercise_attempts`, `exercise_sessions`, `quizzes`, `quiz_attempts`, `user_statistics`, `daily_activity_log`, `vocabulary_reviews`, `daily_review_queue`, `user_learning_goals`.
+
+### Spaced Repetition (SM2 Algorithm)
+
+The vocabulary table includes SM2 fields for spaced repetition:
+- `review_status`: `new` → `learning` → `reviewing` → `mastered`
+- `ease_factor`: 1.3-5.0 (default 2.5)
+- `review_interval`: days until next review
+- `next_review_at`: scheduled review date
+
+Review quality ratings: 0=blackout, 1=again, 2=hard, 3=good, 4=good+, 5=easy
 
 ## Claude Desktop Integration
 
@@ -157,6 +174,11 @@ The MCP server supports optional user authentication:
 | `/api/stats/overview` | GET | User statistics overview |
 | `/api/stats/weekly` | GET | Weekly activity report |
 | `/api/stats/monthly` | GET | Monthly activity report |
+| `/api/review/queue` | GET | Today's review queue (SM2) |
+| `/api/review/submit` | POST | Submit flashcard review (rating: again/hard/good/easy) |
+| `/api/review/stats` | GET | Review statistics (mastery breakdown) |
+| `/api/review/streak` | GET | User's review streak |
+| `/api/review/goals` | GET/PUT | Learning goals settings |
 
 ## Key Patterns
 
@@ -165,3 +187,4 @@ The MCP server supports optional user authentication:
 - **MCP Protocol**: Uses `@modelcontextprotocol/sdk` for Claude Desktop integration
 - **Backend Auth**: JWT tokens with bcrypt password hashing
 - **Exercise Types**: `multiple_choice`, `fill_blank`, `translation`
+- **MySQL Note**: COUNT/SUM/AVG functions may return strings - always use `Number()` to convert

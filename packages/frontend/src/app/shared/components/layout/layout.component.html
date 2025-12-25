@@ -1,5 +1,5 @@
 <mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #drawer mode="side" opened class="sidenav">
+  <mat-sidenav #drawer [mode]="sidenavMode" [opened]="sidenavOpened" class="sidenav">
     <div class="logo">
       <fa-icon [icon]="faGraduationCap"></fa-icon>
       <span>ChatLingua</span>
@@ -17,6 +17,10 @@
       <a mat-list-item routerLink="/vocabulary" routerLinkActive="active">
         <fa-icon [icon]="faLanguage" matListItemIcon></fa-icon>
         <span matListItemTitle>Vocabulary</span>
+      </a>
+      <a mat-list-item routerLink="/review" routerLinkActive="active">
+        <fa-icon [icon]="faBrain" matListItemIcon></fa-icon>
+        <span matListItemTitle>Daily Review</span>
       </a>
       <a mat-list-item routerLink="/exercises" routerLinkActive="active">
         <fa-icon [icon]="faDumbbell" matListItemIcon></fa-icon>

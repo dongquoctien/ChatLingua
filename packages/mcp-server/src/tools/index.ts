@@ -9,6 +9,8 @@ import { saveExerciseResult, saveExerciseResultTool } from './save-exercise-resu
 import { getLearningSummary, getLearningSummaryTool } from './get-learning-summary';
 import { getExerciseHistory, getExerciseHistoryTool } from './get-exercise-history';
 import { saveExerciseSession, saveExerciseSessionTool } from './save-exercise-session';
+import { getReviewQueue, getReviewQueueTool } from './get-review-queue';
+import { submitReview, submitReviewTool } from './submit-review';
 
 // Export all tool definitions
 // Order matters for Claude's understanding of the flow:
@@ -24,6 +26,9 @@ export const tools: Tool[] = [
   saveExerciseSessionTool,
   getLearningSummaryTool,
   getExerciseHistoryTool,
+  // Spaced Repetition tools
+  getReviewQueueTool,
+  submitReviewTool,
 ];
 
 // Tool handler router
@@ -53,6 +58,10 @@ export async function handleToolCall(
       return getLearningSummary(argsWithUser, db);
     case 'get_exercise_history':
       return getExerciseHistory(argsWithUser, db);
+    case 'get_review_queue':
+      return getReviewQueue(argsWithUser, db);
+    case 'submit_review':
+      return submitReview(argsWithUser, db);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

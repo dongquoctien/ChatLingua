@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faFire,
@@ -14,8 +15,10 @@ import {
   faQuestionCircle,
   faHistory,
   faSpinner,
+  faBrain,
+  faPlay,
 } from '../../shared/icons';
-import { ApiService, UserStats } from '../../core/services/api.service';
+import { ApiService, UserStats, QueueStats, ReviewStreak } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -26,6 +29,7 @@ import { AuthService } from '../../core/services/auth.service';
     RouterModule,
     MatCardModule,
     MatButtonModule,
+    MatProgressBarModule,
     FontAwesomeModule,
   ],
   templateUrl: './dashboard.component.html',
@@ -45,12 +49,17 @@ export class DashboardComponent implements OnInit {
   faQuestionCircle = faQuestionCircle;
   faHistory = faHistory;
   faSpinner = faSpinner;
+  faBrain = faBrain;
+  faPlay = faPlay;
 
   stats = signal<UserStats | null>(null);
   loading = signal(true);
+  queueStats = signal<QueueStats | null>(null);
+  streak = signal<ReviewStreak | null>(null);
 
   ngOnInit() {
     this.loadStats();
+    this.loadReviewData();
   }
 
   loadStats() {
@@ -63,5 +72,20 @@ export class DashboardComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  loadReviewData() {
+    this.apiService.getQueueStats().subscribe({
+      next: (stats) => this.queueStats.set(stats),
+    });
+    this.apiService.getReviewStreak().subscribe({
+      next: (streak) => this.streak.set(streak),
+    });
+  }
+
+  getTotalDue(): number {
+    const q = this.queueStats();
+    if (!q) return 0;
+    return q.due + q.overdue + q.new;
   }
 }

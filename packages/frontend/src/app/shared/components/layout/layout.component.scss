@@ -76,3 +76,36 @@ mat-menu {
     }
   }
 }
+
+// Responsive styles
+@media (max-width: 768px) {
+  .sidenav {
+    width: 280px;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  mat-toolbar {
+    .user-name {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .sidenav {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .logo {
+    padding: 16px;
+    font-size: 18px;
+  }
+}

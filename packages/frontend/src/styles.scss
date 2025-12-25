@@ -188,3 +188,73 @@ body {
   border-radius: 4px;
   margin-bottom: 16px;
 }
+
+// ============================================
+// Responsive Breakpoints
+// ============================================
+// Mobile: max-width: 480px
+// Tablet: max-width: 768px
+// Desktop: max-width: 1024px
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .stat-card {
+    padding: 16px;
+
+    .stat-value {
+      font-size: 28px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+
+  .page-header {
+    margin-bottom: 12px;
+
+    h1 {
+      font-size: 20px;
+    }
+
+    p {
+      font-size: 14px;
+    }
+  }
+
+  .empty-state {
+    padding: 32px 16px;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+    }
+
+    h3 {
+      font-size: 16px;
+    }
+  }
+
+  .loading-spinner {
+    padding: 32px;
+  }
+}

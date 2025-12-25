@@ -87,14 +87,14 @@
           @if (getPronunciation(word)) {
             <div class="phonetic-row">
               <span class="phonetic">{{ getPronunciation(word) }}</span>
-              <button
+              <!-- <button
                 class="speak-btn"
                 (click)="speak(word.id, word.englishWord, $event)"
                 [disabled]="speakingWordId() === word.id"
                 matTooltip="Listen"
               >
                 <fa-icon [icon]="faVolumeUp"></fa-icon>
-              </button>
+              </button> -->
             </div>
           }
 
@@ -103,13 +103,13 @@
             <p class="example">"{{ word.exampleEn }}"</p>
           }
 
-          <!-- Mastery bar -->
+          <!-- Mastery bar (0-100 scale) -->
           <div class="mastery-row">
             <span class="mastery-label">Mastery:</span>
             <div class="mastery-bar">
-              <div class="mastery-fill" [style.width.%]="word.masteryLevel * 20"></div>
+              <div class="mastery-fill" [style.width.%]="word.masteryLevel"></div>
             </div>
-            <span class="mastery-value">{{ word.masteryLevel }}/5</span>
+            <span class="mastery-value">{{ word.masteryLevel }}%</span>
           </div>
         </mat-card-content>
       </mat-card>
