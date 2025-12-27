@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,8 +10,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTableModule } from '@angular/material/table';
+import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatIconModule } from '@angular/material/icon';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faSearch, faLanguage, faSpinner, faBook, faListUl, faVolumeUp } from '../../../shared/icons';
+import { faSearch, faLanguage, faSpinner, faBook, faListUl, faVolumeUp, faEye } from '../../../shared/icons';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
 
 @Component({
@@ -20,6 +23,7 @@ import { ApiService, Vocabulary } from '../../../core/services/api.service';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     MatCardModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -28,6 +32,9 @@ import { ApiService, Vocabulary } from '../../../core/services/api.service';
     MatPaginatorModule,
     MatChipsModule,
     MatTooltipModule,
+    MatTableModule,
+    MatSortModule,
+    MatIconModule,
     FontAwesomeModule,
   ],
   templateUrl: './vocabulary-list.component.html',
@@ -44,6 +51,10 @@ export class VocabularyListComponent implements OnInit {
   faBook = faBook;
   faListUl = faListUl;
   faVolumeUp = faVolumeUp;
+  faEye = faEye;
+
+  // Table columns
+  displayedColumns: string[] = ['vietnameseWord', 'englishWord', 'partOfSpeech', 'phonetic', 'cefrLevel', 'mastery', 'actions'];
 
   vocabulary = signal<Vocabulary[]>([]);
   total = signal(0);

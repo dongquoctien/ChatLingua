@@ -11,6 +11,12 @@ English learning platform powered by AI conversation analysis. Integrates with C
 - **Statistics & Reports**: Track your learning streak, vocabulary mastery, and quiz performance
 - **Web Dashboard**: Angular-based web app for reviewing vocabulary, taking quizzes, and tracking progress
 
+## Screenshots
+
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+
 ## Quick Start
 
 ### Prerequisites
@@ -76,6 +82,46 @@ Add to your `claude_desktop_config.json`:
 ```
 
 Restart Claude Desktop to activate.
+
+### Multi-User Setup
+
+By default, the MCP server uses `userId = 1`. To use a different account:
+
+**Step 1: Register a new account**
+
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "your_name",
+    "email": "your_email@example.com",
+    "password": "your_password"
+  }'
+```
+
+**Step 2: Update Claude Desktop config**
+
+Edit `claude_desktop_config.json` and set your credentials:
+
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "chatlingua": {
+      "env": {
+        "MCP_USERNAME": "your_email@example.com",
+        "MCP_PASSWORD": "your_password"
+      }
+    }
+  }
+}
+```
+
+**Step 3: Restart Claude Desktop**
+
+Close and reopen Claude Desktop to apply the new configuration.
 
 ## MCP Tools
 

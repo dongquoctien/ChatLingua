@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+*/node_modules
+**/node_modules
+
+# Build output
+dist
+*/dist
+**/dist
+
+# Development files
+.git
+.gitignore
+.vscode
+.idea
+*.md
+!README.md
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (avoid recursive copy)
+Dockerfile*
+docker-compose*.yml
+
+# Development
+*.map
+.angular

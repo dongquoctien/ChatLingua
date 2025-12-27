@@ -58,62 +58,66 @@
     <p>Have conversations with Claude to learn new words!</p>
   </div>
 } @else {
-  <div class="vocabulary-grid">
-    @for (word of vocabulary(); track word.id) {
-      <mat-card class="vocabulary-card" (click)="openDictionary(word)">
-        <mat-card-content>
-          <!-- Vietnamese word at top -->
-          <p class="vietnamese">{{ word.vietnameseWord }}</p>
-
-          <!-- English word + CEFR badge + part of speech -->
-          <div class="word-row">
-            <span class="english-word">{{ word.englishWord }}</span>
-             @if (word.partOfSpeech) {
-              <span class="pos-label">({{ formatPartOfSpeech(word.partOfSpeech) }})</span>
-            }
-            @if (word.cefrLevel) {
-              <span
-                class="cefr-badge"
-                [style.background-color]="getCefrColor(word.cefrLevel)"
-                [matTooltip]="'CEFR Level ' + word.cefrLevel"
-              >
-                {{ word.cefrLevel }}
-              </span>
-            }
-           
-          </div>
-
-          <!-- Phonetic with speaker -->
-          @if (getPronunciation(word)) {
-            <div class="phonetic-row">
-              <span class="phonetic">{{ getPronunciation(word) }}</span>
+  <div class="table-container">
+    <table class="vocab-table">
+      <thead>
+        <tr>
+          <th>Tiếng Việt</th>
+          <th>Tiếng Anh</th>
+          <th>Phát âm</th>
+          <th>Loại từ</th>
+          <th>Level</th>
+          <th>Mastery</th>
+          <!-- <th></th> -->
+        </tr>
+      </thead>
+      <tbody>
+        @for (word of vocabulary(); track word.id) {
+          <tr (click)="openDictionary(word)">
+            <td>{{ word.vietnameseWord }}</td>
+            <td class="english-word">
+              <a [routerLink]="['/vocabulary', word.id]" class="vocab-link" (click)="$event.stopPropagation()">
+                {{ word.englishWord }}
+              </a>
+            </td>
+            <td class="phonetic-cell">
+              <span class="phonetic">{{ getPronunciation(word) || '-' }}</span>
               <!-- <button
                 class="speak-btn"
-                (click)="speak(word.id, word.englishWord, $event)"
                 [disabled]="speakingWordId() === word.id"
-                matTooltip="Listen"
+                (click)="speak(word.id, word.englishWord, $event)"
               >
-                <fa-icon [icon]="faVolumeUp"></fa-icon>
+                <fa-icon
+                  [icon]="faVolumeUp"
+                  [class.speaking]="speakingWordId() === word.id"
+                ></fa-icon>
               </button> -->
-            </div>
-          }
-
-          <!-- Example sentence -->
-          @if (word.exampleEn) {
-            <p class="example">"{{ word.exampleEn }}"</p>
-          }
-
-          <!-- Mastery bar (0-100 scale) -->
-          <div class="mastery-row">
-            <span class="mastery-label">Mastery:</span>
-            <div class="mastery-bar">
-              <div class="mastery-fill" [style.width.%]="word.masteryLevel"></div>
-            </div>
-            <span class="mastery-value">{{ word.masteryLevel }}%</span>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    }
+            </td>
+            <td><span class="pos-tag">{{ word.partOfSpeech || '-' }}</span></td>
+            <td>
+              @if (word.cefrLevel) {
+                <span class="cefr-badge" [style.background-color]="getCefrColor(word.cefrLevel)">
+                  {{ word.cefrLevel }}
+                </span>
+              }
+            </td>
+            <td>
+              <div class="mastery-cell">
+                <div class="mastery-bar">
+                  <div class="mastery-fill" [style.width.%]="word.masteryLevel"></div>
+                </div>
+                <span class="mastery-value">{{ word.masteryLevel }}%</span>
+              </div>
+            </td>
+            <!-- <td>
+              <button mat-icon-button color="primary" (click)="openDictionary(word); $event.stopPropagation()" matTooltip="View details">
+                <fa-icon [icon]="faEye"></fa-icon>
+              </button>
+            </td> -->
+          </tr>
+        }
+      </tbody>
+    </table>
   </div>
 
   <mat-paginator

@@ -154,6 +154,18 @@ The MCP server supports optional user authentication:
 - If credentials are invalid or not provided, defaults to `userId = 1`
 - Tools can still override userId explicitly if needed
 
+### Multi-User Setup
+
+To use a different account instead of the default `userId = 1`:
+
+1. **Register account**: `POST /api/auth/register` with `{username, email, password}`
+2. **Update config**: Set `MCP_USERNAME` and `MCP_PASSWORD` in `claude_desktop_config.json`
+3. **Restart Claude Desktop**
+
+Config file locations:
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
 ## Backend API Endpoints
 
 | Endpoint | Method | Description |
