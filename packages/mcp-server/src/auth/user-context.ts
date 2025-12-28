@@ -9,8 +9,12 @@ export interface UserContext {
 
 /**
  * Manages user context for MCP server.
- * If MCP_USERNAME and MCP_PASSWORD are provided in environment,
- * authenticates and uses that user's ID. Otherwise defaults to userId = 1.
+ *
+ * Authentication methods:
+ * 1. Environment variables: MCP_USERNAME and MCP_PASSWORD
+ * 2. OAuth2 Device Flow: login tool -> browser login -> login_status tool
+ *
+ * If not authenticated, defaults to userId = 1.
  */
 export class UserContextManager {
   private context: UserContext = {
@@ -30,6 +34,7 @@ export class UserContextManager {
     // If no credentials provided, use default userId = 1
     if (!username || !password) {
       console.error('MCP: No credentials provided, using default user (ID: 1)');
+      console.error('MCP: Use the "login" tool to authenticate via browser.');
       this.context = {
         userId: 1,
         username: null,
@@ -86,6 +91,31 @@ export class UserContextManager {
         isAuthenticated: false,
       };
     }
+  }
+
+  /**
+   * Set user after OAuth2 Device Flow login.
+   * Called by login_status tool when browser login is completed.
+   */
+  async setUser(userId: number, username: string): Promise<void> {
+    this.context = {
+      userId,
+      username,
+      isAuthenticated: true,
+    };
+    console.error(`MCP: Session updated - Authenticated as ${username} (ID: ${userId})`);
+  }
+
+  /**
+   * Clear authentication (logout).
+   */
+  logout(): void {
+    this.context = {
+      userId: 1,
+      username: null,
+      isAuthenticated: false,
+    };
+    console.error('MCP: Logged out, using default user (ID: 1)');
   }
 
   /**

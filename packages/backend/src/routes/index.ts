@@ -9,6 +9,7 @@ import reviewRoutes from './review.routes.js';
 import gamificationRoutes from './gamification.routes.js';
 import grammarRoutes from './grammar.routes.js';
 import ttsRoutes from './tts.routes.js';
+import mcpAuthRoutes from './mcp-auth.routes.js';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/review', reviewRoutes);
 router.use('/gamification', gamificationRoutes);
 router.use('/grammar', grammarRoutes);
 router.use('/tts', ttsRoutes);
+router.use('/mcp-auth', mcpAuthRoutes);
 
 export default router;

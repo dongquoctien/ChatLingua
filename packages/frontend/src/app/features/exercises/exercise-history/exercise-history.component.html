@@ -112,12 +112,12 @@
                       <div class="answer-details">
                         <div class="your-answer">
                           <strong>Your answer:</strong>
-                          <span [class.wrong]="!answer.isCorrect">{{ answer.userAnswer || '(no answer)' }}</span>
+                          <span [class.wrong]="!answer.isCorrect">{{ formatAnswerForDisplay(answer.userAnswer, answer.exerciseType) }}</span>
                         </div>
                         @if (!answer.isCorrect) {
                           <div class="correct-answer">
                             <strong>Correct:</strong>
-                            <span class="correct-text">{{ answer.correctAnswer }}</span>
+                            <span class="correct-text">{{ formatAnswerForDisplay(answer.correctAnswer, answer.exerciseType) }}</span>
                           </div>
                         }
                       </div>

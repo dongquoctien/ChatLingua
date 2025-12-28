@@ -426,4 +426,48 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
       this.showCelebration.set(false);
     }, 3000);
   }
+
+  /**
+   * Format answer for display in results based on exercise type
+   */
+  formatAnswerForDisplay(answer: string | null | undefined, exerciseType: string): string {
+    if (!answer) return '(no answer)';
+
+    try {
+      switch (exerciseType) {
+        case 'matching': {
+          const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
+          if (Array.isArray(parsed)) {
+            return parsed.map((p: any) => `${p.en} → ${p.vi}`).join(', ');
+          } else if (typeof parsed === 'object') {
+            return Object.entries(parsed).map(([en, vi]) => `${en} → ${vi}`).join(', ');
+          }
+          return answer;
+        }
+
+        case 'sentence_building': {
+          if (answer.startsWith('[')) {
+            const parsed = JSON.parse(answer);
+            if (Array.isArray(parsed)) {
+              return parsed.join(' ');
+            }
+          }
+          return answer;
+        }
+
+        case 'cloze': {
+          const parsed = JSON.parse(answer);
+          if (Array.isArray(parsed)) {
+            return parsed.map((a: any, i: number) => `[${i + 1}] ${a}`).join(', ');
+          }
+          return answer;
+        }
+
+        default:
+          return answer;
+      }
+    } catch {
+      return answer;
+    }
+  }
 }

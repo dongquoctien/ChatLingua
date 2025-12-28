@@ -39,7 +39,9 @@
             <span class="q-number">Q{{ i + 1 }}</span>
             <fa-icon [icon]="r.isCorrect ? faCheckCircle : faTimesCircle"></fa-icon>
             @if (!r.isCorrect) {
-              <span class="answer-info">Your: {{ r.userAnswer }} | Correct: {{ r.correctAnswer }}</span>
+              <span class="answer-info">
+                Your: {{ formatAnswerForDisplay(r.userAnswer, r.exerciseId) }} | Correct: {{ formatAnswerForDisplay(r.correctAnswer, r.exerciseId) }}
+              </span>
             }
           </div>
         }

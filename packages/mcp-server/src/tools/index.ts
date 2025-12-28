@@ -18,12 +18,19 @@ import { getGrammarList, getGrammarListTool } from './get-grammar-list';
 import { submitGrammarReview, submitGrammarReviewTool } from './submit-grammar-review';
 import { getGrammarReviewQueue, getGrammarReviewQueueTool } from './get-grammar-review-queue';
 
+// Auth tools
+import { login, loginTool, loginStatus, loginStatusTool, getAuthStatus, getAuthStatusTool } from './login';
+
 // Export all tool definitions
 // Order matters for Claude's understanding of the flow:
-// 1. analyze_conversation (Step 1)
-// 2. enrich_vocabulary (Step 2)
-// 3. generate_exercises (Step 3)
+// Auth tools first (so user can login)
+// Then learning flow tools
 export const tools: Tool[] = [
+  // Auth tools
+  loginTool,
+  loginStatusTool,
+  getAuthStatusTool,
+  // Learning flow
   analyzeConversationTool,
   enrichVocabularyTool,
   generateExercisesTool,
@@ -53,6 +60,14 @@ export async function handleToolCall(
   const argsWithUser = { ...args, _resolvedUserId: resolvedUserId };
 
   switch (name) {
+    // Auth tools
+    case 'login':
+      return login(argsWithUser, db);
+    case 'login_status':
+      return loginStatus(argsWithUser, db);
+    case 'get_auth_status':
+      return getAuthStatus(argsWithUser, db);
+    // Learning flow tools
     case 'analyze_conversation':
       return analyzeConversation(argsWithUser, db);
     case 'enrich_vocabulary':

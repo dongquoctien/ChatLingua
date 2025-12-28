@@ -1,0 +1,116 @@
+
+.mcp-auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  padding: 1rem;
+}
+
+.auth-card {
+  max-width: 450px;
+  width: 100%;
+  padding: 2rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+
+  fa-icon {
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  .subtitle {
+    color: var(--color-text-secondary);
+    margin-top: 0.5rem;
+  }
+}
+
+.status {
+  text-align: center;
+  padding: 2rem;
+
+  fa-icon {
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    margin: 0.5rem 0;
+  }
+
+  p {
+    color: var(--color-text-secondary);
+    margin: 0.5rem 0;
+  }
+}
+
+.checking fa-icon,
+.authenticating fa-icon {
+  color: var(--color-primary);
+}
+
+.success fa-icon {
+  color: var(--color-success);
+}
+
+.success .close-note {
+  margin-top: 1.5rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.error fa-icon,
+.expired fa-icon {
+  color: var(--color-error);
+}
+
+.login-section {
+  .logged-in-info {
+    text-align: center;
+
+    p {
+      margin-bottom: 1.5rem;
+    }
+
+    .note {
+      margin: 1rem 0;
+      color: var(--color-text-muted);
+    }
+  }
+
+  .login-form {
+    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+
+    .full-width {
+      width: 100%;
+    }
+
+    .error-message {
+      color: var(--color-error);
+      text-align: center;
+      padding: 0.5rem;
+      background: var(--color-error-light);
+      border-radius: var(--radius-sm);
+    }
+
+    button {
+      margin-top: 0.5rem;
+
+      fa-icon {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}

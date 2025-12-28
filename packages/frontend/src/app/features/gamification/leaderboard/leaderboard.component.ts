@@ -44,7 +44,7 @@ import { LeaderboardEntry, LeaderboardResponse } from '../../../core/services/ap
               </div>
               <div class="medal silver">
                 <fa-icon [icon]="faMedal"></fa-icon>
-                <span>2</span>
+                <span></span>
               </div>
               <div class="user-info">
                 <span class="username">{{ topThree()[1].displayName || topThree()[1].username }}</span>
@@ -68,7 +68,7 @@ import { LeaderboardEntry, LeaderboardResponse } from '../../../core/services/ap
               </div>
               <div class="medal gold">
                 <fa-icon [icon]="faMedal"></fa-icon>
-                <span>1</span>
+                <span></span>
               </div>
               <div class="user-info">
                 <span class="username">{{ topThree()[0].displayName || topThree()[0].username }}</span>
@@ -89,7 +89,7 @@ import { LeaderboardEntry, LeaderboardResponse } from '../../../core/services/ap
               </div>
               <div class="medal bronze">
                 <fa-icon [icon]="faMedal"></fa-icon>
-                <span>3</span>
+                <span></span>
               </div>
               <div class="user-info">
                 <span class="username">{{ topThree()[2].displayName || topThree()[2].username }}</span>
@@ -97,6 +97,20 @@ import { LeaderboardEntry, LeaderboardResponse } from '../../../core/services/ap
                   <fa-icon [icon]="faBolt"></fa-icon>
                   {{ formatNumber(topThree()[2].totalXp) }}
                 </span>
+              </div>
+              <div class="podium-stand bronze"></div>
+            </div>
+          } @else {
+            <div class="podium-item third placeholder">
+              <div class="avatar empty">
+                <fa-icon [icon]="faUser"></fa-icon>
+              </div>
+              <div class="medal bronze">
+                <fa-icon [icon]="faMedal"></fa-icon>
+                <span></span>
+              </div>
+              <div class="user-info">
+                <span class="username empty-text">---</span>
               </div>
               <div class="podium-stand bronze"></div>
             </div>
@@ -308,6 +322,20 @@ import { LeaderboardEntry, LeaderboardResponse } from '../../../core/services/ap
         background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
         border-color: #4ecdc4;
       }
+
+      &.empty {
+        background: linear-gradient(135deg, #ccc 0%, #999 100%);
+        opacity: 0.5;
+      }
+    }
+
+    .podium-item.placeholder {
+      opacity: 0.6;
+      cursor: default;
+
+      &:hover {
+        transform: none;
+      }
     }
 
     .medal {
@@ -359,10 +387,14 @@ import { LeaderboardEntry, LeaderboardResponse } from '../../../core/services/ap
         font-weight: 600;
         font-size: 0.9rem;
         color: #333;
-        max-width: 80px;
+        max-width: 120px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+
+        &.empty-text {
+          color: #999;
+        }
       }
 
       .xp {

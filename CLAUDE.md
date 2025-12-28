@@ -1,280 +1,384 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# ChatLingua Development Guidelines
 
 ## Project Overview
 
-ChatLingua is an English learning platform that integrates with Claude Desktop via MCP. Users tell AI about their day in Vietnamese, and the AI analyzes conversations to extract vocabulary, grammar points, and generate exercises.
+ChatLingua is an Angular-based language learning application with gamification features. This document contains coding standards and guidelines for development.
 
-## Architecture
+---
 
-```
-ChatLingua/
-├── packages/
-│   ├── mcp-server/     # MCP Server for Claude Desktop (TypeScript)
-│   ├── backend/        # REST API (Express.js + TypeScript)
-│   ├── frontend/       # Web App (Angular 18 + Material)
-│   └── shared/         # Shared types across packages
-├── database/
-│   └── migrations/     # MySQL schema migrations
-└── docker-compose.yml  # MySQL development setup
-```
+## Component Structure Rules
 
-**Data Flow**: The MCP server connects directly to MySQL (not through the backend API). The backend API serves the Angular frontend for web access.
+### REQUIRED: Separate Files
 
-## Build & Development Commands
+Every Angular component MUST have separate files:
 
-```bash
-# Install dependencies
-npm install
+- `component-name.component.ts` - TypeScript logic only
+- `component-name.component.html` - Template
+- `component-name.component.scss` - Styles
 
-# Start MySQL database
-docker-compose up -d
+### FORBIDDEN in .ts files
 
-# Build all packages
-npm run build:all
+```typescript
+// ❌ WRONG - DO NOT USE inline template
+@Component({
+  selector: 'app-example',
+  template: `<div>...</div>`,
+  styles: [`...`]
+})
 
-# Run backend + frontend together
-npm run dev
-
-# MCP Server
-npm run mcp:build          # Build MCP server
-npm run mcp:dev            # Watch mode
-
-# Backend API (port 3000)
-npm run backend:build      # Build backend
-npm run backend:dev        # Development mode with hot reload (tsx watch)
-
-# Frontend (port 4200)
-npm run frontend:build     # Production build
-npm run frontend:dev       # Development server (ng serve)
-npm run frontend:test      # Run tests (ng test) - in packages/frontend
-
-# Docker
-docker-compose up -d       # Start MySQL (container: mysql-local)
-docker-compose down        # Stop MySQL
+// ✅ CORRECT - Use external files
+@Component({
+  selector: 'app-example',
+  templateUrl: './example.component.html',
+  styleUrls: ['./example.component.scss']
+})
 ```
 
-## Environment Variables
+### Component Decorator Pattern
 
-Backend expects these in `.env` or environment:
-- `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` - MySQL connection
-- `JWT_SECRET` - For authentication tokens
-- `PORT` - Backend port (default: 3000)
-- `CORS_ORIGIN` - Frontend URL (default: http://localhost:4200)
+```typescript
+@Component({
+  selector: 'app-feature-name',
+  standalone: true,
+  imports: [
+    CommonModule,
+    // Angular Material modules
+    MatCardModule,
+    MatButtonModule,
+    // Other imports
+    FontAwesomeModule,
+  ],
+  templateUrl: './feature-name.component.html',
+  styleUrls: ['./feature-name.component.scss']
+})
+export class FeatureNameComponent {
+  // ...
+}
+```
 
-MCP server uses same DB variables plus optional auth:
-- `MCP_USERNAME`, `MCP_PASSWORD` - Auto-authenticate user for all tool calls
+---
 
-## MCP Tools
+## SCSS Guidelines
 
-The MCP server (`packages/mcp-server/src/tools/`) exposes these tools to Claude Desktop:
+### Use Shared Styles
 
-### Learning Flow (3 Steps)
+Import shared variables and mixins at the top of component SCSS files:
+
+```scss
+@use 'styles/variables' as *;
+@use 'styles/mixins' as *;
+```
+
+### CSS Custom Properties
+
+**Always use CSS variables for colors and spacing:**
+
+```scss
+// ✅ CORRECT
+.card {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+}
+
+// ❌ WRONG - hardcoded values
+.card {
+  background: #ffffff;
+  color: #333333;
+  padding: 20px;
+  border-radius: 12px;
+}
+```
+
+### Color Palette
+
+**Primary Color: Green (#22c55e)**
+
+| Variable | Value | Usage |
+|----------|-------|-------|
+| `--color-primary` | #22c55e | Main brand color |
+| `--color-primary-light` | #4ade80 | Hover states, highlights |
+| `--color-primary-dark` | #16a34a | Active states |
+| `--color-primary-100` | #dcfce7 | Light backgrounds |
+| `--color-primary-rgb` | 34, 197, 94 | For rgba() usage |
+
+**Semantic Colors:**
+
+| Variable | Value | Usage |
+|----------|-------|-------|
+| `--color-success` | #4caf50 | Success states |
+| `--color-error` | #f44336 | Error states |
+| `--color-warning` | #ff9800 | Warning states |
+| `--color-info` | #2196f3 | Info states |
+
+**Text Colors:**
+
+| Variable | Value | Usage |
+|----------|-------|-------|
+| `--color-text-primary` | #1a1a1a | Main text |
+| `--color-text-secondary` | #555555 | Secondary text |
+| `--color-text-muted` | #888888 | Disabled/muted text |
+
+### Spacing Scale
+
+```scss
+--spacing-xs: 4px;
+--spacing-sm: 8px;
+--spacing-md: 12px;
+--spacing-lg: 16px;
+--spacing-xl: 20px;
+--spacing-2xl: 24px;
+--spacing-3xl: 32px;
+--spacing-4xl: 48px;
+```
+
+### Border Radius
+
+```scss
+--radius-sm: 4px;    // Buttons, inputs
+--radius-md: 8px;    // Cards, dialogs
+--radius-lg: 12px;   // Large cards
+--radius-pill: 9999px; // Pills, badges
+```
+
+### Use Shared Component Classes
+
+These classes are defined in `_components.scss`:
+
+```scss
+// Cards
+.app-card { ... }
+.app-card--hoverable { ... }
+
+// Badges
+.badge { ... }
+.badge-primary { ... }
+.badge-success { ... }
+.badge-error { ... }
+
+// Empty states
+.empty-state { ... }
+
+// Messages
+.error-message { ... }
+.success-message { ... }
+
+// Loading
+.loading-spinner { ... }
+.loading-inline { ... }
+```
+
+### Use Mixins
+
+Available mixins in `_mixins.scss`:
+
+```scss
+// Flexbox
+@include flex-center;
+@include flex-between;
+@include flex-column;
+
+// Cards
+@include card-base;
+@include card-hover;
+
+// Text
+@include text-ellipsis;
+@include text-clamp(2);
+
+// Responsive
+@include mobile { ... }
+@include tablet { ... }
+@include desktop { ... }
+
+// Other
+@include custom-scrollbar;
+@include focus-ring;
+```
+
+---
+
+## FORBIDDEN Colors
+
+**NEVER use these hardcoded colors:**
+
+| Forbidden | Replace with |
+|-----------|--------------|
+| `#3f51b5` (indigo) | `var(--color-primary)` |
+| `#667eea` | `var(--color-primary)` |
+| `#fafafa` | `var(--color-bg-primary)` |
+| `#333` / `#333333` | `var(--color-text-primary)` |
+| `#666` / `#666666` | `var(--color-text-secondary)` |
+| `#999` / `#999999` | `var(--color-text-muted)` |
+
+---
+
+## TypeScript Guidelines
+
+### Use Angular Signals for State
+
+```typescript
+// ✅ Preferred - Signals
+isLoading = signal(false);
+items = signal<Item[]>([]);
+
+// For computed values
+totalCount = computed(() => this.items().length);
+```
+
+### Use inject() for Dependencies
+
+```typescript
+// ✅ Preferred
+private apiService = inject(ApiService);
+private router = inject(Router);
+
+// ❌ Avoid constructor injection for consistency
+constructor(private apiService: ApiService) { }
+```
+
+### Import Icons from Shared File
+
+```typescript
+// ✅ Correct
+import { faSpinner, faCheck, faTimes } from '../../../shared/icons';
+
+// ❌ Avoid direct FontAwesome imports when possible
+import { faSpinner } from '@fortawesome/free-solid-svg-icons';
+```
+
+---
+
+## File Organization
 
 ```
-User Input → analyze_conversation → enrich_vocabulary → generate_exercises
-                   (Step 1)            (Step 2)            (Step 3)
-                   ~5-10s              ~10-15s/batch        ~5-10s
+src/app/
+├── core/                    # Singleton services, guards, interceptors
+│   └── services/
+│       ├── api.service.ts
+│       └── auth.service.ts
+├── shared/                  # Shared modules, components, pipes
+│   ├── icons.ts            # Centralized icon exports
+│   └── components/
+├── features/               # Feature modules
+│   ├── dashboard/
+│   ├── exercises/
+│   ├── gamification/
+│   ├── quizzes/
+│   └── review/
+└── layout/                 # Layout components (navbar, sidebar)
+
+src/styles/                 # Global SCSS
+├── _variables.scss        # CSS custom properties
+├── _mixins.scss           # Reusable mixins
+├── _components.scss       # Shared component styles
+└── _animations.scss       # Keyframe animations
 ```
 
-| Tool | Step | Purpose |
-|------|------|---------|
-| `analyze_conversation` | 1 | Quick save: conversation + basic vocabulary |
-| `enrich_vocabulary` | 2 | Add dictionary data (definitions, examples, etc.) |
-| `generate_exercises` | 3 | Create practice exercises (can run parallel with Step 2) |
+---
 
-### Other Tools
+## Angular Material Theme
 
-| Tool | Purpose |
-|------|---------|
-| `get_vocabulary_list` | Retrieve user's vocabulary with filters |
-| `save_exercise_result` | Record individual exercise attempt |
-| `save_exercise_session` | Record batch of exercise results from a session |
-| `get_exercise_history` | Get user's exercise attempt history |
-| `get_learning_summary` | Get learning statistics and progress |
+The application uses a custom green Angular Material theme:
 
-### Spaced Repetition Tools (Vocabulary)
+```scss
+// Primary: Green palette (#22c55e)
+// Accent: Teal palette
+// Warn: Red palette
+```
 
-| Tool | Purpose |
-|------|---------|
-| `get_review_queue` | Get today's vocabulary review queue (overdue, due, new items) |
-| `submit_review` | Submit vocabulary review with quality rating (0-5), triggers SM2 calculation |
+Material components automatically use the theme colors. For custom styling, override with CSS variables.
 
-### Grammar Tools
+---
 
-| Tool | Purpose |
-|------|---------|
-| `get_grammar_list` | Retrieve user's grammar points with filters |
-| `get_grammar_review_queue` | Get today's grammar review queue (SM2-based) |
-| `generate_grammar_exercises` | Create grammar exercises (error correction, verb conjugation, etc.) |
-| `submit_grammar_review` | Submit grammar review with quality rating |
+## Common Patterns
 
-### Recommended Usage Flow
+### Dialog Component
 
-1. **analyze_conversation**: Extract basic vocabulary (quick)
-   - Returns `vocabularyIds[]` for next step
-2. **enrich_vocabulary**: Add dictionary data in batches of 3-5 words
-   - Retry once on failure, then skip
-3. **generate_exercises**: Create exercises from conversation
-   - Can run in parallel with Step 2
+```typescript
+@Component({
+  selector: 'app-my-dialog',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    FontAwesomeModule,
+  ],
+  templateUrl: './my-dialog.component.html',
+  styleUrls: ['./my-dialog.component.scss']
+})
+export class MyDialogComponent {
+  private dialogRef = inject(MatDialogRef<MyDialogComponent>);
+  private data = inject<DialogData>(MAT_DIALOG_DATA);
 
-## Database
+  close() {
+    this.dialogRef.close();
+  }
 
-MySQL database with core tables: `users`, `conversations`, `vocabulary`, `grammar_points`, `exercises`, `exercise_attempts`, `exercise_sessions`, `quizzes`, `quiz_attempts`, `user_statistics`, `daily_activity_log`, `vocabulary_reviews`, `daily_review_queue`, `user_learning_goals`.
-
-Additional tables for gamification: `achievements`, `user_achievements`, `user_xp`, `xp_transactions`, `challenge_templates`, `daily_challenges`, `weekly_leaderboard`, `notifications`, `user_difficulty_profile`.
-
-Grammar spaced repetition tables: `grammar_reviews`, `grammar_daily_queue`, `grammar_exercises`, `grammar_exercise_attempts`, `grammar_learning_goals`.
-
-### Spaced Repetition (SM2 Algorithm)
-
-The vocabulary table includes SM2 fields for spaced repetition:
-- `review_status`: `new` → `learning` → `reviewing` → `mastered`
-- `ease_factor`: 1.3-5.0 (default 2.5)
-- `review_interval`: days until next review
-- `next_review_at`: scheduled review date
-
-Review quality ratings: 0=blackout, 1=again, 2=hard, 3=good, 4=good+, 5=easy
-
-### Gamification System
-
-XP rewards are defined in `@chatlingua/shared/types/gamification.ts`:
-- Exercise correct: 5 XP, incorrect: 1 XP
-- Review good: 3 XP, easy: 4 XP
-- Quiz base: 10 XP, perfect bonus: 25 XP
-- Daily streak: 10 XP
-
-Grammar points also use SM2 with identical `review_status`, `ease_factor`, `review_interval`, and `next_review_at` fields
-
-## Claude Desktop Integration
-
-Add to `claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "chatlingua": {
-      "command": "node",
-      "args": ["path/to/packages/mcp-server/dist/index.js"],
-      "env": {
-        "DB_HOST": "localhost",
-        "DB_USER": "chatlingua",
-        "DB_PASSWORD": "chatlingua_pass",
-        "DB_NAME": "chatlingua",
-        "MCP_USERNAME": "user@example.com",
-        "MCP_PASSWORD": "your_password"
-      }
-    }
+  save() {
+    this.dialogRef.close(this.result);
   }
 }
 ```
 
-### MCP Authentication
+### Loading State Pattern
 
-The MCP server supports optional user authentication:
+```html
+@if (loading()) {
+  <div class="loading-spinner">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+} @else {
+  <!-- Content -->
+}
+```
 
-| Env Variable | Description |
-|-------------|-------------|
-| `MCP_USERNAME` | User's email (registered in the app) |
-| `MCP_PASSWORD` | User's password |
+### Empty State Pattern
 
-- If both `MCP_USERNAME` and `MCP_PASSWORD` are provided, the server authenticates and uses that user's ID for all operations
-- If credentials are invalid or not provided, defaults to `userId = 1`
-- Tools can still override userId explicitly if needed
+```html
+@if (items().length === 0) {
+  <div class="empty-state">
+    <fa-icon [icon]="faInbox" class="icon-4xl"></fa-icon>
+    <h3>No items found</h3>
+    <p>Start by adding your first item</p>
+  </div>
+}
+```
 
-### Multi-User Setup
+---
 
-To use a different account instead of the default `userId = 1`:
+## Responsive Design
 
-1. **Register account**: `POST /api/auth/register` with `{username, email, password}`
-2. **Update config**: Set `MCP_USERNAME` and `MCP_PASSWORD` in `claude_desktop_config.json`
-3. **Restart Claude Desktop**
+Use mobile-first approach with breakpoints:
 
-Config file locations:
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+```scss
+// Mobile: < 480px
+// Tablet: < 768px
+// Desktop: < 1024px
 
-### MCP Authentication Troubleshooting
+.container {
+  padding: var(--spacing-md);
 
-If MCP still uses `userId = 1` after setting credentials:
+  @include tablet {
+    padding: var(--spacing-lg);
+  }
 
-1. **Verify email exists in database**:
-   ```sql
-   SELECT id, email FROM users WHERE email = 'your_email@example.com';
-   ```
+  @include tablet-up {
+    padding: var(--spacing-2xl);
+  }
+}
+```
 
-2. **Verify password matches** (run in project root):
-   ```bash
-   node -e "const bcrypt = require('bcryptjs'); const mysql = require('mysql2/promise'); (async () => { const conn = await mysql.createConnection({host:'localhost',user:'chatlingua',password:'chatlingua_pass',database:'chatlingua'}); const [rows] = await conn.execute('SELECT password_hash FROM users WHERE email = ?', ['your_email']); const match = await bcrypt.compare('your_password', rows[0].password_hash); console.log('Match:', match); await conn.end(); })();"
-   ```
+---
 
-3. **Reset password if needed**:
-   ```bash
-   node -e "const bcrypt = require('bcryptjs'); const mysql = require('mysql2/promise'); (async () => { const hash = await bcrypt.hash('new_password', 10); const conn = await mysql.createConnection({host:'localhost',user:'chatlingua',password:'chatlingua_pass',database:'chatlingua'}); await conn.execute('UPDATE users SET password_hash = ? WHERE email = ?', [hash, 'your_email']); console.log('Password updated'); await conn.end(); })();"
-   ```
+## Checklist Before Commit
 
-4. **Restart Claude Desktop** after config changes
-
-## Backend API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/register` | POST | User registration |
-| `/api/auth/login` | POST | User login (returns JWT) |
-| `/api/auth/me` | GET | Get current user profile |
-| `/api/conversations` | GET | List user's conversations |
-| `/api/conversations/:id` | GET | Get conversation with vocabulary & grammar |
-| `/api/vocabulary` | GET | List vocabulary with filters |
-| `/api/vocabulary/review` | GET | Get vocabulary for review |
-| `/api/exercises` | GET | List exercises |
-| `/api/exercises/random` | GET | Get random exercises |
-| `/api/exercises/:id/submit` | POST | Submit exercise answer |
-| `/api/quizzes` | GET/POST | List or create quizzes |
-| `/api/quizzes/:id/start` | POST | Start a quiz attempt |
-| `/api/quizzes/:id/submit` | POST | Submit quiz answers |
-| `/api/stats/overview` | GET | User statistics overview |
-| `/api/stats/weekly` | GET | Weekly activity report |
-| `/api/stats/monthly` | GET | Monthly activity report |
-| `/api/review/queue` | GET | Today's review queue (SM2) |
-| `/api/review/submit` | POST | Submit flashcard review (rating: again/hard/good/easy) |
-| `/api/review/stats` | GET | Review statistics (mastery breakdown) |
-| `/api/review/streak` | GET | User's review streak |
-| `/api/review/goals` | GET/PUT | Learning goals settings |
-
-### Gamification Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/gamification/xp` | GET | User's XP and level info |
-| `/api/gamification/xp/history` | GET | XP transaction history |
-| `/api/gamification/levels` | GET | Level definitions |
-| `/api/gamification/achievements` | GET | All achievements with progress |
-| `/api/gamification/challenges` | GET | Today's daily challenges |
-| `/api/gamification/leaderboard` | GET | Weekly leaderboard |
-| `/api/gamification/notifications` | GET | User notifications |
-| `/api/gamification/summary` | GET | Complete gamification dashboard data |
-
-### Grammar Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/grammar` | GET | List grammar points with filters |
-| `/api/grammar/categories` | GET | Grammar categories with counts |
-| `/api/grammar/:id` | GET | Specific grammar point |
-| `/api/grammar/stats/overview` | GET | Grammar statistics |
-| `/api/grammar/review/queue` | GET | Today's grammar review queue |
-| `/api/grammar/review/submit` | POST | Submit grammar flashcard review |
-| `/api/grammar/exercises` | GET | Grammar exercises |
-| `/api/grammar/exercises/random` | GET | Random grammar exercises |
-| `/api/grammar/exercises/:id/submit` | POST | Submit grammar exercise answer |
-| `/api/grammar/goals` | GET/PUT | Grammar learning goals |
-
-## Key Patterns
-
-- **Monorepo**: npm workspaces for package management
-- **Shared Types**: `@chatlingua/shared` for cross-package type definitions
-- **MCP Protocol**: Uses `@modelcontextprotocol/sdk` for Claude Desktop integration
-- **Backend Auth**: JWT tokens with bcrypt password hashing
-- **Exercise Types**: `multiple_choice`, `fill_blank`, `translation`, `sentence_building`, `matching`, `spelling`, `listening`, `error_correction`, `verb_conjugation`, `cloze`
-- **Grammar Exercise Types**: `error_correction`, `verb_conjugation`, `tense_selection`, `article_usage`, `preposition_fill`, `sentence_transformation`, `word_order`
-- **MySQL Note**: COUNT/SUM/AVG functions may return strings - always use `Number()` to convert
+- [ ] Component uses separate `.ts`, `.html`, `.scss` files
+- [ ] No inline `template:` or `styles:` in component decorator
+- [ ] Uses CSS variables for colors and spacing
+- [ ] No hardcoded indigo (#3f51b5) or old theme colors
+- [ ] Imports shared SCSS where appropriate
+- [ ] Uses Angular signals for component state
+- [ ] Uses `inject()` for dependency injection

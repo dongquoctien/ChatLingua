@@ -260,4 +260,59 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
+
+  /**
+   * Format answer for display in results based on exercise type
+   */
+  formatAnswerForDisplay(answer: string | null | undefined, exerciseId: number): string {
+    if (!answer) return '(no answer)';
+
+    // Find the exercise to determine its type
+    const exercise = this.exercises().find(e => e.id === exerciseId);
+    if (!exercise) return answer;
+
+    try {
+      switch (exercise.exerciseType) {
+        case 'matching': {
+          // Parse matching answer: array of {en, vi, correct} or JSON object
+          const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
+          if (Array.isArray(parsed)) {
+            // User answer format: [{en, vi, correct}, ...]
+            return parsed.map((p: any) => `${p.en} → ${p.vi}`).join(', ');
+          } else if (typeof parsed === 'object') {
+            // Correct answer format: {en: vi, ...}
+            return Object.entries(parsed).map(([en, vi]) => `${en} → ${vi}`).join(', ');
+          }
+          return answer;
+        }
+
+        case 'sentence_building': {
+          // User's constructed sentence - just show as is if it's a string
+          // If it's an array of words, join them
+          if (answer.startsWith('[')) {
+            const parsed = JSON.parse(answer);
+            if (Array.isArray(parsed)) {
+              return parsed.join(' ');
+            }
+          }
+          return answer;
+        }
+
+        case 'cloze': {
+          // Cloze answers are JSON array
+          const parsed = JSON.parse(answer);
+          if (Array.isArray(parsed)) {
+            return parsed.map((a: any, i: number) => `[${i + 1}] ${a}`).join(', ');
+          }
+          return answer;
+        }
+
+        default:
+          return answer;
+      }
+    } catch {
+      // If parsing fails, return as-is
+      return answer;
+    }
+  }
 }

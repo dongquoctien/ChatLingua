@@ -189,7 +189,58 @@ export class QuizHistoryComponent implements OnInit {
       multiple_choice: 'Multiple Choice',
       fill_blank: 'Fill in the Blank',
       translation: 'Translation',
+      sentence_building: 'Sentence Building',
+      matching: 'Matching',
+      spelling: 'Spelling',
+      listening: 'Listening',
+      error_correction: 'Error Correction',
+      verb_conjugation: 'Verb Conjugation',
+      cloze: 'Cloze Test',
     };
     return labels[type] || type;
+  }
+
+  /**
+   * Format answer for display based on exercise type
+   */
+  formatAnswerForDisplay(answer: string | null | undefined, exerciseType: string): string {
+    if (!answer) return '(no answer)';
+
+    try {
+      switch (exerciseType) {
+        case 'matching': {
+          const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
+          if (Array.isArray(parsed)) {
+            return parsed.map((p: any) => `${p.en} → ${p.vi}`).join(', ');
+          } else if (typeof parsed === 'object') {
+            return Object.entries(parsed).map(([en, vi]) => `${en} → ${vi}`).join(', ');
+          }
+          return answer;
+        }
+
+        case 'sentence_building': {
+          if (answer.startsWith('[')) {
+            const parsed = JSON.parse(answer);
+            if (Array.isArray(parsed)) {
+              return parsed.join(' ');
+            }
+          }
+          return answer;
+        }
+
+        case 'cloze': {
+          const parsed = JSON.parse(answer);
+          if (Array.isArray(parsed)) {
+            return parsed.map((a: any, i: number) => `[${i + 1}] ${a}`).join(', ');
+          }
+          return answer;
+        }
+
+        default:
+          return answer;
+      }
+    } catch {
+      return answer;
+    }
   }
 }

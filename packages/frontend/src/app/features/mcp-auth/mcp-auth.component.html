@@ -1,0 +1,96 @@
+<div class="mcp-auth-container">
+  <mat-card class="auth-card">
+    <mat-card-content>
+      <!-- Header -->
+      <div class="header">
+        <fa-icon [icon]="faDesktop" size="3x"></fa-icon>
+        <h1>Claude Desktop Login</h1>
+        <p class="subtitle">Connect your ChatLingua account to Claude Desktop</p>
+      </div>
+
+      <!-- States -->
+      @switch (state()) {
+        @case ('checking') {
+          <div class="status checking">
+            <fa-icon [icon]="faSpinner" animation="spin" size="2x"></fa-icon>
+            <p>Verifying session...</p>
+          </div>
+        }
+
+        @case ('login') {
+          <div class="login-section">
+            @if (isLoggedIn()) {
+              <div class="logged-in-info">
+                <p>You are logged in as <strong>{{ currentUser() }}</strong></p>
+                <button mat-raised-button color="primary" (click)="authorize()">
+                  <fa-icon [icon]="faCheckCircle"></fa-icon>
+                  Authorize Claude Desktop
+                </button>
+                <p class="note">or</p>
+                <button mat-stroked-button (click)="switchAccount()">
+                  Login with different account
+                </button>
+              </div>
+            } @else {
+              <div class="login-form">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Email</mat-label>
+                  <input matInput [(ngModel)]="email" type="email">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Password</mat-label>
+                  <input matInput [(ngModel)]="password" type="password" (keyup.enter)="loginAndAuthorize()">
+                </mat-form-field>
+
+                @if (errorMessage()) {
+                  <div class="error-message">{{ errorMessage() }}</div>
+                }
+
+                <button mat-raised-button color="primary" (click)="loginAndAuthorize()" [disabled]="!email || !password">
+                  <fa-icon [icon]="faSignInAlt"></fa-icon>
+                  Login & Authorize
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        @case ('authenticating') {
+          <div class="status authenticating">
+            <fa-icon [icon]="faSpinner" animation="spin" size="2x"></fa-icon>
+            <p>Authorizing...</p>
+          </div>
+        }
+
+        @case ('success') {
+          <div class="status success">
+            <fa-icon [icon]="faCheckCircle" size="3x"></fa-icon>
+            <h2>Success!</h2>
+            <p>Claude Desktop has been authorized.</p>
+            <p class="close-note">You can close this window and return to Claude Desktop.</p>
+          </div>
+        }
+
+        @case ('error') {
+          <div class="status error">
+            <fa-icon [icon]="faTimesCircle" size="3x"></fa-icon>
+            <h2>Error</h2>
+            <p>{{ errorMessage() }}</p>
+            <button mat-raised-button color="primary" (click)="retry()">
+              Try Again
+            </button>
+          </div>
+        }
+
+        @case ('expired') {
+          <div class="status expired">
+            <fa-icon [icon]="faTimesCircle" size="3x"></fa-icon>
+            <h2>Session Expired</h2>
+            <p>This login session has expired. Please try again from Claude Desktop.</p>
+          </div>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

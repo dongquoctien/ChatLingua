@@ -26,6 +26,11 @@ export const routes: Routes = [
       },
     ],
   },
+  // MCP OAuth2 Device Flow - no auth guard (handles its own login)
+  {
+    path: 'mcp-auth',
+    loadComponent: () => import('./features/mcp-auth/mcp-auth.component').then(m => m.McpAuthComponent),
+  },
   {
     path: '',
     canActivate: [authGuard],
