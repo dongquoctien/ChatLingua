@@ -1,10 +1,14 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import routes from './routes/index.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Disable ETag to prevent 304 caching issues
+app.set('etag', false);
 
 // Middleware
 app.use(cors({
@@ -12,6 +16,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+
+// Serve static files from public folder (TTS audio files, etc.)
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Health check
 app.get('/health', (req, res) => {

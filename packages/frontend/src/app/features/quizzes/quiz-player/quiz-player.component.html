@@ -18,6 +18,20 @@
         Time: {{ formatTime(timeSpent()) }}
       </div>
 
+      <!-- XP Earned Display -->
+      @if ((result()!.xpAwarded ?? 0) > 0) {
+        <div class="xp-earned" [class.perfect]="result()!.isPerfect">
+          <fa-icon [icon]="faBolt" class="xp-icon"></fa-icon>
+          <span class="xp-amount">+{{ result()!.xpAwarded }} XP</span>
+          @if (result()!.isPerfect) {
+            <span class="perfect-badge">
+              <fa-icon [icon]="faStar"></fa-icon>
+              Perfect!
+            </span>
+          }
+        </div>
+      }
+
       <div class="results-breakdown">
         <h3>Results</h3>
         @for (r of result()!.results; track r.exerciseId; let i = $index) {
@@ -58,25 +72,105 @@
             @case ('multiple_choice') { Multiple Choice }
             @case ('fill_blank') { Fill in the Blank }
             @case ('translation') { Translation }
+            @case ('sentence_building') { Sentence Building }
+            @case ('matching') { Matching }
+            @case ('spelling') { Spelling }
+            @case ('listening') { Listening }
+            @case ('error_correction') { Error Correction }
+            @case ('verb_conjugation') { Verb Conjugation }
+            @case ('cloze') { Cloze Test }
           }
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
         <p class="question">{{ exercise.questionText }}</p>
 
-        @if (exercise.exerciseType === 'multiple_choice' && exercise.options) {
-          <mat-radio-group [ngModel]="getAnswer(exercise.id)" (ngModelChange)="setAnswer(exercise.id, $event)" class="options-list">
-            @for (option of exercise.options; track option) {
-              <mat-radio-button [value]="option">
-                {{ option }}
-              </mat-radio-button>
+        @switch (exercise.exerciseType) {
+          @case ('multiple_choice') {
+            @if (exercise.options) {
+              <mat-radio-group [ngModel]="getAnswer(exercise.id)" (ngModelChange)="setAnswer(exercise.id, $event)" class="options-list">
+                @for (option of exercise.options; track option) {
+                  <mat-radio-button [value]="option">
+                    {{ option }}
+                  </mat-radio-button>
+                }
+              </mat-radio-group>
             }
-          </mat-radio-group>
-        } @else {
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Your answer</mat-label>
-            <input matInput [ngModel]="getAnswer(exercise.id)" (ngModelChange)="setAnswer(exercise.id, $event)">
-          </mat-form-field>
+          }
+
+          @case ('sentence_building') {
+            <app-sentence-building
+              [exerciseData]="parseExerciseData(exercise)"
+              [currentAnswer]="getAnswer(exercise.id)"
+              [disabled]="false"
+              (answerChange)="onExerciseAnswer(exercise.id, $event)">
+            </app-sentence-building>
+          }
+
+          @case ('matching') {
+            <app-matching
+              [exerciseData]="parseExerciseData(exercise)"
+              [currentAnswer]="getAnswer(exercise.id)"
+              [disabled]="false"
+              (answerChange)="onExerciseAnswer(exercise.id, $event)">
+            </app-matching>
+          }
+
+          @case ('spelling') {
+            <app-spelling
+              [exerciseData]="parseExerciseData(exercise)"
+              [audioUrl]="exercise.audioUrl || ''"
+              [currentAnswer]="getAnswer(exercise.id)"
+              [disabled]="false"
+              (answerChange)="onExerciseAnswer(exercise.id, $event)">
+            </app-spelling>
+          }
+
+          @case ('listening') {
+            <app-listening
+              [exerciseData]="parseExerciseData(exercise)"
+              [audioUrl]="exercise.audioUrl || ''"
+              [currentAnswer]="getAnswer(exercise.id)"
+              [disabled]="false"
+              (answerChange)="onExerciseAnswer(exercise.id, $event)">
+            </app-listening>
+          }
+
+          @case ('error_correction') {
+            <app-error-correction
+              [question]="exercise.questionText"
+              [exerciseData]="parseExerciseData(exercise)"
+              [currentAnswer]="getAnswer(exercise.id)"
+              [disabled]="false"
+              (answerChange)="onExerciseAnswer(exercise.id, $event)">
+            </app-error-correction>
+          }
+
+          @case ('verb_conjugation') {
+            <app-verb-conjugation
+              [exerciseData]="parseExerciseData(exercise)"
+              [currentAnswer]="getAnswer(exercise.id)"
+              [disabled]="false"
+              (answerChange)="onExerciseAnswer(exercise.id, $event)">
+            </app-verb-conjugation>
+          }
+
+          @case ('cloze') {
+            <app-cloze
+              [exerciseData]="parseExerciseData(exercise)"
+              [currentAnswer]="getAnswer(exercise.id)"
+              [disabled]="false"
+              (answerChange)="onExerciseAnswer(exercise.id, $event)">
+            </app-cloze>
+          }
+
+          @default {
+            <!-- Default: fill_blank and translation -->
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Your answer</mat-label>
+              <input matInput [ngModel]="getAnswer(exercise.id)" (ngModelChange)="setAnswer(exercise.id, $event)">
+            </mat-form-field>
+          }
         }
       </mat-card-content>
       <mat-card-actions>

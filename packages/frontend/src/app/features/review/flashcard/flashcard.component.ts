@@ -202,13 +202,17 @@ export class FlashcardComponent implements OnInit, OnDestroy {
         this.updateSessionStats(rating);
         this.submitting.set(false);
 
-        // Move to next card after short delay
-        setTimeout(() => this.nextCard(), 500);
+        // First flip the card back to front
+        this.currentCard.set({ ...card, isFlipped: false });
+
+        // Wait for flip animation to complete (600ms), then move to next card
+        setTimeout(() => this.nextCard(), 650);
       },
       error: () => {
         this.submitting.set(false);
-        // Still move to next card on error
-        this.nextCard();
+        // Flip card back and move to next on error
+        this.currentCard.set({ ...card, isFlipped: false });
+        setTimeout(() => this.nextCard(), 650);
       }
     });
   }

@@ -1,0 +1,169 @@
+<div class="grammar-list-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>
+        <fa-icon [icon]="faBook"></fa-icon>
+        Grammar Rules
+      </h1>
+      <p>Master English grammar with spaced repetition</p>
+    </div>
+    <button mat-raised-button color="primary" routerLink="/grammar/review" class="start-review-btn">
+      <fa-icon [icon]="faPlay"></fa-icon>
+      Start Review
+    </button>
+  </div>
+
+  <!-- Stats Overview -->
+  @if (stats()) {
+    <div class="stats-overview">
+      <mat-card class="stat-card">
+        <div class="stat-icon total">
+          <fa-icon [icon]="faLayerGroup"></fa-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats()!.total }}</span>
+          <span class="stat-label">Total Rules</span>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-icon mastered">
+          <fa-icon [icon]="faCheckCircle"></fa-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats()!.byStatus.mastered }}</span>
+          <span class="stat-label">Mastered</span>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-icon learning">
+          <fa-icon [icon]="faBook"></fa-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats()!.byStatus.learning + stats()!.byStatus.reviewing }}</span>
+          <span class="stat-label">Learning</span>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat-card">
+        <div class="stat-icon due">
+          <fa-icon [icon]="faClock"></fa-icon>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats()!.reviewsDueToday }}</span>
+          <span class="stat-label">Due Today</span>
+        </div>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Filters -->
+  <mat-card class="filters-card">
+    <div class="filters-row">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search grammar rules</mat-label>
+        <input matInput
+               [ngModel]="searchQuery()"
+               (ngModelChange)="searchQuery.set($event)"
+               placeholder="e.g., present tense, articles...">
+        <fa-icon matPrefix [icon]="faSearch"></fa-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="category-field">
+        <mat-label>Category</mat-label>
+        <mat-select [ngModel]="selectedCategory()" (ngModelChange)="selectedCategory.set($event)">
+          <mat-option value="">All Categories</mat-option>
+          @for (cat of categories(); track cat.category) {
+            <mat-option [value]="cat.category">
+              {{ cat.category }} ({{ cat.count }})
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-field">
+        <mat-label>Status</mat-label>
+        <mat-select [ngModel]="selectedStatus()" (ngModelChange)="selectedStatus.set($event)">
+          @for (opt of statusOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (hasActiveFilters()) {
+        <button mat-button color="warn" (click)="clearFilters()" class="clear-btn">
+          Clear Filters
+        </button>
+      }
+    </div>
+  </mat-card>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <fa-icon [icon]="faSpinner" animation="spin" class="spinner"></fa-icon>
+      <p>Loading grammar rules...</p>
+    </div>
+  } @else {
+    <!-- Grammar Points List -->
+    <div class="grammar-grid">
+      @for (point of filteredGrammarPoints(); track point.id) {
+        <mat-card class="grammar-card" [routerLink]="['/grammar', point.id]">
+          <div class="card-header">
+            <div class="status-badge" [ngClass]="getStatusClass(point.reviewStatus)">
+              <fa-icon [icon]="getStatusIcon(point.reviewStatus)"></fa-icon>
+              {{ getStatusLabel(point.reviewStatus) }}
+            </div>
+            <span class="category-tag">{{ point.category }}</span>
+          </div>
+
+          <h3 class="grammar-rule">{{ point.grammarRule }}</h3>
+          <p class="explanation">{{ point.explanation }}</p>
+
+          @if (point.exampleEn) {
+            <div class="example">
+              <span class="example-label">Example:</span>
+              <span class="example-text">{{ point.exampleEn }}</span>
+            </div>
+          }
+
+          <div class="card-footer">
+            <div class="mastery-info">
+              <div class="mastery-bar">
+                <div class="mastery-fill"
+                     [style.width.%]="point.masteryLevel"
+                     [style.backgroundColor]="getMasteryColor(point.masteryLevel)">
+                </div>
+              </div>
+              <span class="mastery-label">{{ point.masteryLevel }}% mastery</span>
+            </div>
+
+            <div class="next-review" [class.overdue]="formatNextReview(point.nextReviewAt) === 'Overdue'">
+              <fa-icon [icon]="faClock"></fa-icon>
+              {{ formatNextReview(point.nextReviewAt) }}
+            </div>
+          </div>
+        </mat-card>
+      } @empty {
+        <div class="empty-state">
+          <fa-icon [icon]="faBook" class="empty-icon"></fa-icon>
+          <h3>No grammar rules found</h3>
+          <p>
+            @if (hasActiveFilters()) {
+              Try adjusting your filters or search query.
+            } @else {
+              Start learning by analyzing conversations with AI.
+            }
+          </p>
+          @if (hasActiveFilters()) {
+            <button mat-raised-button color="primary" (click)="clearFilters()">
+              Clear Filters
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

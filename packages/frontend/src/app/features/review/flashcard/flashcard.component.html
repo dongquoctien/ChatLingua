@@ -176,6 +176,12 @@
           @if (lastResult()) {
             <div class="result-feedback">
               Next review: {{ lastResult()!.intervalText }}
+              @if (lastResult()!.xpAwarded && lastResult()!.xpAwarded! > 0) {
+                <span class="xp-badge">
+                  <fa-icon [icon]="faBolt"></fa-icon>
+                  +{{ lastResult()!.xpAwarded }} XP
+                </span>
+              }
             </div>
           }
         </div>

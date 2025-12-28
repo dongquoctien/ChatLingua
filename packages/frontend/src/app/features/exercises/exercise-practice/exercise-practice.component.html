@@ -40,60 +40,141 @@
 <!-- Practice Mode -->
 @if (state() === 'practice') {
   <!-- Header with progress and timer -->
-  <div class="practice-header">
+  <div class="practice-header" role="region" aria-label="Practice progress">
     <div class="progress-section">
-      <mat-progress-bar mode="determinate" [value]="progressPercent()"></mat-progress-bar>
+      <mat-progress-bar mode="determinate" [value]="progressPercent()"
+                        aria-label="Question progress"></mat-progress-bar>
       <div class="progress-info">
         <span>Question {{ currentIndex() + 1 }} of {{ totalQuestions() }}</span>
         <span class="answered-info">{{ answeredCount() }}/{{ totalQuestions() }} answered</span>
       </div>
     </div>
-    <div class="timer">
+    <div class="timer" role="timer" aria-live="off" aria-label="Elapsed time">
       <fa-icon [icon]="faClock"></fa-icon>
       <span>{{ formattedTime() }}</span>
     </div>
   </div>
 
+  <!-- Keyboard shortcuts hint (desktop) -->
+  <div class="keyboard-hints" role="note" aria-label="Keyboard shortcuts">
+    <span class="hint-item"><kbd>&larr;</kbd><kbd>&rarr;</kbd> Navigate</span>
+    <span class="hint-item"><kbd>1-4</kbd> Select option</span>
+    <span class="hint-item"><kbd>Ctrl+Enter</kbd> Submit</span>
+  </div>
+
+  <!-- Mobile swipe hint -->
+  <div class="mobile-hints" role="note" aria-label="Touch gestures">
+    <span class="swipe-hint">Swipe left/right to navigate between questions</span>
+  </div>
+
   <!-- Question Card -->
-  <mat-card class="exercise-card">
+  <mat-card class="exercise-card"
+            [class.slide-out-left]="slideDirection() === 'left'"
+            [class.slide-out-right]="slideDirection() === 'right'"
+            [class.slide-in]="slideDirection() === 'none'"
+            role="article"
+            [attr.aria-label]="'Question ' + (currentIndex() + 1) + ' of ' + totalQuestions()">
     @if (currentExercise(); as exercise) {
       <mat-card-header>
-        <mat-card-title>
-          @switch (exercise.exerciseType) {
-            @case ('multiple_choice') { Multiple Choice }
-            @case ('fill_blank') { Fill in the Blank }
-            @case ('translation') { Translation }
-          }
-        </mat-card-title>
+        <mat-card-title>{{ getExerciseTypeLabel(exercise.exerciseType) }}</mat-card-title>
         <mat-card-subtitle>Question {{ currentIndex() + 1 }}</mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
-        <p class="question">{{ exercise.questionText }}</p>
+        <!-- Original exercise types -->
+        @if (exercise.exerciseType === 'multiple_choice' || exercise.exerciseType === 'fill_blank' || exercise.exerciseType === 'translation') {
+          <p class="question">{{ exercise.questionText }}</p>
 
-        @if (exercise.exerciseType === 'multiple_choice') {
-          @if (exercise.options && exercise.options.length > 0) {
-            <mat-radio-group [(ngModel)]="currentAnswer" class="options-list">
-              @for (option of exercise.options; track option) {
-                <mat-radio-button [value]="option">
-                  {{ option }}
-                </mat-radio-button>
-              }
-            </mat-radio-group>
+          @if (exercise.exerciseType === 'multiple_choice') {
+            @if (exercise.options && exercise.options.length > 0) {
+              <mat-radio-group [(ngModel)]="currentAnswer" class="options-list">
+                @for (option of exercise.options; track option) {
+                  <mat-radio-button [value]="option">
+                    {{ option }}
+                  </mat-radio-button>
+                }
+              </mat-radio-group>
+            } @else {
+              <div class="options-missing-warning">
+                <p>Options not available for this question. Please type your answer:</p>
+              </div>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Your answer</mat-label>
+                <input matInput [(ngModel)]="currentAnswer" (keyup.enter)="isLastQuestion() ? null : nextQuestion()">
+              </mat-form-field>
+            }
           } @else {
-            <div class="options-missing-warning">
-              <p>Options not available for this question. Please type your answer:</p>
-            </div>
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Your answer</mat-label>
               <input matInput [(ngModel)]="currentAnswer" (keyup.enter)="isLastQuestion() ? null : nextQuestion()">
             </mat-form-field>
           }
-        } @else {
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Your answer</mat-label>
-            <input matInput [(ngModel)]="currentAnswer" (keyup.enter)="isLastQuestion() ? null : nextQuestion()">
-          </mat-form-field>
+        }
+
+        <!-- Sentence Building -->
+        @if (exercise.exerciseType === 'sentence_building') {
+          <app-sentence-building
+            [exerciseData]="getExerciseData(exercise)!"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswerChange($event)">
+          </app-sentence-building>
+        }
+
+        <!-- Matching -->
+        @if (exercise.exerciseType === 'matching') {
+          <app-matching
+            [exerciseData]="getExerciseData(exercise)!"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswerChange($event)">
+          </app-matching>
+        }
+
+        <!-- Spelling -->
+        @if (exercise.exerciseType === 'spelling') {
+          <app-spelling
+            [exerciseData]="getExerciseData(exercise)!"
+            [audioUrl]="exercise.audioUrl"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswerChange($event)">
+          </app-spelling>
+        }
+
+        <!-- Listening -->
+        @if (exercise.exerciseType === 'listening') {
+          <app-listening
+            [exerciseData]="getExerciseData(exercise)!"
+            [audioUrl]="exercise.audioUrl!"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswerChange($event)">
+          </app-listening>
+        }
+
+        <!-- Error Correction -->
+        @if (exercise.exerciseType === 'error_correction') {
+          <app-error-correction
+            [question]="exercise.questionText"
+            [exerciseData]="getExerciseData(exercise)!"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswerChange($event)">
+          </app-error-correction>
+        }
+
+        <!-- Verb Conjugation -->
+        @if (exercise.exerciseType === 'verb_conjugation') {
+          <app-verb-conjugation
+            [exerciseData]="getExerciseData(exercise)!"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswerChange($event)">
+          </app-verb-conjugation>
+        }
+
+        <!-- Cloze Test -->
+        @if (exercise.exerciseType === 'cloze') {
+          <app-cloze
+            [exerciseData]="getExerciseData(exercise)!"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswerChange($event)">
+          </app-cloze>
         }
       </mat-card-content>
 
@@ -137,6 +218,21 @@
   </div>
 }
 
+<!-- Celebration Animation -->
+@if (showCelebration()) {
+  <div class="celebration-overlay">
+    <div class="confetti-container">
+      @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]; track i) {
+        <div class="confetti" [style.--delay]="i * 0.1 + 's'" [style.--x]="(i * 17 % 100) + '%'"></div>
+      }
+    </div>
+    <div class="celebration-content">
+      <fa-icon [icon]="faTrophy" class="trophy-icon"></fa-icon>
+      <h2>Congratulations!</h2>
+    </div>
+  </div>
+}
+
 <!-- Results Screen -->
 @if (state() === 'results' && result()) {
   <mat-card class="results-card">
@@ -164,6 +260,14 @@
           <fa-icon [icon]="faClock"></fa-icon>
           Time: {{ formattedTime() }}
         </div>
+
+        <!-- XP Earned Display -->
+        @if ((result()!.xpAwarded ?? 0) > 0) {
+          <div class="xp-earned" [class.excellent]="result()!.percentage >= 90">
+            <fa-icon [icon]="faBolt" class="xp-icon"></fa-icon>
+            <span class="xp-amount">+{{ result()!.xpAwarded }} XP</span>
+          </div>
+        }
       </div>
 
       <mat-divider></mat-divider>
@@ -179,7 +283,7 @@
                 <fa-icon [icon]="answer.isCorrect ? faCheckCircle : faTimesCircle"
                          [class.icon-correct]="answer.isCorrect"
                          [class.icon-incorrect]="!answer.isCorrect"></fa-icon>
-                <span class="exercise-type">{{ answer.exerciseType | titlecase }}</span>
+                <span class="exercise-type">{{ getExerciseTypeLabel(answer.exerciseType) }}</span>
               </div>
               <p class="review-question">{{ answer.questionText }}</p>
               <div class="review-answers">

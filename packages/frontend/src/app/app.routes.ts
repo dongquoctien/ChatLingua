@@ -87,6 +87,10 @@ export const routes: Routes = [
             loadComponent: () => import('./features/quizzes/quiz-list/quiz-list.component').then(m => m.QuizListComponent),
           },
           {
+            path: 'history',
+            loadComponent: () => import('./features/quizzes/quiz-history/quiz-history.component').then(m => m.QuizHistoryComponent),
+          },
+          {
             path: ':id/play',
             loadComponent: () => import('./features/quizzes/quiz-player/quiz-player.component').then(m => m.QuizPlayerComponent),
           },
@@ -116,6 +120,35 @@ export const routes: Routes = [
             loadComponent: () => import('./features/review/review-stats/review-stats.component').then(m => m.ReviewStatsComponent),
           },
         ],
+      },
+      {
+        path: 'grammar',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/grammar/grammar-list/grammar-list.component').then(m => m.GrammarListComponent),
+          },
+          {
+            path: 'review',
+            loadComponent: () => import('./features/grammar/grammar-flashcard/grammar-flashcard.component').then(m => m.GrammarFlashcardComponent),
+          },
+          {
+            path: 'exercises',
+            loadComponent: () => import('./features/grammar/grammar-exercise-practice/grammar-exercise-practice.component').then(m => m.GrammarExercisePracticeComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/grammar/grammar-detail/grammar-detail.component').then(m => m.GrammarDetailComponent),
+          },
+        ],
+      },
+      {
+        path: 'achievements',
+        loadComponent: () => import('./features/gamification/achievements-page/achievements-page.component').then(m => m.AchievementsPageComponent),
+      },
+      {
+        path: 'leaderboard',
+        loadComponent: () => import('./features/gamification/leaderboard-page/leaderboard-page.component').then(m => m.LeaderboardPageComponent),
       },
     ],
   },

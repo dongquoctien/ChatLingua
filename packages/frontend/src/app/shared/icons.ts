@@ -53,6 +53,7 @@ import {
   faExchangeAlt,
   faStopwatch,
   faChartPie,
+  faBell,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -117,6 +118,7 @@ export const icons = {
   faExchangeAlt,
   faStopwatch,
   faChartPie,
+  faBell,
 };
 
 // Re-export for individual imports
@@ -177,4 +179,5 @@ export {
   faExchangeAlt,
   faStopwatch,
   faChartPie,
+  faBell,
 };

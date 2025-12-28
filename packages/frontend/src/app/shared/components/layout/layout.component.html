@@ -22,6 +22,10 @@
         <fa-icon [icon]="faBrain" matListItemIcon></fa-icon>
         <span matListItemTitle>Daily Review</span>
       </a>
+      <a mat-list-item routerLink="/grammar" routerLinkActive="active">
+        <fa-icon [icon]="faBook" matListItemIcon></fa-icon>
+        <span matListItemTitle>Grammar</span>
+      </a>
       <a mat-list-item routerLink="/exercises" routerLinkActive="active">
         <fa-icon [icon]="faDumbbell" matListItemIcon></fa-icon>
         <span matListItemTitle>Exercises</span>
@@ -43,6 +47,36 @@
         <fa-icon [icon]="faBars"></fa-icon>
       </button>
       <span class="spacer"></span>
+
+      <!-- Notification Bell -->
+      <button mat-icon-button [matMenuTriggerFor]="notificationMenu" class="notification-btn">
+        <fa-icon
+          [icon]="faBell"
+          [matBadge]="notificationBadge().unreadCount > 0 ? notificationBadge().unreadCount : null"
+          matBadgeColor="warn"
+          matBadgeSize="small">
+        </fa-icon>
+      </button>
+      <mat-menu #notificationMenu="matMenu" class="notification-menu">
+        <div class="notification-header" (click)="$event.stopPropagation()">
+          <span>Notifications</span>
+        </div>
+        @if (notificationBadge().hasNewAchievements) {
+          <button mat-menu-item (click)="goToAchievements()">
+            <fa-icon [icon]="faTrophy" class="achievement-icon"></fa-icon>
+            <span>New achievements unlocked!</span>
+          </button>
+        }
+        @if (notificationBadge().unreadCount === 0 && !notificationBadge().hasNewAchievements) {
+          <div class="no-notifications" (click)="$event.stopPropagation()">
+            No new notifications
+          </div>
+        }
+        <mat-divider></mat-divider>
+        <a mat-menu-item routerLink="/achievements">
+          <span>View All Achievements</span>
+        </a>
+      </mat-menu>
 
       @if (authService.currentUser(); as user) {
         <button mat-button [matMenuTriggerFor]="userMenu">

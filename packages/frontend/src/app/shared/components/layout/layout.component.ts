@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, ViewChild, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, NavigationEnd, Router } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -6,6 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatDividerModule } from '@angular/material/divider';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
@@ -20,9 +22,13 @@ import {
   faUserCircle,
   faSignOutAlt,
   faBrain,
+  faBook,
+  faBell,
+  faTrophy,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
-import { Subscription, filter } from 'rxjs';
+import { ApiService } from '../../../core/services/api.service';
+import { Subscription, filter, interval } from 'rxjs';
 
 @Component({
   selector: 'app-layout',
@@ -35,6 +41,8 @@ import { Subscription, filter } from 'rxjs';
     MatSidenavModule,
     MatListModule,
     MatMenuModule,
+    MatBadgeModule,
+    MatDividerModule,
     FontAwesomeModule,
   ],
   templateUrl: './layout.component.html',
@@ -44,6 +52,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   @ViewChild('drawer') drawer!: MatSidenav;
 
   authService = inject(AuthService);
+  private apiService = inject(ApiService);
   private breakpointObserver = inject(BreakpointObserver);
   private router = inject(Router);
   private subscriptions: Subscription[] = [];
@@ -52,18 +61,27 @@ export class LayoutComponent implements OnInit, OnDestroy {
   sidenavMode: 'side' | 'over' = 'side';
   sidenavOpened = true;
 
+  // Notification badge
+  notificationBadge = signal<{ unreadCount: number; hasNewAchievements: boolean }>({
+    unreadCount: 0,
+    hasNewAchievements: false,
+  });
+
   // Icons
   faGraduationCap = faGraduationCap;
   faHome = faHome;
   faComments = faComments;
   faLanguage = faLanguage;
   faBrain = faBrain;
+  faBook = faBook;
   faDumbbell = faDumbbell;
   faQuestionCircle = faQuestionCircle;
   faChartLine = faChartLine;
   faBars = faBars;
   faUserCircle = faUserCircle;
   faSignOutAlt = faSignOutAlt;
+  faBell = faBell;
+  faTrophy = faTrophy;
 
   ngOnInit() {
     // Listen for screen size changes
@@ -85,13 +103,37 @@ export class LayoutComponent implements OnInit, OnDestroy {
         }
       });
     this.subscriptions.push(routerSub);
+
+    // Load notification badge
+    this.loadNotificationBadge();
+
+    // Refresh badge every 60 seconds
+    const badgeSub = interval(60000).subscribe(() => {
+      this.loadNotificationBadge();
+    });
+    this.subscriptions.push(badgeSub);
   }
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
+  loadNotificationBadge() {
+    this.apiService.getNotificationBadge().subscribe({
+      next: badge => {
+        this.notificationBadge.set(badge);
+      },
+      error: () => {
+        // Silently fail - notifications are not critical
+      },
+    });
+  }
+
   logout() {
     this.authService.logout();
+  }
+
+  goToAchievements() {
+    this.router.navigate(['/achievements']);
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface PaginatedResponse<T> {
@@ -172,11 +173,13 @@ export interface GrammarPoint {
 export interface Exercise {
   id: number;
   conversationId: number | null;
-  exerciseType: 'multiple_choice' | 'fill_blank' | 'translation';
+  exerciseType: 'multiple_choice' | 'fill_blank' | 'translation' | 'sentence_building' | 'matching' | 'spelling' | 'listening' | 'error_correction' | 'verb_conjugation' | 'cloze';
   questionText: string;
   options: string[] | null;
   correctAnswer?: string;
   difficultyLevel: string;
+  exerciseData?: string | object; // JSON data for advanced exercise types
+  audioUrl?: string; // Audio URL for listening/spelling exercises
 }
 
 export interface ExerciseResult {
@@ -218,6 +221,8 @@ export interface QuizStartResponse {
 export interface QuizSubmitResponse {
   score: number;
   totalQuestions: number;
+  xpAwarded?: number;
+  isPerfect?: boolean;
   results: {
     exerciseId: number;
     userAnswer: string;
@@ -254,13 +259,20 @@ export interface QuizAttemptDetail extends QuizAttempt {
 }
 
 // Exercise Session types
+export type ExerciseType =
+  | 'multiple_choice' | 'fill_blank' | 'translation'
+  | 'sentence_building' | 'matching' | 'spelling'
+  | 'listening' | 'error_correction' | 'verb_conjugation' | 'cloze';
+
 export interface SessionExercise {
   id: number;
-  exerciseType: 'multiple_choice' | 'fill_blank' | 'translation';
+  exerciseType: ExerciseType;
   questionText: string;
   options: string[] | null;
   difficultyLevel: string;
   questionOrder: number;
+  exerciseData?: unknown; // Type-specific data for new exercise types
+  audioUrl?: string; // Audio URL for listening/spelling exercises
 }
 
 export interface ExerciseSessionStart {
@@ -286,6 +298,7 @@ export interface SessionResult {
   total: number;
   percentage: number;
   timeSpent: number;
+  xpAwarded?: number;
   results: SessionAnswer[];
 }
 
@@ -356,6 +369,7 @@ export interface ReviewResult {
   newEaseFactor: number;
   newStatus: ReviewStatus;
   intervalText: string;
+  xpAwarded?: number;
 }
 
 export interface BatchReviewResult {
@@ -708,4 +722,431 @@ export class ApiService {
   updateLearningGoals(data: LearningGoalsUpdate): Observable<LearningGoals> {
     return this.http.put<LearningGoals>(`${this.baseUrl}/review/goals`, data);
   }
+
+  // ============================================================
+  // Gamification
+  // ============================================================
+
+  // Get XP and level info
+  getXPStatus(): Observable<UserXPStatus> {
+    return this.http.get<UserXPStatus>(`${this.baseUrl}/gamification/xp`);
+  }
+
+  // Get all achievements with progress
+  getAchievements(): Observable<UserAchievementInfo[]> {
+    interface ApiAchievementItem {
+      id: number;
+      achievementId: number;
+      achievement: {
+        achievementCode: string;
+        name: string;
+        description: string;
+        category: string;
+        icon: string;
+        xpReward: number;
+      };
+      unlockedAt?: string;
+      progressValue: number;
+      progressTarget: number;
+      isUnlocked: boolean;
+      notified: number;
+    }
+    return this.http.get<{ unlocked: ApiAchievementItem[]; locked: ApiAchievementItem[] }>(`${this.baseUrl}/gamification/achievements`).pipe(
+      map(response => {
+        const mapItem = (item: ApiAchievementItem): UserAchievementInfo => ({
+          id: item.id,
+          achievementCode: item.achievement.achievementCode,
+          name: item.achievement.name,
+          description: item.achievement.description,
+          category: item.achievement.category as UserAchievementInfo['category'],
+          icon: item.achievement.icon,
+          xpReward: item.achievement.xpReward,
+          isUnlocked: item.isUnlocked,
+          unlockedAt: item.unlockedAt,
+          progressValue: item.progressValue,
+          progressTarget: item.progressTarget,
+          progressPercentage: item.progressTarget > 0 ? Math.round((item.progressValue / item.progressTarget) * 100) : 0,
+          isNew: item.isUnlocked && item.notified === 0,
+        });
+        return [
+          ...(response.unlocked || []).map(mapItem),
+          ...(response.locked || []).map(mapItem)
+        ];
+      })
+    );
+  }
+
+  // Mark achievement notification as seen
+  markAchievementSeen(achievementId: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/gamification/achievements/${achievementId}/seen`, {});
+  }
+
+  // Get today's challenges
+  getDailyChallenges(): Observable<DailyChallengeInfo[]> {
+    return this.http.get<Array<{
+      id: number;
+      template: { challengeType: string; name: string; description: string };
+      status: string;
+      currentProgress: number;
+      targetValue: number;
+      xpReward: number;
+      expiresAt: string;
+      completedAt?: string;
+    }>>(`${this.baseUrl}/gamification/challenges`).pipe(
+      map(challenges => challenges.map(c => ({
+        id: c.id,
+        name: c.template.name,
+        description: c.template.description,
+        challengeType: c.template.challengeType,
+        status: c.status as DailyChallengeInfo['status'],
+        currentProgress: c.currentProgress,
+        targetValue: c.targetValue,
+        xpReward: c.xpReward,
+        progressPercentage: c.targetValue > 0 ? Math.round((c.currentProgress / c.targetValue) * 100) : 0,
+        expiresAt: c.expiresAt,
+        completedAt: c.completedAt,
+      })))
+    );
+  }
+
+  // Get weekly leaderboard
+  getLeaderboard(): Observable<LeaderboardResponse> {
+    return this.http.get<LeaderboardResponse>(`${this.baseUrl}/gamification/leaderboard`);
+  }
+
+  // Get notifications
+  getNotifications(unreadOnly = false): Observable<GamificationNotification[]> {
+    const params = new HttpParams().set('unreadOnly', unreadOnly);
+    return this.http.get<GamificationNotification[]>(`${this.baseUrl}/gamification/notifications`, { params });
+  }
+
+  // Get notification badge count
+  getNotificationBadge(): Observable<NotificationBadgeInfo> {
+    return this.http.get<NotificationBadgeInfo>(`${this.baseUrl}/gamification/notifications/badge`);
+  }
+
+  // Mark notification as read
+  markNotificationRead(notificationId: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/gamification/notifications/${notificationId}/read`, {});
+  }
+
+  // Mark all notifications as read
+  markAllNotificationsRead(): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/gamification/notifications/read-all`, {});
+  }
+
+  // Get gamification summary for dashboard
+  getGamificationSummary(): Observable<GamificationDashboard> {
+    return this.http.get<GamificationDashboard>(`${this.baseUrl}/gamification/summary`);
+  }
+
+  // ============================================================
+  // Grammar
+  // ============================================================
+
+  // Get grammar points list with filters
+  getGrammarPoints(filters?: GrammarFilters): Observable<GrammarPointInfo[]> {
+    let params = new HttpParams();
+    if (filters?.category) params = params.set('category', filters.category);
+    if (filters?.reviewStatus) params = params.set('reviewStatus', filters.reviewStatus);
+    if (filters?.search) params = params.set('search', filters.search);
+    if (filters?.conversationId) params = params.set('conversationId', filters.conversationId.toString());
+    return this.http.get<GrammarPointInfo[]>(`${this.baseUrl}/grammar`, { params });
+  }
+
+  // Get single grammar point detail
+  getGrammarPoint(id: number): Observable<GrammarPointDetail> {
+    return this.http.get<GrammarPointDetail>(`${this.baseUrl}/grammar/${id}`);
+  }
+
+  // Get grammar review queue (SM2)
+  getGrammarReviewQueue(): Observable<GrammarReviewQueueResponse> {
+    return this.http.get<GrammarReviewQueueResponse>(`${this.baseUrl}/grammar/review/queue`);
+  }
+
+  // Submit grammar review (SM2)
+  submitGrammarReview(grammarPointId: number, quality: number): Observable<GrammarReviewResult> {
+    return this.http.post<GrammarReviewResult>(`${this.baseUrl}/grammar/review/submit`, {
+      grammarPointId,
+      quality
+    });
+  }
+
+  // Get grammar statistics
+  getGrammarStats(): Observable<GrammarStatsResponse> {
+    return this.http.get<{
+      totalGrammarPoints: number;
+      masteredCount: number;
+      reviewingCount: number;
+      learningCount: number;
+      newCount: number;
+      averageMastery: number;
+      dueToday: number;
+      overdueCount: number;
+    }>(`${this.baseUrl}/grammar/stats/overview`).pipe(
+      map(response => ({
+        total: response.totalGrammarPoints,
+        byStatus: {
+          new: response.newCount,
+          learning: response.learningCount,
+          reviewing: response.reviewingCount,
+          mastered: response.masteredCount,
+        },
+        byCategory: [],
+        averageMastery: response.averageMastery,
+        reviewsDueToday: response.dueToday + response.overdueCount,
+        streakDays: 0,
+      }))
+    );
+  }
+
+  // Get grammar exercises
+  getGrammarExercises(filters?: GrammarExerciseFilters): Observable<GrammarExerciseInfo[]> {
+    let params = new HttpParams();
+    if (filters?.grammarPointId) params = params.set('grammarPointId', filters.grammarPointId.toString());
+    if (filters?.exerciseType) params = params.set('exerciseType', filters.exerciseType);
+    if (filters?.category) params = params.set('category', filters.category);
+    if (filters?.limit) params = params.set('limit', filters.limit.toString());
+    return this.http.get<GrammarExerciseInfo[]>(`${this.baseUrl}/grammar/exercises`, { params });
+  }
+
+  // Submit grammar exercise answer
+  submitGrammarExercise(exerciseId: number, answer: string | string[]): Observable<GrammarExerciseResult> {
+    return this.http.post<GrammarExerciseResult>(`${this.baseUrl}/grammar/exercises/${exerciseId}/submit`, {
+      answer
+    });
+  }
+
+  // Get grammar categories
+  getGrammarCategories(): Observable<GrammarCategoryInfo[]> {
+    return this.http.get<GrammarCategoryInfo[]>(`${this.baseUrl}/grammar/categories`);
+  }
+}
+
+// ============================================================
+// Gamification Types
+// ============================================================
+
+export interface UserXPStatus {
+  totalXp: number;
+  currentLevel: number;
+  title: string;
+  xpToNextLevel: number;
+  xpForCurrentLevel: number;
+  progressPercentage: number;
+  nextLevelTitle?: string;
+}
+
+export interface UserAchievementInfo {
+  id: number;
+  achievementCode: string;
+  name: string;
+  description: string;
+  category: 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone';
+  icon: string;
+  xpReward: number;
+  isUnlocked: boolean;
+  unlockedAt?: string;
+  progressValue: number;
+  progressTarget: number;
+  progressPercentage: number;
+  isNew: boolean; // Not yet notified
+}
+
+export interface DailyChallengeInfo {
+  id: number;
+  name: string;
+  description: string;
+  challengeType: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'expired';
+  currentProgress: number;
+  targetValue: number;
+  xpReward: number;
+  progressPercentage: number;
+  expiresAt: string;
+  completedAt?: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: number;
+  username: string;
+  displayName?: string;
+  totalXp: number;
+  level: number;
+  isCurrentUser: boolean;
+}
+
+export interface LeaderboardResponse {
+  weekStart: string;
+  weekEnd: string;
+  entries: LeaderboardEntry[];
+  currentUserRank?: number;
+  totalParticipants: number;
+}
+
+export interface GamificationNotification {
+  id: number;
+  notificationType: 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard';
+  title: string;
+  message: string;
+  icon?: string;
+  isRead: boolean;
+  createdAt: string;
+  metadata?: Record<string, any>;
+}
+
+export interface NotificationBadgeInfo {
+  unreadCount: number;
+  hasNewAchievements: boolean;
+  hasNewChallenges: boolean;
+}
+
+export interface GamificationDashboard {
+  xp: UserXPStatus;
+  streak: {
+    currentStreak: number;
+    longestStreak: number;
+    lastReviewDate?: string;
+  };
+  todaysChallenges: DailyChallengeInfo[];
+  recentAchievements: UserAchievementInfo[];
+  leaderboardRank?: number;
+  notificationBadge: NotificationBadgeInfo;
+}
+
+// ============================================================
+// Grammar Types
+// ============================================================
+
+export type GrammarReviewStatus = 'new' | 'learning' | 'reviewing' | 'mastered';
+
+export type GrammarExerciseType =
+  | 'error_correction'
+  | 'verb_conjugation'
+  | 'tense_selection'
+  | 'article_usage'
+  | 'preposition_fill'
+  | 'sentence_transformation'
+  | 'word_order';
+
+export interface GrammarFilters {
+  category?: string;
+  reviewStatus?: GrammarReviewStatus;
+  search?: string;
+  conversationId?: number;
+}
+
+export interface GrammarPointInfo {
+  id: number;
+  grammarRule: string;
+  explanation: string;
+  category: string;
+  exampleEn?: string;
+  exampleVi?: string;
+  conversationId?: number;
+  reviewStatus: GrammarReviewStatus;
+  masteryLevel: number;
+  nextReviewAt?: string;
+  reviewInterval: number;
+  easeFactor: number;
+  repetitionCount: number;
+  lastReviewedAt?: string;
+  createdAt: string;
+}
+
+export interface GrammarPointDetail extends GrammarPointInfo {
+  examples: { en: string; vi: string }[];
+  relatedRules: string[];
+  commonMistakes: string[];
+  usageNotes?: string;
+}
+
+export interface GrammarReviewQueueResponse {
+  date: string;
+  overdue: GrammarQueueItem[];
+  due: GrammarQueueItem[];
+  newItems: GrammarQueueItem[];
+  totalCount: number;
+  completedCount: number;
+  stats: {
+    overdueCount: number;
+    dueCount: number;
+    newCount: number;
+  };
+}
+
+export interface GrammarQueueItem {
+  id: number;
+  grammarPointId: number;
+  grammarPoint: {
+    id: number;
+    grammarRule: string;
+    explanation: string;
+    category?: string;
+    exampleEn?: string;
+    exampleVi?: string;
+    reviewStatus: GrammarReviewStatus;
+    masteryLevel: number;
+  };
+  priority: 'overdue' | 'due' | 'new';
+  queueOrder: number;
+  isCompleted: boolean;
+}
+
+export interface GrammarReviewResult {
+  success: boolean;
+  newInterval: number;
+  newEaseFactor: number;
+  newStatus: GrammarReviewStatus;
+  nextReviewAt: string;
+  masteryLevel: number;
+  xpEarned?: number;
+}
+
+export interface GrammarStatsResponse {
+  total: number;
+  byStatus: {
+    new: number;
+    learning: number;
+    reviewing: number;
+    mastered: number;
+  };
+  byCategory: { category: string; count: number }[];
+  averageMastery: number;
+  reviewsDueToday: number;
+  streakDays: number;
+}
+
+export interface GrammarExerciseFilters {
+  grammarPointId?: number;
+  exerciseType?: GrammarExerciseType;
+  category?: string;
+  limit?: number;
+}
+
+export interface GrammarExerciseInfo {
+  id: number;
+  grammarPointId?: number;
+  exerciseType: GrammarExerciseType;
+  question: string;
+  options?: string[];
+  correctAnswer: string;
+  explanation?: string;
+  category?: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+}
+
+export interface GrammarExerciseResult {
+  isCorrect: boolean;
+  correctAnswer: string;
+  explanation?: string;
+  xpEarned?: number;
+}
+
+export interface GrammarCategoryInfo {
+  category: string;
+  count: number;
+  masteredCount: number;
+  reviewingCount: number;
 }

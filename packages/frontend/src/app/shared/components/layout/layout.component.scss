@@ -77,6 +77,41 @@ mat-menu {
   }
 }
 
+// Notification bell styles
+.notification-btn {
+  margin-right: 8px;
+
+  fa-icon {
+    font-size: var(--icon-md); // 20px
+    margin-right: 0 !important;
+  }
+
+  ::ng-deep .mat-badge-content {
+    font-size: 10px;
+    right: -4px !important;
+    top: -4px !important;
+  }
+}
+
+.notification-header {
+  padding: 12px 16px;
+  font-weight: 500;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.no-notifications {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.achievement-icon {
+  color: #ffc107;
+  margin-right: 8px;
+}
+
 // Responsive styles
 @media (max-width: 768px) {
   .sidenav {

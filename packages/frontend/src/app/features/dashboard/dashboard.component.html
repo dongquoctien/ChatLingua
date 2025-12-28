@@ -4,6 +4,13 @@
     <p>Continue your English learning journey</p>
   </div>
 
+  <!-- XP Progress Bar -->
+  @if (xpStatus()) {
+    <div class="xp-section">
+      <app-xp-progress-bar [xpData]="getXpData()" [animated]="true"></app-xp-progress-bar>
+    </div>
+  }
+
   @if (loading()) {
     <div class="loading-spinner">
       <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
@@ -44,25 +51,27 @@
               <fa-icon [icon]="faBrain" class="review-icon"></fa-icon>
               <h3>Daily Review</h3>
             </div>
-            @if (streak() && streak()!.currentStreak > 0) {
-              <div class="streak-badge">
-                <fa-icon [icon]="faFire"></fa-icon>
-                {{ streak()!.currentStreak }} day streak
-              </div>
+            @if (streak()) {
+              @if (streak()!.currentStreak > 0) {
+                <div class="streak-badge">
+                  <fa-icon [icon]="faFire"></fa-icon>
+                  {{ streak()!.currentStreak }} day streak
+                </div>
+              }
             }
           </div>
 
           <div class="review-stats">
             <div class="review-stat">
-              <span class="number due">{{ queueStats()!.due + queueStats()!.overdue }}</span>
+              <span class="number due">{{ dueCount() }}</span>
               <span class="label">Due</span>
             </div>
             <div class="review-stat">
-              <span class="number new">{{ queueStats()!.new }}</span>
+              <span class="number new">{{ newCount() }}</span>
               <span class="label">New</span>
             </div>
             <div class="review-stat">
-              <span class="number done">{{ queueStats()!.completed }}</span>
+              <span class="number done">{{ doneCount() }}</span>
               <span class="label">Done</span>
             </div>
           </div>
@@ -140,6 +149,80 @@
             <div class="big-number">{{ stats()!.longestStreak }} days</div>
           </mat-card-content>
         </mat-card>
+      </div>
+    </div>
+
+    <!-- Gamification Section -->
+    <div class="gamification-section">
+      <!-- Daily Challenges -->
+      @if (dailyChallenges().length > 0) {
+        <div class="gamification-widget">
+          <app-daily-challenges [challenges]="dailyChallenges()"></app-daily-challenges>
+        </div>
+      }
+
+      <!-- Two Column Layout for Achievements and Leaderboard -->
+      <div class="gamification-row">
+        <!-- Recent Achievements -->
+        @if (getRecentAchievements().length > 0) {
+          <mat-card class="achievements-preview">
+            <div class="widget-header">
+              <h3>
+                <fa-icon [icon]="faTrophy" class="trophy-icon"></fa-icon>
+                Recent Achievements
+              </h3>
+              <a routerLink="/achievements" class="view-all-link">
+                View All
+                <fa-icon [icon]="faArrowRight"></fa-icon>
+              </a>
+            </div>
+            <div class="achievements-grid-small">
+              @for (achievement of getRecentAchievements(); track achievement.id) {
+                <div class="achievement-badge-small"
+                     [class.new]="achievement.isNew"
+                     (click)="onAchievementClick(achievement)">
+                  <div class="badge-icon">
+                    <fa-icon [icon]="faTrophy"></fa-icon>
+                  </div>
+                  <span class="badge-name">{{ achievement.name }}</span>
+                  @if (achievement.isNew) {
+                    <span class="new-indicator">NEW</span>
+                  }
+                </div>
+              }
+            </div>
+          </mat-card>
+        }
+
+        <!-- Leaderboard Preview -->
+        @if (leaderboard() && leaderboard()!.entries.length > 0) {
+          <mat-card class="leaderboard-preview">
+            <div class="widget-header">
+              <h3>
+                <fa-icon [icon]="faTrophy" class="trophy-icon gold"></fa-icon>
+                This Week's Top Learners
+              </h3>
+              <a routerLink="/leaderboard" class="view-all-link">
+                View Full
+                <fa-icon [icon]="faArrowRight"></fa-icon>
+              </a>
+            </div>
+            <div class="leaderboard-mini">
+              @for (entry of leaderboard()!.entries.slice(0, 5); track entry.userId) {
+                <div class="leaderboard-row" [class.current-user]="entry.isCurrentUser">
+                  <span class="rank" [class.top-3]="entry.rank <= 3">{{ entry.rank }}</span>
+                  <span class="name">{{ entry.displayName || entry.username }}</span>
+                  <span class="xp">{{ entry.totalXp }} XP</span>
+                </div>
+              }
+            </div>
+            @if (leaderboard()!.currentUserRank && leaderboard()!.currentUserRank! > 5) {
+              <div class="your-rank">
+                Your rank: #{{ leaderboard()!.currentUserRank }}
+              </div>
+            }
+          </mat-card>
+        }
       </div>
     </div>
   }

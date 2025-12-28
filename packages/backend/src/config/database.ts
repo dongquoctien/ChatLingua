@@ -6,6 +6,7 @@ const pool = mysql.createPool({
   user: process.env.DB_USER || 'chatlingua',
   password: process.env.DB_PASSWORD || 'chatlingua_pass',
   database: process.env.DB_NAME || 'chatlingua',
+  charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

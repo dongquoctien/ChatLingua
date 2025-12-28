@@ -12,6 +12,12 @@ import { saveExerciseSession, saveExerciseSessionTool } from './save-exercise-se
 import { getReviewQueue, getReviewQueueTool } from './get-review-queue';
 import { submitReview, submitReviewTool } from './submit-review';
 
+// Grammar tools
+import { generateGrammarExercises, generateGrammarExercisesTool } from './generate-grammar-exercises';
+import { getGrammarList, getGrammarListTool } from './get-grammar-list';
+import { submitGrammarReview, submitGrammarReviewTool } from './submit-grammar-review';
+import { getGrammarReviewQueue, getGrammarReviewQueueTool } from './get-grammar-review-queue';
+
 // Export all tool definitions
 // Order matters for Claude's understanding of the flow:
 // 1. analyze_conversation (Step 1)
@@ -26,9 +32,14 @@ export const tools: Tool[] = [
   saveExerciseSessionTool,
   getLearningSummaryTool,
   getExerciseHistoryTool,
-  // Spaced Repetition tools
+  // Spaced Repetition tools (Vocabulary)
   getReviewQueueTool,
   submitReviewTool,
+  // Grammar tools
+  generateGrammarExercisesTool,
+  getGrammarListTool,
+  getGrammarReviewQueueTool,
+  submitGrammarReviewTool,
 ];
 
 // Tool handler router
@@ -62,6 +73,15 @@ export async function handleToolCall(
       return getReviewQueue(argsWithUser, db);
     case 'submit_review':
       return submitReview(argsWithUser, db);
+    // Grammar tools
+    case 'generate_grammar_exercises':
+      return generateGrammarExercises(argsWithUser, db);
+    case 'get_grammar_list':
+      return getGrammarList(argsWithUser, db);
+    case 'get_grammar_review_queue':
+      return getGrammarReviewQueue(argsWithUser, db);
+    case 'submit_grammar_review':
+      return submitGrammarReview(argsWithUser, db);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

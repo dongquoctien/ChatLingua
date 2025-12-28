@@ -1,0 +1,189 @@
+<div class="grammar-exercise-page">
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <fa-icon [icon]="faSpinner" animation="spin" class="spinner"></fa-icon>
+      <p>Loading grammar exercises...</p>
+    </div>
+  } @else if (sessionComplete()) {
+    <!-- Session Complete -->
+    <div class="session-complete">
+      <mat-card class="complete-card">
+        <div class="complete-icon" [class.perfect]="getAccuracyPercentage() === 100">
+          <fa-icon [icon]="faCheckCircle"></fa-icon>
+        </div>
+        <h2>Practice Complete!</h2>
+
+        <div class="session-stats">
+          <div class="stat">
+            <span class="value">{{ session().completed }}</span>
+            <span class="label">Exercises</span>
+          </div>
+          <div class="stat correct">
+            <span class="value">{{ session().correct }}</span>
+            <span class="label">Correct</span>
+          </div>
+          <div class="stat">
+            <span class="value">{{ getAccuracyPercentage() }}%</span>
+            <span class="label">Accuracy</span>
+          </div>
+          <div class="stat xp">
+            <span class="value">+{{ session().xpEarned }}</span>
+            <span class="label">XP Earned</span>
+          </div>
+        </div>
+
+        @if (session().total === 0) {
+          <p class="message">No grammar exercises available. Start by reviewing grammar rules first.</p>
+        } @else if (getAccuracyPercentage() === 100) {
+          <p class="message perfect">Perfect score! You've mastered these grammar rules!</p>
+        } @else if (getAccuracyPercentage() >= 80) {
+          <p class="message">Great job! Keep practicing to perfect your grammar.</p>
+        } @else {
+          <p class="message">Good effort! Review the rules you missed and try again.</p>
+        }
+
+        <div class="complete-actions">
+          @if (session().total > 0) {
+            <button mat-stroked-button (click)="restartSession()">
+              <fa-icon [icon]="faRedo"></fa-icon>
+              Try Again
+            </button>
+          }
+          <button mat-raised-button color="primary" (click)="goToReview()">
+            <fa-icon [icon]="faBook"></fa-icon>
+            Grammar Review
+          </button>
+          <button mat-stroked-button (click)="goToGrammarList()">
+            <fa-icon [icon]="faGraduationCap"></fa-icon>
+            All Grammar
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  } @else {
+    <!-- Exercise Session -->
+    <div class="exercise-session">
+      <!-- Progress Header -->
+      <div class="progress-header">
+        <div class="progress-info">
+          <span class="count">{{ session().completed + 1 }} / {{ session().total }}</span>
+          <div class="stats-mini">
+            <span class="correct">{{ session().correct }} correct</span>
+            <span class="xp">+{{ session().xpEarned }} XP</span>
+          </div>
+        </div>
+        <mat-progress-bar mode="determinate" [value]="progress()"></mat-progress-bar>
+      </div>
+
+      <!-- Exercise Card -->
+      @if (currentExercise()) {
+        <mat-card class="exercise-card">
+          <!-- Exercise Meta -->
+          <div class="exercise-meta">
+            <span class="type-badge">
+              {{ getExerciseTypeLabel(currentExercise()!.exerciseType) }}
+            </span>
+            @if (currentExercise()!.category) {
+              <span class="category">{{ currentExercise()!.category }}</span>
+            }
+            <span class="difficulty" [ngClass]="getDifficultyClass(currentExercise()!.difficulty)">
+              {{ currentExercise()!.difficulty | titlecase }}
+            </span>
+          </div>
+
+          <!-- Question -->
+          <div class="question-section">
+            <h2 class="question">{{ currentExercise()!.question }}</h2>
+          </div>
+
+          <!-- Answer Input -->
+          @if (!showResult()) {
+            <div class="answer-section">
+              @if (isMultipleChoice()) {
+                <!-- Multiple Choice -->
+                <mat-radio-group
+                  [ngModel]="selectedOption()"
+                  (ngModelChange)="selectedOption.set($event)"
+                  class="options-group">
+                  @for (option of currentExercise()!.options; track option) {
+                    <mat-radio-button [value]="option" class="option">
+                      {{ option }}
+                    </mat-radio-button>
+                  }
+                </mat-radio-group>
+              } @else {
+                <!-- Text Input -->
+                <mat-form-field appearance="outline" class="answer-input">
+                  <mat-label>Your answer</mat-label>
+                  <input
+                    matInput
+                    [ngModel]="userAnswer()"
+                    (ngModelChange)="userAnswer.set($event)"
+                    (keyup.enter)="submitAnswer()"
+                    placeholder="Type your answer here...">
+                </mat-form-field>
+              }
+
+              <button
+                mat-raised-button
+                color="primary"
+                class="submit-btn"
+                [disabled]="submitting() || (!userAnswer() && !selectedOption())"
+                (click)="submitAnswer()">
+                @if (submitting()) {
+                  <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+                  Checking...
+                } @else {
+                  Check Answer
+                }
+              </button>
+            </div>
+          } @else {
+            <!-- Result -->
+            <div class="result-section" [class.correct]="lastResult()?.isCorrect" [class.incorrect]="!lastResult()?.isCorrect">
+              <div class="result-header">
+                @if (lastResult()?.isCorrect) {
+                  <fa-icon [icon]="faCheckCircle" class="result-icon correct"></fa-icon>
+                  <span class="result-text">Correct!</span>
+                } @else {
+                  <fa-icon [icon]="faTimes" class="result-icon incorrect"></fa-icon>
+                  <span class="result-text">Incorrect</span>
+                }
+                @if (lastResult()?.xpEarned) {
+                  <span class="xp-earned">+{{ lastResult()!.xpEarned }} XP</span>
+                }
+              </div>
+
+              @if (!lastResult()?.isCorrect) {
+                <div class="correct-answer">
+                  <span class="label">Correct answer:</span>
+                  <span class="answer">{{ lastResult()?.correctAnswer }}</span>
+                </div>
+              }
+
+              @if (lastResult()?.explanation) {
+                <div class="explanation">
+                  <fa-icon [icon]="faLightbulb"></fa-icon>
+                  <p>{{ lastResult()!.explanation }}</p>
+                </div>
+              }
+
+              <button mat-raised-button color="primary" class="next-btn" (click)="nextExercise()">
+                <fa-icon [icon]="faArrowRight"></fa-icon>
+                Next Exercise
+              </button>
+            </div>
+          }
+        </mat-card>
+      }
+
+      <!-- Navigation -->
+      <div class="navigation">
+        <button mat-button routerLink="/grammar">
+          Exit Practice
+        </button>
+      </div>
+    </div>
+  }
+</div>

@@ -4,7 +4,7 @@ import type { RowDataPacket } from 'mysql2';
 interface StatsRow extends RowDataPacket {
   user_id: number;
   total_conversations: number;
-  total_vocabulary: number;
+  total_vocabulary_learned: number;
   total_grammar_points: number;
   total_exercises_completed: number;
   total_correct_answers: number;
@@ -105,7 +105,7 @@ export class StatsService {
 
     return {
       totalConversations: stats.total_conversations,
-      totalVocabulary: stats.total_vocabulary,
+      totalVocabulary: stats.total_vocabulary_learned,
       totalGrammar: stats.total_grammar_points,
       totalExercises: stats.total_exercises_completed,
       totalQuizzes: stats.total_quizzes_taken,

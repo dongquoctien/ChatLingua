@@ -8,3 +8,4 @@ export * from './types/exercise';
 export * from './types/quiz';
 export * from './types/stats';
 export * from './types/review';
+export * from './types/gamification';

@@ -18,8 +18,21 @@ import {
   faArrowLeft,
   faArrowRight,
   faSpinner,
+  faBolt,
+  faStar,
 } from '../../../shared/icons';
 import { ApiService, Exercise, Quiz, QuizSubmitResponse } from '../../../core/services/api.service';
+
+// Import new exercise type components
+import {
+  SentenceBuildingComponent,
+  MatchingComponent,
+  SpellingComponent,
+  ListeningComponent,
+  ErrorCorrectionComponent,
+  VerbConjugationComponent,
+  ClozeComponent,
+} from '../../exercises/exercise-types';
 
 @Component({
   selector: 'app-quiz-player',
@@ -35,6 +48,14 @@ import { ApiService, Exercise, Quiz, QuizSubmitResponse } from '../../../core/se
     MatInputModule,
     MatProgressBarModule,
     FontAwesomeModule,
+    // New exercise type components
+    SentenceBuildingComponent,
+    MatchingComponent,
+    SpellingComponent,
+    ListeningComponent,
+    ErrorCorrectionComponent,
+    VerbConjugationComponent,
+    ClozeComponent,
   ],
   templateUrl: './quiz-player.component.html',
   styleUrl: './quiz-player.component.scss',
@@ -53,6 +74,8 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
   faArrowLeft = faArrowLeft;
   faArrowRight = faArrowRight;
   faSpinner = faSpinner;
+  faBolt = faBolt;
+  faStar = faStar;
 
   quiz = signal<Quiz | null>(null);
   exercises = signal<Exercise[]>([]);
@@ -85,6 +108,26 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
 
   hasAnswer(id: number): boolean {
     return !!this.answers()[id];
+  }
+
+  /**
+   * Handle answer from exercise components (new types)
+   */
+  onExerciseAnswer(exerciseId: number, answer: string): void {
+    this.setAnswer(exerciseId, answer);
+  }
+
+  /**
+   * Parse exercise data JSON safely
+   */
+  parseExerciseData(exercise: Exercise): any {
+    if (!exercise.exerciseData) return null;
+    if (typeof exercise.exerciseData === 'object') return exercise.exerciseData;
+    try {
+      return JSON.parse(exercise.exerciseData);
+    } catch {
+      return null;
+    }
   }
 
   ngOnInit() {

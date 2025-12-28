@@ -1,0 +1,160 @@
+<div class="grammar-review-page">
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <fa-icon [icon]="faSpinner" animation="spin" class="spinner"></fa-icon>
+      <p>Loading grammar review...</p>
+    </div>
+  } @else if (sessionComplete()) {
+    <!-- Session Complete -->
+    <div class="session-complete">
+      <mat-card class="complete-card">
+        <div class="complete-icon">
+          <fa-icon [icon]="faCheckCircle"></fa-icon>
+        </div>
+        <h2>Review Complete!</h2>
+
+        <div class="session-stats">
+          <div class="stat">
+            <span class="value">{{ session().completed }}</span>
+            <span class="label">Reviewed</span>
+          </div>
+          <div class="stat">
+            <span class="value">{{ session().correct }}</span>
+            <span class="label">Correct</span>
+          </div>
+          <div class="stat">
+            <span class="value">+{{ session().xpEarned }}</span>
+            <span class="label">XP Earned</span>
+          </div>
+        </div>
+
+        @if (session().total === 0) {
+          <p class="message">No grammar rules to review today. Great job staying on top of your learning!</p>
+        } @else {
+          <p class="message">You've reviewed all grammar rules for today. Keep up the great work!</p>
+        }
+
+        <div class="complete-actions">
+          @if (session().total > 0) {
+            <button mat-stroked-button (click)="restartSession()">
+              <fa-icon [icon]="faRedo"></fa-icon>
+              Review Again
+            </button>
+          }
+          <button mat-raised-button color="primary" (click)="goToExercises()">
+            <fa-icon [icon]="faGraduationCap"></fa-icon>
+            Practice Exercises
+          </button>
+          <button mat-stroked-button (click)="goToGrammarList()">
+            <fa-icon [icon]="faBook"></fa-icon>
+            Grammar List
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  } @else {
+    <!-- Review Session -->
+    <div class="review-session">
+      <!-- Progress Header -->
+      <div class="progress-header">
+        <div class="progress-info">
+          <span class="count">{{ session().completed + 1 }} / {{ session().total }}</span>
+          <span class="xp">+{{ session().xpEarned }} XP</span>
+        </div>
+        <mat-progress-bar mode="determinate" [value]="progress()"></mat-progress-bar>
+      </div>
+
+      <!-- Flashcard -->
+      @if (currentItem()) {
+        <div class="flashcard-container">
+          <mat-card class="flashcard" [class.flipped]="showAnswer()">
+            <!-- Front (Question) -->
+            <div class="card-front">
+              <div class="card-meta">
+                <span class="priority-badge" [ngClass]="getPriorityClass(currentItem()!.priority)">
+                  {{ getPriorityLabel(currentItem()!.priority) }}
+                </span>
+                @if (currentItem()!.grammarPoint.category) {
+                  <span class="category">{{ currentItem()!.grammarPoint.category }}</span>
+                }
+              </div>
+
+              <div class="card-content">
+                <h2 class="grammar-rule">{{ currentItem()!.grammarPoint.grammarRule }}</h2>
+
+                <div class="prompt">
+                  <fa-icon [icon]="faLightbulb"></fa-icon>
+                  <span>Can you explain this grammar rule and give an example?</span>
+                </div>
+              </div>
+
+              <button mat-raised-button color="primary" class="reveal-btn" (click)="revealAnswer()">
+                Show Answer
+                <span class="shortcut">(Space)</span>
+              </button>
+            </div>
+
+            <!-- Back (Answer) -->
+            @if (showAnswer()) {
+              <div class="card-back">
+                <div class="answer-content">
+                  <h3 class="rule-title">{{ currentItem()!.grammarPoint.grammarRule }}</h3>
+
+                  <div class="explanation">
+                    <h4>Explanation:</h4>
+                    <p>{{ currentItem()!.grammarPoint.explanation }}</p>
+                  </div>
+
+                  @if (currentItem()!.grammarPoint.exampleEn) {
+                    <div class="example-section">
+                      <h4>Example:</h4>
+                      <p class="example-en">{{ currentItem()!.grammarPoint.exampleEn }}</p>
+                      @if (currentItem()!.grammarPoint.exampleVi) {
+                        <p class="example-vi">{{ currentItem()!.grammarPoint.exampleVi }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <!-- Rating Buttons -->
+                <div class="rating-section">
+                  <p class="rating-prompt">How well did you remember this?</p>
+                  <div class="rating-buttons">
+                    @for (rating of ratings; track rating.quality) {
+                      <button
+                        mat-raised-button
+                        class="rating-btn"
+                        [style.backgroundColor]="rating.color"
+                        [disabled]="submitting()"
+                        (click)="submitRating(rating.quality)">
+                        <span class="rating-label">{{ rating.label }}</span>
+                        <span class="rating-shortcut">({{ rating.shortcut }})</span>
+                      </button>
+                    }
+                  </div>
+                  <div class="rating-hints">
+                    @for (rating of ratings; track rating.quality) {
+                      <span class="hint">{{ rating.description }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </mat-card>
+        </div>
+      }
+
+      <!-- Navigation -->
+      <div class="navigation">
+        <button mat-stroked-button [disabled]="!hasPrevious()" (click)="moveToPrevious()">
+          <fa-icon [icon]="faArrowLeft"></fa-icon>
+          Previous
+        </button>
+        <button mat-stroked-button routerLink="/grammar">
+          Exit Review
+        </button>
+      </div>
+    </div>
+  }
+</div>

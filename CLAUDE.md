@@ -48,6 +48,11 @@ npm run backend:dev        # Development mode with hot reload (tsx watch)
 # Frontend (port 4200)
 npm run frontend:build     # Production build
 npm run frontend:dev       # Development server (ng serve)
+npm run frontend:test      # Run tests (ng test) - in packages/frontend
+
+# Docker
+docker-compose up -d       # Start MySQL (container: mysql-local)
+docker-compose down        # Stop MySQL
 ```
 
 ## Environment Variables
@@ -89,12 +94,21 @@ User Input → analyze_conversation → enrich_vocabulary → generate_exercises
 | `get_exercise_history` | Get user's exercise attempt history |
 | `get_learning_summary` | Get learning statistics and progress |
 
-### Spaced Repetition Tools
+### Spaced Repetition Tools (Vocabulary)
 
 | Tool | Purpose |
 |------|---------|
 | `get_review_queue` | Get today's vocabulary review queue (overdue, due, new items) |
 | `submit_review` | Submit vocabulary review with quality rating (0-5), triggers SM2 calculation |
+
+### Grammar Tools
+
+| Tool | Purpose |
+|------|---------|
+| `get_grammar_list` | Retrieve user's grammar points with filters |
+| `get_grammar_review_queue` | Get today's grammar review queue (SM2-based) |
+| `generate_grammar_exercises` | Create grammar exercises (error correction, verb conjugation, etc.) |
+| `submit_grammar_review` | Submit grammar review with quality rating |
 
 ### Recommended Usage Flow
 
@@ -107,7 +121,11 @@ User Input → analyze_conversation → enrich_vocabulary → generate_exercises
 
 ## Database
 
-MySQL database with tables: `users`, `conversations`, `vocabulary`, `grammar_points`, `exercises`, `exercise_attempts`, `exercise_sessions`, `quizzes`, `quiz_attempts`, `user_statistics`, `daily_activity_log`, `vocabulary_reviews`, `daily_review_queue`, `user_learning_goals`.
+MySQL database with core tables: `users`, `conversations`, `vocabulary`, `grammar_points`, `exercises`, `exercise_attempts`, `exercise_sessions`, `quizzes`, `quiz_attempts`, `user_statistics`, `daily_activity_log`, `vocabulary_reviews`, `daily_review_queue`, `user_learning_goals`.
+
+Additional tables for gamification: `achievements`, `user_achievements`, `user_xp`, `xp_transactions`, `challenge_templates`, `daily_challenges`, `weekly_leaderboard`, `notifications`, `user_difficulty_profile`.
+
+Grammar spaced repetition tables: `grammar_reviews`, `grammar_daily_queue`, `grammar_exercises`, `grammar_exercise_attempts`, `grammar_learning_goals`.
 
 ### Spaced Repetition (SM2 Algorithm)
 
@@ -118,6 +136,16 @@ The vocabulary table includes SM2 fields for spaced repetition:
 - `next_review_at`: scheduled review date
 
 Review quality ratings: 0=blackout, 1=again, 2=hard, 3=good, 4=good+, 5=easy
+
+### Gamification System
+
+XP rewards are defined in `@chatlingua/shared/types/gamification.ts`:
+- Exercise correct: 5 XP, incorrect: 1 XP
+- Review good: 3 XP, easy: 4 XP
+- Quiz base: 10 XP, perfect bonus: 25 XP
+- Daily streak: 10 XP
+
+Grammar points also use SM2 with identical `review_status`, `ease_factor`, `review_interval`, and `next_review_at` fields
 
 ## Claude Desktop Integration
 
@@ -166,6 +194,27 @@ Config file locations:
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
+### MCP Authentication Troubleshooting
+
+If MCP still uses `userId = 1` after setting credentials:
+
+1. **Verify email exists in database**:
+   ```sql
+   SELECT id, email FROM users WHERE email = 'your_email@example.com';
+   ```
+
+2. **Verify password matches** (run in project root):
+   ```bash
+   node -e "const bcrypt = require('bcryptjs'); const mysql = require('mysql2/promise'); (async () => { const conn = await mysql.createConnection({host:'localhost',user:'chatlingua',password:'chatlingua_pass',database:'chatlingua'}); const [rows] = await conn.execute('SELECT password_hash FROM users WHERE email = ?', ['your_email']); const match = await bcrypt.compare('your_password', rows[0].password_hash); console.log('Match:', match); await conn.end(); })();"
+   ```
+
+3. **Reset password if needed**:
+   ```bash
+   node -e "const bcrypt = require('bcryptjs'); const mysql = require('mysql2/promise'); (async () => { const hash = await bcrypt.hash('new_password', 10); const conn = await mysql.createConnection({host:'localhost',user:'chatlingua',password:'chatlingua_pass',database:'chatlingua'}); await conn.execute('UPDATE users SET password_hash = ? WHERE email = ?', [hash, 'your_email']); console.log('Password updated'); await conn.end(); })();"
+   ```
+
+4. **Restart Claude Desktop** after config changes
+
 ## Backend API Endpoints
 
 | Endpoint | Method | Description |
@@ -192,11 +241,40 @@ Config file locations:
 | `/api/review/streak` | GET | User's review streak |
 | `/api/review/goals` | GET/PUT | Learning goals settings |
 
+### Gamification Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/gamification/xp` | GET | User's XP and level info |
+| `/api/gamification/xp/history` | GET | XP transaction history |
+| `/api/gamification/levels` | GET | Level definitions |
+| `/api/gamification/achievements` | GET | All achievements with progress |
+| `/api/gamification/challenges` | GET | Today's daily challenges |
+| `/api/gamification/leaderboard` | GET | Weekly leaderboard |
+| `/api/gamification/notifications` | GET | User notifications |
+| `/api/gamification/summary` | GET | Complete gamification dashboard data |
+
+### Grammar Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/grammar` | GET | List grammar points with filters |
+| `/api/grammar/categories` | GET | Grammar categories with counts |
+| `/api/grammar/:id` | GET | Specific grammar point |
+| `/api/grammar/stats/overview` | GET | Grammar statistics |
+| `/api/grammar/review/queue` | GET | Today's grammar review queue |
+| `/api/grammar/review/submit` | POST | Submit grammar flashcard review |
+| `/api/grammar/exercises` | GET | Grammar exercises |
+| `/api/grammar/exercises/random` | GET | Random grammar exercises |
+| `/api/grammar/exercises/:id/submit` | POST | Submit grammar exercise answer |
+| `/api/grammar/goals` | GET/PUT | Grammar learning goals |
+
 ## Key Patterns
 
 - **Monorepo**: npm workspaces for package management
 - **Shared Types**: `@chatlingua/shared` for cross-package type definitions
 - **MCP Protocol**: Uses `@modelcontextprotocol/sdk` for Claude Desktop integration
 - **Backend Auth**: JWT tokens with bcrypt password hashing
-- **Exercise Types**: `multiple_choice`, `fill_blank`, `translation`
+- **Exercise Types**: `multiple_choice`, `fill_blank`, `translation`, `sentence_building`, `matching`, `spelling`, `listening`, `error_correction`, `verb_conjugation`, `cloze`
+- **Grammar Exercise Types**: `error_correction`, `verb_conjugation`, `tense_selection`, `article_usage`, `preposition_fill`, `sentence_transformation`, `word_order`
 - **MySQL Note**: COUNT/SUM/AVG functions may return strings - always use `Number()` to convert

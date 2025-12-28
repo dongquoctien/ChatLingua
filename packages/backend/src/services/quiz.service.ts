@@ -1,5 +1,7 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { gamificationService } from './gamification.service.js';
+import { challengeService } from './challenge.service.js';
 
 interface QuizRow extends RowDataPacket {
   id: number;
@@ -227,7 +229,7 @@ export class QuizService {
     // Get exercises (without correct answers)
     const placeholders = quiz.exerciseIds.map(() => '?').join(', ');
     const [exercises] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, exercise_type, question, options, difficulty_level
+      `SELECT id, exercise_type, question, options, difficulty_level, exercise_data, audio_url
        FROM exercises WHERE id IN (${placeholders})`,
       quiz.exerciseIds
     );
@@ -249,12 +251,28 @@ export class QuizService {
             }
           }
         }
+        // Parse exercise_data if it exists
+        let exerciseData = null;
+        if (e.exercise_data) {
+          if (typeof e.exercise_data === 'object') {
+            exerciseData = e.exercise_data;
+          } else if (typeof e.exercise_data === 'string') {
+            try {
+              exerciseData = JSON.parse(e.exercise_data);
+            } catch {
+              exerciseData = null;
+            }
+          }
+        }
+
         return {
           id: e.id,
           exerciseType: e.exercise_type,
           questionText: e.question,
           options,
           difficultyLevel: e.difficulty_level,
+          exerciseData,
+          audioUrl: e.audio_url || null,
         };
       }),
     };
@@ -265,7 +283,7 @@ export class QuizService {
     quizId: number,
     attemptId: number,
     input: SubmitQuizInput
-  ): Promise<{ score: number; totalQuestions: number; results: any[] }> {
+  ): Promise<{ score: number; totalQuestions: number; results: any[]; xpAwarded?: number; isPerfect?: boolean }> {
     // Verify attempt belongs to user and is not completed
     const [attempts] = await pool.execute<QuizAttemptRow[]>(
       'SELECT * FROM quiz_attempts WHERE id = ? AND quiz_id = ? AND user_id = ? AND completed_at IS NULL',
@@ -332,10 +350,66 @@ export class QuizService {
       [userId]
     );
 
+    // Award XP for quiz completion
+    let xpAwarded = 0;
+    const isPerfect = score === 100;
+
+    // Base XP based on score
+    // 0-49%: 5 XP, 50-69%: 10 XP, 70-89%: 15 XP, 90-99%: 20 XP, 100%: 30 XP
+    if (score < 50) {
+      xpAwarded = 5;
+    } else if (score < 70) {
+      xpAwarded = 10;
+    } else if (score < 90) {
+      xpAwarded = 15;
+    } else if (score < 100) {
+      xpAwarded = 20;
+    } else {
+      xpAwarded = 30; // Perfect score!
+    }
+
+    // Bonus XP based on number of questions
+    xpAwarded += Math.floor(exercises.length / 5) * 2; // +2 XP per 5 questions
+
+    // Bonus for time efficiency (if quiz has time limit and completed quickly)
+    if (quiz.timeLimitMinutes) {
+      const timeLimitSeconds = quiz.timeLimitMinutes * 60;
+      if (input.timeSpentSeconds < timeLimitSeconds * 0.5) {
+        xpAwarded += 5; // Speed bonus
+      }
+    }
+
+    try {
+      await gamificationService.awardXP(userId, xpAwarded, 'quiz', quizId, `Quiz "${quiz.title}" - Score: ${score}%`);
+
+      // Update leaderboard
+      await gamificationService.updateLeaderboard(userId, { xp: xpAwarded, quizzes: 1 });
+
+      // Check achievements
+      await gamificationService.checkAchievements(userId, 'quiz_complete', { isPerfect });
+    } catch (error) {
+      console.error('Failed to award XP for quiz:', error);
+    }
+
+    // Update challenge progress
+    try {
+      await challengeService.updateProgress(userId, 'quiz', 1);
+      if (isPerfect) {
+        await challengeService.updateProgress(userId, 'perfect_score', 1);
+      }
+      if (input.timeSpentSeconds < 180) { // Under 3 minutes
+        await challengeService.updateProgress(userId, 'speed_quiz', 1);
+      }
+    } catch (error) {
+      console.error('Failed to update challenge progress:', error);
+    }
+
     return {
       score,
       totalQuestions: exercises.length,
       results,
+      xpAwarded,
+      isPerfect,
     };
   }
 
