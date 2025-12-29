@@ -151,7 +151,7 @@ export class ReviewStatsComponent implements OnInit {
     const p3 = p2 + learningPct;
 
     return `background: conic-gradient(
-      #22c55e 0% ${p1}%,
+      #111827 0% ${p1}%,
       #6b7280 ${p1}% ${p2}%,
       #f97316 ${p2}% ${p3}%,
       #9ca3af ${p3}% 100%
@@ -165,10 +165,10 @@ export class ReviewStatsComponent implements OnInit {
   }
 
   getQualityClass(quality: number): string {
-    if (quality <= 1) return 'bg-red-500';
-    if (quality === 2) return 'bg-orange-500';
-    if (quality === 3) return 'bg-gray-900';
-    if (quality >= 4) return 'bg-gray-800';
+    if (quality <= 1) return 'bg-red-700';
+    if (quality === 2) return 'bg-orange-700';
+    if (quality === 3) return 'bg-green-700';
+    if (quality >= 4) return 'bg-blue-700';
     return 'bg-gray-500';
   }
 
