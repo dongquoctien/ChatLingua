@@ -21,6 +21,7 @@ interface VocabularyRow extends RowDataPacket {
   pronunciation_us: string | null;
   part_of_speech: string | null;
   difficulty_level: string;
+  mastery_level: number;
   // From vocabulary_contexts join
   context_vietnamese_word: string | null;
   example_sentence_vi: string | null;
@@ -60,6 +61,7 @@ export interface ConversationDetail extends ConversationSummary {
     exampleVi: string | null;
     exampleEn: string | null;
     difficultyLevel: string;
+    masteryLevel: number;
   }>;
   grammarPoints: Array<{
     id: number;
@@ -134,7 +136,7 @@ export class ConversationService {
     // Get vocabulary via vocabulary_contexts junction table
     const [vocabulary] = await pool.execute<VocabularyRow[]>(
       `SELECT v.id, v.vietnamese_word, v.english_word, v.phonetic, v.pronunciation_uk, v.pronunciation_us,
-              v.part_of_speech, v.difficulty_level,
+              v.part_of_speech, v.difficulty_level, v.mastery_level,
               vc.vietnamese_word as context_vietnamese_word,
               vc.example_sentence_vi, vc.example_sentence_en
        FROM vocabulary_contexts vc
@@ -169,6 +171,7 @@ export class ConversationService {
         exampleVi: v.example_sentence_vi,
         exampleEn: v.example_sentence_en,
         difficultyLevel: v.difficulty_level,
+        masteryLevel: v.mastery_level,
       })),
       grammarPoints: grammarPoints.map((g) => ({
         id: g.id,

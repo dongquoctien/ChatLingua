@@ -121,3 +121,38 @@ All API types are defined in `core/services/api.service.ts`. Key types:
 
 - Development API: `http://localhost:3000/api` (defined in `src/environments/environment.ts`)
 - Production: uses `environment.prod.ts` file replacement
+
+## Common Patterns
+
+### Pagination Pattern
+
+List components (vocabulary-list, grammar-list) use Angular signals for client-side pagination:
+
+```typescript
+// State signals
+page = signal(1);
+pageSize = signal(10);
+
+// Computed paginated list
+paginatedItems = computed(() => {
+  const filtered = this.filteredItems();
+  const start = (this.page() - 1) * this.pageSize();
+  return filtered.slice(start, start + this.pageSize());
+});
+
+// Helpers as getters
+get totalPages(): number {
+  return Math.ceil(this.filteredItems().length / this.pageSize()) || 1;
+}
+```
+
+### Styling
+
+- Use TailwindCSS utility classes for all styling
+- Grayscale color palette: `gray-50` to `gray-900` for primary UI
+- Accent colors: `orange-500` for warnings, `red-500` for errors
+- Consistent spacing: `p-4`/`p-6` for containers, `gap-4` for flex/grid
+
+## Screenshots
+
+App screenshots for documentation are stored in `/screenshots/` directory.

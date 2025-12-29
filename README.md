@@ -5,9 +5,11 @@ English learning platform powered by AI conversation analysis. Integrates with C
 ## Features
 
 - **Conversation Analysis**: Tell AI about your day in Vietnamese, get English vocabulary and grammar lessons
-- **Smart Exercises**: Multiple choice, fill-in-blank, and translation exercises generated from your conversations
-- **Spaced Repetition**: SM2-based vocabulary review system with daily queues and streak tracking
+- **Smart Exercises**: 10 exercise types including multiple choice, fill-in-blank, translation, sentence building, matching, spelling, listening, and more
+- **Spaced Repetition**: SM2-based vocabulary and grammar review system with daily queues and streak tracking
 - **Quiz System**: Timed quizzes with scoring, multiple attempts, and progress tracking
+- **Grammar Learning**: Extract and practice grammar rules from your conversations
+- **Gamification**: XP system, achievements, daily challenges, and leaderboard
 - **Statistics & Reports**: Track your learning streak, vocabulary mastery, and quiz performance
 - **Web Dashboard**: Angular-based web app for reviewing vocabulary, taking quizzes, and tracking progress
 
@@ -16,8 +18,32 @@ English learning platform powered by AI conversation analysis. Integrates with C
 ### Dashboard
 ![Dashboard](/screenshots/dashboard.png)
 
-### Grammar
+### Vocabulary List
+![Vocabulary](/screenshots/vocabulary.png)
+
+### Vocabulary Detail (Dictionary)
+![Vocabulary Detail](/screenshots/vocabulary-detail.png)
+
+### Grammar Rules
 ![Grammar](/screenshots/grammar.png)
+
+### Daily Review (Flashcards)
+![Daily Review](/screenshots/daily-review.png)
+
+### Exercises
+![Exercises](/screenshots/exercises.png)
+
+### Quizzes
+![Quizzes](/screenshots/quizzes.png)
+
+### Achievements
+![Achievements](/screenshots/achievements.png)
+
+### Leaderboard
+![Leaderboard](/screenshots/leaderboard.png)
+
+### Reports
+![Reports](/screenshots/reports.png)
 
 ## Quick Start
 
@@ -152,6 +178,15 @@ Close and reopen Claude Desktop to apply the new configuration.
 | `get_review_queue` | Get today's vocabulary review queue (overdue, due, new items) |
 | `submit_review` | Submit review with quality rating (0-5), calculates next interval |
 
+### Grammar
+
+| Tool | Purpose |
+|------|---------|
+| `get_grammar_list` | Retrieve grammar points with filters |
+| `get_grammar_review_queue` | Get today's grammar review queue |
+| `submit_grammar_review` | Submit grammar review with rating |
+| `generate_grammar_exercises` | Create grammar-focused exercises |
+
 ## Usage Examples
 
 ### In Claude Desktop
@@ -176,11 +211,15 @@ Claude: [Shows flashcards, you rate each one, SM2 schedules next review]
 
 ### In Web App
 
-1. **Dashboard**: View learning progress and statistics
-2. **Vocabulary**: Browse, search, and filter your vocabulary
-3. **Review**: Flashcard-style spaced repetition review
-4. **Quizzes**: Take timed quizzes on your vocabulary
-5. **Exercises**: Practice with generated exercises
+1. **Dashboard**: View learning progress, streaks, and statistics
+2. **Vocabulary**: Browse, search, and filter vocabulary with full dictionary entries
+3. **Grammar**: Learn and review grammar rules extracted from conversations
+4. **Review**: Flashcard-style spaced repetition review for vocabulary and grammar
+5. **Exercises**: Practice with 10 different exercise types
+6. **Quizzes**: Take timed quizzes on your vocabulary
+7. **Achievements**: Unlock achievements and earn XP
+8. **Leaderboard**: Compete with other learners
+9. **Reports**: View detailed learning analytics
 
 ## Project Structure
 
@@ -199,8 +238,8 @@ ChatLingua/
 ## Tech Stack
 
 - **MCP Server**: TypeScript, @modelcontextprotocol/sdk, mysql2
-- **Backend**: Node.js, Express, TypeScript, JWT authentication
-- **Frontend**: Angular 18, Angular Material, FontAwesome
+- **Backend**: Node.js, Express, TypeScript, JWT authentication, msedge-tts
+- **Frontend**: Angular 18, TailwindCSS, FontAwesome
 - **Database**: MySQL 8.0
 
 ## Spaced Repetition System

@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
+    "exceljs": "^4.4.0",
     "typescript": "^5.7.2"
   },
   "engines": {
