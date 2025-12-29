@@ -6,7 +6,8 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faBook, faSearch, faFilter, faGraduationCap,
   faSpinner, faCheckCircle, faClock, faRedo,
-  faStar, faPlay, faChartLine, faLayerGroup, faTimes
+  faStar, faPlay, faChartLine, faLayerGroup, faTimes,
+  faChevronLeft, faChevronRight
 } from '../../../shared/icons';
 import {
   ApiService,
@@ -45,6 +46,8 @@ export class GrammarListComponent implements OnInit {
   faChartLine = faChartLine;
   faLayerGroup = faLayerGroup;
   faTimes = faTimes;
+  faChevronLeft = faChevronLeft;
+  faChevronRight = faChevronRight;
 
   // State
   loading = signal(true);
@@ -56,6 +59,10 @@ export class GrammarListComponent implements OnInit {
   searchQuery = signal('');
   selectedCategory = signal<string>('');
   selectedStatus = signal<GrammarReviewStatus | ''>('');
+
+  // Pagination
+  page = signal(1);
+  pageSize = signal(9); // 3x3 grid
 
   // Computed filtered list
   filteredGrammarPoints = computed(() => {
@@ -81,6 +88,32 @@ export class GrammarListComponent implements OnInit {
 
     return points;
   });
+
+  // Paginated list
+  paginatedGrammarPoints = computed(() => {
+    const filtered = this.filteredGrammarPoints();
+    const start = (this.page() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+
+  // Pagination helpers
+  get totalFiltered(): number {
+    return this.filteredGrammarPoints().length;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalFiltered / this.pageSize()) || 1;
+  }
+
+  get startItem(): number {
+    if (this.totalFiltered === 0) return 0;
+    return (this.page() - 1) * this.pageSize() + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(this.page() * this.pageSize(), this.totalFiltered);
+  }
 
   // Status options
   statusOptions: { value: GrammarReviewStatus | ''; label: string }[] = [
@@ -161,9 +194,26 @@ export class GrammarListComponent implements OnInit {
     this.searchQuery.set('');
     this.selectedCategory.set('');
     this.selectedStatus.set('');
+    this.page.set(1);
   }
 
   hasActiveFilters(): boolean {
     return !!(this.searchQuery() || this.selectedCategory() || this.selectedStatus());
+  }
+
+  onPageChange(newPage: number) {
+    if (newPage >= 1 && newPage <= this.totalPages) {
+      this.page.set(newPage);
+    }
+  }
+
+  onPageSizeChange(event: Event) {
+    const value = parseInt((event.target as HTMLSelectElement).value, 10);
+    this.pageSize.set(value);
+    this.page.set(1);
+  }
+
+  resetPage() {
+    this.page.set(1);
   }
 }

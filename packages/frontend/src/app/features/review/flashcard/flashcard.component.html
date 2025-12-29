@@ -92,9 +92,10 @@
             @if (currentCard()!.direction === 'en_to_vi' && getPhonetic()) {
               <div class="text-lg text-gray-500 mb-2 flex items-center gap-2">
                 {{ getPhonetic() }}
-                <button class="p-1 text-gray-500 hover:text-gray-900 transition-colors"
+                <button [disabled]="speaking()"
+                 class="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors"
                         (click)="speak(getFrontText()); $event.stopPropagation()">
-                  <fa-icon [icon]="faVolumeUp" [class.text-gray-900]="speaking()"></fa-icon>
+                  <fa-icon [icon]="faVolumeUp"></fa-icon>
                 </button>
               </div>
             }

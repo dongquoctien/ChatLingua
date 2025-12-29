@@ -68,14 +68,14 @@
         <fa-icon [icon]="faSearch" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></fa-icon>
         <input type="text"
                [ngModel]="searchQuery()"
-               (ngModelChange)="searchQuery.set($event)"
+               (ngModelChange)="searchQuery.set($event); resetPage()"
                placeholder="Search grammar rules..."
                class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent">
       </div>
 
       <!-- Category -->
       <select [ngModel]="selectedCategory()"
-              (ngModelChange)="selectedCategory.set($event)"
+              (ngModelChange)="selectedCategory.set($event); resetPage()"
               class="w-44 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white">
         <option value="">All Categories</option>
         @for (cat of categories(); track cat.category) {
@@ -85,7 +85,7 @@
 
       <!-- Status -->
       <select [ngModel]="selectedStatus()"
-              (ngModelChange)="selectedStatus.set($event)"
+              (ngModelChange)="selectedStatus.set($event); resetPage()"
               class="w-44 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white">
         @for (opt of statusOptions; track opt.value) {
           <option [value]="opt.value">{{ opt.label }}</option>
@@ -111,7 +111,7 @@
   } @else {
     <!-- Grammar Points Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-      @for (point of filteredGrammarPoints(); track point.id) {
+      @for (point of paginatedGrammarPoints(); track point.id) {
         <div [routerLink]="['/grammar', point.id]"
              class="bg-white rounded-xl p-5 shadow-sm cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col">
           <!-- Header -->
@@ -180,5 +180,35 @@
         </div>
       }
     </div>
+
+    <!-- Pagination -->
+    @if (totalFiltered > 0) {
+      <div class="flex flex-wrap items-center justify-between gap-4 py-4 mt-6 border-t border-gray-200">
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-gray-500">
+            Showing {{ startItem }} - {{ endItem }} of {{ totalFiltered }}
+          </span>
+          <select class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white" (change)="onPageSizeChange($event)">
+            <option [value]="9" [selected]="pageSize() === 9">9 per page</option>
+            <option [value]="18" [selected]="pageSize() === 18">18 per page</option>
+            <option [value]="27" [selected]="pageSize() === 27">27 per page</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button class="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  [disabled]="page() === 1"
+                  (click)="onPageChange(page() - 1)">
+            <fa-icon [icon]="faChevronLeft"></fa-icon>
+          </button>
+          <span class="px-3 text-sm">Page {{ page() }} of {{ totalPages }}</span>
+          <button class="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  [disabled]="page() >= totalPages"
+                  (click)="onPageChange(page() + 1)">
+            <fa-icon [icon]="faChevronRight"></fa-icon>
+          </button>
+        </div>
+      </div>
+    }
   }
 </div>
