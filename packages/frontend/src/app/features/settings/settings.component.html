@@ -1,0 +1,202 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">Account Settings</h1>
+
+    <!-- Tabs -->
+    <div class="bg-white rounded-lg shadow-sm mb-6">
+      <div class="flex border-b border-gray-200">
+        <button
+          (click)="setTab('profile')"
+          [class.text-gray-900]="activeTab() === 'profile'"
+          [class.border-gray-900]="activeTab() === 'profile'"
+          [class.text-gray-500]="activeTab() !== 'profile'"
+          [class.border-transparent]="activeTab() !== 'profile'"
+          class="flex-1 py-4 px-6 text-center font-medium border-b-2 transition-colors hover:text-gray-900">
+          <fa-icon [icon]="faUser" class="mr-2"></fa-icon>
+          Profile
+        </button>
+        <button
+          (click)="setTab('password')"
+          [class.text-gray-900]="activeTab() === 'password'"
+          [class.border-gray-900]="activeTab() === 'password'"
+          [class.text-gray-500]="activeTab() !== 'password'"
+          [class.border-transparent]="activeTab() !== 'password'"
+          class="flex-1 py-4 px-6 text-center font-medium border-b-2 transition-colors hover:text-gray-900">
+          <fa-icon [icon]="faLock" class="mr-2"></fa-icon>
+          Password
+        </button>
+      </div>
+    </div>
+
+    <!-- Profile Tab -->
+    @if (activeTab() === 'profile') {
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">Personal Information</h2>
+
+        <!-- Avatar Section -->
+        <div class="flex items-center gap-6 mb-6 pb-6 border-b border-gray-200">
+          <div class="relative">
+            <img
+              [src]="avatar() || getDefaultAvatar()"
+              alt="Avatar"
+              class="w-24 h-24 rounded-full object-cover border-2 border-gray-200">
+            <button
+              class="absolute bottom-0 right-0 bg-gray-900 text-white p-2 rounded-full shadow-lg hover:bg-gray-800 transition-colors">
+              <fa-icon [icon]="faCamera" class="text-sm"></fa-icon>
+            </button>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
+            <input
+              type="url"
+              [ngModel]="avatar()"
+              (ngModelChange)="avatar.set($event)"
+              placeholder="https://example.com/avatar.jpg"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+            <p class="text-xs text-gray-500 mt-1">Enter image URL or leave empty for default avatar</p>
+          </div>
+        </div>
+
+        <!-- Nickname -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nickname</label>
+          <input
+            type="text"
+            [ngModel]="nickname()"
+            (ngModelChange)="nickname.set($event)"
+            placeholder="Enter your nickname"
+            maxlength="100"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+        </div>
+
+        <!-- Bio -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+          <textarea
+            [ngModel]="bio()"
+            (ngModelChange)="bio.set($event)"
+            placeholder="Write something about yourself..."
+            rows="3"
+            maxlength="500"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 resize-none"></textarea>
+          <p class="text-xs text-gray-500 mt-1">{{ (bio() || '').length }}/500 characters</p>
+        </div>
+
+        <!-- Gender -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+          <div class="flex flex-wrap gap-3">
+            @for (option of genderOptions; track option.value) {
+              <button
+                type="button"
+                (click)="gender.set(option.value)"
+                [class.bg-gray-900]="gender() === option.value"
+                [class.text-white]="gender() === option.value"
+                [class.bg-gray-100]="gender() !== option.value"
+                [class.text-gray-700]="gender() !== option.value"
+                class="px-4 py-2 rounded-lg font-medium transition-colors hover:opacity-90">
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        @if (profileSuccess()) {
+          <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700">
+            <fa-icon [icon]="faCheck"></fa-icon>
+            <span>{{ profileSuccess() }}</span>
+          </div>
+        }
+        @if (profileError()) {
+          <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+            <fa-icon [icon]="faExclamationTriangle"></fa-icon>
+            <span>{{ profileError() }}</span>
+          </div>
+        }
+
+        <!-- Save Button -->
+        <button
+          (click)="updateProfile()"
+          [disabled]="loading()"
+          class="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          @if (loading()) {
+            <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+            <span>Saving...</span>
+          } @else {
+            <fa-icon [icon]="faSave"></fa-icon>
+            <span>Save Changes</span>
+          }
+        </button>
+      </div>
+    }
+
+    <!-- Password Tab -->
+    @if (activeTab() === 'password') {
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">Change Password</h2>
+
+        <!-- Current Password -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+          <input
+            type="password"
+            [ngModel]="currentPassword()"
+            (ngModelChange)="currentPassword.set($event)"
+            placeholder="Enter current password"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+        </div>
+
+        <!-- New Password -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+          <input
+            type="password"
+            [ngModel]="newPassword()"
+            (ngModelChange)="newPassword.set($event)"
+            placeholder="Enter new password (min 6 characters)"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+          <input
+            type="password"
+            [ngModel]="confirmPassword()"
+            (ngModelChange)="confirmPassword.set($event)"
+            placeholder="Re-enter new password"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900">
+        </div>
+
+        <!-- Success/Error Messages -->
+        @if (passwordSuccess()) {
+          <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700">
+            <fa-icon [icon]="faCheck"></fa-icon>
+            <span>{{ passwordSuccess() }}</span>
+          </div>
+        }
+        @if (passwordError()) {
+          <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+            <fa-icon [icon]="faExclamationTriangle"></fa-icon>
+            <span>{{ passwordError() }}</span>
+          </div>
+        }
+
+        <!-- Change Password Button -->
+        <button
+          (click)="changePassword()"
+          [disabled]="loading() || !currentPassword() || !newPassword() || !confirmPassword()"
+          class="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          @if (loading()) {
+            <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+            <span>Processing...</span>
+          } @else {
+            <fa-icon [icon]="faLock"></fa-icon>
+            <span>Change Password</span>
+          }
+        </button>
+      </div>
+    }
+  </div>
+</div>

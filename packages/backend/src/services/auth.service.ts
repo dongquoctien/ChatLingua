@@ -9,7 +9,37 @@ interface UserRow extends RowDataPacket {
   username: string;
   email: string;
   password_hash: string;
+  display_name: string | null;
+  avatar: string | null;
+  nickname: string | null;
+  bio: string | null;
+  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
   created_at: Date;
+  updated_at: Date;
+}
+
+export interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  displayName: string | null;
+  avatar: string | null;
+  nickname: string | null;
+  bio: string | null;
+  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
+  createdAt: Date;
+}
+
+export interface UpdateProfileInput {
+  avatar?: string | null;
+  nickname?: string | null;
+  bio?: string | null;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface RegisterInput {
@@ -119,9 +149,10 @@ export class AuthService {
     };
   }
 
-  async getProfile(userId: number): Promise<{ id: number; username: string; email: string; createdAt: Date }> {
+  async getProfile(userId: number): Promise<UserProfile> {
     const [users] = await pool.execute<UserRow[]>(
-      'SELECT id, username, email, created_at FROM users WHERE id = ?',
+      `SELECT id, username, email, display_name, avatar, nickname, bio, gender, created_at
+       FROM users WHERE id = ?`,
       [userId]
     );
 
@@ -134,8 +165,76 @@ export class AuthService {
       id: user.id,
       username: user.username,
       email: user.email,
+      displayName: user.display_name,
+      avatar: user.avatar,
+      nickname: user.nickname,
+      bio: user.bio,
+      gender: user.gender,
       createdAt: user.created_at,
     };
+  }
+
+  async updateProfile(userId: number, input: UpdateProfileInput): Promise<UserProfile> {
+    const updates: string[] = [];
+    const params: (string | null)[] = [];
+
+    if (input.avatar !== undefined) {
+      updates.push('avatar = ?');
+      params.push(input.avatar);
+    }
+    if (input.nickname !== undefined) {
+      updates.push('nickname = ?');
+      params.push(input.nickname);
+    }
+    if (input.bio !== undefined) {
+      updates.push('bio = ?');
+      params.push(input.bio);
+    }
+    if (input.gender !== undefined) {
+      updates.push('gender = ?');
+      params.push(input.gender);
+    }
+
+    if (updates.length === 0) {
+      return this.getProfile(userId);
+    }
+
+    params.push(userId.toString());
+    await pool.execute(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    return this.getProfile(userId);
+  }
+
+  async changePassword(userId: number, input: ChangePasswordInput): Promise<void> {
+    const { currentPassword, newPassword } = input;
+
+    // Get current password hash
+    const [users] = await pool.execute<UserRow[]>(
+      'SELECT password_hash FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (users.length === 0) {
+      throw new Error('User not found');
+    }
+
+    // Verify current password
+    const isValid = await bcrypt.compare(currentPassword, users[0].password_hash);
+    if (!isValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await pool.execute(
+      'UPDATE users SET password_hash = ? WHERE id = ?',
+      [newPasswordHash, userId]
+    );
   }
 
   private generateToken(userId: number, username: string, email: string): string {

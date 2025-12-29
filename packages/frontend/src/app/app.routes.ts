@@ -155,6 +155,10 @@ export const routes: Routes = [
         path: 'leaderboard',
         loadComponent: () => import('./features/gamification/leaderboard-page/leaderboard-page.component').then(m => m.LeaderboardPageComponent),
       },
+      {
+        path: 'settings',
+        loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
+      },
     ],
   },
   {

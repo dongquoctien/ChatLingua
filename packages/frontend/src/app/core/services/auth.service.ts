@@ -8,6 +8,24 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  displayName: string | null;
+  avatar: string | null;
+  nickname: string | null;
+  bio: string | null;
+  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
+  createdAt: string;
+}
+
+export interface UpdateProfileRequest {
+  avatar?: string | null;
+  nickname?: string | null;
+  bio?: string | null;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface AuthResponse {
@@ -77,6 +95,26 @@ export class AuthService {
       tap(user => {
         this.currentUserSignal.set(user);
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+      })
+    );
+  }
+
+  updateProfile(data: UpdateProfileRequest): Observable<User> {
+    return this.http.put<User>(`${environment.apiUrl}/auth/profile`, data).pipe(
+      tap(user => {
+        this.currentUserSignal.set(user);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+      }),
+      catchError(error => {
+        return throwError(() => error.error?.error || 'Failed to update profile');
+      })
+    );
+  }
+
+  changePassword(data: ChangePasswordRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${environment.apiUrl}/auth/password`, data).pipe(
+      catchError(error => {
+        return throwError(() => error.error?.error || 'Failed to change password');
       })
     );
   }

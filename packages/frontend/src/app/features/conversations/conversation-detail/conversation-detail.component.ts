@@ -85,6 +85,11 @@ export class ConversationDetailComponent implements OnInit {
     return 'New';
   }
 
+  getMasteryStars(masteryLevel: number): number {
+    // Convert 0-100 scale to 0-5 stars
+    return Math.round(masteryLevel / 20);
+  }
+
   getDifficultyClass(level: string): string {
     switch (level.toLowerCase()) {
       case 'beginner': return 'bg-gray-50 text-gray-700';

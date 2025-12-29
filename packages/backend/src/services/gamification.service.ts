@@ -75,6 +75,8 @@ export interface LeaderboardEntry {
   userId: number;
   username: string;
   displayName?: string;
+  nickname?: string;
+  avatar?: string;
   weekStart: Date;
   totalXp: number;
   exercisesCompleted: number;
@@ -207,6 +209,8 @@ interface LeaderboardRow extends RowDataPacket {
   user_id: number;
   username: string;
   display_name: string | null;
+  nickname: string | null;
+  avatar: string | null;
   week_start: Date;
   total_xp: number;
   exercises_completed: number;
@@ -764,7 +768,7 @@ export class GamificationService {
 
     // Get top entries
     const [rows] = await pool.query<LeaderboardRow[]>(
-      `SELECT wl.*, u.username, u.display_name
+      `SELECT wl.*, u.username, u.display_name, u.nickname, u.avatar
        FROM weekly_leaderboards wl
        JOIN users u ON wl.user_id = u.id
        WHERE wl.week_start = ?
@@ -778,6 +782,8 @@ export class GamificationService {
       userId: row.user_id,
       username: row.username,
       displayName: row.display_name || undefined,
+      nickname: row.nickname || undefined,
+      avatar: row.avatar || undefined,
       weekStart: row.week_start,
       totalXp: row.total_xp,
       exercisesCompleted: row.exercises_completed,

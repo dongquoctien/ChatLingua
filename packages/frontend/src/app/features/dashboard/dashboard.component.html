@@ -1,6 +1,6 @@
 <div class="max-w-6xl mx-auto p-6">
   <div class="mb-6 md:mb-8">
-    <h1 class="text-2xl font-medium text-gray-800 mb-2">Welcome back, {{ authService.currentUser()?.username }}!</h1>
+    <h1 class="text-2xl font-medium text-gray-800 mb-2">Welcome back, {{ getDisplayName() }}!</h1>
     <p class="text-gray-600 mt-1">Continue your English learning journey</p>
   </div>
 
@@ -46,7 +46,7 @@
         <div class="card p-4 md:p-6 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg transition-all" routerLink="/review">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
-              <fa-icon [icon]="faBrain" class="text-2xl text-purple-600"></fa-icon>
+              <fa-icon [icon]="faBrain" class="text-2xl text-gray-900"></fa-icon>
               <h3 class="text-lg font-semibold text-gray-900">Daily Review</h3>
             </div>
             @if (streak() && streak()!.currentStreak > 0) {
@@ -59,7 +59,7 @@
 
           <div class="grid grid-cols-3 gap-4 mb-4">
             <div class="text-center">
-              <span class="block text-2xl font-bold text-amber-600">{{ dueCount() }}</span>
+              <span class="block text-2xl font-bold text-gray-600">{{ dueCount() }}</span>
               <span class="text-sm text-gray-500">Due</span>
             </div>
             <div class="text-center">
@@ -67,7 +67,7 @@
               <span class="text-sm text-gray-500">New</span>
             </div>
             <div class="text-center">
-              <span class="block text-2xl font-bold text-gray-900">{{ doneCount() }}</span>
+              <span class="block text-2xl font-bold text-gray-600">{{ doneCount() }}</span>
               <span class="text-sm text-gray-500">Done</span>
             </div>
           </div>
@@ -103,7 +103,7 @@
         </div>
 
         <div class="card p-4 md:p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all text-center" routerLink="/quizzes">
-          <fa-icon [icon]="faQuestionCircle" class="text-3xl md:text-4xl text-amber-600 mb-3"></fa-icon>
+          <fa-icon [icon]="faQuestionCircle" class="text-3xl md:text-4xl text-gray-600 mb-3"></fa-icon>
           <h3 class="font-semibold text-gray-900 mb-1">Take a Quiz</h3>
           <p class="text-sm text-gray-500">Challenge yourself</p>
         </div>
@@ -126,7 +126,7 @@
 
         <div class="card p-4 md:p-6">
           <h4 class="text-sm font-medium text-gray-500 mb-2">Quizzes Taken</h4>
-          <div class="text-3xl font-bold text-purple-600">{{ stats()!.totalQuizzes }}</div>
+          <div class="text-3xl font-bold text-gray-900">{{ stats()!.totalQuizzes }}</div>
         </div>
 
         <div class="card p-4 md:p-6">
@@ -142,7 +142,7 @@
       }
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        @if (getRecentAchievements().length > 0) {
+        <!-- @if (getRecentAchievements().length > 0) { -->
           <div class="card p-4 md:p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900">
@@ -154,27 +154,36 @@
                 <fa-icon [icon]="faArrowRight"></fa-icon>
               </a>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              @for (achievement of getRecentAchievements(); track achievement.id) {
-                <div class="relative flex flex-col items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                     [class.ring-2]="achievement.isNew"
-                     [class.ring-yellow-400]="achievement.isNew"
-                     (click)="onAchievementClick(achievement)">
-                  <div class="w-10 h-10 flex items-center justify-center bg-yellow-100 text-yellow-600 rounded-full mb-2">
-                    <fa-icon [icon]="faTrophy"></fa-icon>
+            @if (getRecentAchievements().length > 0) {
+              <div class="grid grid-cols-2 gap-3">
+                @for (achievement of getRecentAchievements(); track achievement.id) {
+                  <div class="relative flex flex-col items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                       [class.ring-2]="achievement.isNew"
+                       [class.ring-yellow-400]="achievement.isNew"
+                       (click)="onAchievementClick(achievement)">
+                    <div class="w-10 h-10 flex items-center justify-center bg-yellow-100 text-yellow-600 rounded-full mb-2">
+                      <fa-icon [icon]="faTrophy"></fa-icon>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900 text-center">{{ achievement.name }}</span>
+                    @if (achievement.isNew) {
+                      <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">NEW</span>
+                    }
                   </div>
-                  <span class="text-sm font-medium text-gray-900 text-center">{{ achievement.name }}</span>
-                  @if (achievement.isNew) {
-                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">NEW</span>
-                  }
+                }
+              </div>
+            } @else {
+              <div class="text-center py-6">
+                <div class="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                  <fa-icon [icon]="faTrophy" class="text-xl text-gray-400"></fa-icon>
                 </div>
-              }
-            </div>
+                <p class="text-gray-500 text-sm mb-2">No achievements yet</p>
+                <p class="text-gray-400 text-xs">Complete exercises and quizzes to unlock achievements!</p>
+              </div>
+            }
           </div>
-        }
+        <!-- } -->
 
-        @if (leaderboard() && leaderboard()!.entries.length > 0) {
-          <div class="card p-4 md:p-6">
+        <div class="card p-4 md:p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900">
                 <fa-icon [icon]="faTrophy" class="text-yellow-500"></fa-icon>
@@ -185,32 +194,44 @@
                 <fa-icon [icon]="faArrowRight"></fa-icon>
               </a>
             </div>
-            <div class="space-y-2">
-              @for (entry of leaderboard()!.entries.slice(0, 5); track entry.userId) {
-                <div class="flex items-center justify-between p-2 rounded-lg"
-                     [class.bg-gray-100]="entry.isCurrentUser">
-                  <div class="flex items-center gap-3">
-                    <span class="w-6 h-6 flex items-center justify-center text-sm font-bold rounded-full"
-                          [class.bg-yellow-400]="entry.rank === 1"
-                          [class.text-white]="entry.rank === 1"
-                          [class.bg-gray-300]="entry.rank === 2"
-                          [class.bg-amber-600]="entry.rank === 3"
-                          [class.text-gray-600]="entry.rank > 3">
-                      {{ entry.rank }}
-                    </span>
-                    <span class="font-medium text-gray-900">{{ entry.displayName || entry.username }}</span>
+            @if (leaderboard()?.entries?.length) {
+              <div class="space-y-2">
+                @for (entry of leaderboard()?.entries?.slice(0, 5); track entry.userId) {
+                  <div class="flex items-center justify-between p-2 rounded-lg"
+                       [class.bg-gray-100]="entry.isCurrentUser">
+                    <div class="flex items-center gap-3">
+                      <span class="w-6 h-6 flex items-center justify-center text-sm font-bold rounded-full"
+                            [class.bg-yellow-400]="entry.rankPosition === 1"
+                            [class.text-white]="entry.rankPosition === 1"
+                            [class.bg-gray-300]="entry.rankPosition === 2"
+                            [class.bg-amber-600]="entry.rankPosition === 3"
+                            [class.text-gray-600]="entry.rankPosition > 3">
+                        {{ entry.rankPosition }}
+                      </span>
+                      <img [src]="getLeaderboardAvatarUrl(entry)"
+                           [alt]="getLeaderboardDisplayName(entry)"
+                           class="w-7 h-7 rounded-full object-cover border border-gray-200">
+                      <span class="font-medium text-gray-900">{{ getLeaderboardDisplayName(entry) }}</span>
+                    </div>
+                    <span class="text-sm font-semibold text-gray-900">{{ entry.totalXp }} XP</span>
                   </div>
-                  <span class="text-sm font-semibold text-gray-900">{{ entry.totalXp }} XP</span>
+                }
+              </div>
+              @if (leaderboard()?.currentUserRank && leaderboard()?.currentUserRank! > 5) {
+                <div class="mt-3 pt-3 border-t text-center text-sm text-gray-600">
+                  Your rank: <span class="font-semibold">#{{ leaderboard()!.currentUserRank }}</span>
                 </div>
               }
-            </div>
-            @if (leaderboard()!.currentUserRank && leaderboard()!.currentUserRank! > 5) {
-              <div class="mt-3 pt-3 border-t text-center text-sm text-gray-600">
-                Your rank: <span class="font-semibold">#{{ leaderboard()!.currentUserRank }}</span>
+            } @else {
+              <div class="text-center py-6">
+                <div class="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+                  <fa-icon [icon]="faTrophy" class="text-xl text-gray-400"></fa-icon>
+                </div>
+                <p class="text-gray-500 text-sm mb-2">No learners on the board yet</p>
+                <p class="text-gray-400 text-xs">Complete exercises and earn XP to climb the ranks!</p>
               </div>
             }
           </div>
-        }
       </div>
     </div>
   }

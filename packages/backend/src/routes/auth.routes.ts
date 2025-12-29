@@ -16,6 +16,18 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+const updateProfileSchema = z.object({
+  avatar: z.string().url().nullable().optional(),
+  nickname: z.string().max(100).nullable().optional(),
+  bio: z.string().max(500).nullable().optional(),
+  gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).nullable().optional(),
+});
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+});
+
 // POST /api/auth/register
 router.post('/register', async (req, res: Response) => {
   try {
@@ -56,6 +68,38 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get profile';
     res.status(404).json({ error: message });
+  }
+});
+
+// PUT /api/auth/profile
+router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const input = updateProfileSchema.parse(req.body);
+    const profile = await authService.updateProfile(req.userId!, input);
+    res.json(profile);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation error', details: error.errors });
+      return;
+    }
+    const message = error instanceof Error ? error.message : 'Failed to update profile';
+    res.status(400).json({ error: message });
+  }
+});
+
+// PUT /api/auth/password
+router.put('/password', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const input = changePasswordSchema.parse(req.body);
+    await authService.changePassword(req.userId!, input);
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation error', details: error.errors });
+      return;
+    }
+    const message = error instanceof Error ? error.message : 'Failed to change password';
+    res.status(400).json({ error: message });
   }
 });
 

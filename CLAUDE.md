@@ -149,9 +149,25 @@ get totalPages(): number {
 ### Styling
 
 - Use TailwindCSS utility classes for all styling
-- Grayscale color palette: `gray-50` to `gray-900` for primary UI
-- Accent colors: `orange-500` for warnings, `red-500` for errors
+- **Black/White Template**: Grayscale color palette only
+  - Backgrounds: `gray-50`, `gray-100`, `white`
+  - Text: `gray-900` (primary), `gray-700` (secondary), `gray-500` (muted)
+  - Borders: `gray-200`, `gray-300`
+  - Buttons: `bg-gray-900 text-white` (primary), `bg-gray-100 text-gray-700` (secondary)
+  - Hover states: `hover:bg-gray-800` (primary), `hover:bg-gray-200` (secondary)
+- Accent colors (use sparingly):
+  - Success: `green-500`, `green-50` (background)
+  - Error: `red-500`, `red-50` (background)
+  - Warning: `orange-500`, `orange-50` (background)
 - Consistent spacing: `p-4`/`p-6` for containers, `gap-4` for flex/grid
+
+### Language
+
+- **All UI text in layout, menus, navigation, page titles, buttons should be in English**
+- Vietnamese is only used for:
+  - User-generated content (conversations, vocabulary examples)
+  - Learning content translations
+  - Explanatory text for Vietnamese learners where contextually appropriate
 
 ## Screenshots
 

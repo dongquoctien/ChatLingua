@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { challengeService } from './challenge.service.js';
 
 // ============================================================
 // Types
@@ -435,6 +436,9 @@ export class SpacedRepetitionService {
 
     // Update streak
     await this.updateStreak(userId);
+
+    // Update daily challenge progress
+    await challengeService.checkProgress(userId, 'review_complete');
 
     return result;
   }

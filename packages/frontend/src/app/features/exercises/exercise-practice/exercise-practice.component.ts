@@ -340,7 +340,16 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
   }
 
   getExerciseData<T>(exercise: SessionExercise): T | null {
-    return (exercise.exerciseData as T) || null;
+    let data: any = exercise.exerciseData || null;
+
+    // For listening exercises, merge options into exerciseData as comprehensionOptions
+    if (exercise.exerciseType === 'listening' && exercise.options?.length) {
+      data = data ? { ...data } : { questionType: 'comprehension' };
+      data.comprehensionOptions = exercise.options;
+      data.comprehensionQuestion = exercise.questionText;
+    }
+
+    return data as T;
   }
 
   getExerciseTypeLabel(type: string): string {
@@ -411,9 +420,33 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
         }
 
         case 'cloze': {
-          const parsed = JSON.parse(answer);
+          const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
+
+          // Helper to extract string value from any type
+          const extractValue = (item: any): string => {
+            if (item === null || item === undefined) return '';
+            if (typeof item === 'string') return item;
+            if (typeof item === 'number') return String(item);
+            if (typeof item === 'object') {
+              // Try common keys first
+              const val = item.answer ?? item.value ?? item.text;
+              if (typeof val === 'string') return val;
+              if (typeof val === 'number') return String(val);
+              // Fallback to stringify
+              return JSON.stringify(item);
+            }
+            return String(item);
+          };
+
           if (Array.isArray(parsed)) {
-            return parsed.map((a: any, i: number) => `[${i + 1}] ${a}`).join(', ');
+            // Handle array of objects or strings
+            return parsed.map((a: any, i: number) => `[${i + 1}] ${extractValue(a)}`).join(', ');
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            // Handle object with numbered keys like {"1": "have been", "2": "since"}
+            return Object.entries(parsed)
+              .sort(([a], [b]) => Number(a) - Number(b))
+              .map(([key, val]) => `[${key}] ${extractValue(val)}`)
+              .join(', ');
           }
           return answer;
         }

@@ -20,7 +20,7 @@ import {
 } from '../../shared/icons';
 import {
   ApiService, UserStats, QueueStats, ReviewStreak,
-  UserXPStatus, UserAchievementInfo, DailyChallengeInfo, LeaderboardResponse
+  UserXPStatus, UserAchievementInfo, DailyChallengeInfo, LeaderboardResponse, LeaderboardEntry
 } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { XpProgressBarComponent, XPData } from '../gamification/xp-progress-bar/xp-progress-bar.component';
@@ -207,5 +207,21 @@ export class DashboardComponent implements OnInit {
     if (achievement.isUnlocked) {
       this.showAchievementUnlock(achievement);
     }
+  }
+
+  getDisplayName(): string {
+    const user = this.authService.currentUser();
+    if (!user) return 'User';
+    return user.nickname || user.username;
+  }
+
+  getLeaderboardAvatarUrl(entry: LeaderboardEntry): string {
+    if (entry.avatar) return entry.avatar;
+    const name = entry.nickname || entry.displayName || entry.username;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e5e7eb&color=374151&size=40`;
+  }
+
+  getLeaderboardDisplayName(entry: LeaderboardEntry): string {
+    return entry.nickname || entry.displayName || entry.username;
   }
 }

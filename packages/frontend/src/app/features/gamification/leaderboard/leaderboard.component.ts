@@ -78,7 +78,27 @@ export class LeaderboardComponent {
     return currentUser?.totalXp || 0;
   }
 
+  getCurrentUserEntry(): LeaderboardEntry | undefined {
+    return this.leaderboard.entries.find(e => e.isCurrentUser);
+  }
+
+  getCurrentUserAvatarUrl(): string {
+    const entry = this.getCurrentUserEntry();
+    if (entry) return this.getAvatarUrl(entry);
+    return 'https://ui-avatars.com/api/?name=You&background=e5e7eb&color=374151&size=80';
+  }
+
   onUserClick(entry: LeaderboardEntry) {
     this.userClick.emit(entry);
+  }
+
+  getAvatarUrl(entry: LeaderboardEntry): string {
+    if (entry.avatar) return entry.avatar;
+    const name = entry.nickname || entry.displayName || entry.username;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e5e7eb&color=374151&size=80`;
+  }
+
+  getDisplayName(entry: LeaderboardEntry): string {
+    return entry.nickname || entry.displayName || entry.username;
   }
 }

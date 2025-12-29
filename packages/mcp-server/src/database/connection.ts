@@ -24,6 +24,16 @@ export class DatabaseConnection {
     console.error('Database connected successfully');
   }
 
+  async getConnection(): Promise<PoolConnection> {
+    if (!this.pool) {
+      throw new Error('Database not connected');
+    }
+    const connection = await this.pool.getConnection();
+    // Ensure UTF-8 encoding for Vietnamese text
+    await connection.query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+    return connection;
+  }
+
   async query<T extends RowDataPacket[]>(sql: string, params?: any[]): Promise<T> {
     if (!this.pool) {
       throw new Error('Database not connected');
@@ -38,13 +48,6 @@ export class DatabaseConnection {
     }
     const [result] = await this.pool.execute<ResultSetHeader>(sql, params);
     return result;
-  }
-
-  async getConnection(): Promise<PoolConnection> {
-    if (!this.pool) {
-      throw new Error('Database not connected');
-    }
-    return this.pool.getConnection();
   }
 
   async close(): Promise<void> {

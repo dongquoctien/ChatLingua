@@ -107,15 +107,31 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
 
   /**
    * Parse exercise data JSON safely
+   * For listening exercises, merge top-level options into exerciseData
    */
   parseExerciseData(exercise: Exercise): any {
-    if (!exercise.exerciseData) return null;
-    if (typeof exercise.exerciseData === 'object') return exercise.exerciseData;
-    try {
-      return JSON.parse(exercise.exerciseData);
-    } catch {
-      return null;
+    let data: any = null;
+
+    if (exercise.exerciseData) {
+      if (typeof exercise.exerciseData === 'object') {
+        data = { ...exercise.exerciseData };
+      } else {
+        try {
+          data = JSON.parse(exercise.exerciseData);
+        } catch {
+          data = null;
+        }
+      }
     }
+
+    // For listening exercises, merge options into exerciseData as comprehensionOptions
+    if (exercise.exerciseType === 'listening' && exercise.options?.length) {
+      data = data || { questionType: 'comprehension' };
+      data.comprehensionOptions = exercise.options;
+      data.comprehensionQuestion = exercise.questionText;
+    }
+
+    return data;
   }
 
   ngOnInit() {
@@ -287,10 +303,33 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
         }
 
         case 'cloze': {
-          // Cloze answers are JSON array
-          const parsed = JSON.parse(answer);
+          const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
+
+          // Helper to extract string value from any type
+          const extractValue = (item: any): string => {
+            if (item === null || item === undefined) return '';
+            if (typeof item === 'string') return item;
+            if (typeof item === 'number') return String(item);
+            if (typeof item === 'object') {
+              // Try common keys first
+              const val = item.answer ?? item.value ?? item.text;
+              if (typeof val === 'string') return val;
+              if (typeof val === 'number') return String(val);
+              // Fallback to stringify
+              return JSON.stringify(item);
+            }
+            return String(item);
+          };
+
           if (Array.isArray(parsed)) {
-            return parsed.map((a: any, i: number) => `[${i + 1}] ${a}`).join(', ');
+            // Handle array of objects or strings
+            return parsed.map((a: any, i: number) => `[${i + 1}] ${extractValue(a)}`).join(', ');
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            // Handle object with numbered keys like {"1": "have been", "2": "since"}
+            return Object.entries(parsed)
+              .sort(([a], [b]) => Number(a) - Number(b))
+              .map(([key, val]) => `[${key}] ${extractValue(val)}`)
+              .join(', ');
           }
           return answer;
         }

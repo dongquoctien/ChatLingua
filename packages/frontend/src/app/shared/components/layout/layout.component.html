@@ -99,14 +99,24 @@
             <button
               (click)="toggleUserMenu()"
               class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <fa-icon [icon]="faUserCircle" class="text-xl text-gray-600"></fa-icon>
-              <span class="hidden sm:inline text-sm font-medium text-gray-700">{{ user.username }}</span>
+              <img
+                [src]="getUserAvatar()"
+                [alt]="getDisplayName()"
+                class="w-8 h-8 rounded-full object-cover border border-gray-200">
+              <span class="hidden sm:inline text-sm font-medium text-gray-700">{{ getDisplayName() }}</span>
               <fa-icon [icon]="faChevronDown" class="text-xs text-gray-500"></fa-icon>
             </button>
 
             <!-- User Dropdown -->
             @if (userMenuOpen()) {
               <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <a
+                  routerLink="/settings"
+                  (click)="closeMenus()"
+                  class="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">
+                  <fa-icon [icon]="faCog" class="text-gray-500"></fa-icon>
+                  <span class="text-sm">Settings</span>
+                </a>
                 <button
                   (click)="logout()"
                   class="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">

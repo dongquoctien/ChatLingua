@@ -19,6 +19,7 @@ import {
   faTrophy,
   faTimes,
   faChevronDown,
+  faCog,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -70,6 +71,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faTrophy = faTrophy;
   faTimes = faTimes;
   faChevronDown = faChevronDown;
+  faCog = faCog;
 
   // Navigation items
   navItems = [
@@ -164,5 +166,19 @@ export class LayoutComponent implements OnInit, OnDestroy {
   goToAchievements() {
     this.router.navigate(['/achievements']);
     this.closeMenus();
+  }
+
+  getUserAvatar(): string {
+    const user = this.authService.currentUser();
+    if (!user) return 'https://ui-avatars.com/api/?name=User&background=e5e7eb&color=374151&size=40';
+    if (user.avatar) return user.avatar;
+    const name = user.nickname || user.username;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=e5e7eb&color=374151&size=40`;
+  }
+
+  getDisplayName(): string {
+    const user = this.authService.currentUser();
+    if (!user) return 'User';
+    return user.nickname || user.username;
   }
 }

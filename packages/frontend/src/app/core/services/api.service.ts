@@ -968,10 +968,12 @@ export interface DailyChallengeInfo {
 }
 
 export interface LeaderboardEntry {
-  rank: number;
+  rankPosition: number;
   userId: number;
   username: string;
   displayName?: string;
+  nickname?: string;
+  avatar?: string;
   totalXp: number;
   level: number;
   isCurrentUser: boolean;

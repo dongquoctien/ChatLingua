@@ -16,16 +16,16 @@
       <!-- Second Place -->
       @if (topThree()[1]) {
         <div class="podium-item order-1 cursor-pointer transition-transform hover:-translate-y-1" (click)="onUserClick(topThree()[1])">
-          <div class="w-[60px] h-[60px] rounded-full flex items-center justify-center text-white text-2xl border-[3px] border-white shadow-lg"
-               [ngClass]="topThree()[1].isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700 border-gray-500' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
-            <fa-icon [icon]="faUser"></fa-icon>
-          </div>
+          <img [src]="getAvatarUrl(topThree()[1])"
+               [alt]="getDisplayName(topThree()[1])"
+               class="w-[60px] h-[60px] rounded-full border-[3px] border-white shadow-lg object-cover"
+               [class.border-gray-500]="topThree()[1].isCurrentUser">
           <div class="relative -mt-3 z-10">
             <fa-icon [icon]="faMedal" class="text-[2rem] text-gray-400"></fa-icon>
           </div>
           <div class="flex flex-col items-center mt-2 mb-2">
             <span class="font-semibold text-sm text-gray-800 max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
-              {{ topThree()[1].displayName || topThree()[1].username }}
+              {{ getDisplayName(topThree()[1]) }}
             </span>
             <span class="flex items-center gap-1 text-sm text-gray-600">
               <fa-icon [icon]="faBolt" class="text-yellow-400 text-xs"></fa-icon>
@@ -42,16 +42,16 @@
           <div class="text-yellow-400 text-2xl -mb-2 animate-float">
             <fa-icon [icon]="faCrown"></fa-icon>
           </div>
-          <div class="w-[70px] h-[70px] rounded-full flex items-center justify-center text-white text-[2rem] border-[3px] border-white shadow-lg"
-               [ngClass]="topThree()[0].isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700 border-gray-500' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
-            <fa-icon [icon]="faUser"></fa-icon>
-          </div>
+          <img [src]="getAvatarUrl(topThree()[0])"
+               [alt]="getDisplayName(topThree()[0])"
+               class="w-[70px] h-[70px] rounded-full border-[3px] border-white shadow-lg object-cover"
+               [class.border-gray-500]="topThree()[0].isCurrentUser">
           <div class="relative -mt-3 z-10">
             <fa-icon [icon]="faMedal" class="text-[2rem] text-yellow-400"></fa-icon>
           </div>
           <div class="flex flex-col items-center mt-2 mb-2">
             <span class="font-semibold text-sm text-gray-800 max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
-              {{ topThree()[0].displayName || topThree()[0].username }}
+              {{ getDisplayName(topThree()[0]) }}
             </span>
             <span class="flex items-center gap-1 text-sm text-gray-600">
               <fa-icon [icon]="faBolt" class="text-yellow-400 text-xs"></fa-icon>
@@ -65,16 +65,16 @@
       <!-- Third Place -->
       @if (topThree()[2]) {
         <div class="podium-item order-3 cursor-pointer transition-transform hover:-translate-y-1" (click)="onUserClick(topThree()[2])">
-          <div class="w-[55px] h-[55px] rounded-full flex items-center justify-center text-white text-xl border-[3px] border-white shadow-lg"
-               [ngClass]="topThree()[2].isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700 border-gray-500' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
-            <fa-icon [icon]="faUser"></fa-icon>
-          </div>
+          <img [src]="getAvatarUrl(topThree()[2])"
+               [alt]="getDisplayName(topThree()[2])"
+               class="w-[55px] h-[55px] rounded-full border-[3px] border-white shadow-lg object-cover"
+               [class.border-gray-500]="topThree()[2].isCurrentUser">
           <div class="relative -mt-3 z-10">
             <fa-icon [icon]="faMedal" class="text-[2rem] text-amber-700"></fa-icon>
           </div>
           <div class="flex flex-col items-center mt-2 mb-2">
             <span class="font-semibold text-sm text-gray-800 max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
-              {{ topThree()[2].displayName || topThree()[2].username }}
+              {{ getDisplayName(topThree()[2]) }}
             </span>
             <span class="flex items-center gap-1 text-sm text-gray-600">
               <fa-icon [icon]="faBolt" class="text-yellow-400 text-xs"></fa-icon>
@@ -110,12 +110,12 @@
           <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-sm text-gray-600 flex-shrink-0">
             {{ entry.rank }}
           </div>
-          <div class="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
-               [ngClass]="entry.isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
-            <fa-icon [icon]="faUser"></fa-icon>
-          </div>
+          <img [src]="getAvatarUrl(entry)"
+               [alt]="getDisplayName(entry)"
+               class="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200"
+               [class.border-gray-500]="entry.isCurrentUser">
           <div class="flex-1 flex flex-col">
-            <span class="font-semibold text-gray-800">{{ entry.displayName || entry.username }}</span>
+            <span class="font-semibold text-gray-800">{{ getDisplayName(entry) }}</span>
             <span class="text-sm text-gray-600">Level {{ entry.level }}</span>
           </div>
           <div class="flex items-center gap-1">
@@ -139,9 +139,9 @@
         <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-sm text-gray-600 flex-shrink-0">
           {{ leaderboard.currentUserRank }}
         </div>
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center text-white flex-shrink-0">
-          <fa-icon [icon]="faUser"></fa-icon>
-        </div>
+        <img [src]="getCurrentUserAvatarUrl()"
+             alt="You"
+             class="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-500">
         <div class="flex-1 flex flex-col">
           <span class="font-semibold text-gray-800">You</span>
           <span class="text-sm text-gray-600">Keep learning to climb!</span>

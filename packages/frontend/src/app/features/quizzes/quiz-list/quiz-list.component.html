@@ -28,9 +28,9 @@
         <!-- Header -->
         <div class="mb-4">
           <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ quiz.title }}</h3>
-          @if (quiz.description) {
-            <p class="text-sm text-gray-500">{{ quiz.description }}</p>
-          }
+          <!-- @if (quiz.description) { -->
+            <p class="text-sm text-gray-500">{{ quiz.description || "No description" }}</p>
+          <!-- } -->
         </div>
 
         <!-- Info -->
@@ -95,7 +95,7 @@
              [class.opacity-50]="(quiz.attemptCount || 0) >= quiz.maxAttempts"
              [class.pointer-events-none]="(quiz.attemptCount || 0) >= quiz.maxAttempts">
             @if ((quiz.attemptCount || 0) >= quiz.maxAttempts) {
-              Max attempts reached
+              Max attempts
             } @else {
               Start Quiz
             }
