@@ -1,10 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatChipsModule } from '@angular/material/chips';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
@@ -18,6 +14,8 @@ import {
   faCalendarAlt,
   faListOl,
   faPlay,
+  faChevronDown,
+  faChevronUp,
 } from '../../../shared/icons';
 import {
   ApiService,
@@ -31,10 +29,6 @@ import {
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatDividerModule,
-    MatChipsModule,
     FontAwesomeModule,
   ],
   templateUrl: './quiz-history.component.html',
@@ -57,6 +51,8 @@ export class QuizHistoryComponent implements OnInit {
   faCalendarAlt = faCalendarAlt;
   faListOl = faListOl;
   faPlay = faPlay;
+  faChevronDown = faChevronDown;
+  faChevronUp = faChevronUp;
 
   quizId = signal<number>(0);
   attempts = signal<QuizAttempt[]>([]);
@@ -178,10 +174,10 @@ export class QuizHistoryComponent implements OnInit {
   }
 
   getScoreClass(score: number): string {
-    if (score >= 80) return 'excellent';
-    if (score >= 60) return 'good';
-    if (score >= 40) return 'average';
-    return 'needs-work';
+    if (score >= 80) return 'bg-gray-100 text-gray-700';
+    if (score >= 60) return 'bg-gray-100 text-gray-700';
+    if (score >= 40) return 'bg-orange-100 text-orange-700';
+    return 'bg-red-100 text-red-700';
   }
 
   formatExerciseType(type: string): string {

@@ -2,21 +2,12 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faBook, faSearch, faFilter, faGraduationCap,
   faSpinner, faCheckCircle, faClock, faRedo,
-  faStar, faPlay, faChartLine, faLayerGroup
-} from '@fortawesome/free-solid-svg-icons';
+  faStar, faPlay, faChartLine, faLayerGroup, faTimes
+} from '../../../shared/icons';
 import {
   ApiService,
   GrammarPointInfo,
@@ -32,15 +23,6 @@ import {
     CommonModule,
     RouterModule,
     FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatChipsModule,
-    MatProgressBarModule,
-    MatTooltipModule,
     FontAwesomeModule,
   ],
   templateUrl: './grammar-list.component.html',
@@ -62,6 +44,7 @@ export class GrammarListComponent implements OnInit {
   faPlay = faPlay;
   faChartLine = faChartLine;
   faLayerGroup = faLayerGroup;
+  faTimes = faTimes;
 
   // State
   loading = signal(true);
@@ -153,11 +136,11 @@ export class GrammarListComponent implements OnInit {
   }
 
   getMasteryColor(level: number): string {
-    if (level >= 80) return '#4caf50';
-    if (level >= 60) return '#8bc34a';
-    if (level >= 40) return '#ffc107';
-    if (level >= 20) return '#ff9800';
-    return '#f44336';
+    if (level >= 80) return 'bg-gray-900';
+    if (level >= 60) return 'bg-gray-700';
+    if (level >= 40) return 'bg-gray-500';
+    if (level >= 20) return 'bg-gray-400';
+    return 'bg-gray-300';
   }
 
   formatNextReview(dateStr?: string): string {

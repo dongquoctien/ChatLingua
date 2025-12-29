@@ -1,10 +1,6 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
@@ -27,10 +23,6 @@ import { ApiService, ConversationDetail, Vocabulary } from '../../../core/servic
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatChipsModule,
-    MatDividerModule,
     FontAwesomeModule,
   ],
   templateUrl: './conversation-detail.component.html',
@@ -91,5 +83,14 @@ export class ConversationDetailComponent implements OnInit {
     if (level >= 4) return 'Mastered';
     if (level >= 2) return 'Learning';
     return 'New';
+  }
+
+  getDifficultyClass(level: string): string {
+    switch (level.toLowerCase()) {
+      case 'beginner': return 'bg-gray-50 text-gray-700';
+      case 'intermediate': return 'bg-orange-50 text-orange-700';
+      case 'advanced': return 'bg-red-50 text-red-700';
+      default: return 'bg-gray-50 text-gray-700';
+    }
   }
 }

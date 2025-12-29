@@ -1,97 +1,116 @@
-<div class="daily-review">
-  <div class="page-header">
-    <div class="header-content">
-      <h1>Daily Review</h1>
-      <p>Keep your learning streak going!</p>
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Header -->
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-800">Daily Review</h1>
+      <p class="text-gray-500 mt-1">Keep your learning streak going!</p>
     </div>
-    <div class="header-actions">
-      <button mat-icon-button (click)="rebuildQueue()" [disabled]="rebuilding()" matTooltip="Rebuild Queue">
+    <div class="flex gap-2">
+      <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+              (click)="rebuildQueue()"
+              [disabled]="rebuilding()"
+              title="Rebuild Queue">
         <fa-icon [icon]="faSyncAlt" [animation]="rebuilding() ? 'spin' : undefined"></fa-icon>
       </button>
-      <button mat-icon-button (click)="openSettings()" matTooltip="Learning Goals">
+      <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+              (click)="openSettings()"
+              title="Learning Goals">
         <fa-icon [icon]="faCog"></fa-icon>
       </button>
     </div>
   </div>
 
   @if (loading()) {
-    <div class="loading-spinner">
-      <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+    <div class="flex justify-center items-center min-h-[200px]">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-3xl text-gray-600"></fa-icon>
     </div>
   } @else {
     <!-- Streak Banner -->
     @if (streak()) {
-      <mat-card class="streak-banner" [class.has-streak]="streak()!.currentStreak > 0">
-        <div class="streak-content">
-          <fa-icon [icon]="faFire" class="streak-icon"></fa-icon>
-          <div class="streak-info">
-            <span class="streak-number">{{ streak()!.currentStreak }}</span>
-            <span class="streak-label">day streak</span>
+      <div class="card flex justify-between items-center px-6 py-5 mb-6"
+           [ngClass]="streak()!.currentStreak > 0 ? 'bg-gradient-to-r from-orange-50 to-amber-50' : 'bg-gray-50'">
+        <div class="flex items-center gap-4">
+          <fa-icon [icon]="faFire" class="text-3xl text-orange-500"></fa-icon>
+          <div class="flex items-baseline gap-2">
+            <span class="text-4xl font-bold text-orange-600">{{ streak()!.currentStreak }}</span>
+            <span class="text-gray-500">day streak</span>
           </div>
         </div>
         @if (streak()!.longestStreak > streak()!.currentStreak) {
-          <div class="best-streak">
+          <div class="text-sm text-gray-500">
             Best: {{ streak()!.longestStreak }} days
           </div>
         }
-      </mat-card>
+      </div>
     }
 
-    <!-- Queue Stats -->
+    <!-- Queue Stats Grid -->
     @if (queueStats()) {
-      <div class="stats-grid">
-        <mat-card class="stat-card overdue" [class.has-items]="queueStats()!.overdue > 0">
-          <fa-icon [icon]="faExclamationTriangle" class="stat-icon"></fa-icon>
-          <div class="stat-value">{{ queueStats()!.overdue }}</div>
-          <div class="stat-label">Overdue</div>
-        </mat-card>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <!-- Overdue -->
+        <div class="card text-center py-5 px-4"
+             [ngClass]="queueStats()!.overdue > 0 ? 'bg-red-50' : ''">
+          <fa-icon [icon]="faExclamationTriangle"
+                   class="text-2xl mb-2"
+                   [ngClass]="queueStats()!.overdue > 0 ? 'text-red-500' : 'text-gray-400'"></fa-icon>
+          <div class="text-2xl font-semibold"
+               [ngClass]="queueStats()!.overdue > 0 ? 'text-red-700' : 'text-gray-800'">
+            {{ queueStats()!.overdue }}
+          </div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mt-1">Overdue</div>
+        </div>
 
-        <mat-card class="stat-card due">
-          <fa-icon [icon]="faBrain" class="stat-icon"></fa-icon>
-          <div class="stat-value">{{ queueStats()!.due }}</div>
-          <div class="stat-label">Due Today</div>
-        </mat-card>
+        <!-- Due Today -->
+        <div class="card text-center py-5 px-4">
+          <fa-icon [icon]="faBrain" class="text-2xl text-gray-600 mb-2"></fa-icon>
+          <div class="text-2xl font-semibold text-gray-800">{{ queueStats()!.due }}</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mt-1">Due Today</div>
+        </div>
 
-        <mat-card class="stat-card new">
-          <fa-icon [icon]="faLayerGroup" class="stat-icon"></fa-icon>
-          <div class="stat-value">{{ queueStats()!.new }}</div>
-          <div class="stat-label">New Words</div>
-        </mat-card>
+        <!-- New Words -->
+        <div class="card text-center py-5 px-4">
+          <fa-icon [icon]="faLayerGroup" class="text-2xl text-gray-900 mb-2"></fa-icon>
+          <div class="text-2xl font-semibold text-gray-800">{{ queueStats()!.new }}</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mt-1">New Words</div>
+        </div>
 
-        <mat-card class="stat-card completed">
-          <fa-icon [icon]="faCheckCircle" class="stat-icon"></fa-icon>
-          <div class="stat-value">{{ queueStats()!.completed }}</div>
-          <div class="stat-label">Completed</div>
-        </mat-card>
+        <!-- Completed -->
+        <div class="card text-center py-5 px-4">
+          <fa-icon [icon]="faCheckCircle" class="text-2xl text-purple-500 mb-2"></fa-icon>
+          <div class="text-2xl font-semibold text-gray-800">{{ queueStats()!.completed }}</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mt-1">Completed</div>
+        </div>
       </div>
 
       <!-- Progress Section -->
-      <mat-card class="progress-card">
-        <h3>Today's Progress</h3>
-        <mat-progress-bar
-          mode="determinate"
-          [value]="progressPercentage()"
-          [color]="progressPercentage() >= 100 ? 'accent' : 'primary'"
-        ></mat-progress-bar>
-        <div class="progress-info">
-          <span>{{ queueStats()!.completed }} / {{ goals()?.dailyReviews || 20 }} reviews</span>
-          <span class="percentage">{{ progressPercentage() }}%</span>
+      <div class="card p-6 mb-6">
+        <h3 class="font-medium text-gray-800 mb-4">Today's Progress</h3>
+        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-300"
+               [ngClass]="progressPercentage() >= 100 ? 'bg-gray-900' : 'bg-gray-900'"
+               [style.width.%]="progressPercentage()"></div>
         </div>
-      </mat-card>
+        <div class="flex justify-between mt-3 text-sm">
+          <span class="text-gray-500">{{ queueStats()!.completed }} / {{ goals()?.dailyReviews || 20 }} reviews</span>
+          <span class="font-medium" [ngClass]="progressPercentage() >= 100 ? 'text-gray-900' : 'text-gray-900'">
+            {{ progressPercentage() }}%
+          </span>
+        </div>
+      </div>
 
       <!-- Start Review Button -->
-      <div class="action-section">
+      <div class="text-center mb-8">
         @if (hasDueCards()) {
-          <button mat-raised-button color="primary" class="start-button" (click)="startReview()">
-            <fa-icon [icon]="faPlay"></fa-icon>
+          <button class="btn btn-primary text-lg px-12 py-4 rounded-full" (click)="startReview()">
+            <fa-icon [icon]="faPlay" class="mr-3"></fa-icon>
             Start Review
-            <span class="card-count">({{ queueStats()!.overdue + queueStats()!.due + queueStats()!.new }} cards)</span>
+            <span class="ml-2 opacity-80 text-sm">({{ queueStats()!.overdue + queueStats()!.due + queueStats()!.new }} cards)</span>
           </button>
         } @else {
-          <div class="all-done">
-            <fa-icon [icon]="faCheckCircle" class="done-icon"></fa-icon>
-            <h3>All caught up!</h3>
-            <p>You've completed all your reviews for today. Great job!</p>
+          <div class="bg-gray-100 rounded-xl p-8 text-center">
+            <fa-icon [icon]="faCheckCircle" class="text-5xl text-gray-900 mb-4"></fa-icon>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">All caught up!</h3>
+            <p class="text-gray-700">You've completed all your reviews for today. Great job!</p>
           </div>
         }
       </div>
@@ -99,45 +118,63 @@
 
     <!-- Mastery Overview -->
     @if (reviewStats()) {
-      <mat-card class="mastery-card">
-        <div class="mastery-header">
-          <h3>Vocabulary Mastery</h3>
-          <button mat-button color="primary" (click)="viewStats()">
-            <fa-icon [icon]="faChartLine"></fa-icon>
+      <div class="card p-6">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="font-medium text-gray-800">Vocabulary Mastery</h3>
+          <button class="btn btn-secondary text-sm" (click)="viewStats()">
+            <fa-icon [icon]="faChartLine" class="mr-2"></fa-icon>
             View Details
           </button>
         </div>
-        <div class="mastery-bars">
-          <div class="mastery-row">
-            <span class="mastery-label">Mastered</span>
-            <div class="mastery-bar-container">
-              <div class="mastery-bar mastered" [style.width.%]="getMasteryPercentage()"></div>
+        <div class="space-y-3">
+          <!-- Mastered -->
+          <div class="flex items-center gap-3">
+            <span class="w-20 text-sm text-gray-600">Mastered</span>
+            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-gray-900 rounded-full transition-all duration-300"
+                   [style.width.%]="getMasteryPercentage()"></div>
             </div>
-            <span class="mastery-count">{{ reviewStats()!.masteredCount }}</span>
+            <span class="w-10 text-right text-sm font-medium text-gray-800">{{ reviewStats()!.masteredCount }}</span>
           </div>
-          <div class="mastery-row">
-            <span class="mastery-label">Reviewing</span>
-            <div class="mastery-bar-container">
-              <div class="mastery-bar reviewing" [style.width.%]="reviewStats()!.reviewingCount / (reviewStats()!.masteredCount + reviewStats()!.learningCount + reviewStats()!.reviewingCount + reviewStats()!.newAvailable) * 100"></div>
+
+          <!-- Reviewing -->
+          <div class="flex items-center gap-3">
+            <span class="w-20 text-sm text-gray-600">Reviewing</span>
+            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-gray-600 rounded-full transition-all duration-300"
+                   [style.width.%]="getBarPercentage(reviewStats()!.reviewingCount)"></div>
             </div>
-            <span class="mastery-count">{{ reviewStats()!.reviewingCount }}</span>
+            <span class="w-10 text-right text-sm font-medium text-gray-800">{{ reviewStats()!.reviewingCount }}</span>
           </div>
-          <div class="mastery-row">
-            <span class="mastery-label">Learning</span>
-            <div class="mastery-bar-container">
-              <div class="mastery-bar learning" [style.width.%]="reviewStats()!.learningCount / (reviewStats()!.masteredCount + reviewStats()!.learningCount + reviewStats()!.reviewingCount + reviewStats()!.newAvailable) * 100"></div>
+
+          <!-- Learning -->
+          <div class="flex items-center gap-3">
+            <span class="w-20 text-sm text-gray-600">Learning</span>
+            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-orange-500 rounded-full transition-all duration-300"
+                   [style.width.%]="getBarPercentage(reviewStats()!.learningCount)"></div>
             </div>
-            <span class="mastery-count">{{ reviewStats()!.learningCount }}</span>
+            <span class="w-10 text-right text-sm font-medium text-gray-800">{{ reviewStats()!.learningCount }}</span>
           </div>
-          <div class="mastery-row">
-            <span class="mastery-label">New</span>
-            <div class="mastery-bar-container">
-              <div class="mastery-bar new" [style.width.%]="reviewStats()!.newAvailable / (reviewStats()!.masteredCount + reviewStats()!.learningCount + reviewStats()!.reviewingCount + reviewStats()!.newAvailable) * 100"></div>
+
+          <!-- New -->
+          <div class="flex items-center gap-3">
+            <span class="w-20 text-sm text-gray-600">New</span>
+            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-gray-400 rounded-full transition-all duration-300"
+                   [style.width.%]="getBarPercentage(reviewStats()!.newAvailable)"></div>
             </div>
-            <span class="mastery-count">{{ reviewStats()!.newAvailable }}</span>
+            <span class="w-10 text-right text-sm font-medium text-gray-800">{{ reviewStats()!.newAvailable }}</span>
           </div>
         </div>
-      </mat-card>
+      </div>
     }
   }
 </div>
+
+<!-- Learning Goals Dialog -->
+<app-learning-goals-dialog
+  #goalsDialog
+  [data]="goals()"
+  (closed)="onGoalsDialogClosed($event)">
+</app-learning-goals-dialog>

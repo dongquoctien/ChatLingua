@@ -1,0 +1,111 @@
+<div class="flex flex-col gap-6">
+  <p class="text-gray-600">
+    @if (exerciseData?.questionType === 'dictation') {
+      Listen carefully and write exactly what you hear:
+    } @else {
+      Listen and answer the question below:
+    }
+  </p>
+
+  <!-- Audio Player -->
+  <div class="flex items-center gap-4 p-6 bg-gradient-to-r from-gray-600 to-gray-800 rounded-xl text-white">
+    <button class="w-14 h-14 rounded-full flex items-center justify-center transition-all"
+            [class.bg-white]="!isPlaying()"
+            [class.text-gray-600]="!isPlaying()"
+            [class.bg-red-500]="isPlaying()"
+            [class.text-white]="isPlaying()"
+            (click)="togglePlayback()">
+      <fa-icon [icon]="isPlaying() ? faPause : faPlay" size="lg"></fa-icon>
+    </button>
+
+    <div class="flex-1 flex flex-col gap-2">
+      <div class="text-sm font-mono">
+        {{ formatTime(currentTime()) }} / {{ formatTime(duration()) }}
+      </div>
+      <div class="h-2 bg-white/30 rounded-full cursor-pointer overflow-hidden" (click)="seek($event)">
+        <div class="h-full bg-white rounded-full transition-all" [style.width.%]="progressPercent()"></div>
+      </div>
+      <div class="flex items-center gap-2 text-sm opacity-90">
+        <fa-icon [icon]="faVolumeUp"></fa-icon>
+        {{ playsRemaining() }} plays remaining
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <button class="px-3 py-1 rounded border text-sm transition-all"
+              [ngClass]="{
+                'border-white bg-white/20': playbackRate() === 0.75,
+                'border-white/50 hover:bg-white/20': playbackRate() !== 0.75
+              }"
+              (click)="setSpeed(0.75)">
+        0.75x
+      </button>
+      <button class="px-3 py-1 rounded border text-sm transition-all"
+              [ngClass]="{
+                'border-white bg-white/20': playbackRate() === 1,
+                'border-white/50 hover:bg-white/20': playbackRate() !== 1
+              }"
+              (click)="setSpeed(1)">
+        1x
+      </button>
+    </div>
+  </div>
+
+  <!-- Dictation Input -->
+  @if (exerciseData?.questionType === 'dictation') {
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Write what you heard</label>
+      <textarea class="input min-h-[120px]"
+                [ngModel]="userAnswer()"
+                (ngModelChange)="onAnswerChange($event)"
+                [disabled]="disabled"
+                placeholder="Type the sentence you heard...">
+      </textarea>
+      <p class="text-sm text-gray-500 mt-1">Write the complete sentence as you hear it</p>
+    </div>
+  }
+
+  <!-- Comprehension Question -->
+  @if (exerciseData?.questionType === 'comprehension') {
+    <div class="space-y-4">
+      @if (exerciseData?.comprehensionQuestion) {
+        <p class="text-lg font-medium">{{ exerciseData.comprehensionQuestion }}</p>
+      }
+
+      @if (exerciseData?.comprehensionOptions?.length) {
+        <div class="flex flex-col gap-2">
+          @for (option of exerciseData?.comprehensionOptions || []; track option) {
+            <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-gray-500 hover:bg-gray-50"
+                   [class.border-gray-500]="userAnswer() === option"
+                   [class.bg-gray-100]="userAnswer() === option">
+              <input type="radio"
+                     [value]="option"
+                     [checked]="userAnswer() === option"
+                     (change)="onAnswerChange(option)"
+                     [disabled]="disabled"
+                     class="w-4 h-4 text-gray-600">
+              <span>{{ option }}</span>
+            </label>
+          }
+        </div>
+      } @else {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Your answer</label>
+          <input type="text"
+                 class="input"
+                 [ngModel]="userAnswer()"
+                 (ngModelChange)="onAnswerChange($event)"
+                 [disabled]="disabled">
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-4">
+    <button class="btn btn-secondary" (click)="reset()" [disabled]="disabled">
+      <fa-icon [icon]="faRedo" class="mr-2"></fa-icon>
+      Reset
+    </button>
+  </div>
+</div>

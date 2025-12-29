@@ -1,11 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faSpinner,
@@ -41,11 +36,6 @@ interface FlashcardState {
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatProgressBarModule,
-    MatChipsModule,
-    MatTooltipModule,
     FontAwesomeModule,
   ],
   templateUrl: './flashcard.component.html',
@@ -84,6 +74,16 @@ export class FlashcardComponent implements OnInit, OnDestroy {
   // Timer
   elapsedSeconds = signal(0);
   private timerInterval: ReturnType<typeof setInterval> | null = null;
+
+  // CEFR level colors (Tailwind classes) - color-coded by difficulty
+  cefrColors: Record<string, string> = {
+    A1: 'bg-green-500',      // Beginner - easiest
+    A2: 'bg-teal-500',       // Elementary
+    B1: 'bg-amber-500',      // Intermediate
+    B2: 'bg-orange-500',     // Upper Intermediate
+    C1: 'bg-rose-500',       // Advanced
+    C2: 'bg-purple-600',     // Proficiency - hardest
+  };
 
   // Computed
   progress = computed(() => {
@@ -306,5 +306,9 @@ export class FlashcardComponent implements OnInit, OnDestroy {
     const card = this.currentCard();
     if (!card || !card.item.definitions || card.item.definitions.length === 0) return null;
     return card.item.definitions[0].definition;
+  }
+
+  getCefrColorClass(level: string | null | undefined): string {
+    return level ? this.cefrColors[level] || 'bg-gray-400' : 'bg-gray-400';
   }
 }

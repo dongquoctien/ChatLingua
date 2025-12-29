@@ -1,136 +1,151 @@
-<div class="grammar-exercise-page">
+<div class="max-w-3xl mx-auto p-6 min-h-[calc(100vh-120px)] flex flex-col">
   <!-- Loading State -->
   @if (loading()) {
-    <div class="loading-container">
-      <fa-icon [icon]="faSpinner" animation="spin" class="spinner"></fa-icon>
+    <div class="flex-1 flex flex-col items-center justify-center text-gray-500">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-900 mb-4"></fa-icon>
       <p>Loading grammar exercises...</p>
     </div>
   } @else if (sessionComplete()) {
     <!-- Session Complete -->
-    <div class="session-complete">
-      <mat-card class="complete-card">
-        <div class="complete-icon" [class.perfect]="getAccuracyPercentage() === 100">
+    <div class="flex-1 flex items-center justify-center">
+      <div class="bg-white rounded-2xl shadow-lg p-12 max-w-xl text-center">
+        <div class="text-6xl mb-6"
+             [class.text-yellow-400]="getAccuracyPercentage() === 100"
+             [class.text-gray-900]="getAccuracyPercentage() !== 100"
+             [class.celebrate]="getAccuracyPercentage() === 100">
           <fa-icon [icon]="faCheckCircle"></fa-icon>
         </div>
-        <h2>Practice Complete!</h2>
+        <h2 class="text-2xl font-medium text-gray-800 mb-6">Practice Complete!</h2>
 
-        <div class="session-stats">
-          <div class="stat">
-            <span class="value">{{ session().completed }}</span>
-            <span class="label">Exercises</span>
+        <div class="flex justify-center flex-wrap gap-8 mb-6 p-5 bg-gray-50 rounded-xl">
+          <div class="flex flex-col items-center">
+            <span class="text-2xl font-semibold text-gray-800">{{ session().completed }}</span>
+            <span class="text-sm text-gray-500 mt-1">Exercises</span>
           </div>
-          <div class="stat correct">
-            <span class="value">{{ session().correct }}</span>
-            <span class="label">Correct</span>
+          <div class="flex flex-col items-center">
+            <span class="text-2xl font-semibold text-gray-900">{{ session().correct }}</span>
+            <span class="text-sm text-gray-500 mt-1">Correct</span>
           </div>
-          <div class="stat">
-            <span class="value">{{ getAccuracyPercentage() }}%</span>
-            <span class="label">Accuracy</span>
+          <div class="flex flex-col items-center">
+            <span class="text-2xl font-semibold text-gray-800">{{ getAccuracyPercentage() }}%</span>
+            <span class="text-sm text-gray-500 mt-1">Accuracy</span>
           </div>
-          <div class="stat xp">
-            <span class="value">+{{ session().xpEarned }}</span>
-            <span class="label">XP Earned</span>
+          <div class="flex flex-col items-center">
+            <span class="text-2xl font-semibold text-orange-500">+{{ session().xpEarned }}</span>
+            <span class="text-sm text-gray-500 mt-1">XP Earned</span>
           </div>
         </div>
 
         @if (session().total === 0) {
-          <p class="message">No grammar exercises available. Start by reviewing grammar rules first.</p>
+          <p class="text-gray-600 mb-8 leading-relaxed">No grammar exercises available. Start by reviewing grammar rules first.</p>
         } @else if (getAccuracyPercentage() === 100) {
-          <p class="message perfect">Perfect score! You've mastered these grammar rules!</p>
+          <p class="text-yellow-600 font-medium mb-8 leading-relaxed">Perfect score! You've mastered these grammar rules!</p>
         } @else if (getAccuracyPercentage() >= 80) {
-          <p class="message">Great job! Keep practicing to perfect your grammar.</p>
+          <p class="text-gray-600 mb-8 leading-relaxed">Great job! Keep practicing to perfect your grammar.</p>
         } @else {
-          <p class="message">Good effort! Review the rules you missed and try again.</p>
+          <p class="text-gray-600 mb-8 leading-relaxed">Good effort! Review the rules you missed and try again.</p>
         }
 
-        <div class="complete-actions">
+        <div class="flex flex-col gap-3">
           @if (session().total > 0) {
-            <button mat-stroked-button (click)="restartSession()">
+            <button (click)="restartSession()"
+                    class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <fa-icon [icon]="faRedo"></fa-icon>
               Try Again
             </button>
           }
-          <button mat-raised-button color="primary" (click)="goToReview()">
+          <button (click)="goToReview()"
+                  class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
             <fa-icon [icon]="faBook"></fa-icon>
             Grammar Review
           </button>
-          <button mat-stroked-button (click)="goToGrammarList()">
+          <button (click)="goToGrammarList()"
+                  class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
             <fa-icon [icon]="faGraduationCap"></fa-icon>
             All Grammar
           </button>
         </div>
-      </mat-card>
+      </div>
     </div>
   } @else {
     <!-- Exercise Session -->
-    <div class="exercise-session">
+    <div class="flex-1 flex flex-col">
       <!-- Progress Header -->
-      <div class="progress-header">
-        <div class="progress-info">
-          <span class="count">{{ session().completed + 1 }} / {{ session().total }}</span>
-          <div class="stats-mini">
-            <span class="correct">{{ session().correct }} correct</span>
-            <span class="xp">+{{ session().xpEarned }} XP</span>
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm font-medium text-gray-600">{{ session().completed + 1 }} / {{ session().total }}</span>
+          <div class="flex gap-4">
+            <span class="text-sm font-medium text-gray-900">{{ session().correct }} correct</span>
+            <span class="text-sm font-medium text-orange-500">+{{ session().xpEarned }} XP</span>
           </div>
         </div>
-        <mat-progress-bar mode="determinate" [value]="progress()"></mat-progress-bar>
+        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-full bg-gray-900 rounded-full transition-all duration-300"
+               [style.width.%]="progress()"></div>
+        </div>
       </div>
 
       <!-- Exercise Card -->
       @if (currentExercise()) {
-        <mat-card class="exercise-card">
+        <div class="flex-1 bg-white rounded-2xl shadow-lg p-8 mb-6">
           <!-- Exercise Meta -->
-          <div class="exercise-meta">
-            <span class="type-badge">
+          <div class="flex flex-wrap gap-3 mb-6">
+            <span class="px-4 py-1.5 bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-full text-xs font-medium">
               {{ getExerciseTypeLabel(currentExercise()!.exerciseType) }}
             </span>
             @if (currentExercise()!.category) {
-              <span class="category">{{ currentExercise()!.category }}</span>
+              <span class="px-4 py-1.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                {{ currentExercise()!.category }}
+              </span>
             }
-            <span class="difficulty" [ngClass]="getDifficultyClass(currentExercise()!.difficulty)">
+            <span class="px-4 py-1.5 rounded-full text-xs font-medium"
+                  [ngClass]="getDifficultyClass(currentExercise()!.difficulty)">
               {{ currentExercise()!.difficulty | titlecase }}
             </span>
           </div>
 
           <!-- Question -->
-          <div class="question-section">
-            <h2 class="question">{{ currentExercise()!.question }}</h2>
+          <div class="mb-8">
+            <h2 class="text-xl font-medium text-gray-800 leading-relaxed">{{ currentExercise()!.question }}</h2>
           </div>
 
           <!-- Answer Input -->
           @if (!showResult()) {
-            <div class="answer-section">
+            <div>
               @if (isMultipleChoice()) {
                 <!-- Multiple Choice -->
-                <mat-radio-group
-                  [ngModel]="selectedOption()"
-                  (ngModelChange)="selectedOption.set($event)"
-                  class="options-group">
+                <div class="flex flex-col gap-3 mb-6">
                   @for (option of currentExercise()!.options; track option) {
-                    <mat-radio-button [value]="option" class="option">
-                      {{ option }}
-                    </mat-radio-button>
+                    <label class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl cursor-pointer transition-all hover:bg-gray-100"
+                           [class.bg-gray-100]="selectedOption() === option"
+                           [class.ring-2]="selectedOption() === option"
+                           [class.ring-gray-500]="selectedOption() === option">
+                      <input type="radio"
+                             name="option"
+                             [value]="option"
+                             [checked]="selectedOption() === option"
+                             (change)="selectedOption.set(option)"
+                             class="w-5 h-5 text-gray-900 border-gray-300 focus:ring-gray-500">
+                      <span class="text-gray-700">{{ option }}</span>
+                    </label>
                   }
-                </mat-radio-group>
+                </div>
               } @else {
                 <!-- Text Input -->
-                <mat-form-field appearance="outline" class="answer-input">
-                  <mat-label>Your answer</mat-label>
-                  <input
-                    matInput
-                    [ngModel]="userAnswer()"
-                    (ngModelChange)="userAnswer.set($event)"
-                    (keyup.enter)="submitAnswer()"
-                    placeholder="Type your answer here...">
-                </mat-form-field>
+                <div class="mb-6">
+                  <label class="block text-sm font-medium text-gray-600 mb-2">Your answer</label>
+                  <input type="text"
+                         [ngModel]="userAnswer()"
+                         (ngModelChange)="userAnswer.set($event)"
+                         (keyup.enter)="submitAnswer()"
+                         placeholder="Type your answer here..."
+                         class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-base">
+                </div>
               }
 
-              <button
-                mat-raised-button
-                color="primary"
-                class="submit-btn"
-                [disabled]="submitting() || (!userAnswer() && !selectedOption())"
-                (click)="submitAnswer()">
+              <button (click)="submitAnswer()"
+                      [disabled]="submitting() || (!userAnswer() && !selectedOption())"
+                      class="w-full py-4 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg">
                 @if (submitting()) {
                   <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
                   Checking...
@@ -141,46 +156,55 @@
             </div>
           } @else {
             <!-- Result -->
-            <div class="result-section" [class.correct]="lastResult()?.isCorrect" [class.incorrect]="!lastResult()?.isCorrect">
-              <div class="result-header">
+            <div class="p-6 rounded-xl"
+                 [class.bg-gray-100]="lastResult()?.isCorrect"
+                 [class.border-2]="true"
+                 [class.border-gray-900]="lastResult()?.isCorrect"
+                 [class.bg-red-50]="!lastResult()?.isCorrect"
+                 [class.border-red-500]="!lastResult()?.isCorrect">
+              <div class="flex items-center flex-wrap gap-3 mb-4">
                 @if (lastResult()?.isCorrect) {
-                  <fa-icon [icon]="faCheckCircle" class="result-icon correct"></fa-icon>
-                  <span class="result-text">Correct!</span>
+                  <fa-icon [icon]="faCheckCircle" class="text-3xl text-gray-900"></fa-icon>
+                  <span class="text-xl font-semibold text-gray-800">Correct!</span>
                 } @else {
-                  <fa-icon [icon]="faTimes" class="result-icon incorrect"></fa-icon>
-                  <span class="result-text">Incorrect</span>
+                  <fa-icon [icon]="faTimes" class="text-3xl text-red-500"></fa-icon>
+                  <span class="text-xl font-semibold text-gray-800">Incorrect</span>
                 }
                 @if (lastResult()?.xpEarned) {
-                  <span class="xp-earned">+{{ lastResult()!.xpEarned }} XP</span>
+                  <span class="ml-auto px-3 py-1.5 bg-orange-100 text-orange-600 rounded-xl text-sm font-semibold">
+                    +{{ lastResult()!.xpEarned }} XP
+                  </span>
                 }
               </div>
 
               @if (!lastResult()?.isCorrect) {
-                <div class="correct-answer">
-                  <span class="label">Correct answer:</span>
-                  <span class="answer">{{ lastResult()?.correctAnswer }}</span>
+                <div class="flex items-center gap-2 p-3 bg-white rounded-lg mb-4">
+                  <span class="text-sm text-gray-500">Correct answer:</span>
+                  <span class="font-semibold text-gray-900">{{ lastResult()?.correctAnswer }}</span>
                 </div>
               }
 
               @if (lastResult()?.explanation) {
-                <div class="explanation">
-                  <fa-icon [icon]="faLightbulb"></fa-icon>
-                  <p>{{ lastResult()!.explanation }}</p>
+                <div class="flex gap-3 p-4 bg-white rounded-lg border-l-4 border-yellow-400 mb-5">
+                  <fa-icon [icon]="faLightbulb" class="text-yellow-500 text-lg flex-shrink-0"></fa-icon>
+                  <p class="text-gray-600 leading-relaxed m-0">{{ lastResult()!.explanation }}</p>
                 </div>
               }
 
-              <button mat-raised-button color="primary" class="next-btn" (click)="nextExercise()">
+              <button (click)="nextExercise()"
+                      class="w-full py-4 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 text-lg">
                 <fa-icon [icon]="faArrowRight"></fa-icon>
                 Next Exercise
               </button>
             </div>
           }
-        </mat-card>
+        </div>
       }
 
       <!-- Navigation -->
-      <div class="navigation">
-        <button mat-button routerLink="/grammar">
+      <div class="flex justify-center pt-4 border-t border-gray-200">
+        <button routerLink="/grammar"
+                class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
           Exit Practice
         </button>
       </div>

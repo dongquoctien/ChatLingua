@@ -14,8 +14,10 @@ English learning platform powered by AI conversation analysis. Integrates with C
 ## Screenshots
 
 ### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
+![Dashboard](/screenshots/dashboard.png)
 
+### Grammar
+![Grammar](/screenshots/grammar.png)
 
 ## Quick Start
 

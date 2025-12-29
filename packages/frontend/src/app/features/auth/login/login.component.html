@@ -1,54 +1,90 @@
-<div class="auth-container">
-  <mat-card class="auth-card">
-    <mat-card-header>
-      <div class="logo">
-        <fa-icon [icon]="faGraduationCap" class="logo-icon"></fa-icon>
-        <h1>ChatLingua</h1>
+<div class="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="flex items-center justify-center gap-3 mb-2">
+        <fa-icon [icon]="faGraduationCap" class="text-4xl text-gray-900"></fa-icon>
+        <h1 class="text-3xl font-semibold text-gray-900">ChatLingua</h1>
       </div>
-      <p>Sign in to continue learning</p>
-    </mat-card-header>
+      <p class="text-gray-500">Sign in to continue learning</p>
+    </div>
 
-    <mat-card-content>
-      @if (error()) {
-        <div class="error-message">{{ error() }}</div>
-      }
+    <!-- Error Message -->
+    @if (error()) {
+      <div class="alert alert-error mb-6">
+        {{ error() }}
+      </div>
+    }
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" placeholder="your@email.com">
-          <span matSuffix class="icon-suffix"><fa-icon [icon]="faEnvelope"></fa-icon></span>
-          @if (form.controls['email'].hasError('required')) {
-            <mat-error>Email is required</mat-error>
-          }
-          @if (form.controls['email'].hasError('email')) {
-            <mat-error>Please enter a valid email</mat-error>
-          }
-        </mat-form-field>
+    <!-- Form -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+      <!-- Email Field -->
+      <div class="form-group">
+        <label class="label" for="email">Email</label>
+        <div class="relative">
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            class="input pr-10"
+            [class.input-error]="form.controls['email'].touched && form.controls['email'].invalid"
+            placeholder="your@email.com">
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <fa-icon [icon]="faEnvelope"></fa-icon>
+          </span>
+        </div>
+        @if (form.controls['email'].touched && form.controls['email'].hasError('required')) {
+          <p class="form-error">Email is required</p>
+        }
+        @if (form.controls['email'].touched && form.controls['email'].hasError('email')) {
+          <p class="form-error">Please enter a valid email</p>
+        }
+      </div>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Password</mat-label>
-          <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password">
-          <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())">
+      <!-- Password Field -->
+      <div class="form-group">
+        <label class="label" for="password">Password</label>
+        <div class="relative">
+          <input
+            id="password"
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            class="input pr-10"
+            [class.input-error]="form.controls['password'].touched && form.controls['password'].invalid"
+            placeholder="Enter your password">
+          <button
+            type="button"
+            (click)="hidePassword.set(!hidePassword())"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
             <fa-icon [icon]="hidePassword() ? faEyeSlash : faEye"></fa-icon>
           </button>
-          @if (form.controls['password'].hasError('required')) {
-            <mat-error>Password is required</mat-error>
-          }
-        </mat-form-field>
+        </div>
+        @if (form.controls['password'].touched && form.controls['password'].hasError('required')) {
+          <p class="form-error">Password is required</p>
+        }
+      </div>
 
-        <button mat-raised-button color="primary" type="submit" class="full-width" [disabled]="loading()">
-          @if (loading()) {
-            <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
-          } @else {
-            Sign In
-          }
-        </button>
-      </form>
-    </mat-card-content>
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn btn-primary w-full h-12 text-base"
+        [disabled]="loading() || form.invalid">
+        @if (loading()) {
+          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          <span>Signing in...</span>
+        } @else {
+          <fa-icon [icon]="faLock"></fa-icon>
+          <span>Sign In</span>
+        }
+      </button>
+    </form>
 
-    <mat-card-actions>
-      <p>Don't have an account? <a routerLink="/auth/register">Sign up</a></p>
-    </mat-card-actions>
-  </mat-card>
+    <!-- Footer -->
+    <p class="text-center mt-6 text-gray-600">
+      Don't have an account?
+      <a routerLink="/auth/register" class="text-gray-900 hover:text-gray-700 font-medium underline">
+        Sign up
+      </a>
+    </p>
+  </div>
 </div>

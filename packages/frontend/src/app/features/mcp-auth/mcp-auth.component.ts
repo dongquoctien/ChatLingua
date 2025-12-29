@@ -3,11 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faDesktop, faCheckCircle, faTimesCircle, faSpinner, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../core/services/auth.service';
@@ -23,11 +18,6 @@ type AuthState = 'checking' | 'login' | 'authenticating' | 'success' | 'error' |
     CommonModule,
     RouterModule,
     FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
     FontAwesomeModule,
   ],
   templateUrl: './mcp-auth.component.html',

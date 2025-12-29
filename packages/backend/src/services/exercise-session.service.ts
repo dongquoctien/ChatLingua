@@ -40,6 +40,8 @@ interface ExerciseRow extends RowDataPacket {
   options: string | null;
   correct_answer: string;
   difficulty_level: string;
+  exercise_data: string | object | null;
+  audio_url: string | null;
 }
 
 // ============= Public Interfaces =============
@@ -64,6 +66,8 @@ export interface SessionExercise {
   options: string[] | null;
   difficultyLevel: string;
   questionOrder: number;
+  exerciseData?: unknown;
+  audioUrl?: string | null;
 }
 
 export interface SessionAnswer {
@@ -123,7 +127,7 @@ export class ExerciseSessionService {
 
     // Get random exercises for this user
     const [exerciseRows] = await pool.query<ExerciseRow[]>(
-      `SELECT e.id, e.exercise_type, e.question, e.options, e.correct_answer, e.difficulty_level
+      `SELECT e.id, e.exercise_type, e.question, e.options, e.correct_answer, e.difficulty_level, e.exercise_data, e.audio_url
        FROM exercises e
        LEFT JOIN conversations c ON e.conversation_id = c.id
        WHERE (c.user_id = ? OR e.user_id = ?) ${typeFilter}
@@ -177,6 +181,20 @@ export class ExerciseSessionService {
         }
       }
 
+      // Parse exercise_data
+      let exerciseData: unknown = null;
+      if (exercise.exercise_data) {
+        if (typeof exercise.exercise_data === 'object') {
+          exerciseData = exercise.exercise_data;
+        } else if (typeof exercise.exercise_data === 'string') {
+          try {
+            exerciseData = JSON.parse(exercise.exercise_data);
+          } catch {
+            exerciseData = null;
+          }
+        }
+      }
+
       exercises.push({
         id: exercise.id,
         exerciseType: exercise.exercise_type,
@@ -184,6 +202,8 @@ export class ExerciseSessionService {
         options,
         difficultyLevel: exercise.difficulty_level,
         questionOrder,
+        exerciseData,
+        audioUrl: exercise.audio_url,
       });
     }
 

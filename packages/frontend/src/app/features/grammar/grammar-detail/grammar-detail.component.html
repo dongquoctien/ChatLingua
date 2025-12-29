@@ -1,76 +1,83 @@
-<div class="grammar-detail-page">
+<div class="max-w-5xl mx-auto p-6">
   <!-- Header -->
-  <div class="page-header">
-    <button mat-icon-button (click)="goBack()" class="back-btn">
+  <div class="flex items-center gap-4 mb-6">
+    <button (click)="goBack()"
+            class="w-10 h-10 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors">
       <fa-icon [icon]="faArrowLeft"></fa-icon>
     </button>
-    <h1>Grammar Rule</h1>
+    <h1 class="text-2xl font-medium text-gray-800 m-0">Grammar Rule</h1>
   </div>
 
   @if (loading()) {
-    <div class="loading-container">
-      <fa-icon [icon]="faSpinner" animation="spin" class="spinner"></fa-icon>
-      <p>Loading grammar rule...</p>
+    <div class="text-center py-12">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-900 mb-4"></fa-icon>
+      <p class="text-gray-500">Loading grammar rule...</p>
     </div>
   } @else if (error()) {
-    <div class="error-container">
-      <p class="error-message">{{ error() }}</p>
-      <button mat-raised-button color="primary" (click)="goBack()">
+    <div class="text-center py-12">
+      <p class="text-red-500 mb-4">{{ error() }}</p>
+      <button (click)="goBack()"
+              class="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
         Go Back
       </button>
     </div>
   } @else if (grammarPoint()) {
-    <div class="content">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
       <!-- Main Card -->
-      <mat-card class="main-card">
-        <div class="card-header">
-          <div class="status-badge" [ngClass]="getStatusClass(grammarPoint()!.reviewStatus)">
-            <fa-icon [icon]="faCheckCircle"></fa-icon>
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <div class="flex justify-between items-center mb-4">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium"
+                [ngClass]="getStatusClass(grammarPoint()!.reviewStatus)">
+            <fa-icon [icon]="faCheckCircle" class="text-xs"></fa-icon>
             {{ getStatusLabel(grammarPoint()!.reviewStatus) }}
-          </div>
-          <span class="category-tag">{{ grammarPoint()!.category }}</span>
+          </span>
+          <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-xl text-sm">
+            {{ grammarPoint()!.category }}
+          </span>
         </div>
 
-        <h2 class="grammar-rule">{{ grammarPoint()!.grammarRule }}</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4 leading-relaxed">
+          {{ grammarPoint()!.grammarRule }}
+        </h2>
 
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200 my-6">
 
-        <div class="explanation-section">
-          <h3>
-            <fa-icon [icon]="faLightbulb"></fa-icon>
+        <div class="mb-6">
+          <h3 class="flex items-center gap-2 text-lg font-medium text-gray-800 mb-3">
+            <fa-icon [icon]="faLightbulb" class="text-gray-600"></fa-icon>
             Explanation
           </h3>
-          <p class="explanation">{{ grammarPoint()!.explanation }}</p>
+          <p class="text-gray-600 leading-relaxed">{{ grammarPoint()!.explanation }}</p>
         </div>
 
         <!-- Examples -->
         @if (grammarPoint()!.examples && grammarPoint()!.examples.length > 0) {
-          <mat-divider></mat-divider>
-          <div class="examples-section">
-            <h3>
-              <fa-icon [icon]="faBook"></fa-icon>
+          <hr class="border-gray-200 my-6">
+          <div class="mb-6">
+            <h3 class="flex items-center gap-2 text-lg font-medium text-gray-800 mb-3">
+              <fa-icon [icon]="faBook" class="text-gray-600"></fa-icon>
               Examples
             </h3>
-            <div class="examples-list">
+            <div class="flex flex-col gap-4">
               @for (example of grammarPoint()!.examples; track $index) {
-                <div class="example-item">
-                  <p class="example-en">{{ example.en }}</p>
-                  <p class="example-vi">{{ example.vi }}</p>
+                <div class="p-4 bg-gray-50 rounded-xl border-l-4 border-gray-400">
+                  <p class="text-gray-800 font-medium mb-1">{{ example.en }}</p>
+                  <p class="text-gray-500 text-sm italic m-0">{{ example.vi }}</p>
                 </div>
               }
             </div>
           </div>
         } @else if (grammarPoint()!.exampleEn) {
-          <mat-divider></mat-divider>
-          <div class="examples-section">
-            <h3>
-              <fa-icon [icon]="faBook"></fa-icon>
+          <hr class="border-gray-200 my-6">
+          <div class="mb-6">
+            <h3 class="flex items-center gap-2 text-lg font-medium text-gray-800 mb-3">
+              <fa-icon [icon]="faBook" class="text-gray-600"></fa-icon>
               Example
             </h3>
-            <div class="example-item">
-              <p class="example-en">{{ grammarPoint()!.exampleEn }}</p>
+            <div class="p-4 bg-gray-50 rounded-xl border-l-4 border-gray-400">
+              <p class="text-gray-800 font-medium mb-1">{{ grammarPoint()!.exampleEn }}</p>
               @if (grammarPoint()!.exampleVi) {
-                <p class="example-vi">{{ grammarPoint()!.exampleVi }}</p>
+                <p class="text-gray-500 text-sm italic m-0">{{ grammarPoint()!.exampleVi }}</p>
               }
             </div>
           </div>
@@ -78,14 +85,14 @@
 
         <!-- Related Rules -->
         @if (grammarPoint()!.relatedRules && grammarPoint()!.relatedRules.length > 0) {
-          <mat-divider></mat-divider>
-          <div class="related-section">
-            <h3>Related Rules</h3>
-            <div class="chips-container">
+          <hr class="border-gray-200 my-6">
+          <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-800 mb-3">Related Rules</h3>
+            <div class="flex flex-wrap gap-2">
               @for (rule of grammarPoint()!.relatedRules; track rule) {
-                <mat-chip-set>
-                  <mat-chip>{{ rule }}</mat-chip>
-                </mat-chip-set>
+                <span class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm">
+                  {{ rule }}
+                </span>
               }
             </div>
           </div>
@@ -93,12 +100,12 @@
 
         <!-- Common Mistakes -->
         @if (grammarPoint()!.commonMistakes && grammarPoint()!.commonMistakes.length > 0) {
-          <mat-divider></mat-divider>
-          <div class="mistakes-section">
-            <h3>Common Mistakes</h3>
-            <ul class="mistakes-list">
+          <hr class="border-gray-200 my-6">
+          <div class="mb-6">
+            <h3 class="text-lg font-medium text-gray-800 mb-3">Common Mistakes</h3>
+            <ul class="list-disc list-inside text-gray-600 space-y-2">
               @for (mistake of grammarPoint()!.commonMistakes; track mistake) {
-                <li>{{ mistake }}</li>
+                <li class="leading-relaxed">{{ mistake }}</li>
               }
             </ul>
           </div>
@@ -106,65 +113,68 @@
 
         <!-- Usage Notes -->
         @if (grammarPoint()!.usageNotes) {
-          <mat-divider></mat-divider>
-          <div class="notes-section">
-            <h3>Usage Notes</h3>
-            <p>{{ grammarPoint()!.usageNotes }}</p>
+          <hr class="border-gray-200 my-6">
+          <div>
+            <h3 class="text-lg font-medium text-gray-800 mb-3">Usage Notes</h3>
+            <p class="text-gray-600 leading-relaxed m-0">{{ grammarPoint()!.usageNotes }}</p>
           </div>
         }
-      </mat-card>
+      </div>
 
       <!-- Progress Card -->
-      <mat-card class="progress-card">
-        <h3>
-          <fa-icon [icon]="faChartLine"></fa-icon>
+      <div class="bg-white rounded-2xl shadow-sm p-6 h-fit lg:sticky lg:top-6">
+        <h3 class="flex items-center gap-2 text-lg font-medium text-gray-800 mb-6">
+          <fa-icon [icon]="faChartLine" class="text-gray-900"></fa-icon>
           Learning Progress
         </h3>
 
-        <div class="mastery-section">
-          <div class="mastery-header">
-            <span>Mastery Level</span>
-            <span class="mastery-value">{{ grammarPoint()!.masteryLevel }}%</span>
+        <div class="mb-6">
+          <div class="flex justify-between mb-2 text-sm">
+            <span class="text-gray-500">Mastery Level</span>
+            <span class="font-semibold text-gray-800">{{ grammarPoint()!.masteryLevel }}%</span>
           </div>
-          <mat-progress-bar
-            mode="determinate"
-            [value]="grammarPoint()!.masteryLevel"
-            [style.--mdc-linear-progress-active-indicator-color]="getMasteryColor(grammarPoint()!.masteryLevel)">
-          </mat-progress-bar>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-300"
+                 [ngClass]="getMasteryColor(grammarPoint()!.masteryLevel)"
+                 [style.width.%]="grammarPoint()!.masteryLevel"></div>
+          </div>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">Review Interval</span>
-            <span class="stat-value">{{ grammarPoint()!.reviewInterval }} days</span>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-400 uppercase tracking-wide">Review Interval</span>
+            <span class="text-sm font-semibold text-gray-800">{{ grammarPoint()!.reviewInterval }} days</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">Repetitions</span>
-            <span class="stat-value">{{ grammarPoint()!.repetitionCount }}</span>
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-400 uppercase tracking-wide">Repetitions</span>
+            <span class="text-sm font-semibold text-gray-800">{{ grammarPoint()!.repetitionCount }}</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">Ease Factor</span>
-            <span class="stat-value">{{ grammarPoint()!.easeFactor.toFixed(2) }}</span>
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-400 uppercase tracking-wide">Ease Factor</span>
+            <span class="text-sm font-semibold text-gray-800">{{ grammarPoint()!.easeFactor.toFixed(2) }}</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">Next Review</span>
-            <span class="stat-value" [class.overdue]="formatNextReview(grammarPoint()!.nextReviewAt) === 'Overdue'">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-400 uppercase tracking-wide">Next Review</span>
+            <span class="text-sm font-semibold"
+                  [class.text-red-500]="formatNextReview(grammarPoint()!.nextReviewAt) === 'Overdue'"
+                  [class.text-gray-800]="formatNextReview(grammarPoint()!.nextReviewAt) !== 'Overdue'">
               {{ formatNextReview(grammarPoint()!.nextReviewAt) }}
             </span>
           </div>
         </div>
 
         @if (grammarPoint()!.lastReviewedAt) {
-          <p class="last-reviewed">
+          <p class="text-sm text-gray-400 text-center my-4">
             Last reviewed: {{ formatDate(grammarPoint()!.lastReviewedAt!) }}
           </p>
         }
 
-        <button mat-raised-button color="primary" class="review-btn" (click)="startReview()">
+        <button (click)="startReview()"
+                class="w-full flex items-center justify-center gap-2 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors mt-4">
           <fa-icon [icon]="faPlay"></fa-icon>
           Start Review
         </button>
-      </mat-card>
+      </div>
     </div>
   }
 </div>

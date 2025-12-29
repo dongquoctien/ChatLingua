@@ -1,12 +1,6 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faFire,
@@ -35,13 +29,8 @@ import { LearningGoalsDialogComponent } from '../learning-goals/learning-goals-d
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatProgressBarModule,
-    MatDialogModule,
-    MatChipsModule,
-    MatTooltipModule,
     FontAwesomeModule,
+    LearningGoalsDialogComponent,
   ],
   templateUrl: './daily-review.component.html',
   styleUrl: './daily-review.component.scss',
@@ -49,7 +38,8 @@ import { LearningGoalsDialogComponent } from '../learning-goals/learning-goals-d
 export class DailyReviewComponent implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
-  private dialog = inject(MatDialog);
+
+  @ViewChild('goalsDialog') goalsDialog!: LearningGoalsDialogComponent;
 
   // Icons
   faFire = faFire;
@@ -127,16 +117,13 @@ export class DailyReviewComponent implements OnInit {
   }
 
   openSettings() {
-    const dialogRef = this.dialog.open(LearningGoalsDialogComponent, {
-      width: '450px',
-      data: this.goals(),
-    });
+    this.goalsDialog.open();
+  }
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
-        this.goals.set(result);
-      }
-    });
+  onGoalsDialogClosed(result: LearningGoals | null) {
+    if (result) {
+      this.goals.set(result);
+    }
   }
 
   viewStats() {
@@ -149,5 +136,13 @@ export class DailyReviewComponent implements OnInit {
     const total = stats.masteredCount + stats.learningCount + stats.reviewingCount + stats.newAvailable;
     if (total === 0) return 0;
     return Math.round((stats.masteredCount / total) * 100);
+  }
+
+  getBarPercentage(count: number): number {
+    const stats = this.reviewStats();
+    if (!stats) return 0;
+    const total = stats.masteredCount + stats.learningCount + stats.reviewingCount + stats.newAvailable;
+    if (total === 0) return 0;
+    return (count / total) * 100;
   }
 }

@@ -1,0 +1,89 @@
+<div class="relative" [class.z-50]="isOpen()">
+  <!-- Bell Button -->
+  <button class="relative w-11 h-11 rounded-full border-none bg-transparent cursor-pointer flex items-center justify-center transition-all hover:bg-black/5"
+          [class.text-yellow-400]="badgeInfo.unreadCount > 0"
+          (click)="toggleDropdown()">
+    <fa-icon [icon]="faBell"
+             class="text-xl transition-colors"
+             [class.text-gray-500]="badgeInfo.unreadCount === 0"
+             [class.text-yellow-400]="badgeInfo.unreadCount > 0"
+             [class.ringing]="badgeInfo.unreadCount > 0"></fa-icon>
+    @if (badgeInfo.unreadCount > 0) {
+      <span class="absolute top-1 right-1 min-w-[18px] h-[18px] bg-gradient-to-br from-red-400 to-orange-500 text-white rounded-full text-[0.7rem] font-bold flex items-center justify-center px-1 shadow-md"
+            [class.min-w-[24px]]="badgeInfo.unreadCount > 9"
+            [class.text-[0.65rem]]="badgeInfo.unreadCount > 9">
+        {{ badgeInfo.unreadCount > 99 ? '99+' : badgeInfo.unreadCount }}
+      </span>
+    }
+  </button>
+
+  <!-- Dropdown -->
+  @if (isOpen()) {
+    <div class="absolute top-[calc(100%+8px)] right-0 w-[340px] max-h-[480px] bg-white rounded-xl shadow-2xl overflow-hidden z-[1000] slide-down"
+         (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex justify-between items-center p-4 border-b border-gray-100">
+        <h4 class="m-0 text-base text-gray-800 font-semibold">Notifications</h4>
+        @if (notifications.length > 0) {
+          <button class="flex items-center gap-1 px-2 py-1 bg-transparent border border-gray-900 rounded-md text-gray-900 text-xs cursor-pointer transition-all hover:bg-gray-900 hover:text-white"
+                  (click)="onMarkAllRead()">
+            <fa-icon [icon]="faCheckDouble"></fa-icon>
+            Mark all read
+          </button>
+        }
+      </div>
+
+      <!-- Notification List -->
+      <div class="max-h-[360px] overflow-y-auto">
+        @if (notifications.length === 0) {
+          <div class="py-8 text-center text-gray-400">
+            <fa-icon [icon]="faBell" class="text-3xl mb-2 opacity-30"></fa-icon>
+            <p class="m-0 text-sm">No notifications yet</p>
+          </div>
+        } @else {
+          @for (notification of notifications; track notification.id) {
+            <div class="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-gray-50 last:border-b-0"
+                 [class.bg-gray-50]="!notification.isRead"
+                 [class.hover:bg-gray-100]="!notification.isRead"
+                 [class.hover:bg-gray-50]="notification.isRead"
+                 (click)="onNotificationClick(notification)">
+              <!-- Icon -->
+              <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white"
+                   [ngClass]="{
+                     'bg-gradient-to-br from-yellow-400 to-orange-500': notification.notificationType === 'achievement',
+                     'bg-gradient-to-br from-gray-500 to-gray-700': notification.notificationType === 'level_up',
+                     'bg-gradient-to-br from-red-400 to-orange-500': notification.notificationType === 'streak',
+                     'bg-gradient-to-br from-gray-600 to-gray-800': notification.notificationType === 'challenge',
+                     'bg-gradient-to-br from-gray-600 to-gray-700': !['achievement', 'level_up', 'streak', 'challenge'].includes(notification.notificationType)
+                   }">
+                <fa-icon [icon]="getIcon(notification.notificationType)"></fa-icon>
+              </div>
+              <!-- Content -->
+              <div class="flex-1 flex flex-col gap-0.5 min-w-0">
+                <span class="font-semibold text-sm text-gray-800">{{ notification.title }}</span>
+                <span class="text-xs text-gray-600 leading-tight line-clamp-2">{{ notification.message }}</span>
+                <span class="text-[0.7rem] text-gray-400">{{ formatTime(notification.createdAt) }}</span>
+              </div>
+              <!-- Unread dot -->
+              @if (!notification.isRead) {
+                <div class="flex-shrink-0 self-center text-gray-900 text-[0.5rem]">
+                  <fa-icon [icon]="faCircle"></fa-icon>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Footer -->
+      @if (notifications.length > 5) {
+        <div class="p-3 border-t border-gray-100 text-center">
+          <button class="w-full py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm cursor-pointer transition-all hover:bg-gray-100 hover:text-gray-800"
+                  (click)="onViewAll()">
+            View All Notifications
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

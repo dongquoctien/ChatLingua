@@ -1,0 +1,174 @@
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" (click)="onClose()">
+  <!-- Dialog -->
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 class="text-xl font-semibold text-gray-900">Create Quiz</h2>
+      <button class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+              (click)="onClose()">
+        <fa-icon [icon]="faTimes"></fa-icon>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto px-6 py-4">
+      @if (loadingConversations()) {
+        <div class="flex items-center justify-center gap-3 py-10 text-gray-500">
+          <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+          <span>Loading...</span>
+        </div>
+      } @else {
+        <!-- Title -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Quiz Title</label>
+          <input type="text"
+                 class="input w-full"
+                 [(ngModel)]="title"
+                 placeholder="e.g., Daily Vocabulary Quiz"
+                 required>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+          <textarea class="input w-full"
+                    [(ngModel)]="description"
+                    rows="2"
+                    placeholder="Optional description..."></textarea>
+        </div>
+
+        <!-- Time & Attempts -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Time Limit (minutes)</label>
+            <input type="number"
+                   class="input w-full"
+                   [(ngModel)]="timeLimitMinutes"
+                   min="1"
+                   max="60">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Max Attempts</label>
+            <input type="number"
+                   class="input w-full"
+                   [(ngModel)]="maxAttempts"
+                   min="1"
+                   max="10">
+          </div>
+        </div>
+
+        <!-- Exercises Section -->
+        <div class="mt-6">
+          <!-- Conversation Filter -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Select Conversation ({{ totalExerciseCount() }} exercises total)
+            </label>
+            <select class="input w-full"
+                    [(ngModel)]="selectedConversationId"
+                    (change)="onConversationFilterChange()">
+              <option [ngValue]="null">-- Select a conversation --</option>
+              @for (conv of conversations(); track conv.id) {
+                <option [ngValue]="conv.id">
+                  {{ conv.topic || 'Conversation #' + conv.id }} ({{ conv.count }} exercises)
+                </option>
+              }
+            </select>
+          </div>
+
+          @if (loadingExercises()) {
+            <div class="flex items-center justify-center gap-2 py-6 text-gray-500 text-sm">
+              <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+              <span>Loading exercises...</span>
+            </div>
+          } @else if (exercises().length === 0) {
+            <div class="text-center py-8 text-gray-400 bg-gray-50 rounded-lg">
+              <p>Select a conversation above to load exercises</p>
+            </div>
+          } @else {
+            <!-- Section Header -->
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-medium text-gray-700">Select Exercises ({{ selectedIds.size }} selected)</span>
+              <button class="text-sm text-gray-900 hover:text-gray-700 font-medium" (click)="toggleAll()">
+                {{ isAllSelected() ? 'Deselect All' : 'Select All' }}
+              </button>
+            </div>
+
+            <!-- Exercises List -->
+            <div class="border border-gray-200 rounded-lg max-h-[300px] overflow-y-auto">
+              @for (exercise of exercises(); track exercise.id) {
+                <div class="flex items-start gap-3 p-3 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                     (click)="toggleExercise(exercise.id)">
+                  <input type="checkbox"
+                         class="mt-1 w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-500"
+                         [checked]="selectedIds.has(exercise.id)"
+                         (change)="toggleExercise(exercise.id)"
+                         (click)="$event.stopPropagation()">
+                  <div class="flex-1 flex flex-col gap-1">
+                    <span class="text-xs font-semibold uppercase px-2 py-0.5 rounded w-fit"
+                          [ngClass]="getTypeClass(exercise.exerciseType)">
+                      {{ formatType(exercise.exerciseType) }}
+                    </span>
+                    <span class="text-sm text-gray-700 line-clamp-2">{{ exercise.questionText }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Selected Exercises Panel -->
+        @if (selectedExercises().length > 0) {
+          <div class="mt-4 border border-gray-300 rounded-lg bg-gray-50">
+            <div class="flex justify-between items-center px-4 py-3 cursor-pointer select-none"
+                 (click)="showSelectedPanel = !showSelectedPanel">
+              <span class="flex items-center gap-2 font-medium text-gray-700">
+                <fa-icon [icon]="showSelectedPanel ? faChevronUp : faChevronDown"></fa-icon>
+                Selected Exercises ({{ selectedExercises().length }})
+              </span>
+              <button class="text-sm text-red-600 hover:text-red-700 font-medium"
+                      (click)="clearAllSelected(); $event.stopPropagation()">
+                Clear All
+              </button>
+            </div>
+            @if (showSelectedPanel) {
+              <div class="max-h-[200px] overflow-y-auto border-t border-gray-200 bg-white rounded-b-lg">
+                @for (exercise of selectedExercises(); track exercise.id) {
+                  <div class="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-b-0">
+                    <div class="flex-1 flex flex-col gap-1 min-w-0">
+                      <span class="text-xs font-semibold uppercase px-2 py-0.5 rounded w-fit"
+                            [ngClass]="getTypeClass(exercise.exerciseType)">
+                        {{ formatType(exercise.exerciseType) }}
+                      </span>
+                      <span class="text-sm text-gray-700 truncate">{{ exercise.questionText }}</span>
+                    </div>
+                    <button class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                            (click)="removeSelected(exercise.id)">
+                      <fa-icon [icon]="faTrash" class="text-sm"></fa-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+      <button class="btn btn-secondary" (click)="onClose()">Cancel</button>
+      <button class="btn btn-primary"
+              (click)="create()"
+              [disabled]="!canCreate() || creating()">
+        @if (creating()) {
+          <fa-icon [icon]="faSpinner" animation="spin" class="mr-2"></fa-icon>
+          Creating...
+        } @else {
+          Create Quiz
+        }
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,75 +1,78 @@
-<div class="flashcard-page">
+<div class="max-w-xl mx-auto min-h-[calc(100vh-120px)] flex flex-col">
   <!-- Header -->
-  <div class="flashcard-header">
-    <button mat-icon-button (click)="goBack()" matTooltip="Back to Review">
+  <div class="flex justify-between items-center py-2 mb-2">
+    <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            (click)="goBack()"
+            title="Back to Review">
       <fa-icon [icon]="faArrowLeft"></fa-icon>
     </button>
 
-    <div class="session-info">
-      <div class="timer">
-        <fa-icon [icon]="faStopwatch"></fa-icon>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1.5 text-sm text-gray-500">
+        <fa-icon [icon]="faStopwatch" class="text-gray-400"></fa-icon>
         {{ formatTime(elapsedSeconds()) }}
       </div>
-      <div class="progress-text">
+      <div class="font-medium text-gray-800">
         {{ currentIndex() + 1 }} / {{ queue().length }}
       </div>
     </div>
 
-    <div class="session-stats">
-      <span class="correct">{{ sessionStats().correct }}</span>
-      <span class="separator">/</span>
-      <span class="total">{{ sessionStats().completed }}</span>
+    <div class="flex items-center text-sm">
+      <span class="text-gray-900 font-semibold">{{ sessionStats().correct }}</span>
+      <span class="mx-1 text-gray-400">/</span>
+      <span class="text-gray-500">{{ sessionStats().completed }}</span>
     </div>
   </div>
 
   <!-- Progress Bar -->
-  <mat-progress-bar mode="determinate" [value]="progress()"></mat-progress-bar>
+  <div class="h-1 bg-gray-200 rounded-full overflow-hidden mb-6">
+    <div class="h-full bg-gray-900 transition-all duration-300 rounded-full"
+         [style.width.%]="progress()"></div>
+  </div>
 
   @if (loading()) {
-    <div class="loading-spinner">
-      <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
-      <p>Loading review cards...</p>
+    <div class="flex-1 flex flex-col justify-center items-center text-gray-600">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-5xl mb-4"></fa-icon>
+      <p class="text-gray-500">Loading review cards...</p>
     </div>
   } @else if (showCompletion()) {
     <!-- Completion Screen -->
-    <div class="completion-screen">
-      <div class="completion-icon">
-        <fa-icon [icon]="faTrophy"></fa-icon>
-      </div>
-      <h2>Session Complete!</h2>
+    <div class="flex-1 flex flex-col justify-center items-center text-center p-8">
+      <fa-icon [icon]="faTrophy" class="text-6xl text-orange-500 mb-6"></fa-icon>
+      <h2 class="text-2xl font-semibold text-gray-800 mb-3">Session Complete!</h2>
 
-      <div class="completion-stats">
-        <div class="stat">
-          <span class="value">{{ sessionStats().completed }}</span>
-          <span class="label">Cards Reviewed</span>
+      <div class="flex gap-8 my-6">
+        <div class="flex flex-col items-center">
+          <span class="text-3xl font-bold text-gray-900">{{ sessionStats().completed }}</span>
+          <span class="text-xs text-gray-500 uppercase mt-1">Cards Reviewed</span>
         </div>
-        <div class="stat">
-          <span class="value">{{ getAccuracy() }}%</span>
-          <span class="label">Accuracy</span>
+        <div class="flex flex-col items-center">
+          <span class="text-3xl font-bold text-gray-900">{{ getAccuracy() }}%</span>
+          <span class="text-xs text-gray-500 uppercase mt-1">Accuracy</span>
         </div>
-        <div class="stat">
-          <span class="value">{{ formatTime(elapsedSeconds()) }}</span>
-          <span class="label">Time Spent</span>
+        <div class="flex flex-col items-center">
+          <span class="text-3xl font-bold text-gray-900">{{ formatTime(elapsedSeconds()) }}</span>
+          <span class="text-xs text-gray-500 uppercase mt-1">Time Spent</span>
         </div>
       </div>
 
-      <div class="completion-actions">
-        <button mat-raised-button color="primary" (click)="restartSession()">
+      <div class="flex gap-4 mt-4">
+        <button class="btn btn-primary flex items-center gap-2" (click)="restartSession()">
           <fa-icon [icon]="faRedo"></fa-icon>
           Review More
         </button>
-        <button mat-stroked-button (click)="goBack()">
+        <button class="btn btn-secondary" (click)="goBack()">
           Back to Dashboard
         </button>
       </div>
     </div>
   } @else if (queue().length === 0) {
     <!-- Empty Queue -->
-    <div class="empty-queue">
-      <fa-icon [icon]="faCheck" class="empty-icon"></fa-icon>
-      <h2>No cards to review!</h2>
-      <p>You're all caught up. Check back later for more reviews.</p>
-      <button mat-raised-button color="primary" (click)="goBack()">
+    <div class="flex-1 flex flex-col justify-center items-center text-center p-8">
+      <fa-icon [icon]="faCheck" class="text-6xl text-gray-900 mb-6"></fa-icon>
+      <h2 class="text-2xl font-semibold text-gray-800 mb-3">No cards to review!</h2>
+      <p class="text-gray-500 mb-6">You're all caught up. Check back later for more reviews.</p>
+      <button class="btn btn-primary" (click)="goBack()">
         Back to Dashboard
       </button>
     </div>
@@ -79,106 +82,91 @@
       <div class="flashcard" [class.flipped]="currentCard()!.isFlipped">
         <!-- Front Side -->
         <div class="card-face front">
-          <div class="direction-badge">
+          <span class="inline-block self-start bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded-full">
             {{ currentCard()!.direction === 'vi_to_en' ? 'VI → EN' : 'EN → VI' }}
-          </div>
+          </span>
 
-          <div class="card-content">
-            <h2 class="main-word">{{ getFrontText() }}</h2>
+          <div class="flex-1 flex flex-col justify-center items-center text-center">
+            <h2 class="text-4xl font-medium text-gray-800 mb-3">{{ getFrontText() }}</h2>
 
             @if (currentCard()!.direction === 'en_to_vi' && getPhonetic()) {
-              <div class="phonetic">
+              <div class="text-lg text-gray-500 mb-2 flex items-center gap-2">
                 {{ getPhonetic() }}
-                <button mat-icon-button class="speak-btn" (click)="speak(getFrontText()); $event.stopPropagation()">
-                  <fa-icon [icon]="faVolumeUp" [class.speaking]="speaking()"></fa-icon>
+                <button class="p-1 text-gray-500 hover:text-gray-900 transition-colors"
+                        (click)="speak(getFrontText()); $event.stopPropagation()">
+                  <fa-icon [icon]="faVolumeUp" [class.text-gray-900]="speaking()"></fa-icon>
                 </button>
               </div>
             }
 
             @if (currentCard()!.item.partOfSpeech) {
-              <div class="part-of-speech">{{ currentCard()!.item.partOfSpeech }}</div>
+              <div class="text-sm text-gray-400 italic">{{ currentCard()!.item.partOfSpeech }}</div>
             }
           </div>
 
-          <div class="tap-hint">Tap to reveal answer</div>
+          <div class="text-center text-gray-400 text-sm mt-auto">Tap to reveal answer</div>
         </div>
 
         <!-- Back Side -->
         <div class="card-face back">
-          <div class="card-content">
-            <div class="front-reminder">{{ getFrontText() }}</div>
+          <div class="flex-1 flex flex-col items-center text-center">
+            <div class="text-sm text-gray-400 mb-4">{{ getFrontText() }}</div>
 
-            <div class="answer-section">
-              <h2 class="answer-word">{{ getBackText() }}</h2>
+            <div class="mb-4">
+              <h2 class="text-3xl font-semibold text-gray-900 mb-2">{{ getBackText() }}</h2>
 
               @if (currentCard()!.direction === 'vi_to_en' && getPhonetic()) {
-                <div class="phonetic">
+                <div class="text-base text-gray-500 flex items-center justify-center gap-2">
                   {{ getPhonetic() }}
-                  <button mat-icon-button class="speak-btn" (click)="speak(getBackText()); $event.stopPropagation()">
-                    <fa-icon [icon]="faVolumeUp" [class.speaking]="speaking()"></fa-icon>
+                  <button class="p-1 text-gray-500 hover:text-gray-900 transition-colors"
+                          (click)="speak(getBackText()); $event.stopPropagation()">
+                    <fa-icon [icon]="faVolumeUp" [class.text-gray-900]="speaking()"></fa-icon>
                   </button>
                 </div>
               }
             </div>
 
             @if (getFirstDefinition()) {
-              <div class="definition">{{ getFirstDefinition() }}</div>
+              <div class="text-sm text-gray-600 max-w-xs leading-relaxed mb-3">{{ getFirstDefinition() }}</div>
             }
 
             @if (currentCard()!.item.cefrLevel) {
-              <div class="cefr-badge">{{ currentCard()!.item.cefrLevel }}</div>
+              <span class="inline-block text-white text-xs font-medium px-3 py-1 rounded-full"
+                    [ngClass]="getCefrColorClass(currentCard()!.item.cefrLevel)">
+                {{ currentCard()!.item.cefrLevel }}
+              </span>
             }
           </div>
 
           <!-- Rating Buttons -->
-          <div class="rating-buttons" (click)="$event.stopPropagation()">
-            <button
-              mat-raised-button
-              class="rating-btn again"
-              [disabled]="submitting()"
-              (click)="submitRating('again')"
-            >
+          <div class="grid grid-cols-4 gap-2 mt-auto pt-4" (click)="$event.stopPropagation()">
+            <button class="rating-btn again" [disabled]="submitting()" (click)="submitRating('again')">
               <span class="rating-label">Again</span>
               <span class="rating-interval">{{ getIntervalText('again') }}</span>
             </button>
 
-            <button
-              mat-raised-button
-              class="rating-btn hard"
-              [disabled]="submitting()"
-              (click)="submitRating('hard')"
-            >
+            <button class="rating-btn hard" [disabled]="submitting()" (click)="submitRating('hard')">
               <span class="rating-label">Hard</span>
               <span class="rating-interval">{{ getIntervalText('hard') }}</span>
             </button>
 
-            <button
-              mat-raised-button
-              class="rating-btn good"
-              [disabled]="submitting()"
-              (click)="submitRating('good')"
-            >
+            <button class="rating-btn good" [disabled]="submitting()" (click)="submitRating('good')">
               <span class="rating-label">Good</span>
               <span class="rating-interval">{{ getIntervalText('good') }}</span>
             </button>
 
-            <button
-              mat-raised-button
-              class="rating-btn easy"
-              [disabled]="submitting()"
-              (click)="submitRating('easy')"
-            >
+            <button class="rating-btn easy" [disabled]="submitting()" (click)="submitRating('easy')">
               <span class="rating-label">Easy</span>
               <span class="rating-interval">{{ getIntervalText('easy') }}</span>
             </button>
           </div>
 
           @if (lastResult()) {
-            <div class="result-feedback">
+            <div class="text-center mt-3 text-sm text-gray-500 flex items-center justify-center gap-3">
               Next review: {{ lastResult()!.intervalText }}
               @if (lastResult()!.xpAwarded && lastResult()!.xpAwarded! > 0) {
                 <span class="xp-badge">
-                  <fa-icon [icon]="faBolt"></fa-icon>
+                  <fa-icon [icon]="faBolt" class="text-yellow-500"></fa-icon>
                   +{{ lastResult()!.xpAwarded }} XP
                 </span>
               }

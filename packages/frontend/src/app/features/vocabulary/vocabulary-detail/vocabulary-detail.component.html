@@ -1,17 +1,17 @@
 <!-- Loading State -->
 @if (loading()) {
-  <div class="loading-container">
-    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+  <div class="flex flex-col items-center justify-center min-h-[300px] gap-4 text-gray-500">
+    <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl"></fa-icon>
     <p>Loading dictionary entry...</p>
   </div>
 }
 
 <!-- Error State -->
 @if (error()) {
-  <div class="error-container">
-    <p class="error-message">{{ error() }}</p>
-    <button mat-button (click)="goBack()">
-      <fa-icon [icon]="faArrowLeft"></fa-icon>
+  <div class="flex flex-col items-center justify-center min-h-[300px] gap-4">
+    <p class="text-red-600">{{ error() }}</p>
+    <button class="btn btn-secondary" (click)="goBack()">
+      <fa-icon [icon]="faArrowLeft" class="mr-2"></fa-icon>
       Back to Vocabulary
     </button>
   </div>
@@ -19,113 +19,104 @@
 
 <!-- Dictionary Entry -->
 @if (entry(); as entry) {
-  <div class="dictionary-page">
+  <div class="max-w-[900px] mx-auto px-4 py-6">
     <!-- Back Navigation -->
-    <button mat-button class="back-button" (click)="goBack()">
-      <fa-icon [icon]="faArrowLeft"></fa-icon>
+    <button class="btn btn-secondary mb-4" (click)="goBack()">
+      <fa-icon [icon]="faArrowLeft" class="mr-2"></fa-icon>
       Back to Vocabulary
     </button>
 
     <!-- Main Entry Card -->
-    <mat-card class="dictionary-card">
+    <div class="card overflow-hidden">
       <!-- Header Section -->
-      <div class="entry-header">
-        <div class="word-row">
-          <h1 class="english-word">{{ entry.englishWord }}</h1>
+      <div class="p-6 bg-gradient-to-br from-gray-50 to-white">
+        <div class="flex items-center gap-3 flex-wrap">
+          <h1 class="text-4xl font-bold text-gray-900 font-serif">{{ entry.englishWord }}</h1>
           @if (entry.cefrLevel) {
-            <span
-              class="cefr-badge"
-              [style.background-color]="getCefrColor(entry.cefrLevel)"
-            >
+            <span class="px-2.5 py-1 rounded text-xs font-semibold text-white uppercase tracking-wide"
+                  [ngClass]="getCefrColorClass(entry.cefrLevel)">
               {{ entry.cefrLevel }}
             </span>
           }
         </div>
 
         <!-- Pronunciation -->
-        <div class="pronunciation-row">
+        <div class="flex items-center flex-wrap gap-1 mt-2">
           @if (entry.pronunciationUk || entry.phonetic) {
-            <span class="phonetic">{{ entry.pronunciationUk || entry.phonetic }}</span>
-            <button
-              mat-icon-button
-              class="audio-btn"
-              matTooltip="UK pronunciation"
-              (click)="speak(entry.englishWord, 'uk')"
-              [disabled]="speakingAccent() === 'uk'"
-            >
+            <span class="text-gray-500 text-lg">{{ entry.pronunciationUk || entry.phonetic }}</span>
+            <button class="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors"
+                    title="UK pronunciation"
+                    (click)="speak(entry.englishWord, 'uk')"
+                    [disabled]="speakingAccent() === 'uk'">
               <fa-icon [icon]="faVolumeUp"></fa-icon>
             </button>
-            <span class="accent-label">UK</span>
+            <span class="text-xs font-semibold text-gray-400 uppercase mr-3">UK</span>
           }
-          <!-- @if (entry.pronunciationUs && entry.pronunciationUs !== entry.pronunciationUk) {
-            <span class="phonetic us">{{ entry.pronunciationUs }}</span>
-          } -->
-          <button
-            mat-icon-button
-            class="audio-btn"
-            matTooltip="US pronunciation"
-            (click)="speak(entry.englishWord, 'us')"
-            [disabled]="speakingAccent() === 'us'"
-          >
+          <button class="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 transition-colors"
+                  title="US pronunciation"
+                  (click)="speak(entry.englishWord, 'us')"
+                  [disabled]="speakingAccent() === 'us'">
             <fa-icon [icon]="faVolumeUp"></fa-icon>
           </button>
-          <span class="accent-label">US</span>
+          <span class="text-xs font-semibold text-gray-400 uppercase">US</span>
         </div>
 
         <!-- Part of Speech & Vietnamese -->
-        <div class="pos-row">
-          <span class="part-of-speech">{{ formatPartOfSpeech(entry.partOfSpeech) }}</span>
-          <span class="separator">·</span>
-          <span class="vietnamese-word">{{ entry.vietnameseWord }}</span>
+        <div class="flex items-center gap-2 mt-3 flex-wrap">
+          <span class="italic text-gray-600">{{ formatPartOfSpeech(entry.partOfSpeech) }}</span>
+          <span class="text-gray-400">·</span>
+          <span class="text-gray-600 font-medium text-lg">{{ entry.vietnameseWord }}</span>
           @if (entry.register && entry.register !== 'neutral') {
-            <span class="register-badge">{{ entry.register }}</span>
+            <span class="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs italic rounded">{{ entry.register }}</span>
           }
         </div>
       </div>
 
-      <mat-divider></mat-divider>
+      <hr class="border-gray-200">
 
       <!-- Word Forms Section -->
       @if (entry.wordForms && formatWordForms(entry).length > 0) {
-        <div class="section word-forms-section">
-          <h3 class="section-title">WORD FORMS</h3>
-          <div class="word-forms">
+        <div class="p-5 bg-gray-50">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">WORD FORMS</h3>
+          <div class="flex flex-wrap gap-3">
             @for (form of formatWordForms(entry); track form) {
-              <span class="word-form">{{ form }}</span>
+              <span class="text-sm text-gray-600 before:content-['•'] before:mr-1.5 before:text-gray-400">{{ form }}</span>
             }
           </div>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Definitions Section -->
       @if (entry.definitions && entry.definitions.length > 0) {
-        <div class="section definitions-section">
-          <h3 class="section-title">DEFINITIONS</h3>
+        <div class="p-5">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">DEFINITIONS</h3>
           @for (def of entry.definitions; track def.senseId; let i = $index) {
-            <div class="definition-item">
-              <div class="definition-header">
-                <span class="sense-number">{{ def.senseId }}</span>
+            <div class="mb-6 last:mb-0">
+              <div class="flex items-center gap-2 flex-wrap mb-2">
+                <span class="w-6 h-6 rounded-full bg-gray-900 text-white text-xs font-semibold flex items-center justify-center">
+                  {{ def.senseId }}
+                </span>
                 @if (def.grammar) {
-                  <span class="grammar-label">{{ def.grammar }}</span>
+                  <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-mono rounded">{{ def.grammar }}</span>
                 }
                 @if (def.register) {
-                  <span class="register-label">({{ def.register }})</span>
+                  <span class="text-sm text-gray-400 italic">({{ def.register }})</span>
                 }
               </div>
-              <p class="definition-text">{{ def.definition }}</p>
-              <p class="definition-vi">{{ def.definitionVi }}</p>
+              <p class="text-gray-900 leading-relaxed">{{ def.definition }}</p>
+              <p class="text-gray-600 italic mt-1">{{ def.definitionVi }}</p>
 
               <!-- Examples -->
               @if (def.examples && def.examples.length > 0) {
-                <div class="examples">
-                  <p class="examples-label">Examples:</p>
+                <div class="mt-3 pl-2">
+                  <p class="text-xs text-gray-400 uppercase tracking-wide mb-2">Examples:</p>
                   @for (ex of def.examples; track ex.en) {
-                    <div class="example-item">
-                      <fa-icon [icon]="faQuoteLeft" class="quote-icon"></fa-icon>
-                      <div class="example-content">
-                        <p class="example-en">{{ ex.en }}</p>
-                        <p class="example-vi">{{ ex.vi }}</p>
+                    <div class="flex gap-3 p-3 bg-gray-50 rounded-lg border-l-3 border-gray-300 mb-3 last:mb-0">
+                      <fa-icon [icon]="faQuoteLeft" class="text-gray-300 text-sm flex-shrink-0 mt-0.5"></fa-icon>
+                      <div>
+                        <p class="text-gray-800 leading-relaxed">{{ ex.en }}</p>
+                        <p class="text-gray-500 italic text-sm mt-1">{{ ex.vi }}</p>
                       </div>
                     </div>
                   }
@@ -134,233 +125,237 @@
 
               <!-- Patterns -->
               @if (def.patterns && def.patterns.length > 0) {
-                <div class="patterns">
-                  <span class="patterns-label">Patterns:</span>
+                <div class="flex items-center flex-wrap gap-2 mt-3">
+                  <span class="text-xs text-gray-400 uppercase tracking-wide">Patterns:</span>
                   @for (pattern of def.patterns; track pattern) {
-                    <span class="pattern-chip">{{ pattern }}</span>
+                    <span class="px-2.5 py-1 bg-gray-100 text-gray-700 text-sm font-mono rounded">{{ pattern }}</span>
                   }
                 </div>
               }
             </div>
           }
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       } @else if (entry.exampleEn) {
         <!-- Fallback to simple example if no definitions -->
-        <div class="section definitions-section">
-          <h3 class="section-title">EXAMPLE</h3>
-          <div class="example-item">
-            <fa-icon [icon]="faQuoteLeft" class="quote-icon"></fa-icon>
-            <div class="example-content">
-              <p class="example-en">{{ entry.exampleEn }}</p>
+        <div class="p-5">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">EXAMPLE</h3>
+          <div class="flex gap-3 p-3 bg-gray-50 rounded-lg border-l-3 border-gray-300">
+            <fa-icon [icon]="faQuoteLeft" class="text-gray-300 text-sm flex-shrink-0 mt-0.5"></fa-icon>
+            <div>
+              <p class="text-gray-800">{{ entry.exampleEn }}</p>
               @if (entry.exampleVi) {
-                <p class="example-vi">{{ entry.exampleVi }}</p>
+                <p class="text-gray-500 italic text-sm mt-1">{{ entry.exampleVi }}</p>
               }
             </div>
           </div>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       } @else {
         <!-- No dictionary data available -->
-        <div class="section empty-dictionary-section">
-          <div class="empty-dictionary">
-            <fa-icon [icon]="faBook" class="empty-icon"></fa-icon>
-            <h4>Dictionary data not available</h4>
-            <p>This vocabulary item was added before the dictionary feature. Talk to Claude about this word to get detailed dictionary information including definitions, examples, collocations, and more.</p>
+        <div class="p-5 bg-gray-50">
+          <div class="text-center py-8">
+            <fa-icon [icon]="faBook" class="text-4xl text-gray-300 mb-4"></fa-icon>
+            <h4 class="text-lg font-semibold text-gray-700 mb-2">Dictionary data not available</h4>
+            <p class="text-sm text-gray-500 max-w-[500px] mx-auto">
+              This vocabulary item was added before the dictionary feature. Talk to Claude about this word to get detailed dictionary information including definitions, examples, collocations, and more.
+            </p>
           </div>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Word Family Section -->
       @if (hasWordFamily(entry)) {
-        <div class="section word-family-section">
-          <h3 class="section-title">WORD FAMILY</h3>
-          <div class="word-family">
+        <div class="p-5 bg-gradient-to-r from-purple-50 to-white">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">WORD FAMILY</h3>
+          <div class="flex flex-col gap-2">
             @if (entry.wordFamily?.noun?.length) {
-              <div class="family-row">
-                <span class="family-pos">noun:</span>
-                <span class="family-words">{{ entry.wordFamily!.noun!.join(', ') }}</span>
+              <div class="flex items-baseline gap-3">
+                <span class="text-sm text-gray-400 italic min-w-[70px]">noun:</span>
+                <span class="text-gray-800">{{ entry.wordFamily!.noun!.join(', ') }}</span>
               </div>
             }
             @if (entry.wordFamily?.verb?.length) {
-              <div class="family-row">
-                <span class="family-pos">verb:</span>
-                <span class="family-words">{{ entry.wordFamily!.verb!.join(', ') }}</span>
+              <div class="flex items-baseline gap-3">
+                <span class="text-sm text-gray-400 italic min-w-[70px]">verb:</span>
+                <span class="text-gray-800">{{ entry.wordFamily!.verb!.join(', ') }}</span>
               </div>
             }
             @if (entry.wordFamily?.adjective?.length) {
-              <div class="family-row">
-                <span class="family-pos">adjective:</span>
-                <span class="family-words">{{ entry.wordFamily!.adjective!.join(', ') }}</span>
+              <div class="flex items-baseline gap-3">
+                <span class="text-sm text-gray-400 italic min-w-[70px]">adjective:</span>
+                <span class="text-gray-800">{{ entry.wordFamily!.adjective!.join(', ') }}</span>
               </div>
             }
             @if (entry.wordFamily?.adverb?.length) {
-              <div class="family-row">
-                <span class="family-pos">adverb:</span>
-                <span class="family-words">{{ entry.wordFamily!.adverb!.join(', ') }}</span>
+              <div class="flex items-baseline gap-3">
+                <span class="text-sm text-gray-400 italic min-w-[70px]">adverb:</span>
+                <span class="text-gray-800">{{ entry.wordFamily!.adverb!.join(', ') }}</span>
               </div>
             }
           </div>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Collocations Section -->
       @if (hasCollocations(entry)) {
-        <div class="section collocations-section">
-          <h3 class="section-title">COLLOCATIONS</h3>
-          <div class="collocations">
+        <div class="p-5 bg-gradient-to-r from-gray-50 to-white">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">COLLOCATIONS</h3>
+          <div class="flex flex-col gap-2.5">
             @if (entry.collocations?.adjective?.length) {
-              <div class="collocation-row">
-                <span class="collocation-type">adjectives:</span>
-                <span class="collocation-words">{{ entry.collocations!.adjective!.join(' · ') }}</span>
+              <div class="flex items-baseline gap-3 flex-wrap">
+                <span class="text-sm text-gray-400 italic min-w-[90px]">adjectives:</span>
+                <span class="text-gray-800">{{ entry.collocations!.adjective!.join(' · ') }}</span>
               </div>
             }
             @if (entry.collocations?.verbContract?.length) {
-              <div class="collocation-row">
-                <span class="collocation-type">verbs:</span>
-                <span class="collocation-words">{{ entry.collocations!.verbContract!.join(' · ') }}</span>
+              <div class="flex items-baseline gap-3 flex-wrap">
+                <span class="text-sm text-gray-400 italic min-w-[90px]">verbs:</span>
+                <span class="text-gray-800">{{ entry.collocations!.verbContract!.join(' · ') }}</span>
               </div>
             }
             @if (entry.collocations?.contractNoun?.length) {
-              <div class="collocation-row">
-                <span class="collocation-type">nouns:</span>
-                <span class="collocation-words">{{ entry.collocations!.contractNoun!.join(' · ') }}</span>
+              <div class="flex items-baseline gap-3 flex-wrap">
+                <span class="text-sm text-gray-400 italic min-w-[90px]">nouns:</span>
+                <span class="text-gray-800">{{ entry.collocations!.contractNoun!.join(' · ') }}</span>
               </div>
             }
             @if (entry.collocations?.preposition?.length) {
-              <div class="collocation-row">
-                <span class="collocation-type">prepositions:</span>
-                <span class="collocation-words">{{ entry.collocations!.preposition!.join(' · ') }}</span>
+              <div class="flex items-baseline gap-3 flex-wrap">
+                <span class="text-sm text-gray-400 italic min-w-[90px]">prepositions:</span>
+                <span class="text-gray-800">{{ entry.collocations!.preposition!.join(' · ') }}</span>
               </div>
             }
             @if (entry.collocations?.phrases?.length) {
-              <div class="collocation-row">
-                <span class="collocation-type">phrases:</span>
-                <span class="collocation-words">{{ entry.collocations!.phrases!.join(' · ') }}</span>
+              <div class="flex items-baseline gap-3 flex-wrap">
+                <span class="text-sm text-gray-400 italic min-w-[90px]">phrases:</span>
+                <span class="text-gray-800">{{ entry.collocations!.phrases!.join(' · ') }}</span>
               </div>
             }
           </div>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Synonyms & Antonyms -->
       @if (entry.synonyms?.length || entry.antonyms?.length) {
-        <div class="section synonyms-section">
+        <div class="p-5">
           @if (entry.synonyms?.length) {
-            <div class="synonym-row">
-              <h3 class="section-title inline">SYNONYMS</h3>
-              <div class="word-chips">
+            <div class="mb-4">
+              <h3 class="inline text-xs font-semibold text-gray-500 uppercase tracking-wider mr-3">SYNONYMS</h3>
+              <div class="inline-flex flex-wrap gap-2">
                 @for (syn of entry.synonyms; track syn) {
-                  <span class="word-chip">{{ syn }}</span>
+                  <span class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm">{{ syn }}</span>
                 }
               </div>
             </div>
           }
           @if (entry.antonyms?.length) {
-            <div class="antonym-row">
-              <h3 class="section-title inline">ANTONYMS</h3>
-              <div class="word-chips">
+            <div>
+              <h3 class="inline text-xs font-semibold text-gray-500 uppercase tracking-wider mr-3">ANTONYMS</h3>
+              <div class="inline-flex flex-wrap gap-2">
                 @for (ant of entry.antonyms; track ant) {
-                  <span class="word-chip antonym">{{ ant }}</span>
+                  <span class="px-3 py-1.5 bg-red-100 text-red-700 rounded-full text-sm">{{ ant }}</span>
                 }
               </div>
             </div>
           }
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Idioms Section -->
       @if (entry.idioms && entry.idioms.length > 0) {
-        <div class="section idioms-section">
-          <h3 class="section-title">IDIOMS</h3>
+        <div class="p-5 bg-gradient-to-r from-amber-50 to-white">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">IDIOMS</h3>
           @for (idiom of entry.idioms; track idiom.phrase) {
-            <div class="idiom-item">
-              <p class="idiom-phrase">{{ idiom.phrase }}</p>
-              <p class="idiom-meaning">{{ idiom.meaning }}</p>
-              <p class="idiom-meaning-vi">{{ idiom.meaningVi }}</p>
+            <div class="mb-4 pb-4 border-b border-dashed border-gray-200 last:mb-0 last:pb-0 last:border-b-0">
+              <p class="font-semibold text-gray-900">{{ idiom.phrase }}</p>
+              <p class="text-gray-600 mt-1">{{ idiom.meaning }}</p>
+              <p class="text-gray-400 italic text-sm mt-1">{{ idiom.meaningVi }}</p>
             </div>
           }
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Usage Notes -->
       @if (entry.usageNotes) {
-        <div class="section usage-notes-section">
-          <h3 class="section-title">
-            <fa-icon [icon]="faLightbulb"></fa-icon>
+        <div class="p-5 bg-yellow-50">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+            <fa-icon [icon]="faLightbulb" class="mr-2"></fa-icon>
             USAGE NOTES
           </h3>
-          <p class="usage-notes">{{ entry.usageNotes }}</p>
+          <p class="text-gray-600 leading-relaxed">{{ entry.usageNotes }}</p>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Word Origin -->
       @if (entry.wordOrigin) {
-        <div class="section word-origin-section">
-          <h3 class="section-title">WORD ORIGIN</h3>
-          <p class="word-origin">{{ entry.wordOrigin }}</p>
+        <div class="p-5 bg-gray-50">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">WORD ORIGIN</h3>
+          <p class="text-gray-600 leading-relaxed italic">{{ entry.wordOrigin }}</p>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Topics -->
       @if (entry.topics && entry.topics.length > 0) {
-        <div class="section topics-section">
-          <h3 class="section-title">TOPICS</h3>
-          <div class="topics">
+        <div class="p-5">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">TOPICS</h3>
+          <div class="flex flex-wrap gap-2.5">
             @for (topic of entry.topics; track topic.name) {
-              <span class="topic-chip" [style.border-color]="getCefrColor(topic.level)">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 rounded-full text-sm text-gray-600"
+                    [class.border-gray-500]="topic.level === 'A1' || topic.level === 'A2'"
+                    [class.border-yellow-500]="topic.level === 'B1' || topic.level === 'B2'"
+                    [class.border-red-500]="topic.level === 'C1' || topic.level === 'C2'">
                 {{ topic.name }}
-                <span class="topic-level" [style.background-color]="getCefrColor(topic.level)">
+                <span class="px-1.5 py-0.5 rounded text-xs font-semibold text-white"
+                      [ngClass]="getCefrColorClass(topic.level)">
                   {{ topic.level }}
                 </span>
               </span>
             }
           </div>
         </div>
-        <mat-divider></mat-divider>
+        <hr class="border-gray-200">
       }
 
       <!-- Learning Progress Section -->
-      <div class="section progress-section">
-        <h3 class="section-title">
-          <fa-icon [icon]="faChartLine"></fa-icon>
+      <div class="p-5 bg-gradient-to-br from-gray-50 to-white">
+        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          <fa-icon [icon]="faChartLine" class="mr-2"></fa-icon>
           YOUR LEARNING PROGRESS
         </h3>
-        <div class="progress-content">
-          <div class="progress-item">
-            <span class="progress-label">Mastery:</span>
-            <mat-progress-bar
-              mode="determinate"
-              [value]="entry.masteryLevel"
-              class="mastery-bar"
-            ></mat-progress-bar>
-            <span class="progress-value">{{ entry.masteryLevel }}%</span>
-          </div>
-          <div class="progress-stats">
-            <div class="stat">
-              <span class="stat-label">Times practiced:</span>
-              <span class="stat-value">{{ entry.timesPracticed }}</span>
+        <div class="mb-5">
+          <div class="flex items-center gap-4 mb-4">
+            <span class="text-sm text-gray-500 min-w-[70px]">Mastery:</span>
+            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-gray-900 rounded-full transition-all" [style.width.%]="entry.masteryLevel"></div>
             </div>
-            <div class="stat">
-              <span class="stat-label">Last practiced:</span>
-              <span class="stat-value">{{ formatTimeSince(entry.lastPracticedAt) }}</span>
+            <span class="text-sm font-semibold text-gray-900 min-w-[40px]">{{ entry.masteryLevel }}%</span>
+          </div>
+          <div class="flex gap-8 flex-wrap">
+            <div class="flex gap-2">
+              <span class="text-sm text-gray-400">Times practiced:</span>
+              <span class="text-sm font-medium text-gray-700">{{ entry.timesPracticed }}</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="text-sm text-gray-400">Last practiced:</span>
+              <span class="text-sm font-medium text-gray-700">{{ formatTimeSince(entry.lastPracticedAt) }}</span>
             </div>
           </div>
         </div>
-        <div class="action-buttons">
-          <button mat-raised-button color="primary">
-            <fa-icon [icon]="faGraduationCap"></fa-icon>
+        <div class="flex gap-3 flex-wrap">
+          <button class="btn btn-primary">
+            <fa-icon [icon]="faGraduationCap" class="mr-2"></fa-icon>
             Practice This Word
           </button>
-          <button mat-stroked-button color="primary">
-            <fa-icon [icon]="faBook"></fa-icon>
+          <button class="btn btn-secondary">
+            <fa-icon [icon]="faBook" class="mr-2"></fa-icon>
             Add to Quiz
           </button>
         </div>
@@ -368,56 +363,53 @@
 
       <!-- Contexts Section - Conversations where this word appeared -->
       @if (entry.contexts && entry.contexts.length > 0) {
-        <mat-divider></mat-divider>
-        <div class="section contexts-section">
-          <h3 class="section-title">
-            <fa-icon [icon]="faComments"></fa-icon>
+        <hr class="border-gray-200">
+        <div class="p-5 bg-gradient-to-r from-gray-50 to-white">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+            <fa-icon [icon]="faComments" class="mr-2"></fa-icon>
             APPEARED IN CONVERSATIONS ({{ entry.contexts.length }})
           </h3>
-          <div class="contexts-list">
+          <div class="flex flex-col gap-3">
             @for (ctx of entry.contexts; track ctx.id) {
-              <div class="context-item" (click)="navigateToConversation(ctx.conversationId)">
-                <div class="context-header">
-                  <span class="context-vietnamese">{{ ctx.vietnameseWord }}</span>
-                  <span class="context-date">{{ formatDate(ctx.createdAt) }}</span>
+              <div class="p-4 bg-white rounded-lg border border-gray-200 cursor-pointer transition-all hover:border-gray-400 hover:shadow-md"
+                   (click)="navigateToConversation(ctx.conversationId)">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-medium text-gray-800">{{ ctx.vietnameseWord }}</span>
+                  <span class="text-xs text-gray-400">{{ formatDate(ctx.createdAt) }}</span>
                 </div>
                 @if (ctx.exampleEn) {
-                  <div class="context-example">
-                    <fa-icon [icon]="faQuoteLeft" class="quote-icon small"></fa-icon>
-                    <div class="example-text">
-                      <p class="example-en">{{ ctx.exampleEn }}</p>
+                  <div class="flex gap-2.5 p-2.5 bg-gray-50 rounded mb-2">
+                    <fa-icon [icon]="faQuoteLeft" class="text-xs text-gray-300 flex-shrink-0"></fa-icon>
+                    <div>
+                      <p class="text-sm text-gray-700 leading-relaxed">{{ ctx.exampleEn }}</p>
                       @if (ctx.exampleVi) {
-                        <p class="example-vi">{{ ctx.exampleVi }}</p>
+                        <p class="text-xs text-gray-500 italic mt-1">{{ ctx.exampleVi }}</p>
                       }
                     </div>
                   </div>
                 }
-                <span class="view-conversation">View conversation →</span>
+                <span class="block text-xs text-gray-400 text-right hover:text-gray-900 transition-colors">View conversation →</span>
               </div>
             }
           </div>
         </div>
       }
-    </mat-card>
+    </div>
 
     <!-- Related Words Section -->
     @if (relatedWords(); as related) {
       @if (related.wordFamily.length || related.synonyms.length || related.seeAlso.length) {
-        <mat-card class="related-card">
-          <h3 class="related-title">Related Words in Your Vocabulary</h3>
+        <div class="card mt-6 p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-5">Related Words in Your Vocabulary</h3>
 
           @if (related.wordFamily.length) {
-            <div class="related-section">
-              <h4>Word Family</h4>
-              <div class="related-words">
+            <div class="mb-5">
+              <h4 class="text-sm text-gray-400 font-medium mb-3">Word Family</h4>
+              <div class="flex flex-wrap gap-2">
                 @for (word of related.wordFamily; track word.id) {
-                  <button
-                    mat-stroked-button
-                    class="related-word-btn"
-                    (click)="navigateToWord(word)"
-                  >
+                  <button class="btn btn-secondary text-sm" (click)="navigateToWord(word)">
                     {{ word.englishWord }}
-                    <span class="related-pos">{{ formatPartOfSpeech(word.partOfSpeech) }}</span>
+                    <span class="text-xs text-gray-400 italic ml-1.5">{{ formatPartOfSpeech(word.partOfSpeech) }}</span>
                   </button>
                 }
               </div>
@@ -425,15 +417,11 @@
           }
 
           @if (related.synonyms.length) {
-            <div class="related-section">
-              <h4>Synonyms</h4>
-              <div class="related-words">
+            <div class="mb-5">
+              <h4 class="text-sm text-gray-400 font-medium mb-3">Synonyms</h4>
+              <div class="flex flex-wrap gap-2">
                 @for (word of related.synonyms; track word.id) {
-                  <button
-                    mat-stroked-button
-                    class="related-word-btn"
-                    (click)="navigateToWord(word)"
-                  >
+                  <button class="btn btn-secondary text-sm" (click)="navigateToWord(word)">
                     {{ word.englishWord }}
                   </button>
                 }
@@ -442,22 +430,18 @@
           }
 
           @if (related.seeAlso.length) {
-            <div class="related-section">
-              <h4>See Also</h4>
-              <div class="related-words">
+            <div>
+              <h4 class="text-sm text-gray-400 font-medium mb-3">See Also</h4>
+              <div class="flex flex-wrap gap-2">
                 @for (word of related.seeAlso; track word.id) {
-                  <button
-                    mat-stroked-button
-                    class="related-word-btn"
-                    (click)="navigateToWord(word)"
-                  >
+                  <button class="btn btn-secondary text-sm" (click)="navigateToWord(word)">
                     {{ word.englishWord }}
                   </button>
                 }
               </div>
             </div>
           }
-        </mat-card>
+        </div>
       }
     }
   </div>

@@ -2,14 +2,6 @@ import { Component, inject, OnInit, OnDestroy, signal, computed, HostListener, E
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faDumbbell,
@@ -49,14 +41,6 @@ type PracticeState = 'start' | 'loading' | 'practice' | 'submitting' | 'results'
     CommonModule,
     FormsModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatRadioModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressBarModule,
-    MatChipsModule,
-    MatDividerModule,
     FontAwesomeModule,
     // New exercise type components
     SentenceBuildingComponent,
@@ -106,8 +90,8 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
   private touchStartY = 0;
   private touchEndX = 0;
   private touchEndY = 0;
-  private readonly SWIPE_THRESHOLD = 50; // Minimum distance for swipe
-  private readonly SWIPE_ANGLE_LIMIT = 30; // Maximum vertical angle for horizontal swipe
+  private readonly SWIPE_THRESHOLD = 50;
+  private readonly SWIPE_ANGLE_LIMIT = 30;
 
   // Timer
   startTime = 0;
@@ -131,7 +115,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
   isFirstQuestion = computed(() => this.currentIndex() === 0);
   isLastQuestion = computed(() => this.currentIndex() === this.totalQuestions() - 1);
 
-  // Current answer for the current exercise
   get currentAnswer(): string {
     const exercise = this.currentExercise();
     if (!exercise) return '';
@@ -153,16 +136,12 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     this.stopTimer();
   }
 
-  // Keyboard navigation
   @HostListener('document:keydown', ['$event'])
   handleKeydown(event: KeyboardEvent) {
-    // Only handle keys during practice mode
     if (this.state() !== 'practice' || this.isAnimating()) return;
 
-    // Skip if user is typing in an input field
     const target = event.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-      // Allow Enter to move to next question from input
       if (event.key === 'Enter' && !event.shiftKey && !this.isLastQuestion()) {
         event.preventDefault();
         this.nextQuestion();
@@ -183,7 +162,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
       case '2':
       case '3':
       case '4':
-        // Quick select options for multiple choice (1-4)
         const exercise = this.currentExercise();
         if (exercise?.exerciseType === 'multiple_choice' && exercise.options) {
           const optionIndex = parseInt(event.key) - 1;
@@ -194,7 +172,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
         break;
       case 'Enter':
         if (event.ctrlKey || event.metaKey) {
-          // Ctrl+Enter or Cmd+Enter to submit
           if (this.canSubmit()) {
             event.preventDefault();
             this.submitSession();
@@ -204,7 +181,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Touch gesture handlers for swipe navigation
   @HostListener('touchstart', ['$event'])
   onTouchStart(event: TouchEvent) {
     if (this.state() !== 'practice') return;
@@ -226,22 +202,17 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     const deltaX = this.touchEndX - this.touchStartX;
     const deltaY = this.touchEndY - this.touchStartY;
 
-    // Check if this is a valid horizontal swipe
     if (Math.abs(deltaX) < this.SWIPE_THRESHOLD) return;
 
-    // Calculate angle - reject if too vertical
     const angle = Math.abs(Math.atan2(deltaY, deltaX) * 180 / Math.PI);
     if (angle > this.SWIPE_ANGLE_LIMIT && angle < 180 - this.SWIPE_ANGLE_LIMIT) return;
 
     if (deltaX > 0) {
-      // Swipe right -> go to previous question
       this.previousQuestion();
     } else {
-      // Swipe left -> go to next question
       this.nextQuestion();
     }
 
-    // Reset touch positions
     this.touchStartX = 0;
     this.touchStartY = 0;
     this.touchEndX = 0;
@@ -255,7 +226,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     this.apiService.startExerciseSession(10).subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
-        // Shuffle exercises and their options
         const shuffledExercises = this.shuffleExercises(response.exercises);
         this.exercises.set(shuffledExercises);
         this.currentIndex.set(0);
@@ -271,7 +241,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Shuffle array using Fisher-Yates algorithm
   private shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -281,15 +250,11 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     return shuffled;
   }
 
-  // Shuffle exercises and their options
   private shuffleExercises(exercises: SessionExercise[]): SessionExercise[] {
-    // Shuffle the order of exercises
     const shuffledExercises = this.shuffleArray(exercises);
-
-    // Shuffle options for each multiple_choice exercise
     return shuffledExercises.map((exercise, index) => ({
       ...exercise,
-      questionOrder: index + 1, // Update question order after shuffle
+      questionOrder: index + 1,
       options: exercise.exerciseType === 'multiple_choice' && exercise.options
         ? this.shuffleArray(exercise.options)
         : exercise.options,
@@ -319,12 +284,10 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     this.isAnimating.set(true);
     this.slideDirection.set(direction);
 
-    // Wait for exit animation, then change question
     setTimeout(() => {
       this.currentIndex.set(newIndex);
       this.slideDirection.set('none');
 
-      // Allow enter animation to complete
       setTimeout(() => {
         this.isAnimating.set(false);
       }, 250);
@@ -343,7 +306,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
         this.result.set(result);
         this.state.set('results');
 
-        // Trigger celebration for good scores
         if (result.percentage >= 70) {
           this.triggerCelebration();
         }
@@ -351,7 +313,7 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.error.set(err.error?.error || 'Failed to submit session');
         this.state.set('practice');
-        this.startTimer(); // Resume timer on error
+        this.startTimer();
       }
     });
   }
@@ -368,7 +330,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     return !!this.answers()[exerciseId.toString()];
   }
 
-  // Handler for new exercise type components
   onExerciseAnswerChange(answer: string) {
     const exercise = this.currentExercise();
     if (!exercise) return;
@@ -378,12 +339,10 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     }));
   }
 
-  // Helper to get exercise-specific data
   getExerciseData<T>(exercise: SessionExercise): T | null {
     return (exercise.exerciseData as T) || null;
   }
 
-  // Get exercise type display name
   getExerciseTypeLabel(type: string): string {
     const labels: Record<string, string> = {
       'multiple_choice': 'Multiple Choice',
@@ -421,15 +380,11 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
 
   private triggerCelebration() {
     this.showCelebration.set(true);
-    // Hide celebration after animation completes
     setTimeout(() => {
       this.showCelebration.set(false);
     }, 3000);
   }
 
-  /**
-   * Format answer for display in results based on exercise type
-   */
   formatAnswerForDisplay(answer: string | null | undefined, exerciseType: string): string {
     if (!answer) return '(no answer)';
 

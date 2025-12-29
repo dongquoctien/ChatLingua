@@ -1,16 +1,12 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faBook, faSpinner, faLightbulb, faRedo,
   faCheckCircle, faTimes, faArrowRight, faArrowLeft,
   faFire, faClock, faStar, faGraduationCap
-} from '@fortawesome/free-solid-svg-icons';
+} from '../../../shared/icons';
 import {
   ApiService,
   GrammarQueueItem,
@@ -31,10 +27,6 @@ interface ReviewSession {
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatProgressBarModule,
-    MatDialogModule,
     FontAwesomeModule,
   ],
   templateUrl: './grammar-flashcard.component.html',
@@ -89,12 +81,12 @@ export class GrammarFlashcardComponent implements OnInit {
   hasNext = computed(() => this.currentIndex() < this.queue().length - 1);
   hasPrevious = computed(() => this.currentIndex() > 0);
 
-  // Rating options
+  // Rating options with Tailwind classes - matching vocabulary flashcard colors
   ratings = [
-    { quality: 1, label: 'Again', shortcut: '1', color: '#f44336', description: "Didn't remember" },
-    { quality: 2, label: 'Hard', shortcut: '2', color: '#ff9800', description: 'Remembered with difficulty' },
-    { quality: 3, label: 'Good', shortcut: '3', color: '#4caf50', description: 'Remembered correctly' },
-    { quality: 5, label: 'Easy', shortcut: '4', color: '#2196f3', description: 'Very easy to recall' },
+    { quality: 1, label: 'Again', shortcut: '1', bgClass: 'bg-red-500 hover:bg-red-600', description: "Didn't remember" },
+    { quality: 2, label: 'Hard', shortcut: '2', bgClass: 'bg-orange-500 hover:bg-orange-600', description: 'Remembered with difficulty' },
+    { quality: 3, label: 'Good', shortcut: '3', bgClass: 'bg-green-600 hover:bg-green-700', description: 'Remembered correctly' },
+    { quality: 5, label: 'Easy', shortcut: '4', bgClass: 'bg-blue-600 hover:bg-blue-700', description: 'Very easy to recall' },
   ];
 
   ngOnInit() {
@@ -203,7 +195,12 @@ export class GrammarFlashcardComponent implements OnInit {
   }
 
   getPriorityClass(priority: string): string {
-    return `priority-${priority}`;
+    switch (priority) {
+      case 'overdue': return 'bg-red-50 text-red-700';
+      case 'due': return 'bg-orange-50 text-orange-700';
+      case 'new': return 'bg-gray-50 text-gray-700';
+      default: return 'bg-gray-50 text-gray-700';
+    }
   }
 
   restartSession() {

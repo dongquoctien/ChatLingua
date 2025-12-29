@@ -1,8 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatTabsModule } from '@angular/material/tabs';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faFire,
@@ -21,9 +18,6 @@ import { ApiService, PeriodReport, UserStats } from '../../core/services/api.ser
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatTabsModule,
     FontAwesomeModule,
   ],
   templateUrl: './reports.component.html',
@@ -46,6 +40,7 @@ export class ReportsComponent implements OnInit {
   weeklyReport = signal<PeriodReport | null>(null);
   monthlyReport = signal<PeriodReport | null>(null);
   loading = signal(true);
+  activeTab = signal<'weekly' | 'monthly'>('weekly');
 
   ngOnInit() {
     this.loadData();
@@ -67,5 +62,9 @@ export class ReportsComponent implements OnInit {
       },
       error: () => this.loading.set(false)
     });
+  }
+
+  setTab(tab: 'weekly' | 'monthly') {
+    this.activeTab.set(tab);
   }
 }

@@ -1,0 +1,116 @@
+<div class="flex flex-col gap-6">
+  <div class="flex justify-between items-center flex-wrap gap-4">
+    <h2 class="text-xl font-semibold text-gray-900 mb-0">
+      <fa-icon [icon]="faCalendarCheck" class="text-gray-700"></fa-icon>
+      Daily Challenges
+    </h2>
+    <div class="flex items-center gap-2 text-sm text-gray-600 px-4 py-2 bg-gray-100 rounded-full">
+      <fa-icon [icon]="faClock" class="text-orange-500"></fa-icon>
+      Refreshes in {{ timeUntilRefresh() }}
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-4">
+    @for (challenge of challenges; track challenge.id) {
+      <div class="flex gap-4 p-4 bg-white rounded-xl border-2 transition-all duration-300"
+           [ngClass]="{
+             'bg-gradient-to-br from-gray-100 to-white border-gray-900': challenge.status === 'completed',
+             'opacity-60 bg-gray-100': challenge.status === 'expired',
+             'border-orange-500': challenge.status === 'in_progress',
+             'border-gray-200 cursor-pointer hover:border-gray-500 hover:shadow-lg hover:-translate-y-0.5': challenge.status !== 'completed' && challenge.status !== 'expired'
+           }"
+           (click)="navigateToChallenge(challenge)">
+
+        <!-- Status Indicator -->
+        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-white"
+             [ngClass]="{
+               'bg-gradient-to-br from-gray-800 to-gray-700': challenge.status === 'completed',
+               'bg-gradient-to-br from-gray-600 to-gray-500': challenge.status !== 'completed' && challenge.status !== 'expired',
+               'bg-gray-400': challenge.status === 'expired'
+             }">
+          @if (challenge.status === 'completed') {
+            <fa-icon [icon]="faCheck" class="text-xl"></fa-icon>
+          } @else {
+            <fa-icon [icon]="getChallengeIcon(challenge.challengeType)" class="text-xl"></fa-icon>
+          }
+        </div>
+
+        <!-- Challenge Content -->
+        <div class="flex-1 flex flex-col gap-2">
+          <div class="flex justify-between items-start gap-4">
+            <h4 class="m-0 font-semibold text-gray-800">{{ challenge.name }}</h4>
+            <div class="flex items-center gap-1 px-2 py-1 rounded-xl text-sm font-semibold whitespace-nowrap"
+                 [ngClass]="{
+                   'bg-gradient-to-r from-orange-50 to-orange-100 text-orange-500': challenge.status === 'completed',
+                   'bg-gray-100 text-gray-500': challenge.status !== 'completed'
+                 }">
+              <fa-icon [icon]="faBolt" [ngClass]="challenge.status === 'completed' ? 'text-yellow-400' : 'text-gray-300'"></fa-icon>
+              {{ challenge.xpReward }} XP
+            </div>
+          </div>
+
+          <p class="m-0 text-sm text-gray-600">{{ challenge.description }}</p>
+
+          <!-- Progress Section -->
+          <div class="mt-2">
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-300"
+                   [ngClass]="challenge.status === 'completed' ? 'bg-gray-900' : 'bg-gray-900'"
+                   [style.width.%]="challenge.progressPercentage"></div>
+            </div>
+            <div class="flex justify-between items-center mt-2 text-sm">
+              <span class="font-semibold text-gray-800">{{ challenge.currentProgress }}/{{ challenge.targetValue }}</span>
+              @if (challenge.status !== 'completed' && challenge.status !== 'expired') {
+                <span class="flex items-center gap-1 text-gray-600">
+                  <fa-icon [icon]="faClock" class="text-orange-500"></fa-icon>
+                  {{ getTimeRemaining(challenge.expiresAt) }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <!-- Completed Badge -->
+          @if (challenge.status === 'completed') {
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-gray-900 text-white rounded-xl text-sm font-semibold w-fit">
+              <fa-icon [icon]="faStar" class="text-yellow-300"></fa-icon>
+              Completed!
+            </div>
+          }
+
+          <!-- Expired Badge -->
+          @if (challenge.status === 'expired') {
+            <div class="inline-flex px-3 py-1 bg-gray-500 text-white rounded-xl text-sm font-semibold w-fit">
+              Expired
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (challenges.length === 0) {
+    <div class="text-center py-12 text-gray-400">
+      <fa-icon [icon]="faCalendarCheck" class="text-5xl mb-4 opacity-30"></fa-icon>
+      <p class="m-2">No challenges available today</p>
+      <p class="m-2 text-sm">Check back tomorrow for new challenges!</p>
+    </div>
+  }
+
+  <!-- Summary -->
+  @if (challenges.length > 0) {
+    <div class="flex justify-center gap-8 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl">
+      <div class="flex flex-col items-center">
+        <span class="text-2xl font-bold text-gray-800">{{ completedCount() }}</span>
+        <span class="text-xs text-gray-600 uppercase">Completed</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <span class="text-2xl font-bold text-gray-800">{{ totalXpEarned() }}</span>
+        <span class="text-xs text-gray-600 uppercase">XP Earned</span>
+      </div>
+      <div class="flex flex-col items-center">
+        <span class="text-2xl font-bold text-gray-800">{{ remainingCount() }}</span>
+        <span class="text-xs text-gray-600 uppercase">Remaining</span>
+      </div>
+    </div>
+  }
+</div>

@@ -1,145 +1,174 @@
-<div class="page-header">
-  <h1>Learning Reports</h1>
-  <p>Track your progress over time</p>
-</div>
-
-@if (loading()) {
-  <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-medium text-gray-800 mb-2">Learning Reports</h1>
+    <p class="text-gray-500">Track your progress over time</p>
   </div>
-} @else {
-  <div class="overview-section">
-    <h2>Overview</h2>
-    <div class="stats-grid">
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faFire" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()?.currentStreak || 0 }}</div>
-        <div class="stat-label">Current Streak</div>
-      </mat-card>
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faTrophy" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()?.longestStreak || 0 }}</div>
-        <div class="stat-label">Longest Streak</div>
-      </mat-card>
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faCheckCircle" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()?.correctRate || 0 }}%</div>
-        <div class="stat-label">Accuracy</div>
-      </mat-card>
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faLanguage" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()?.totalVocabulary || 0 }}</div>
-        <div class="stat-label">Words Learned</div>
-      </mat-card>
+
+  @if (loading()) {
+    <div class="flex justify-center items-center min-h-[200px]">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-5xl text-gray-900"></fa-icon>
     </div>
-  </div>
+  } @else {
+    <!-- Overview Stats -->
+    <div class="mb-8">
+      <h2 class="text-lg font-medium text-gray-800 mb-4">Overview</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+          <fa-icon [icon]="faFire" class="text-3xl text-gray-900 mb-3"></fa-icon>
+          <div class="text-3xl font-medium text-gray-800">{{ stats()?.currentStreak || 0 }}</div>
+          <div class="text-gray-500 mt-1">Current Streak</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+          <fa-icon [icon]="faTrophy" class="text-3xl text-gray-900 mb-3"></fa-icon>
+          <div class="text-3xl font-medium text-gray-800">{{ stats()?.longestStreak || 0 }}</div>
+          <div class="text-gray-500 mt-1">Longest Streak</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+          <fa-icon [icon]="faCheckCircle" class="text-3xl text-gray-900 mb-3"></fa-icon>
+          <div class="text-3xl font-medium text-gray-800">{{ stats()?.correctRate || 0 }}%</div>
+          <div class="text-gray-500 mt-1">Accuracy</div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+          <fa-icon [icon]="faLanguage" class="text-3xl text-gray-900 mb-3"></fa-icon>
+          <div class="text-3xl font-medium text-gray-800">{{ stats()?.totalVocabulary || 0 }}</div>
+          <div class="text-gray-500 mt-1">Words Learned</div>
+        </div>
+      </div>
+    </div>
 
-  <mat-tab-group>
-    <mat-tab label="Weekly Report">
-      @if (weeklyReport()) {
-        <div class="report-content">
-          <div class="report-summary">
-            <mat-card>
-              <mat-card-header>
-                <mat-card-title>This Week's Summary</mat-card-title>
-                <mat-card-subtitle>
-                  {{ weeklyReport()!.startDate | date:'MMM d' }} - {{ weeklyReport()!.endDate | date:'MMM d, yyyy' }}
-                </mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="summary-grid">
-                  <div class="summary-item">
-                    <span class="value">{{ weeklyReport()!.summary.totalDaysActive }}</span>
-                    <span class="label">Days Active</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ weeklyReport()!.summary.totalConversations }}</span>
-                    <span class="label">Conversations</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ weeklyReport()!.summary.totalVocabulary }}</span>
-                    <span class="label">Words Learned</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ weeklyReport()!.summary.totalExercises }}</span>
-                    <span class="label">Exercises</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ weeklyReport()!.summary.totalQuizzes }}</span>
-                    <span class="label">Quizzes</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ weeklyReport()!.summary.averageCorrectRate }}%</span>
-                    <span class="label">Accuracy</span>
-                  </div>
-                </div>
-              </mat-card-content>
-            </mat-card>
+    <!-- Tab Navigation -->
+    <div class="flex border-b border-gray-200 mb-6">
+      <button (click)="setTab('weekly')"
+              class="px-6 py-3 text-sm font-medium transition-colors border-b-2 -mb-px"
+              [class.border-gray-900]="activeTab() === 'weekly'"
+              [class.text-gray-900]="activeTab() === 'weekly'"
+              [class.border-transparent]="activeTab() !== 'weekly'"
+              [class.text-gray-500]="activeTab() !== 'weekly'"
+              [class.hover:text-gray-700]="activeTab() !== 'weekly'">
+        Weekly Report
+      </button>
+      <button (click)="setTab('monthly')"
+              class="px-6 py-3 text-sm font-medium transition-colors border-b-2 -mb-px"
+              [class.border-gray-900]="activeTab() === 'monthly'"
+              [class.text-gray-900]="activeTab() === 'monthly'"
+              [class.border-transparent]="activeTab() !== 'monthly'"
+              [class.text-gray-500]="activeTab() !== 'monthly'"
+              [class.hover:text-gray-700]="activeTab() !== 'monthly'">
+        Monthly Report
+      </button>
+    </div>
+
+    <!-- Weekly Report Tab -->
+    @if (activeTab() === 'weekly' && weeklyReport()) {
+      <div class="py-4">
+        <!-- Summary Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+          <div class="mb-4">
+            <h3 class="text-lg font-medium text-gray-800">This Week's Summary</h3>
+            <p class="text-sm text-gray-500">
+              {{ weeklyReport()!.startDate | date:'MMM d' }} - {{ weeklyReport()!.endDate | date:'MMM d, yyyy' }}
+            </p>
           </div>
-
-          <h3>Daily Breakdown</h3>
-          <div class="daily-breakdown">
-            @for (day of weeklyReport()!.dailyBreakdown; track day.date) {
-              <mat-card class="day-card">
-                <div class="day-header">{{ day.date | date:'EEE, MMM d' }}</div>
-                <div class="day-stats">
-                  <span><fa-icon [icon]="faComments"></fa-icon> {{ day.conversationsAdded }}</span>
-                  <span><fa-icon [icon]="faLanguage"></fa-icon> {{ day.vocabularyLearned }}</span>
-                  <span><fa-icon [icon]="faDumbbell"></fa-icon> {{ day.exercisesCompleted }}</span>
-                  <span><fa-icon [icon]="faQuestionCircle"></fa-icon> {{ day.quizzesCompleted }}</span>
-                </div>
-              </mat-card>
-            } @empty {
-              <p class="no-data">No activity this week</p>
-            }
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center py-4">
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ weeklyReport()!.summary.totalDaysActive }}</span>
+              <span class="text-sm text-gray-500 mt-1">Days Active</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ weeklyReport()!.summary.totalConversations }}</span>
+              <span class="text-sm text-gray-500 mt-1">Conversations</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ weeklyReport()!.summary.totalVocabulary }}</span>
+              <span class="text-sm text-gray-500 mt-1">Words Learned</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ weeklyReport()!.summary.totalExercises }}</span>
+              <span class="text-sm text-gray-500 mt-1">Exercises</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ weeklyReport()!.summary.totalQuizzes }}</span>
+              <span class="text-sm text-gray-500 mt-1">Quizzes</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ weeklyReport()!.summary.averageCorrectRate }}%</span>
+              <span class="text-sm text-gray-500 mt-1">Accuracy</span>
+            </div>
           </div>
         </div>
-      }
-    </mat-tab>
 
-    <mat-tab label="Monthly Report">
-      @if (monthlyReport()) {
-        <div class="report-content">
-          <div class="report-summary">
-            <mat-card>
-              <mat-card-header>
-                <mat-card-title>This Month's Summary</mat-card-title>
-                <mat-card-subtitle>
-                  {{ monthlyReport()!.startDate | date:'MMM d' }} - {{ monthlyReport()!.endDate | date:'MMM d, yyyy' }}
-                </mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="summary-grid">
-                  <div class="summary-item">
-                    <span class="value">{{ monthlyReport()!.summary.totalDaysActive }}</span>
-                    <span class="label">Days Active</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ monthlyReport()!.summary.totalConversations }}</span>
-                    <span class="label">Conversations</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ monthlyReport()!.summary.totalVocabulary }}</span>
-                    <span class="label">Words Learned</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ monthlyReport()!.summary.totalExercises }}</span>
-                    <span class="label">Exercises</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ monthlyReport()!.summary.totalQuizzes }}</span>
-                    <span class="label">Quizzes</span>
-                  </div>
-                  <div class="summary-item">
-                    <span class="value">{{ monthlyReport()!.summary.averageCorrectRate }}%</span>
-                    <span class="label">Accuracy</span>
-                  </div>
-                </div>
-              </mat-card-content>
-            </mat-card>
+        <!-- Daily Breakdown -->
+        <h3 class="text-lg font-medium text-gray-800 mb-4">Daily Breakdown</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          @for (day of weeklyReport()!.dailyBreakdown; track day.date) {
+            <div class="bg-white rounded-xl shadow-sm p-4">
+              <div class="font-medium text-gray-800 mb-3">{{ day.date | date:'EEE, MMM d' }}</div>
+              <div class="flex flex-wrap gap-3 text-sm text-gray-600">
+                <span class="flex items-center gap-1">
+                  <fa-icon [icon]="faComments" class="text-gray-400"></fa-icon>
+                  {{ day.conversationsAdded }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <fa-icon [icon]="faLanguage" class="text-gray-400"></fa-icon>
+                  {{ day.vocabularyLearned }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <fa-icon [icon]="faDumbbell" class="text-gray-400"></fa-icon>
+                  {{ day.exercisesCompleted }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <fa-icon [icon]="faQuestionCircle" class="text-gray-400"></fa-icon>
+                  {{ day.quizzesCompleted }}
+                </span>
+              </div>
+            </div>
+          } @empty {
+            <p class="col-span-full text-center text-gray-500 py-6">No activity this week</p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Monthly Report Tab -->
+    @if (activeTab() === 'monthly' && monthlyReport()) {
+      <div class="py-4">
+        <!-- Summary Card -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+          <div class="mb-4">
+            <h3 class="text-lg font-medium text-gray-800">This Month's Summary</h3>
+            <p class="text-sm text-gray-500">
+              {{ monthlyReport()!.startDate | date:'MMM d' }} - {{ monthlyReport()!.endDate | date:'MMM d, yyyy' }}
+            </p>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center py-4">
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ monthlyReport()!.summary.totalDaysActive }}</span>
+              <span class="text-sm text-gray-500 mt-1">Days Active</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ monthlyReport()!.summary.totalConversations }}</span>
+              <span class="text-sm text-gray-500 mt-1">Conversations</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ monthlyReport()!.summary.totalVocabulary }}</span>
+              <span class="text-sm text-gray-500 mt-1">Words Learned</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ monthlyReport()!.summary.totalExercises }}</span>
+              <span class="text-sm text-gray-500 mt-1">Exercises</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ monthlyReport()!.summary.totalQuizzes }}</span>
+              <span class="text-sm text-gray-500 mt-1">Quizzes</span>
+            </div>
+            <div>
+              <span class="block text-2xl font-medium text-gray-900">{{ monthlyReport()!.summary.averageCorrectRate }}%</span>
+              <span class="text-sm text-gray-500 mt-1">Accuracy</span>
+            </div>
           </div>
         </div>
-      }
-    </mat-tab>
-  </mat-tab-group>
-}
+      </div>
+    }
+  }
+</div>

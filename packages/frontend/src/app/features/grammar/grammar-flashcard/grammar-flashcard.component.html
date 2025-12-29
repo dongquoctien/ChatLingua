@@ -1,117 +1,131 @@
-<div class="grammar-review-page">
+<div class="max-w-3xl mx-auto p-6 min-h-[calc(100vh-120px)] flex flex-col">
   <!-- Loading State -->
   @if (loading()) {
-    <div class="loading-container">
-      <fa-icon [icon]="faSpinner" animation="spin" class="spinner"></fa-icon>
+    <div class="flex-1 flex flex-col items-center justify-center text-gray-500">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-900 mb-4"></fa-icon>
       <p>Loading grammar review...</p>
     </div>
   } @else if (sessionComplete()) {
     <!-- Session Complete -->
-    <div class="session-complete">
-      <mat-card class="complete-card">
-        <div class="complete-icon">
+    <div class="flex-1 flex items-center justify-center">
+      <div class="bg-white rounded-2xl shadow-lg p-12 max-w-lg text-center">
+        <div class="text-6xl text-gray-900 mb-6">
           <fa-icon [icon]="faCheckCircle"></fa-icon>
         </div>
-        <h2>Review Complete!</h2>
+        <h2 class="text-2xl font-medium text-gray-800 mb-6">Review Complete!</h2>
 
-        <div class="session-stats">
-          <div class="stat">
-            <span class="value">{{ session().completed }}</span>
-            <span class="label">Reviewed</span>
+        <div class="flex justify-center gap-10 mb-6 p-5 bg-gray-50 rounded-xl">
+          <div class="flex flex-col items-center">
+            <span class="text-2xl font-semibold text-gray-900">{{ session().completed }}</span>
+            <span class="text-sm text-gray-500 mt-1">Reviewed</span>
           </div>
-          <div class="stat">
-            <span class="value">{{ session().correct }}</span>
-            <span class="label">Correct</span>
+          <div class="flex flex-col items-center">
+            <span class="text-2xl font-semibold text-gray-900">{{ session().correct }}</span>
+            <span class="text-sm text-gray-500 mt-1">Correct</span>
           </div>
-          <div class="stat">
-            <span class="value">+{{ session().xpEarned }}</span>
-            <span class="label">XP Earned</span>
+          <div class="flex flex-col items-center">
+            <span class="text-2xl font-semibold text-gray-900">+{{ session().xpEarned }}</span>
+            <span class="text-sm text-gray-500 mt-1">XP Earned</span>
           </div>
         </div>
 
         @if (session().total === 0) {
-          <p class="message">No grammar rules to review today. Great job staying on top of your learning!</p>
+          <p class="text-gray-600 mb-8 leading-relaxed">No grammar rules to review today. Great job staying on top of your learning!</p>
         } @else {
-          <p class="message">You've reviewed all grammar rules for today. Keep up the great work!</p>
+          <p class="text-gray-600 mb-8 leading-relaxed">You've reviewed all grammar rules for today. Keep up the great work!</p>
         }
 
-        <div class="complete-actions">
+        <div class="flex flex-col gap-3">
           @if (session().total > 0) {
-            <button mat-stroked-button (click)="restartSession()">
+            <button (click)="restartSession()"
+                    class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               <fa-icon [icon]="faRedo"></fa-icon>
               Review Again
             </button>
           }
-          <button mat-raised-button color="primary" (click)="goToExercises()">
+          <button (click)="goToExercises()"
+                  class="flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium">
             <fa-icon [icon]="faGraduationCap"></fa-icon>
             Practice Exercises
           </button>
-          <button mat-stroked-button (click)="goToGrammarList()">
+          <button (click)="goToGrammarList()"
+                  class="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
             <fa-icon [icon]="faBook"></fa-icon>
             Grammar List
           </button>
         </div>
-      </mat-card>
+      </div>
     </div>
   } @else {
     <!-- Review Session -->
-    <div class="review-session">
+    <div class="flex-1 flex flex-col">
       <!-- Progress Header -->
-      <div class="progress-header">
-        <div class="progress-info">
-          <span class="count">{{ session().completed + 1 }} / {{ session().total }}</span>
-          <span class="xp">+{{ session().xpEarned }} XP</span>
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm font-medium text-gray-600">{{ session().completed + 1 }} / {{ session().total }}</span>
+          <span class="text-sm font-semibold text-gray-900">+{{ session().xpEarned }} XP</span>
         </div>
-        <mat-progress-bar mode="determinate" [value]="progress()"></mat-progress-bar>
+        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-full bg-gray-900 rounded-full transition-all duration-300"
+               [style.width.%]="progress()"></div>
+        </div>
       </div>
 
       <!-- Flashcard -->
       @if (currentItem()) {
-        <div class="flashcard-container">
-          <mat-card class="flashcard" [class.flipped]="showAnswer()">
+        <div class="flex-1 flex items-center justify-center mb-6">
+          <div class="w-full bg-white rounded-2xl shadow-lg p-8 min-h-[400px]">
             <!-- Front (Question) -->
-            <div class="card-front">
-              <div class="card-meta">
-                <span class="priority-badge" [ngClass]="getPriorityClass(currentItem()!.priority)">
+            <div class="card-front" [class.hidden]="showAnswer()">
+              <div class="flex gap-3 mb-6">
+                <span class="px-3 py-1 rounded-full text-xs font-medium"
+                      [ngClass]="getPriorityClass(currentItem()!.priority)">
                   {{ getPriorityLabel(currentItem()!.priority) }}
                 </span>
                 @if (currentItem()!.grammarPoint.category) {
-                  <span class="category">{{ currentItem()!.grammarPoint.category }}</span>
+                  <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    {{ currentItem()!.grammarPoint.category }}
+                  </span>
                 }
               </div>
 
-              <div class="card-content">
-                <h2 class="grammar-rule">{{ currentItem()!.grammarPoint.grammarRule }}</h2>
+              <div class="text-center mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6 leading-relaxed">
+                  {{ currentItem()!.grammarPoint.grammarRule }}
+                </h2>
 
-                <div class="prompt">
-                  <fa-icon [icon]="faLightbulb"></fa-icon>
+                <div class="flex items-center justify-center gap-2 text-gray-500 italic">
+                  <fa-icon [icon]="faLightbulb" class="text-yellow-500"></fa-icon>
                   <span>Can you explain this grammar rule and give an example?</span>
                 </div>
               </div>
 
-              <button mat-raised-button color="primary" class="reveal-btn" (click)="revealAnswer()">
+              <button (click)="revealAnswer()"
+                      class="mx-auto block px-10 py-4 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors text-lg">
                 Show Answer
-                <span class="shortcut">(Space)</span>
+                <span class="ml-2 opacity-70 text-sm">(Space)</span>
               </button>
             </div>
 
             <!-- Back (Answer) -->
             @if (showAnswer()) {
               <div class="card-back">
-                <div class="answer-content">
-                  <h3 class="rule-title">{{ currentItem()!.grammarPoint.grammarRule }}</h3>
+                <div class="mb-8 mt-4">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-5 text-center">
+                    {{ currentItem()!.grammarPoint.grammarRule }}
+                  </h3>
 
-                  <div class="explanation">
-                    <h4>Explanation:</h4>
-                    <p>{{ currentItem()!.grammarPoint.explanation }}</p>
+                  <div class="bg-gray-50 p-5 rounded-xl mb-4">
+                    <h4 class="text-xs uppercase tracking-wide text-gray-500 mb-2">Explanation:</h4>
+                    <p class="text-gray-700 leading-relaxed">{{ currentItem()!.grammarPoint.explanation }}</p>
                   </div>
 
                   @if (currentItem()!.grammarPoint.exampleEn) {
-                    <div class="example-section">
-                      <h4>Example:</h4>
-                      <p class="example-en">{{ currentItem()!.grammarPoint.exampleEn }}</p>
+                    <div class="bg-gray-100 p-5 rounded-xl border-l-4 border-gray-900">
+                      <h4 class="text-xs uppercase tracking-wide text-gray-700 mb-2">Example:</h4>
+                      <p class="text-gray-800 italic mb-2">{{ currentItem()!.grammarPoint.exampleEn }}</p>
                       @if (currentItem()!.grammarPoint.exampleVi) {
-                        <p class="example-vi">{{ currentItem()!.grammarPoint.exampleVi }}</p>
+                        <p class="text-gray-600 text-sm">{{ currentItem()!.grammarPoint.exampleVi }}</p>
                       }
                     </div>
                   }
@@ -119,39 +133,41 @@
 
                 <!-- Rating Buttons -->
                 <div class="rating-section">
-                  <p class="rating-prompt">How well did you remember this?</p>
-                  <div class="rating-buttons">
+                  <p class="text-center text-gray-600 mb-4">How well did you remember this?</p>
+                  <div class="grid grid-cols-4 gap-3 mb-3">
                     @for (rating of ratings; track rating.quality) {
                       <button
-                        mat-raised-button
-                        class="rating-btn"
-                        [style.backgroundColor]="rating.color"
+                        class="text-white py-4 px-3 rounded-xl flex flex-col items-center gap-1 min-h-[60px] transition-all hover:-translate-y-0.5 disabled:opacity-60"
+                        [ngClass]="rating.bgClass"
                         [disabled]="submitting()"
                         (click)="submitRating(rating.quality)">
-                        <span class="rating-label">{{ rating.label }}</span>
-                        <span class="rating-shortcut">({{ rating.shortcut }})</span>
+                        <span class="font-semibold text-sm">{{ rating.label }}</span>
+                        <span class="opacity-80 text-[11px]">({{ rating.shortcut }})</span>
                       </button>
                     }
                   </div>
-                  <div class="rating-hints">
+                  <div class="grid grid-cols-4 gap-3 text-center">
                     @for (rating of ratings; track rating.quality) {
-                      <span class="hint">{{ rating.description }}</span>
+                      <span class="text-[11px] text-gray-400 leading-tight">{{ rating.description }}</span>
                     }
                   </div>
                 </div>
               </div>
             }
-          </mat-card>
+          </div>
         </div>
       }
 
       <!-- Navigation -->
-      <div class="navigation">
-        <button mat-stroked-button [disabled]="!hasPrevious()" (click)="moveToPrevious()">
+      <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+        <button [disabled]="!hasPrevious()"
+                (click)="moveToPrevious()"
+                class="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           <fa-icon [icon]="faArrowLeft"></fa-icon>
           Previous
         </button>
-        <button mat-stroked-button routerLink="/grammar">
+        <button routerLink="/grammar"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
           Exit Review
         </button>
       </div>

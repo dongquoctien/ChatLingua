@@ -1,11 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
@@ -16,7 +11,7 @@ import {
   faClock,
   faPlay,
   faChartLine,
-} from '@fortawesome/free-solid-svg-icons';
+} from '../../../shared/icons';
 import { ApiService, GrammarPointDetail, GrammarReviewStatus } from '../../../core/services/api.service';
 
 @Component({
@@ -25,11 +20,6 @@ import { ApiService, GrammarPointDetail, GrammarReviewStatus } from '../../../co
   imports: [
     CommonModule,
     RouterLink,
-    MatCardModule,
-    MatButtonModule,
-    MatChipsModule,
-    MatDividerModule,
-    MatProgressBarModule,
     FontAwesomeModule,
   ],
   templateUrl: './grammar-detail.component.html',
@@ -87,12 +77,12 @@ export class GrammarDetailComponent implements OnInit {
 
   getStatusClass(status: GrammarReviewStatus): string {
     const classes: Record<GrammarReviewStatus, string> = {
-      new: 'status-new',
-      learning: 'status-learning',
-      reviewing: 'status-reviewing',
-      mastered: 'status-mastered',
+      new: 'bg-gray-50 text-gray-700',
+      learning: 'bg-orange-50 text-orange-700',
+      reviewing: 'bg-pink-50 text-pink-700',
+      mastered: 'bg-gray-100 text-gray-900',
     };
-    return classes[status] || 'status-new';
+    return classes[status] || 'bg-gray-50 text-gray-700';
   }
 
   getStatusLabel(status: GrammarReviewStatus): string {
@@ -106,11 +96,11 @@ export class GrammarDetailComponent implements OnInit {
   }
 
   getMasteryColor(level: number): string {
-    if (level >= 80) return '#4caf50';
-    if (level >= 60) return '#8bc34a';
-    if (level >= 40) return '#ffeb3b';
-    if (level >= 20) return '#ff9800';
-    return '#f44336';
+    if (level >= 80) return 'bg-gray-900';
+    if (level >= 60) return 'bg-gray-700';
+    if (level >= 40) return 'bg-gray-500';
+    if (level >= 20) return 'bg-gray-400';
+    return 'bg-gray-300';
   }
 
   formatNextReview(dateStr?: string): string {

@@ -1,0 +1,79 @@
+<div class="flex flex-col gap-6">
+  <p class="text-gray-600">Listen to the word and spell it correctly:</p>
+
+  <!-- Audio Controls -->
+  <div class="flex items-center gap-4 p-4 bg-gray-100 rounded-lg">
+    <button class="w-14 h-14 rounded-full bg-gray-900 text-white flex items-center justify-center transition-all hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            (click)="playAudio()"
+            [disabled]="isPlaying() || playsRemaining() <= 0">
+      <fa-icon [icon]="faVolumeUp" size="lg"></fa-icon>
+    </button>
+
+    <div class="flex-1 flex flex-col gap-2">
+      <span class="text-sm text-gray-600">
+        {{ playsRemaining() }} plays remaining
+      </span>
+      @if (isPlaying()) {
+        <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-full bg-gray-900 animate-pulse" style="width: 100%"></div>
+        </div>
+      }
+    </div>
+
+    <button class="btn btn-secondary" (click)="playAudio(0.7)" [disabled]="isPlaying() || playsRemaining() <= 0">
+      Slow
+    </button>
+  </div>
+
+  <!-- Hint -->
+  @if (exerciseData?.hint) {
+    <div class="flex flex-col gap-2">
+      <button class="btn btn-secondary w-fit" (click)="toggleHint()">
+        <fa-icon [icon]="faLightbulb" class="mr-2"></fa-icon>
+        {{ showHint() ? 'Hide Hint' : 'Show Hint' }}
+      </button>
+      @if (showHint()) {
+        <div class="p-3 bg-amber-50 rounded border-l-4 border-amber-500">
+          <strong>Hint:</strong> {{ exerciseData.hint }}
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Word Length Hint -->
+  <div class="text-center">
+    <span class="text-sm text-gray-600 block mb-2">Word length: {{ exerciseData?.word?.length || '?' }} letters</span>
+    <div class="flex justify-center gap-1 flex-wrap">
+      @for (i of getLetterBoxes(); track i) {
+        <div class="w-8 h-10 border-2 rounded flex items-center justify-center text-xl font-semibold uppercase bg-white"
+             [class.border-gray-300]="!userAnswer()[i]"
+             [class.border-gray-500]="userAnswer()[i]"
+             [class.bg-gray-100]="userAnswer()[i]"
+             [class.text-gray-900]="userAnswer()[i]">
+          {{ userAnswer()[i] || '' }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Spell the word</label>
+    <input type="text"
+           class="input"
+           [ngModel]="userAnswer()"
+           (ngModelChange)="onAnswerChange($event)"
+           [disabled]="disabled"
+           (keyup.enter)="confirmAnswer()"
+           autocomplete="off"
+           spellcheck="false">
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-4">
+    <button class="btn btn-secondary" (click)="reset()" [disabled]="disabled">
+      <fa-icon [icon]="faRedo" class="mr-2"></fa-icon>
+      Reset
+    </button>
+  </div>
+</div>

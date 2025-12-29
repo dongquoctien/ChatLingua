@@ -1,260 +1,318 @@
-@use '@angular/material' as mat;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@include mat.core();
-
-$chatlingua-primary: mat.m2-define-palette(mat.$m2-indigo-palette);
-$chatlingua-accent: mat.m2-define-palette(mat.$m2-teal-palette);
-$chatlingua-warn: mat.m2-define-palette(mat.$m2-red-palette);
-
-$chatlingua-theme: mat.m2-define-light-theme((
-  color: (
-    primary: $chatlingua-primary,
-    accent: $chatlingua-accent,
-    warn: $chatlingua-warn,
-  ),
-  typography: mat.m2-define-typography-config(),
-  density: 0,
-));
-
-@include mat.all-component-themes($chatlingua-theme);
-
-* {
+/* Reset */
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-// ============================================
-// Icon Size System
-// ============================================
-// Use these CSS custom properties for consistent icon sizing
-:root {
-  --icon-xs: 12px;    // Small inline icons (badges, stats)
-  --icon-sm: 16px;    // Menu/list item icons
-  --icon-md: 20px;    // Button icons, form icons
-  --icon-lg: 24px;    // Logo, header icons
-  --icon-xl: 32px;    // Card action icons
-  --icon-2xl: 40px;   // Large stat icons
-  --icon-3xl: 48px;   // Hero/feature icons
-  --icon-4xl: 64px;   // Empty state icons
-}
-
-// Icon size utility classes
-.icon-xs { font-size: var(--icon-xs) !important; }
-.icon-sm { font-size: var(--icon-sm) !important; }
-.icon-md { font-size: var(--icon-md) !important; }
-.icon-lg { font-size: var(--icon-lg) !important; }
-.icon-xl { font-size: var(--icon-xl) !important; }
-.icon-2xl { font-size: var(--icon-2xl) !important; }
-.icon-3xl { font-size: var(--icon-3xl) !important; }
-.icon-4xl { font-size: var(--icon-4xl) !important; }
-
+/* Base styles */
 html, body {
   height: 100%;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-  background-color: #fafafa;
+  @apply bg-gray-50 text-gray-900;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-}
+/* Icon size utilities */
+.icon-xs { font-size: 12px !important; }
+.icon-sm { font-size: 16px !important; }
+.icon-md { font-size: 20px !important; }
+.icon-lg { font-size: 24px !important; }
+.icon-xl { font-size: 32px !important; }
+.icon-2xl { font-size: 40px !important; }
+.icon-3xl { font-size: 48px !important; }
+.icon-4xl { font-size: 64px !important; }
 
-.page-header {
-  margin-bottom: 24px;
-
-  h1 {
-    font-size: 28px;
-    font-weight: 500;
-    color: #333;
+/* Component layer */
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
   }
 
-  p {
-    color: #666;
-    margin-top: 8px;
+  .card-hover {
+    @apply hover:shadow-md hover:border-gray-300 transition-all duration-200;
   }
-}
 
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
-}
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 
+           font-medium rounded-lg transition-all duration-200 
+           focus:outline-none focus:ring-2 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
 
-.stat-card {
-  text-align: center;
-  padding: 24px;
+  .btn-primary {
+    @apply bg-gray-900 text-white hover:bg-gray-800 focus:ring-gray-500;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500;
+  }
+
+  .btn-success {
+    @apply bg-gray-900 text-white hover:bg-gray-800 focus:ring-gray-500;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
+
+  .btn-outline {
+    @apply border-2 border-current bg-transparent hover:bg-gray-50;
+  }
+
+  .btn-sm {
+    @apply text-sm px-3 py-1.5;
+  }
+
+  .btn-lg {
+    @apply text-lg px-6 py-3;
+  }
+
+  .btn-icon {
+    @apply p-2 rounded-full;
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900
+           placeholder-gray-400 transition-colors duration-200;
+  }
+
+  .input-error {
+    @apply border-red-500 focus:ring-red-500 focus:border-red-500;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .form-group {
+    @apply mb-4;
+  }
+
+  .form-error {
+    @apply text-sm text-red-600 mt-1;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-gray-100 text-gray-800;
+  }
+
+  .badge-success {
+    @apply bg-gray-100 text-gray-800;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .badge-info {
+    @apply bg-gray-100 text-gray-800;
+  }
+
+  .badge-gray {
+    @apply bg-gray-100 text-gray-800;
+  }
+
+  /* Mastery badges */
+  .mastery-badge {
+    @apply inline-block px-3 py-1 rounded-xl text-xs font-medium;
+  }
+
+  .mastery-0, .mastery-1 {
+    @apply bg-red-50 text-red-700;
+  }
+
+  .mastery-2, .mastery-3 {
+    @apply bg-orange-50 text-orange-700;
+  }
+
+  .mastery-4, .mastery-5 {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  /* Difficulty badges */
+  .difficulty-badge {
+    @apply inline-block px-3 py-1 rounded-xl text-xs font-medium;
+  }
+
+  .difficulty-badge.beginner {
+    @apply bg-gray-50 text-gray-700;
+  }
+
+  .difficulty-badge.intermediate {
+    @apply bg-orange-50 text-orange-700;
+  }
+
+  .difficulty-badge.advanced {
+    @apply bg-pink-50 text-pink-700;
+  }
+
+  /* Alerts/Messages */
+  .alert {
+    @apply p-4 rounded-lg mb-4;
+  }
+
+  .alert-success {
+    @apply bg-gray-50 text-gray-800 border border-gray-200;
+  }
+
+  .alert-error {
+    @apply bg-red-50 text-red-800 border border-red-200;
+  }
+
+  .alert-warning {
+    @apply bg-yellow-50 text-yellow-800 border border-yellow-200;
+  }
+
+  .alert-info {
+    @apply bg-gray-50 text-gray-800 border border-gray-200;
+  }
+
+  /* Empty state */
+  .empty-state {
+    @apply text-center py-12 px-6 text-gray-500;
+  }
+
+  .empty-state-icon {
+    @apply text-6xl text-gray-300 mb-4;
+  }
+
+  .empty-state-title {
+    @apply text-lg font-medium text-gray-700 mb-2;
+  }
+
+  .empty-state-text {
+    @apply text-gray-500;
+  }
+
+  /* Loading */
+  .loading-spinner {
+    @apply flex justify-center items-center py-12;
+  }
+
+  .spinner {
+    @apply w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin;
+  }
+
+  /* Container */
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Page header */
+  .page-header {
+    @apply mb-6;
+  }
+
+  .page-header h1 {
+    @apply text-2xl sm:text-3xl font-semibold text-gray-900;
+  }
+
+  .page-header p {
+    @apply text-gray-500 mt-2;
+  }
+
+  /* Card grid */
+  .card-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply text-center p-6;
+  }
 
   .stat-value {
-    font-size: 36px;
-    font-weight: 500;
-    color: mat.m2-get-color-from-palette($chatlingua-primary, 500);
+    @apply text-3xl font-semibold text-gray-900;
   }
 
   .stat-label {
-    color: #666;
-    margin-top: 8px;
+    @apply text-gray-500 mt-2;
+  }
+
+  /* Dialog/Modal */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50;
+  }
+
+  .modal {
+    @apply bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-auto;
+  }
+
+  .modal-header {
+    @apply flex items-center justify-between p-6 border-b border-gray-200;
+  }
+
+  .modal-title {
+    @apply text-xl font-semibold text-gray-900;
+  }
+
+  .modal-body {
+    @apply p-6;
+  }
+
+  .modal-footer {
+    @apply flex justify-end gap-3 p-6 border-t border-gray-200;
+  }
+
+  /* Progress bar */
+  .progress {
+    @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+  }
+
+  .progress-bar {
+    @apply h-full bg-gray-900 rounded-full transition-all duration-300;
+  }
+
+  /* Table */
+  .table {
+    @apply w-full text-left;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-sm font-medium text-gray-500 bg-gray-50 border-b border-gray-200;
+  }
+
+  .table td {
+    @apply px-4 py-3 text-sm text-gray-700 border-b border-gray-100;
+  }
+
+  .table tr:hover td {
+    @apply bg-gray-50;
   }
 }
 
-.mastery-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-
-  &.mastery-0, &.mastery-1 {
-    background: #ffebee;
-    color: #c62828;
+/* Utility layer */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent;
   }
 
-  &.mastery-2, &.mastery-3 {
-    background: #fff3e0;
-    color: #ef6c00;
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  &.mastery-4, &.mastery-5 {
-    background: #e8f5e9;
-    color: #2e7d32;
-  }
-}
-
-.difficulty-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-
-  &.beginner {
-    background: #e3f2fd;
-    color: #1565c0;
-  }
-
-  &.intermediate {
-    background: #fff3e0;
-    color: #ef6c00;
-  }
-
-  &.advanced {
-    background: #fce4ec;
-    color: #c2185b;
-  }
-}
-
-.loading-spinner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 48px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 48px;
-  color: #666;
-
-  mat-icon {
-    font-size: 64px;
-    width: 64px;
-    height: 64px;
-    color: #ccc;
-    margin-bottom: 16px;
-  }
-
-  h3 {
-    font-size: 18px;
-    margin-bottom: 8px;
-  }
-}
-
-.error-message {
-  background: #ffebee;
-  color: #c62828;
-  padding: 16px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-}
-
-.success-message {
-  background: #e8f5e9;
-  color: #2e7d32;
-  padding: 16px;
-  border-radius: 4px;
-  margin-bottom: 16px;
-}
-
-// ============================================
-// Responsive Breakpoints
-// ============================================
-// Mobile: max-width: 480px
-// Tablet: max-width: 768px
-// Desktop: max-width: 1024px
-
-@media (max-width: 768px) {
-  .container {
-    padding: 16px;
-  }
-
-  .page-header {
-    margin-bottom: 16px;
-
-    h1 {
-      font-size: 24px;
-    }
-  }
-
-  .card-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .stat-card {
-    padding: 16px;
-
-    .stat-value {
-      font-size: 28px;
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 12px;
-  }
-
-  .page-header {
-    margin-bottom: 12px;
-
-    h1 {
-      font-size: 20px;
-    }
-
-    p {
-      font-size: 14px;
-    }
-  }
-
-  .empty-state {
-    padding: 32px 16px;
-
-    mat-icon {
-      font-size: 48px;
-      width: 48px;
-      height: 48px;
-    }
-
-    h3 {
-      font-size: 16px;
-    }
-  }
-
-  .loading-spinner {
-    padding: 32px;
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

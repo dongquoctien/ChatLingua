@@ -1,12 +1,15 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatChipsModule } from '@angular/material/chips';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faComment, faLanguage, faSpellCheck, faSpinner } from '../../../shared/icons';
+import {
+  faComment,
+  faLanguage,
+  faSpellCheck,
+  faSpinner,
+  faChevronLeft,
+  faChevronRight,
+} from '../../../shared/icons';
 import { ApiService, Conversation } from '../../../core/services/api.service';
 
 @Component({
@@ -15,10 +18,6 @@ import { ApiService, Conversation } from '../../../core/services/api.service';
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatPaginatorModule,
-    MatChipsModule,
     FontAwesomeModule,
   ],
   templateUrl: './conversation-list.component.html',
@@ -32,12 +31,16 @@ export class ConversationListComponent implements OnInit {
   faLanguage = faLanguage;
   faSpellCheck = faSpellCheck;
   faSpinner = faSpinner;
+  faChevronLeft = faChevronLeft;
+  faChevronRight = faChevronRight;
 
   conversations = signal<Conversation[]>([]);
   total = signal(0);
   page = signal(1);
   pageSize = signal(10);
   loading = signal(true);
+
+  pageSizeOptions = [5, 10, 20];
 
   ngOnInit() {
     this.loadConversations();
@@ -57,9 +60,45 @@ export class ConversationListComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent) {
-    this.page.set(event.pageIndex + 1);
-    this.pageSize.set(event.pageSize);
+  get totalPages(): number {
+    return Math.ceil(this.total() / this.pageSize());
+  }
+
+  get startItem(): number {
+    return (this.page() - 1) * this.pageSize() + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(this.page() * this.pageSize(), this.total());
+  }
+
+  onPageSizeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.pageSize.set(parseInt(select.value, 10));
+    this.page.set(1);
     this.loadConversations();
+  }
+
+  previousPage() {
+    if (this.page() > 1) {
+      this.page.update(p => p - 1);
+      this.loadConversations();
+    }
+  }
+
+  nextPage() {
+    if (this.page() < this.totalPages) {
+      this.page.update(p => p + 1);
+      this.loadConversations();
+    }
+  }
+
+  getDifficultyClass(level: string): string {
+    switch (level.toLowerCase()) {
+      case 'beginner': return 'bg-gray-50 text-gray-700';
+      case 'intermediate': return 'bg-orange-50 text-orange-700';
+      case 'advanced': return 'bg-pink-50 text-pink-700';
+      default: return 'bg-gray-50 text-gray-700';
+    }
   }
 }

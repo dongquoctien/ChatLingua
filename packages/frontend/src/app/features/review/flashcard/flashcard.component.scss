@@ -1,150 +1,4 @@
-.flashcard-page {
-  max-width: 600px;
-  margin: 0 auto;
-  min-height: calc(100vh - 120px);
-  display: flex;
-  flex-direction: column;
-}
-
-.flashcard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  margin-bottom: 8px;
-
-  .session-info {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    .timer {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #666;
-      font-size: 14px;
-
-      fa-icon {
-        color: #888;
-      }
-    }
-
-    .progress-text {
-      font-weight: 500;
-      color: #333;
-    }
-  }
-
-  .session-stats {
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-
-    .correct {
-      color: #4caf50;
-      font-weight: 600;
-    }
-
-    .separator {
-      margin: 0 4px;
-      color: #999;
-    }
-
-    .total {
-      color: #666;
-    }
-  }
-}
-
-mat-progress-bar {
-  margin-bottom: 24px;
-}
-
-.loading-spinner {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: #3f51b5;
-
-  fa-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-  }
-
-  p {
-    color: #666;
-  }
-}
-
-.empty-queue, .completion-screen {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 32px;
-
-  .empty-icon, .completion-icon {
-    font-size: 64px;
-    color: #4caf50;
-    margin-bottom: 24px;
-  }
-
-  .completion-icon {
-    color: #ff9800;
-  }
-
-  h2 {
-    margin: 0 0 12px;
-    font-size: 24px;
-    color: #333;
-  }
-
-  p {
-    color: #666;
-    margin-bottom: 24px;
-  }
-}
-
-.completion-stats {
-  display: flex;
-  gap: 32px;
-  margin: 24px 0 32px;
-
-  .stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    .value {
-      font-size: 32px;
-      font-weight: 600;
-      color: #3f51b5;
-    }
-
-    .label {
-      font-size: 12px;
-      color: #888;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-  }
-}
-
-.completion-actions {
-  display: flex;
-  gap: 16px;
-
-  button {
-    fa-icon {
-      margin-right: 8px;
-    }
-  }
-}
+// Flashcard component - 3D flip animation requires custom CSS
 
 .flashcard-container {
   flex: 1;
@@ -181,233 +35,104 @@ mat-progress-bar {
   flex-direction: column;
   padding: 24px;
 
-  &.front {
-    .direction-badge {
-      align-self: flex-start;
-      background: #e3f2fd;
-      color: #1976d2;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .card-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-
-      .main-word {
-        font-size: 36px;
-        font-weight: 500;
-        color: #333;
-        margin: 0 0 12px;
-      }
-
-      .phonetic {
-        font-size: 18px;
-        color: #666;
-        margin-bottom: 8px;
-      }
-
-      .part-of-speech {
-        font-size: 14px;
-        color: #888;
-        font-style: italic;
-      }
-    }
-
-    .tap-hint {
-      text-align: center;
-      color: #999;
-      font-size: 14px;
-      margin-top: auto;
-    }
-  }
-
   &.back {
     transform: rotateY(180deg);
-
-    .card-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-
-      .front-reminder {
-        font-size: 14px;
-        color: #888;
-        margin-bottom: 16px;
-      }
-
-      .answer-section {
-        margin-bottom: 16px;
-
-        .answer-word {
-          font-size: 32px;
-          font-weight: 600;
-          color: #3f51b5;
-          margin: 0 0 8px;
-        }
-
-        .phonetic {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          font-size: 16px;
-          color: #666;
-
-          .speak-btn {
-            // width: 32px;
-            // height: 32px;
-
-            fa-icon {
-              font-size: 16px;
-              color: #666;
-
-              &.speaking {
-                color: #3f51b5;
-              }
-            }
-          }
-        }
-      }
-
-      .definition {
-        font-size: 14px;
-        color: #555;
-        max-width: 300px;
-        line-height: 1.5;
-        margin-bottom: 12px;
-      }
-
-      .cefr-badge {
-        background: #f5f5f5;
-        color: #666;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 500;
-      }
-    }
-
-    .rating-buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-top: auto;
-      padding-top: 16px;
-
-      .rating-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 12px 8px;
-        min-height: 60px;
-        border-radius: 8px;
-        text-transform: none;
-
-        .rating-label {
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .rating-interval {
-          font-size: 11px;
-          opacity: 0.8;
-          margin-top: 4px;
-        }
-
-        &.again {
-          background: #ffebee;
-          color: #c62828;
-
-          &:hover {
-            background: #ffcdd2;
-          }
-        }
-
-        &.hard {
-          background: #fff3e0;
-          color: #e65100;
-
-          &:hover {
-            background: #ffe0b2;
-          }
-        }
-
-        &.good {
-          background: #e8f5e9;
-          color: #2e7d32;
-
-          &:hover {
-            background: #c8e6c9;
-          }
-        }
-
-        &.easy {
-          background: #e3f2fd;
-          color: #1565c0;
-
-          &:hover {
-            background: #bbdefb;
-          }
-        }
-
-        &:disabled {
-          opacity: 0.6;
-        }
-      }
-    }
-
-    .result-feedback {
-      text-align: center;
-      margin-top: 12px;
-      font-size: 13px;
-      color: #666;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-
-      .xp-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-        border-radius: 12px;
-        font-weight: 600;
-        color: #ff6f00;
-        animation: xp-pop 0.3s ease-out;
-
-        fa-icon {
-          color: #ffd700;
-        }
-      }
-    }
-
-    @keyframes xp-pop {
-      0% {
-        transform: scale(0.8);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.1);
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
   }
 }
 
+// Rating buttons
+.rating-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  min-height: 60px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  .rating-label {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .rating-interval {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 4px;
+  }
+
+  &.again {
+    background: #fef2f2;
+    color: #b91c1c;
+
+    &:hover:not(:disabled) {
+      background: #fecaca;
+    }
+  }
+
+  &.hard {
+    background: #fff7ed;
+    color: #c2410c;
+
+    &:hover:not(:disabled) {
+      background: #fed7aa;
+    }
+  }
+
+  &.good {
+    background: #f0fdf4;
+    color: #15803d;
+
+    &:hover:not(:disabled) {
+      background: #bbf7d0;
+    }
+  }
+
+  &.easy {
+    background: #eff6ff;
+    color: #1d4ed8;
+
+    &:hover:not(:disabled) {
+      background: #bfdbfe;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// XP Badge animation
+.xp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+  border-radius: 12px;
+  font-weight: 600;
+  color: #c2410c;
+  animation: xp-pop 0.3s ease-out;
+}
+
+@keyframes xp-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// Mobile responsive
 @media (max-width: 480px) {
   .flashcard {
     min-height: 350px;
@@ -417,18 +142,25 @@ mat-progress-bar {
     min-height: 350px;
     padding: 16px;
 
-    &.front .card-content .main-word {
+    &.front h2 {
       font-size: 28px;
     }
 
-    &.back {
-      .card-content .answer-section .answer-word {
-        font-size: 26px;
-      }
+    &.back h2 {
+      font-size: 24px;
+    }
+  }
 
-      .rating-buttons {
-        grid-template-columns: repeat(2, 1fr);
-      }
+  .rating-btn {
+    padding: 10px 6px;
+    min-height: 50px;
+
+    .rating-label {
+      font-size: 12px;
+    }
+
+    .rating-interval {
+      font-size: 10px;
     }
   }
 }

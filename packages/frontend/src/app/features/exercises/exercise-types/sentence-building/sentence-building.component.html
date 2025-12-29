@@ -1,0 +1,81 @@
+<div class="flex flex-col gap-4">
+  <p class="text-gray-600 mb-2">Drag and drop the words to form a correct sentence:</p>
+
+  <!-- Answer area (drop zone) -->
+  <div class="min-h-[60px] p-4 border-2 border-dashed rounded-lg flex flex-wrap gap-2 items-center transition-all"
+       [class.border-gray-900]="dropTargetZone() === 'arranged'"
+       [class.bg-gray-100]="dropTargetZone() === 'arranged'"
+       [class.border-gray-300]="dropTargetZone() !== 'arranged'"
+       [class.bg-gray-50]="dropTargetZone() !== 'arranged'"
+       (dragover)="onDragOver($event, 'arranged')"
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event, 'arranged')">
+    @if (arrangedWords().length === 0) {
+      <div class="w-full text-center text-gray-400 italic">Drop words here to build your sentence</div>
+    }
+    @for (word of arrangedWords(); track $index) {
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full cursor-grab select-none transition-all bg-gray-100 border border-gray-900 text-gray-700 hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing"
+           draggable="true"
+           [attr.draggable]="!disabled"
+           (dragstart)="onDragStart($event, word, 'arranged', $index)"
+           (dragend)="onDragEnd($event)"
+           (dragover)="onDragOver($event, 'arranged')"
+           (drop)="onDrop($event, 'arranged', $index)">
+        <span>{{ word }}</span>
+        <fa-icon [icon]="faArrowsAlt" class="text-xs opacity-50"></fa-icon>
+      </div>
+    }
+  </div>
+
+  <!-- Word bank (source) -->
+  <div class="p-4 border rounded-lg flex flex-wrap gap-2 items-center min-h-[50px] transition-all"
+       [class.border-gray-400]="dropTargetZone() === 'available'"
+       [class.bg-gray-100]="dropTargetZone() === 'available'"
+       [class.border-gray-200]="dropTargetZone() !== 'available'"
+       [class.bg-white]="dropTargetZone() !== 'available'"
+       (dragover)="onDragOver($event, 'available')"
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event, 'available')">
+    <span class="font-medium text-gray-600 mr-2 text-sm">Word Bank:</span>
+    @for (word of availableWords(); track $index) {
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full cursor-grab select-none transition-all bg-gray-100 border border-gray-500 text-gray-700 hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing"
+           draggable="true"
+           [attr.draggable]="!disabled"
+           (dragstart)="onDragStart($event, word, 'available', $index)"
+           (dragend)="onDragEnd($event)"
+           (dragover)="onDragOver($event, 'available')"
+           (drop)="onDrop($event, 'available', $index)">
+        <span>{{ word }}</span>
+        <fa-icon [icon]="faArrowsAlt" class="text-xs opacity-50"></fa-icon>
+      </div>
+    }
+    @if (availableWords().length === 0) {
+      <span class="text-gray-600 italic">All words used!</span>
+    }
+  </div>
+
+  <!-- Preview -->
+  @if (arrangedWords().length > 0) {
+    <div class="p-4 rounded-lg border-l-4"
+         [class.bg-amber-50]="availableWords().length > 0"
+         [class.border-amber-500]="availableWords().length > 0"
+         [class.bg-gray-100]="availableWords().length === 0"
+         [class.border-gray-900]="availableWords().length === 0">
+      <strong class="text-amber-700" [class.text-gray-700]="availableWords().length === 0">Your sentence:</strong>
+      <span class="italic ml-2">{{ currentSentence() }}</span>
+      @if (availableWords().length === 0) {
+        <fa-icon [icon]="faCheck" class="ml-2 text-gray-600"></fa-icon>
+      }
+    </div>
+  }
+
+  <!-- Reset button only -->
+  <div class="flex justify-end gap-4 mt-2">
+    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            (click)="reset()"
+            [disabled]="disabled || arrangedWords().length === 0">
+      <fa-icon [icon]="faUndo" class="mr-2"></fa-icon>
+      Reset
+    </button>
+  </div>
+</div>

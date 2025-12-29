@@ -1,0 +1,107 @@
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <h2 class="flex items-center gap-3 text-2xl font-semibold text-gray-800">
+      <fa-icon [icon]="faTrophy" class="text-yellow-400"></fa-icon>
+      Achievements
+    </h2>
+    <div class="flex flex-col items-end">
+      <span class="text-2xl font-bold text-gray-900">{{ unlockedCount() }}/{{ achievements.length }}</span>
+      <span class="text-xs text-gray-500 uppercase">Unlocked</span>
+    </div>
+  </div>
+
+  <!-- Category Tabs -->
+  <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-3">
+    @for (cat of categoryTabs; track cat.id; let i = $index) {
+      <button class="relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors"
+              [ngClass]="selectedCategory() === cat.id ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+              (click)="onCategoryChange(i)">
+        @if (cat.icon) {
+          <fa-icon [icon]="cat.icon" class="text-sm"></fa-icon>
+        }
+        {{ cat.label }}
+        @if (getNewCount(cat.id) > 0) {
+          <span class="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+            {{ getNewCount(cat.id) }}
+          </span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Achievement Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    @for (achievement of filteredAchievements(); track achievement.id) {
+      <div class="relative flex gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+           [ngClass]="{
+             'bg-gradient-to-br from-amber-50 to-white border-yellow-400': achievement.isUnlocked,
+             'bg-gray-100 border-transparent': !achievement.isUnlocked,
+             'animate-glow-pulse': achievement.isNew
+           }"
+           (click)="onAchievementClick(achievement)">
+
+        <!-- New Glow Effect -->
+        @if (achievement.isNew) {
+          <div class="absolute inset-0 bg-gradient-radial from-yellow-300/30 to-transparent pointer-events-none rounded-xl"></div>
+        }
+
+        <!-- Achievement Icon -->
+        <div class="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+             [ngClass]="achievement.isUnlocked ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white' : 'bg-gray-300'">
+          @if (achievement.isUnlocked) {
+            <fa-icon [icon]="getIcon(achievement.icon)" class="text-2xl" [style.color]="'white'"></fa-icon>
+          } @else {
+            <fa-icon [icon]="faLock" class="text-xl text-gray-500"></fa-icon>
+          }
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 flex flex-col gap-1">
+          <h4 class="font-semibold text-gray-800">{{ achievement.name }}</h4>
+          <p class="text-sm text-gray-600 leading-snug">{{ achievement.description }}</p>
+
+          <!-- Progress Bar (if not unlocked) -->
+          @if (!achievement.isUnlocked) {
+            <div class="flex items-center gap-2 mt-2">
+              <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-gray-900 rounded-full transition-all duration-300"
+                     [style.width.%]="achievement.progressPercentage"></div>
+              </div>
+              <span class="text-xs text-gray-500 whitespace-nowrap">{{ achievement.progressValue }}/{{ achievement.progressTarget }}</span>
+            </div>
+          }
+
+          <!-- XP Reward -->
+          <div class="flex items-center gap-1 text-sm mt-1"
+               [ngClass]="achievement.isUnlocked ? 'text-orange-500' : 'text-gray-400'">
+            <fa-icon [icon]="faBolt" [ngClass]="achievement.isUnlocked ? 'text-yellow-400' : 'text-gray-300'"></fa-icon>
+            {{ achievement.xpReward }} XP
+          </div>
+        </div>
+
+        <!-- Unlocked Date -->
+        @if (achievement.isUnlocked && achievement.unlockedAt) {
+          <div class="absolute bottom-2 right-3 text-xs text-gray-600 flex items-center gap-1">
+            <fa-icon [icon]="faCheckCircle"></fa-icon>
+            {{ formatDate(achievement.unlockedAt) }}
+          </div>
+        }
+
+        <!-- New Badge -->
+        @if (achievement.isNew) {
+          <div class="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded animate-pulse">
+            NEW!
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  @if (filteredAchievements().length === 0) {
+    <div class="text-center py-12 text-gray-400">
+      <fa-icon [icon]="faTrophy" class="text-5xl mb-4 opacity-30"></fa-icon>
+      <p>No achievements in this category yet</p>
+    </div>
+  }
+</div>

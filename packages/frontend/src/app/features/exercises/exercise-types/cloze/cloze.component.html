@@ -1,0 +1,60 @@
+<div class="flex flex-col gap-6">
+  <p class="text-gray-600 flex items-center gap-2">
+    <fa-icon [icon]="faPuzzlePiece" class="text-purple-600"></fa-icon>
+    Fill in all the blanks in the passage:
+  </p>
+
+  <!-- Passage with blanks -->
+  <div class="p-6 bg-gray-50 rounded-lg border border-gray-200 text-lg leading-loose">
+    @for (part of passageParts(); track $index) {
+      @if (part.type === 'text') {
+        <span class="whitespace-pre-wrap">{{ part.content }}</span>
+      } @else {
+        <span class="inline-flex items-center gap-1 mx-1">
+          <input type="text"
+                 class="border-0 border-b-2 border-purple-600 bg-transparent text-center px-2 py-1 min-w-[60px] focus:outline-none focus:bg-purple-50 focus:border-purple-700 transition-all"
+                 [class.text-purple-700]="userAnswers()[part.blankIndex!]"
+                 [class.font-medium]="userAnswers()[part.blankIndex!]"
+                 [value]="userAnswers()[part.blankIndex!] || ''"
+                 (input)="onBlankInput($event, part.blankIndex!)"
+                 (focus)="focusedBlank.set(part.blankIndex!)"
+                 (blur)="focusedBlank.set(null)"
+                 [disabled]="disabled"
+                 [placeholder]="'[' + part.blankIndex + ']'"
+                 [style.width.ch]="getInputWidth(part.blankIndex!)">
+          <span class="text-xs text-purple-600 opacity-70">({{ part.blankIndex }})</span>
+        </span>
+      }
+    }
+  </div>
+
+  <!-- Progress -->
+  <div class="text-center text-gray-600 text-sm">
+    <span>Filled: {{ filledCount() }} / {{ totalBlanks() }}</span>
+  </div>
+
+  <!-- Answer Summary -->
+  @if (filledCount() > 0) {
+    <div class="p-4 bg-gray-100 rounded-lg">
+      <strong class="block mb-2 text-gray-600">Your answers:</strong>
+      <div class="flex flex-wrap gap-2">
+        @for (blank of exerciseData?.blanks; track blank.index) {
+          <div class="flex items-center gap-1 px-3 py-1 bg-white border rounded text-sm"
+               [class.border-purple-600]="userAnswers()[blank.index]"
+               [class.bg-purple-50]="userAnswers()[blank.index]">
+            <span class="font-semibold text-purple-600">[{{ blank.index }}]</span>
+            <span>{{ userAnswers()[blank.index] || '___' }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-4">
+    <button class="btn btn-secondary" (click)="reset()" [disabled]="disabled">
+      <fa-icon [icon]="faUndo" class="mr-2"></fa-icon>
+      Reset
+    </button>
+  </div>
+</div>

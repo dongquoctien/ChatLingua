@@ -1,0 +1,65 @@
+<div class="flex flex-col gap-6">
+  <p class="text-gray-600 flex items-center gap-2">
+    <fa-icon [icon]="faExclamationTriangle" class="text-amber-500"></fa-icon>
+    Find the error in the sentence and write the correct word:
+  </p>
+
+  <!-- Sentence with clickable words -->
+  <div class="p-6 bg-gray-100 rounded-lg text-xl leading-loose text-center">
+    @for (word of words(); track $index) {
+      <span class="inline-block px-2 py-1 mx-1 rounded cursor-pointer transition-all border-2 border-transparent hover:bg-gray-100 hover:border-gray-500"
+            [class.bg-red-100]="selectedWordIndex() === $index"
+            [class.border-red-500]="selectedWordIndex() === $index"
+            [class.text-red-700]="selectedWordIndex() === $index"
+            [class.font-semibold]="selectedWordIndex() === $index"
+            [class.underline]="exerciseData?.errorPosition === $index"
+            [class.decoration-wavy]="exerciseData?.errorPosition === $index"
+            [class.decoration-amber-500]="exerciseData?.errorPosition === $index"
+            (click)="selectWord($index)">
+        {{ word }}
+      </span>
+    }
+  </div>
+
+  <!-- Error type hint if available -->
+  @if (exerciseData?.errorType) {
+    <div class="p-3 bg-amber-50 rounded border-l-4 border-amber-500 text-sm">
+      <strong>Error type:</strong> {{ exerciseData.errorType }}
+    </div>
+  }
+
+  <!-- Selected word and correction -->
+  @if (selectedWordIndex() !== null) {
+    <div class="p-4 bg-white border border-gray-200 rounded-lg">
+      <div class="mb-4">
+        <strong>Selected word:</strong>
+        <span class="inline-block px-3 py-1 ml-2 bg-red-100 text-red-700 rounded line-through">
+          {{ words()[selectedWordIndex()!] }}
+        </span>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Write the correct word</label>
+        <input type="text"
+               class="input"
+               [ngModel]="correction()"
+               (ngModelChange)="onCorrectionChange($event)"
+               [disabled]="disabled"
+               (keyup.enter)="confirmAnswer()"
+               placeholder="Type the correct spelling...">
+      </div>
+    </div>
+  } @else {
+    <div class="text-center text-gray-500 italic p-4">
+      Click on the word you think contains the error
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-4">
+    <button class="btn btn-secondary" (click)="reset()" [disabled]="disabled">
+      <fa-icon [icon]="faUndo" class="mr-2"></fa-icon>
+      Reset
+    </button>
+  </div>
+</div>

@@ -1,10 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faFire,
@@ -20,6 +16,7 @@ import {
   faPlay,
   faTrophy,
   faArrowRight,
+  faTimes,
 } from '../../shared/icons';
 import {
   ApiService, UserStats, QueueStats, ReviewStreak,
@@ -29,7 +26,6 @@ import { AuthService } from '../../core/services/auth.service';
 import { XpProgressBarComponent, XPData } from '../gamification/xp-progress-bar/xp-progress-bar.component';
 import { DailyChallengesComponent } from '../gamification/daily-challenges/daily-challenges.component';
 import { AchievementListComponent } from '../gamification/achievement-list/achievement-list.component';
-import { AchievementUnlockDialogComponent, AchievementUnlockDialogData } from '../gamification/achievement-unlock-dialog/achievement-unlock-dialog.component';
 import { LeaderboardComponent } from '../gamification/leaderboard/leaderboard.component';
 
 @Component({
@@ -38,10 +34,6 @@ import { LeaderboardComponent } from '../gamification/leaderboard/leaderboard.co
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatProgressBarModule,
-    MatDialogModule,
     FontAwesomeModule,
     XpProgressBarComponent,
     DailyChallengesComponent,
@@ -53,7 +45,6 @@ import { LeaderboardComponent } from '../gamification/leaderboard/leaderboard.co
 })
 export class DashboardComponent implements OnInit {
   private apiService = inject(ApiService);
-  private dialog = inject(MatDialog);
   authService = inject(AuthService);
 
   // Icons
@@ -70,6 +61,7 @@ export class DashboardComponent implements OnInit {
   faPlay = faPlay;
   faTrophy = faTrophy;
   faArrowRight = faArrowRight;
+  faTimes = faTimes;
 
   // Stats
   stats = signal<UserStats | null>(null);
@@ -84,7 +76,11 @@ export class DashboardComponent implements OnInit {
   leaderboard = signal<LeaderboardResponse | null>(null);
   newAchievements = signal<UserAchievementInfo[]>([]);
 
-  // Computed signals for review stats (fixes Angular template reactivity issue)
+  // Dialog state
+  showAchievementDialog = signal(false);
+  selectedAchievement = signal<UserAchievementInfo | null>(null);
+
+  // Computed signals for review stats
   dueCount = computed(() => {
     const q = this.queueStats();
     return q ? (q.due + q.overdue) : 0;
@@ -126,17 +122,14 @@ export class DashboardComponent implements OnInit {
   }
 
   loadGamificationData() {
-    // Load XP status
     this.apiService.getXPStatus().subscribe({
       next: (xp) => this.xpStatus.set(xp),
-      error: () => {} // Silently fail if gamification not available
+      error: () => {}
     });
 
-    // Load achievements
     this.apiService.getAchievements().subscribe({
       next: (achievements) => {
         this.achievements.set(achievements);
-        // Check for new achievements to celebrate
         const newOnes = achievements.filter(a => a.isNew && a.isUnlocked);
         if (newOnes.length > 0) {
           this.newAchievements.set(newOnes);
@@ -146,13 +139,11 @@ export class DashboardComponent implements OnInit {
       error: () => {}
     });
 
-    // Load daily challenges
     this.apiService.getDailyChallenges().subscribe({
       next: (challenges) => this.dailyChallenges.set(challenges),
       error: () => {}
     });
 
-    // Load leaderboard
     this.apiService.getLeaderboard().subscribe({
       next: (leaderboard) => this.leaderboard.set(leaderboard),
       error: () => {}
@@ -165,7 +156,6 @@ export class DashboardComponent implements OnInit {
     return q.due + q.overdue + q.new;
   }
 
-  // Convert XP status to XPData format
   getXpData(): XPData {
     const xp = this.xpStatus();
     if (!xp) {
@@ -189,7 +179,6 @@ export class DashboardComponent implements OnInit {
     };
   }
 
-  // Get recent achievements (max 4) for dashboard preview
   getRecentAchievements(): UserAchievementInfo[] {
     return this.achievements()
       .filter(a => a.isUnlocked)
@@ -201,16 +190,17 @@ export class DashboardComponent implements OnInit {
   }
 
   showAchievementUnlock(achievement: UserAchievementInfo) {
-    const dialogRef = this.dialog.open(AchievementUnlockDialogComponent, {
-      data: { achievement } as AchievementUnlockDialogData,
-      panelClass: 'achievement-dialog',
-      disableClose: false
-    });
+    this.selectedAchievement.set(achievement);
+    this.showAchievementDialog.set(true);
+  }
 
-    dialogRef.afterClosed().subscribe(() => {
-      // Mark as seen
+  closeAchievementDialog() {
+    const achievement = this.selectedAchievement();
+    if (achievement) {
       this.apiService.markAchievementSeen(achievement.id).subscribe();
-    });
+    }
+    this.showAchievementDialog.set(false);
+    this.selectedAchievement.set(null);
   }
 
   onAchievementClick(achievement: UserAchievementInfo) {

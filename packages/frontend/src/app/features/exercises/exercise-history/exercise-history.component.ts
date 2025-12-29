@@ -1,12 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faHistory,
@@ -19,6 +13,10 @@ import {
   faArrowLeft,
   faChartLine,
   faCalendarAlt,
+  faChevronDown,
+  faChevronUp,
+  faChevronLeft,
+  faChevronRight,
 } from '../../../shared/icons';
 import {
   ApiService,
@@ -33,12 +31,6 @@ import {
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatChipsModule,
-    MatDividerModule,
-    MatExpansionModule,
-    MatPaginatorModule,
     FontAwesomeModule,
   ],
   templateUrl: './exercise-history.component.html',
@@ -59,6 +51,10 @@ export class ExerciseHistoryComponent implements OnInit {
   faArrowLeft = faArrowLeft;
   faChartLine = faChartLine;
   faCalendarAlt = faCalendarAlt;
+  faChevronDown = faChevronDown;
+  faChevronUp = faChevronUp;
+  faChevronLeft = faChevronLeft;
+  faChevronRight = faChevronRight;
 
   // State
   loading = signal(true);
@@ -75,6 +71,7 @@ export class ExerciseHistoryComponent implements OnInit {
 
   // Computed
   isEmpty = computed(() => !this.loading() && this.sessions().length === 0);
+  totalPages = computed(() => Math.ceil(this.totalSessions() / this.limit()));
 
   ngOnInit() {
     this.loadHistory();
@@ -97,9 +94,17 @@ export class ExerciseHistoryComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent) {
-    this.page.set(event.pageIndex + 1);
-    this.limit.set(event.pageSize);
+  onPageChange(newPage: number) {
+    if (newPage >= 1 && newPage <= this.totalPages()) {
+      this.page.set(newPage);
+      this.loadHistory();
+    }
+  }
+
+  onLimitChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.limit.set(parseInt(select.value, 10));
+    this.page.set(1);
     this.loadHistory();
   }
 
@@ -111,7 +116,6 @@ export class ExerciseHistoryComponent implements OnInit {
 
     this.expandedSessionId.set(sessionId);
 
-    // Load details if not already loaded
     if (!this.sessionDetails()[sessionId]) {
       this.loadSessionDetails(sessionId);
     }
@@ -160,19 +164,19 @@ export class ExerciseHistoryComponent implements OnInit {
     });
   }
 
-  getScoreClass(percentage: number): string {
-    if (percentage >= 80) return 'excellent';
-    if (percentage >= 60) return 'good';
-    if (percentage >= 40) return 'average';
-    return 'needs-work';
+  getScoreClasses(percentage: number): string {
+    if (percentage >= 80) return 'bg-gray-100 text-gray-700';
+    if (percentage >= 60) return 'bg-gray-50 text-gray-700';
+    if (percentage >= 40) return 'bg-amber-50 text-amber-700';
+    return 'bg-red-50 text-red-700';
   }
 
-  getStatusClass(status: string): string {
+  getStatusClasses(status: string): string {
     switch (status) {
-      case 'completed': return 'status-completed';
-      case 'in_progress': return 'status-in-progress';
-      case 'abandoned': return 'status-abandoned';
-      default: return '';
+      case 'completed': return 'bg-gray-100 text-gray-700';
+      case 'in_progress': return 'bg-amber-100 text-amber-700';
+      case 'abandoned': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
   }
 
@@ -184,9 +188,6 @@ export class ExerciseHistoryComponent implements OnInit {
     this.router.navigate(['/exercises/practice']);
   }
 
-  /**
-   * Format answer for display based on exercise type
-   */
   formatAnswerForDisplay(answer: string | null | undefined, exerciseType: string): string {
     if (!answer) return '(no answer)';
 

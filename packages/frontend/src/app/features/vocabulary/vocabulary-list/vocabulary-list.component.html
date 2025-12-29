@@ -1,131 +1,150 @@
-<div class="page-header">
-  <h1>Vocabulary</h1>
-  <p>Words you've learned from conversations</p>
+<div class="max-w-6xl mx-auto p-6">
+
+<div class="mb-8">
+  <h1 class="text-2xl font-semibold mb-2">Vocabulary</h1>
+  <p class="text-gray-500">Words you've learned from conversations</p>
 </div>
 
-<div class="filters">
-  <mat-form-field appearance="outline">
-    <mat-label>Search</mat-label>
-    <input matInput [(ngModel)]="searchTerm" (keyup.enter)="applyFilters()" placeholder="Search words...">
-    <fa-icon matSuffix [icon]="faSearch"></fa-icon>
-  </mat-form-field>
+<!-- Filters -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Search -->
+  <div class="relative">
+    <input
+      type="text"
+      class="input pl-10 w-full"
+      [(ngModel)]="searchTerm"
+      (keyup.enter)="applyFilters()"
+      placeholder="Search words...">
+    <fa-icon [icon]="faSearch" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></fa-icon>
+  </div>
 
-  <mat-form-field appearance="outline">
-    <mat-label>CEFR Level</mat-label>
-    <mat-select [(ngModel)]="cefrLevel" (selectionChange)="applyFilters()">
-      <mat-option value="">All Levels</mat-option>
-      <mat-option value="A1">A1 - Beginner</mat-option>
-      <mat-option value="A2">A2 - Elementary</mat-option>
-      <mat-option value="B1">B1 - Intermediate</mat-option>
-      <mat-option value="B2">B2 - Upper Intermediate</mat-option>
-      <mat-option value="C1">C1 - Advanced</mat-option>
-      <mat-option value="C2">C2 - Proficiency</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <!-- CEFR Level -->
+  <select class="input w-full" [(ngModel)]="cefrLevel" (change)="applyFilters()">
+    <option value="">All Levels</option>
+    <option value="A1">A1 - Beginner</option>
+    <option value="A2">A2 - Elementary</option>
+    <option value="B1">B1 - Intermediate</option>
+    <option value="B2">B2 - Upper Intermediate</option>
+    <option value="C1">C1 - Advanced</option>
+    <option value="C2">C2 - Proficiency</option>
+  </select>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Part of Speech</mat-label>
-    <mat-select [(ngModel)]="partOfSpeech" (selectionChange)="applyFilters()">
-      <mat-option value="">All</mat-option>
-      <mat-option value="noun">Noun</mat-option>
-      <mat-option value="verb">Verb</mat-option>
-      <mat-option value="adjective">Adjective</mat-option>
-      <mat-option value="adverb">Adverb</mat-option>
-      <mat-option value="preposition">Preposition</mat-option>
-      <mat-option value="phrase">Phrase</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <!-- Part of Speech -->
+  <select class="input w-full" [(ngModel)]="partOfSpeech" (change)="applyFilters()">
+    <option value="">All Types</option>
+    <option value="noun">Noun</option>
+    <option value="verb">Verb</option>
+    <option value="adjective">Adjective</option>
+    <option value="adverb">Adverb</option>
+    <option value="preposition">Preposition</option>
+    <option value="phrase">Phrase</option>
+  </select>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Difficulty</mat-label>
-    <mat-select [(ngModel)]="difficulty" (selectionChange)="applyFilters()">
-      <mat-option value="">All</mat-option>
-      <mat-option value="beginner">Beginner</mat-option>
-      <mat-option value="intermediate">Intermediate</mat-option>
-      <mat-option value="advanced">Advanced</mat-option>
-    </mat-select>
-  </mat-form-field>
+  <!-- Difficulty -->
+  <select class="input w-full" [(ngModel)]="difficulty" (change)="applyFilters()">
+    <option value="">All Difficulty</option>
+    <option value="beginner">Beginner</option>
+    <option value="intermediate">Intermediate</option>
+    <option value="advanced">Advanced</option>
+  </select>
 </div>
 
+<!-- Loading -->
 @if (loading()) {
-  <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+  <div class="flex justify-center items-center min-h-[200px]">
+    <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-600"></fa-icon>
   </div>
 } @else if (vocabulary().length === 0) {
-  <div class="empty-state">
-    <fa-icon [icon]="faLanguage"></fa-icon>
-    <h3>No vocabulary yet</h3>
+  <!-- Empty State -->
+  <div class="text-center py-16 text-gray-500">
+    <fa-icon [icon]="faLanguage" class="text-6xl text-gray-300 mb-6"></fa-icon>
+    <h3 class="text-xl font-medium text-gray-700 mb-2">No vocabulary yet</h3>
     <p>Have conversations with Claude to learn new words!</p>
   </div>
 } @else {
-  <div class="table-container">
-    <table class="vocab-table">
+  <!-- Table -->
+  <div class="overflow-x-auto mb-6 bg-white rounded-lg shadow-sm">
+    <table class="w-full text-sm">
       <thead>
-        <tr>
-          <th>Tiếng Việt</th>
-          <th>Tiếng Anh</th>
-          <th>Phát âm</th>
-          <th>Loại từ</th>
-          <th>Level</th>
-          <th>Mastery</th>
-          <!-- <th></th> -->
+        <tr class="bg-gray-100">
+          <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Tiếng Việt</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Tiếng Anh</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Phát âm</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Loại từ</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Level</th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700 border-b-2 border-gray-200">Mastery</th>
         </tr>
       </thead>
       <tbody>
         @for (word of vocabulary(); track word.id) {
-          <tr (click)="openDictionary(word)">
-            <td>{{ word.vietnameseWord }}</td>
-            <td class="english-word">
-              <a [routerLink]="['/vocabulary', word.id]" class="vocab-link" (click)="$event.stopPropagation()">
+          <tr class="hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100"
+              (click)="openDictionary(word)">
+            <td class="px-4 py-3">{{ word.vietnameseWord }}</td>
+            <td class="px-4 py-3">
+              <a [routerLink]="['/vocabulary', word.id]"
+                 class="text-base font-semibold text-gray-900 hover:underline"
+                 (click)="$event.stopPropagation()">
                 {{ word.englishWord }}
               </a>
             </td>
-            <td class="phonetic-cell">
-              <span class="phonetic">{{ getPronunciation(word) || '-' }}</span>
-              <!-- <button
-                class="speak-btn"
-                [disabled]="speakingWordId() === word.id"
-                (click)="speak(word.id, word.englishWord, $event)"
-              >
-                <fa-icon
-                  [icon]="faVolumeUp"
-                  [class.speaking]="speakingWordId() === word.id"
-                ></fa-icon>
-              </button> -->
+            <td class="px-4 py-3">
+              <span class="text-gray-500 italic text-sm">{{ getPronunciation(word) || '-' }}</span>
             </td>
-            <td><span class="pos-tag">{{ word.partOfSpeech || '-' }}</span></td>
-            <td>
+            <td class="px-4 py-3">
+              <span class="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                {{ formatPartOfSpeech(word.partOfSpeech) || '-' }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
               @if (word.cefrLevel) {
-                <span class="cefr-badge" [style.background-color]="getCefrColor(word.cefrLevel)">
+                <span class="inline-block px-2 py-0.5 rounded text-xs font-semibold text-white"
+                      [ngClass]="getCefrColorClass(word.cefrLevel)">
                   {{ word.cefrLevel }}
                 </span>
               }
             </td>
-            <td>
-              <div class="mastery-cell">
-                <div class="mastery-bar">
-                  <div class="mastery-fill" [style.width.%]="word.masteryLevel"></div>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2 min-w-[120px]">
+                <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden min-w-[60px]">
+                  <div class="h-full bg-gradient-to-r from-gray-800 to-gray-600 transition-all"
+                       [style.width.%]="word.masteryLevel"></div>
                 </div>
-                <span class="mastery-value">{{ word.masteryLevel }}%</span>
+                <span class="text-xs text-gray-500 min-w-[35px]">{{ word.masteryLevel }}%</span>
               </div>
             </td>
-            <!-- <td>
-              <button mat-icon-button color="primary" (click)="openDictionary(word); $event.stopPropagation()" matTooltip="View details">
-                <fa-icon [icon]="faEye"></fa-icon>
-              </button>
-            </td> -->
           </tr>
         }
       </tbody>
     </table>
   </div>
 
-  <mat-paginator
-    [length]="total()"
-    [pageSize]="pageSize()"
-    [pageIndex]="page() - 1"
-    [pageSizeOptions]="[10, 20, 50]"
-    (page)="onPageChange($event)"
-    showFirstLastButtons>
-  </mat-paginator>
+  <!-- Pagination -->
+  <div class="flex flex-wrap items-center justify-between gap-4 py-4 border-t border-gray-200">
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-gray-500">
+        Showing {{ startItem }} - {{ endItem }} of {{ total() }}
+      </span>
+      <select class="input py-1 px-2 text-sm w-auto" (change)="onPageSizeChange($event)">
+        <option [value]="10" [selected]="pageSize() === 10">10 per page</option>
+        <option [value]="20" [selected]="pageSize() === 20">20 per page</option>
+        <option [value]="50" [selected]="pageSize() === 50">50 per page</option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button class="btn btn-secondary py-1 px-3"
+              [disabled]="page() === 1"
+              (click)="onPageChange(page() - 1)">
+        <fa-icon [icon]="faChevronLeft"></fa-icon>
+      </button>
+      <span class="px-3 text-sm">Page {{ page() }} of {{ totalPages }}</span>
+      <button class="btn btn-secondary py-1 px-3"
+              [disabled]="page() >= totalPages"
+              (click)="onPageChange(page() + 1)">
+        <fa-icon [icon]="faChevronRight"></fa-icon>
+      </button>
+    </div>
+  </div>
 }
+</div>
+

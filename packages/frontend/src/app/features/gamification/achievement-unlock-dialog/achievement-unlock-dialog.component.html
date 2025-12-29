@@ -1,0 +1,52 @@
+<div class="achievement-unlock-dialog" [class.visible]="animationReady()">
+  <!-- Close Button -->
+  <button class="absolute top-2 right-2 w-10 h-10 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center"
+          (click)="close()">
+    <fa-icon [icon]="faTimes"></fa-icon>
+  </button>
+
+  <!-- Confetti Container -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    @for (i of confettiPieces; track i) {
+      <div class="confetti" [style.--delay]="i * 0.1 + 's'" [style.--x]="getRandomX()"></div>
+    }
+  </div>
+
+  <!-- Main Content -->
+  <div class="relative z-10 flex flex-col items-center gap-6">
+    <!-- Trophy Animation -->
+    <div class="trophy-container" [class.animate]="animationReady()">
+      <div class="glow-ring"></div>
+      <div class="trophy-circle">
+        <fa-icon [icon]="getIcon(achievement.icon)"
+                 class="text-white text-[2.5rem]">
+        </fa-icon>
+      </div>
+      <div class="sparkles">
+        @for (i of [1,2,3,4,5,6]; track i) {
+          <div class="sparkle" [style.--i]="i"></div>
+        }
+      </div>
+    </div>
+
+    <!-- Text Content -->
+    <div class="flex flex-col items-center gap-2 text-center">
+      <h2 class="m-0 text-sm uppercase tracking-widest text-yellow-400 font-semibold">Achievement Unlocked!</h2>
+      <h3 class="m-0 text-2xl font-bold text-white">{{ achievement.name }}</h3>
+      <p class="m-0 text-sm text-gray-400 max-w-[280px]">{{ achievement.description }}</p>
+
+      <!-- XP Reward -->
+      <div class="xp-reward" [class.animate]="xpAnimated()">
+        <fa-icon [icon]="faBolt" class="text-yellow-400 text-xl"></fa-icon>
+        <span class="text-2xl font-bold text-gray-300">+{{ achievement.xpReward }}</span>
+        <span class="text-sm text-gray-500">XP</span>
+      </div>
+    </div>
+
+    <!-- Action Button -->
+    <button class="px-8 py-3 bg-gradient-to-r from-gray-800 to-gray-900 text-white font-semibold rounded-full hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg"
+            (click)="close()">
+      Awesome!
+    </button>
+  </div>
+</div>

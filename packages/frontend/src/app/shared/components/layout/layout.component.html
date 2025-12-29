@@ -1,99 +1,133 @@
-<mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #drawer [mode]="sidenavMode" [opened]="sidenavOpened" class="sidenav">
-    <div class="logo">
-      <fa-icon [icon]="faGraduationCap"></fa-icon>
-      <span>ChatLingua</span>
+<!-- Layout Container -->
+<div class="flex h-screen bg-gray-50">
+  <!-- Mobile Overlay -->
+  @if (isMobile() && sidebarOpen()) {
+    <div
+      class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+      (click)="toggleSidebar()">
+    </div>
+  }
+
+  <!-- Sidebar -->
+  <aside
+    [class]="sidebarOpen() ? 'translate-x-0' : '-translate-x-full'"
+    class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out lg:translate-x-0">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-200">
+      <fa-icon [icon]="faGraduationCap" class="text-2xl text-gray-900"></fa-icon>
+      <span class="text-xl font-semibold text-gray-900">ChatLingua</span>
     </div>
 
-    <mat-nav-list>
-      <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
-        <fa-icon [icon]="faHome" matListItemIcon></fa-icon>
-        <span matListItemTitle>Dashboard</span>
-      </a>
-      <a mat-list-item routerLink="/conversations" routerLinkActive="active">
-        <fa-icon [icon]="faComments" matListItemIcon></fa-icon>
-        <span matListItemTitle>Conversations</span>
-      </a>
-      <a mat-list-item routerLink="/vocabulary" routerLinkActive="active">
-        <fa-icon [icon]="faLanguage" matListItemIcon></fa-icon>
-        <span matListItemTitle>Vocabulary</span>
-      </a>
-      <a mat-list-item routerLink="/review" routerLinkActive="active">
-        <fa-icon [icon]="faBrain" matListItemIcon></fa-icon>
-        <span matListItemTitle>Daily Review</span>
-      </a>
-      <a mat-list-item routerLink="/grammar" routerLinkActive="active">
-        <fa-icon [icon]="faBook" matListItemIcon></fa-icon>
-        <span matListItemTitle>Grammar</span>
-      </a>
-      <a mat-list-item routerLink="/exercises" routerLinkActive="active">
-        <fa-icon [icon]="faDumbbell" matListItemIcon></fa-icon>
-        <span matListItemTitle>Exercises</span>
-      </a>
-      <a mat-list-item routerLink="/quizzes" routerLinkActive="active">
-        <fa-icon [icon]="faQuestionCircle" matListItemIcon></fa-icon>
-        <span matListItemTitle>Quizzes</span>
-      </a>
-      <a mat-list-item routerLink="/reports" routerLinkActive="active">
-        <fa-icon [icon]="faChartLine" matListItemIcon></fa-icon>
-        <span matListItemTitle>Reports</span>
-      </a>
-    </mat-nav-list>
-  </mat-sidenav>
+    <!-- Navigation -->
+    <nav class="px-3 py-4 space-y-1">
+      @for (item of navItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="bg-gray-100 text-gray-900 border-gray-900"
+          [routerLinkActiveOptions]="{exact: item.path === '/dashboard'}"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors border-l-4 border-transparent">
+          <fa-icon [icon]="item.icon" class="text-lg w-5"></fa-icon>
+          <span class="font-medium">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+  </aside>
 
-  <mat-sidenav-content>
-    <mat-toolbar color="primary">
-      <button mat-icon-button (click)="drawer.toggle()">
-        <fa-icon [icon]="faBars"></fa-icon>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Header -->
+    <header class="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 shadow-sm">
+      <!-- Left: Menu Button -->
+      <button
+        (click)="toggleSidebar()"
+        class="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden">
+        <fa-icon [icon]="sidebarOpen() ? faTimes : faBars" class="text-xl text-gray-600"></fa-icon>
       </button>
-      <span class="spacer"></span>
 
-      <!-- Notification Bell -->
-      <button mat-icon-button [matMenuTriggerFor]="notificationMenu" class="notification-btn">
-        <fa-icon
-          [icon]="faBell"
-          [matBadge]="notificationBadge().unreadCount > 0 ? notificationBadge().unreadCount : null"
-          matBadgeColor="warn"
-          matBadgeSize="small">
-        </fa-icon>
-      </button>
-      <mat-menu #notificationMenu="matMenu" class="notification-menu">
-        <div class="notification-header" (click)="$event.stopPropagation()">
-          <span>Notifications</span>
-        </div>
-        @if (notificationBadge().hasNewAchievements) {
-          <button mat-menu-item (click)="goToAchievements()">
-            <fa-icon [icon]="faTrophy" class="achievement-icon"></fa-icon>
-            <span>New achievements unlocked!</span>
+      <!-- Desktop: Spacer -->
+      <div class="hidden lg:block"></div>
+
+      <!-- Right: Actions -->
+      <div class="flex items-center gap-2">
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button
+            (click)="toggleNotificationMenu()"
+            class="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <fa-icon [icon]="faBell" class="text-xl text-gray-600"></fa-icon>
+            @if (notificationBadge().unreadCount > 0) {
+              <span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                {{ notificationBadge().unreadCount }}
+              </span>
+            }
           </button>
-        }
-        @if (notificationBadge().unreadCount === 0 && !notificationBadge().hasNewAchievements) {
-          <div class="no-notifications" (click)="$event.stopPropagation()">
-            No new notifications
+
+          <!-- Notification Dropdown -->
+          @if (notificationMenuOpen()) {
+            <div class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+              <div class="px-4 py-3 border-b border-gray-100">
+                <span class="font-semibold text-gray-900">Notifications</span>
+              </div>
+              @if (notificationBadge().hasNewAchievements) {
+                <button
+                  (click)="goToAchievements()"
+                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                  <fa-icon [icon]="faTrophy" class="text-yellow-500"></fa-icon>
+                  <span class="text-sm text-gray-700">New achievements unlocked!</span>
+                </button>
+              }
+              @if (notificationBadge().unreadCount === 0 && !notificationBadge().hasNewAchievements) {
+                <div class="px-4 py-6 text-center text-gray-500 text-sm">
+                  No new notifications
+                </div>
+              }
+              <div class="border-t border-gray-100">
+                <a
+                  routerLink="/achievements"
+                  (click)="closeMenus()"
+                  class="block px-4 py-2.5 text-sm text-gray-900 font-medium hover:bg-gray-50 transition-colors">
+                  View All Achievements
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- User Menu -->
+        @if (authService.currentUser(); as user) {
+          <div class="relative">
+            <button
+              (click)="toggleUserMenu()"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <fa-icon [icon]="faUserCircle" class="text-xl text-gray-600"></fa-icon>
+              <span class="hidden sm:inline text-sm font-medium text-gray-700">{{ user.username }}</span>
+              <fa-icon [icon]="faChevronDown" class="text-xs text-gray-500"></fa-icon>
+            </button>
+
+            <!-- User Dropdown -->
+            @if (userMenuOpen()) {
+              <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <button
+                  (click)="logout()"
+                  class="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">
+                  <fa-icon [icon]="faSignOutAlt" class="text-gray-500"></fa-icon>
+                  <span class="text-sm">Logout</span>
+                </button>
+              </div>
+            }
           </div>
         }
-        <mat-divider></mat-divider>
-        <a mat-menu-item routerLink="/achievements">
-          <span>View All Achievements</span>
-        </a>
-      </mat-menu>
+      </div>
+    </header>
 
-      @if (authService.currentUser(); as user) {
-        <button mat-button [matMenuTriggerFor]="userMenu">
-          <fa-icon [icon]="faUserCircle"></fa-icon>
-          {{ user.username }}
-        </button>
-        <mat-menu #userMenu="matMenu">
-          <button mat-menu-item (click)="logout()">
-            <fa-icon [icon]="faSignOutAlt"></fa-icon>
-            <span>Logout</span>
-          </button>
-        </mat-menu>
-      }
-    </mat-toolbar>
-
-    <main class="content">
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-auto p-4 md:p-6">
       <router-outlet />
     </main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  </div>
+</div>
+
+<!-- Click outside to close menus -->
+@if (userMenuOpen() || notificationMenuOpen()) {
+  <div class="fixed inset-0 z-20" (click)="closeMenus()"></div>
+}

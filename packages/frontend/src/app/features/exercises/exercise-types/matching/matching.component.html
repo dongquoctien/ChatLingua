@@ -1,0 +1,80 @@
+<div class="flex flex-col gap-4">
+  <p class="text-gray-600 mb-2">Match the English words with their Vietnamese translations:</p>
+
+  <div class="grid grid-cols-[1fr_40px_1fr] gap-4 items-start">
+    <!-- English Column -->
+    <div class="flex flex-col gap-2">
+      <div class="font-semibold p-2 text-center bg-gray-100 text-gray-700 rounded mb-2">
+        English
+      </div>
+      @for (item of englishItems(); track item.id) {
+        <div class="p-3 border-2 rounded-lg cursor-pointer transition-all flex items-center justify-between bg-white"
+             [class.border-gray-200]="!item.matched && selectedEnglish() !== item.id"
+             [class.hover:border-gray-500]="!item.matched && !disabled"
+             [class.hover:translate-x-1]="!item.matched && !disabled"
+             [class.border-gray-500]="selectedEnglish() === item.id"
+             [class.bg-gray-100]="selectedEnglish() === item.id"
+             [class.shadow-md]="selectedEnglish() === item.id"
+             [class.border-gray-900]="item.matched"
+             [class.bg-gray-100]="item.matched"
+             [class.opacity-70]="item.matched || disabled"
+             [class.cursor-default]="item.matched || disabled"
+             (click)="selectEnglish(item)">
+          <span>{{ item.text }}</span>
+          @if (item.matched) {
+            <fa-icon [icon]="faLink" class="text-gray-900"></fa-icon>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Connection Lines (visual feedback) -->
+    <div class="relative flex flex-col justify-around">
+      @for (match of matches(); track match.enId) {
+        <div class="absolute left-1/2 w-0.5 bg-gray-900 -translate-x-1/2"
+             [style.top.%]="getConnectionTop(match.enId)"
+             [style.height.%]="getConnectionHeight(match.enId, match.viId)">
+        </div>
+      }
+    </div>
+
+    <!-- Vietnamese Column -->
+    <div class="flex flex-col gap-2">
+      <div class="font-semibold p-2 text-center bg-pink-100 text-pink-700 rounded mb-2">
+        Tiếng Việt
+      </div>
+      @for (item of vietnameseItems(); track item.id) {
+        <div class="p-3 border-2 rounded-lg cursor-pointer transition-all flex items-center justify-between bg-white"
+             [class.border-gray-200]="!item.matched && selectedVietnamese() !== item.id"
+             [class.hover:border-pink-500]="!item.matched && !disabled"
+             [class.hover:-translate-x-1]="!item.matched && !disabled"
+             [class.border-pink-500]="selectedVietnamese() === item.id"
+             [class.bg-pink-50]="selectedVietnamese() === item.id"
+             [class.shadow-md]="selectedVietnamese() === item.id"
+             [class.border-gray-900]="item.matched"
+             [class.bg-gray-100]="item.matched"
+             [class.opacity-70]="item.matched || disabled"
+             [class.cursor-default]="item.matched || disabled"
+             (click)="selectVietnamese(item)">
+          <span>{{ item.text }}</span>
+          @if (item.matched) {
+            <fa-icon [icon]="faLink" class="text-gray-900"></fa-icon>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="text-center text-gray-600 text-sm">
+    <span>Matched: {{ matchedCount() }} / {{ totalPairs() }}</span>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-4 mt-2">
+    <button class="btn btn-secondary" (click)="reset()" [disabled]="disabled || matchedCount() === 0">
+      <fa-icon [icon]="faUndo" class="mr-2"></fa-icon>
+      Reset
+    </button>
+  </div>
+</div>

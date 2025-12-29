@@ -1,107 +1,152 @@
-<div class="page-header">
-  <div class="header-content">
-    <h1>Quizzes</h1>
-    <p>Test your knowledge with timed quizzes</p>
+<div class="max-w-6xl mx-auto p-6">
+
+<div class="flex flex-wrap justify-between items-start gap-4 mb-8">
+  <div>
+    <h1 class="text-2xl font-semibold mb-2">Quizzes</h1>
+    <p class="text-gray-500">Test your knowledge with timed quizzes</p>
   </div>
-  <button mat-raised-button color="primary" (click)="openCreateDialog()">
-    <fa-icon [icon]="faPlus"></fa-icon>
+  <button class="btn btn-primary" (click)="openCreateDialog()">
+    <fa-icon [icon]="faPlus" class="mr-2"></fa-icon>
     Create Quiz
   </button>
 </div>
 
 @if (loading()) {
-  <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+  <div class="flex justify-center items-center min-h-[200px]">
+    <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-600"></fa-icon>
   </div>
 } @else if (quizzes().length === 0) {
-  <div class="empty-state">
-    <fa-icon [icon]="faQuestionCircle" class="empty-icon"></fa-icon>
-    <h3>No quizzes yet</h3>
+  <div class="text-center py-16 text-gray-500">
+    <fa-icon [icon]="faQuestionCircle" class="text-6xl text-gray-300 mb-6"></fa-icon>
+    <h3 class="text-xl font-medium text-gray-700 mb-2">No quizzes yet</h3>
     <p>Complete some exercises first to create quizzes!</p>
   </div>
 } @else {
-  <div class="quiz-grid">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
     @for (quiz of quizzes(); track quiz.id) {
-      <mat-card class="quiz-card">
-        <mat-card-header>
-          <mat-card-title>{{ quiz.title }}</mat-card-title>
+      <div class="card">
+        <!-- Header -->
+        <div class="mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ quiz.title }}</h3>
           @if (quiz.description) {
-            <mat-card-subtitle>{{ quiz.description }}</mat-card-subtitle>
+            <p class="text-sm text-gray-500">{{ quiz.description }}</p>
           }
-        </mat-card-header>
-        <mat-card-content>
-          <div class="quiz-info">
-            <div class="info-item">
-              <fa-icon [icon]="faQuestionCircle"></fa-icon>
-              <span>{{ quiz.exerciseIds.length }} questions</span>
-            </div>
-            @if (quiz.timeLimitMinutes) {
-              <div class="info-item">
-                <fa-icon [icon]="faClock"></fa-icon>
-                <span>{{ quiz.timeLimitMinutes }} min</span>
-              </div>
-            }
-            <div class="info-item">
-              <fa-icon [icon]="faRedo"></fa-icon>
-              <span>{{ quiz.attemptCount || 0 }}/{{ quiz.maxAttempts }} attempts</span>
-            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
+          <div class="flex items-center gap-1">
+            <fa-icon [icon]="faQuestionCircle" class="text-sm"></fa-icon>
+            <span>{{ quiz.exerciseIds.length }} questions</span>
           </div>
-          <div class="score-badge" [class.has-score]="quiz.bestScore !== undefined" [class.no-score]="quiz.bestScore === undefined">
-            @if (quiz.bestScore !== undefined) {
-              <fa-icon [icon]="faTrophy"></fa-icon>
-              Best: {{ quiz.bestScore }}%
-            } @else {
-              <fa-icon [icon]="faPlay"></fa-icon>
-              Ready to start
-            }
-          </div>
-          @if (quiz.questionPreviews && quiz.questionPreviews.length > 0) {
-            <div class="question-previews">
-              <div class="preview-header" (click)="togglePreview(quiz.id)">
-                <fa-icon [icon]="faListOl"></fa-icon>
-                <span>Preview Questions</span>
-                <fa-icon [icon]="isExpanded(quiz.id) ? faChevronUp : faChevronDown" class="expand-icon"></fa-icon>
-              </div>
-              @if (isExpanded(quiz.id)) {
-                <div class="preview-list">
-                  @for (preview of quiz.questionPreviews; track preview.id; let i = $index) {
-                    <div class="preview-item">
-                      <span class="preview-number">{{ i + 1 }}.</span>
-                      <span class="preview-text">{{ truncateQuestion(preview.questionText) }}</span>
-                      <span class="preview-type">{{ formatExerciseType(preview.exerciseType) }}</span>
-                    </div>
-                  }
-                </div>
-              }
+          @if (quiz.timeLimitMinutes) {
+            <div class="flex items-center gap-1">
+              <fa-icon [icon]="faClock" class="text-sm"></fa-icon>
+              <span>{{ quiz.timeLimitMinutes }} min</span>
             </div>
           }
-        </mat-card-content>
-        <mat-card-actions>
-          <button mat-raised-button color="primary" [routerLink]="['/quizzes', quiz.id, 'play']"
-                  [disabled]="(quiz.attemptCount || 0) >= quiz.maxAttempts">
+          <div class="flex items-center gap-1">
+            <fa-icon [icon]="faRedo" class="text-sm"></fa-icon>
+            <span>{{ quiz.attemptCount || 0 }}/{{ quiz.maxAttempts }} attempts</span>
+          </div>
+        </div>
+
+        <!-- Score Badge -->
+        <div class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium mb-4"
+             [ngClass]="quiz.bestScore !== undefined ? 'bg-amber-50 text-amber-700' : 'bg-gray-50 text-gray-700'">
+          @if (quiz.bestScore !== undefined) {
+            <fa-icon [icon]="faTrophy"></fa-icon>
+            Best: {{ quiz.bestScore }}%
+          } @else {
+            <fa-icon [icon]="faPlay"></fa-icon>
+            Ready to start
+          }
+        </div>
+
+        <!-- Question Previews -->
+        @if (quiz.questionPreviews && quiz.questionPreviews.length > 0) {
+          <div class="border-t border-gray-200 pt-3 mt-3">
+            <div class="flex items-center gap-2 cursor-pointer text-gray-600 text-sm py-1 hover:text-gray-900 transition-colors"
+                 (click)="togglePreview(quiz.id)">
+              <fa-icon [icon]="faListOl" class="text-sm"></fa-icon>
+              <span>Preview Questions</span>
+              <fa-icon [icon]="isExpanded(quiz.id) ? faChevronUp : faChevronDown" class="ml-auto text-sm"></fa-icon>
+            </div>
+            @if (isExpanded(quiz.id)) {
+              <div class="mt-3 flex flex-col gap-2">
+                @for (preview of quiz.questionPreviews; track preview.id; let i = $index) {
+                  <div class="flex items-start gap-2 text-sm p-2 bg-gray-50 rounded">
+                    <span class="text-gray-400 font-medium min-w-[20px]">{{ i + 1 }}.</span>
+                    <span class="flex-1 text-gray-700 leading-relaxed">{{ truncateQuestion(preview.questionText) }}</span>
+                    <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-medium whitespace-nowrap">
+                      {{ formatExerciseType(preview.exerciseType) }}
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+          <a class="btn btn-primary flex-1 text-center"
+             [routerLink]="['/quizzes', quiz.id, 'play']"
+             [class.opacity-50]="(quiz.attemptCount || 0) >= quiz.maxAttempts"
+             [class.pointer-events-none]="(quiz.attemptCount || 0) >= quiz.maxAttempts">
             @if ((quiz.attemptCount || 0) >= quiz.maxAttempts) {
               Max attempts reached
             } @else {
               Start Quiz
             }
-          </button>
+          </a>
           @if ((quiz.attemptCount || 0) > 0) {
-            <button mat-button [routerLink]="['/quizzes', quiz.id, 'history']">
-              <fa-icon [icon]="faHistory"></fa-icon>
+            <a class="btn btn-secondary" [routerLink]="['/quizzes', quiz.id, 'history']">
+              <fa-icon [icon]="faHistory" class="mr-1"></fa-icon>
               History
-            </button>
+            </a>
           }
-        </mat-card-actions>
-      </mat-card>
+        </div>
+      </div>
     }
   </div>
 
-  <mat-paginator
-    [length]="total()"
-    [pageSize]="pageSize()"
-    [pageIndex]="page() - 1"
-    [pageSizeOptions]="[6, 12, 24]"
-    (page)="onPageChange($event)"
-    showFirstLastButtons>
-  </mat-paginator>
+  <!-- Pagination -->
+  @if (total() > pageSize()) {
+    <div class="flex flex-wrap items-center justify-between gap-4 py-4 border-t border-gray-200">
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-gray-500">
+          Showing {{ startItem }} - {{ endItem }} of {{ total() }}
+        </span>
+        <select class="input py-1 px-2 text-sm w-auto" (change)="onPageSizeChange($event)">
+          <option [value]="6" [selected]="pageSize() === 6">6 per page</option>
+          <option [value]="12" [selected]="pageSize() === 12">12 per page</option>
+          <option [value]="24" [selected]="pageSize() === 24">24 per page</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button class="btn btn-secondary py-1 px-3"
+                [disabled]="page() === 1"
+                (click)="onPageChange(page() - 1)">
+          <fa-icon [icon]="faChevronLeft"></fa-icon>
+        </button>
+        <span class="px-3 text-sm">Page {{ page() }} of {{ totalPages }}</span>
+        <button class="btn btn-secondary py-1 px-3"
+                [disabled]="page() >= totalPages"
+                (click)="onPageChange(page() + 1)">
+          <fa-icon [icon]="faChevronRight"></fa-icon>
+        </button>
+      </div>
+    </div>
+  }
 }
+
+<!-- Create Quiz Dialog -->
+@if (showCreateDialog()) {
+  <app-create-quiz-dialog
+    (close)="closeCreateDialog()"
+    (created)="onQuizCreated()">
+  </app-create-quiz-dialog>
+}
+</div>

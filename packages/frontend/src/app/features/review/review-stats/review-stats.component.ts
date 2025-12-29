@@ -1,11 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatTableModule } from '@angular/material/table';
-import { MatChipsModule } from '@angular/material/chips';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faSpinner,
@@ -16,13 +11,14 @@ import {
   faTrophy,
   faCheck,
   faHistory,
+  faChevronLeft,
+  faChevronRight,
 } from '../../../shared/icons';
 import {
   ApiService,
   ReviewStats,
   ReviewStreak,
   ReviewHistoryItem,
-  ReviewHistoryResponse,
 } from '../../../core/services/api.service';
 
 @Component({
@@ -30,11 +26,6 @@ import {
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatPaginatorModule,
-    MatTableModule,
-    MatChipsModule,
     FontAwesomeModule,
   ],
   templateUrl: './review-stats.component.html',
@@ -43,6 +34,7 @@ import {
 export class ReviewStatsComponent implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
+  Math = Math; // Expose Math for template
 
   // Icons
   faSpinner = faSpinner;
@@ -53,6 +45,8 @@ export class ReviewStatsComponent implements OnInit {
   faTrophy = faTrophy;
   faCheck = faCheck;
   faHistory = faHistory;
+  faChevronLeft = faChevronLeft;
+  faChevronRight = faChevronRight;
 
   // State
   loading = signal(true);
@@ -63,7 +57,12 @@ export class ReviewStatsComponent implements OnInit {
   historyPage = signal(1);
   historyPageSize = signal(10);
 
-  displayedColumns = ['word', 'quality', 'interval', 'type', 'date'];
+  pageSizeOptions = [5, 10, 20];
+
+  // Computed
+  totalPages = computed(() => Math.ceil(this.historyTotal() / this.historyPageSize()));
+  canGoPrev = computed(() => this.historyPage() > 1);
+  canGoNext = computed(() => this.historyPage() < this.totalPages());
 
   ngOnInit() {
     this.loadData();
@@ -98,10 +97,25 @@ export class ReviewStatsComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent) {
-    this.historyPage.set(event.pageIndex + 1);
-    this.historyPageSize.set(event.pageSize);
+  onPageSizeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.historyPageSize.set(parseInt(select.value, 10));
+    this.historyPage.set(1);
     this.loadHistory();
+  }
+
+  prevPage() {
+    if (this.canGoPrev()) {
+      this.historyPage.update(p => p - 1);
+      this.loadHistory();
+    }
+  }
+
+  nextPage() {
+    if (this.canGoNext()) {
+      this.historyPage.update(p => p + 1);
+      this.loadHistory();
+    }
   }
 
   goBack() {
@@ -124,33 +138,38 @@ export class ReviewStatsComponent implements OnInit {
 
   getDonutChartStyle(): string {
     const s = this.stats();
-    if (!s) return 'background: #e0e0e0;';
+    if (!s) return 'background: #e5e7eb;';
     const total = this.getTotalVocabulary();
-    if (total === 0) return 'background: #e0e0e0;';
+    if (total === 0) return 'background: #e5e7eb;';
 
     const masteredPct = (s.masteredCount / total) * 100;
     const reviewingPct = (s.reviewingCount / total) * 100;
     const learningPct = (s.learningCount / total) * 100;
-    // newPct fills the rest
 
     const p1 = masteredPct;
     const p2 = p1 + reviewingPct;
     const p3 = p2 + learningPct;
 
     return `background: conic-gradient(
-      #4caf50 0% ${p1}%,
-      #2196f3 ${p1}% ${p2}%,
-      #ff9800 ${p2}% ${p3}%,
-      #9e9e9e ${p3}% 100%
+      #22c55e 0% ${p1}%,
+      #6b7280 ${p1}% ${p2}%,
+      #f97316 ${p2}% ${p3}%,
+      #9ca3af ${p3}% 100%
     );`;
   }
 
-  getQualityColor(quality: number): string {
-    if (quality <= 1) return '#f44336';
-    if (quality === 2) return '#ff9800';
-    if (quality === 3) return '#4caf50';
-    if (quality >= 4) return '#2196f3';
-    return '#9e9e9e';
+  getSegmentWidth(count: number): number {
+    const total = this.getTotalVocabulary();
+    if (total === 0) return 0;
+    return (count / total) * 100;
+  }
+
+  getQualityClass(quality: number): string {
+    if (quality <= 1) return 'bg-red-500';
+    if (quality === 2) return 'bg-orange-500';
+    if (quality === 3) return 'bg-gray-900';
+    if (quality >= 4) return 'bg-gray-800';
+    return 'bg-gray-500';
   }
 
   formatDate(date: Date): string {

@@ -1,13 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatIconModule } from '@angular/material/icon';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faArrowLeft,
@@ -28,13 +21,6 @@ import { ApiService, DictionaryEntry, RelatedWords, Vocabulary } from '../../../
   imports: [
     CommonModule,
     RouterLink,
-    MatCardModule,
-    MatButtonModule,
-    MatChipsModule,
-    MatDividerModule,
-    MatProgressBarModule,
-    MatTooltipModule,
-    MatIconModule,
     FontAwesomeModule,
   ],
   templateUrl: './vocabulary-detail.component.html',
@@ -62,14 +48,14 @@ export class VocabularyDetailComponent implements OnInit {
   error = signal<string | null>(null);
   speakingAccent = signal<'uk' | 'us' | null>(null);
 
-  // CEFR level colors
+  // CEFR level colors (Tailwind classes) - color-coded by difficulty
   cefrColors: Record<string, string> = {
-    A1: '#4caf50',
-    A2: '#8bc34a',
-    B1: '#ffeb3b',
-    B2: '#ff9800',
-    C1: '#f44336',
-    C2: '#9c27b0',
+    A1: 'bg-green-500',      // Beginner - easiest
+    A2: 'bg-teal-500',       // Elementary
+    B1: 'bg-amber-500',      // Intermediate
+    B2: 'bg-orange-500',     // Upper Intermediate
+    C1: 'bg-rose-500',       // Advanced
+    C2: 'bg-purple-600',     // Proficiency - hardest
   };
 
   // Speech synthesis voices
@@ -87,15 +73,12 @@ export class VocabularyDetailComponent implements OnInit {
   private loadVoices() {
     const loadAvailableVoices = () => {
       const voices = speechSynthesis.getVoices();
-      // Find UK English voice
       this.ukVoice = voices.find(v =>
         v.lang === 'en-GB' || v.lang.startsWith('en-GB')
       ) || null;
-      // Find US English voice
       this.usVoice = voices.find(v =>
         v.lang === 'en-US' || v.lang.startsWith('en-US')
       ) || null;
-      // Fallback to any English voice
       if (!this.ukVoice && !this.usVoice) {
         const englishVoice = voices.find(v => v.lang.startsWith('en'));
         this.ukVoice = englishVoice || null;
@@ -103,7 +86,6 @@ export class VocabularyDetailComponent implements OnInit {
       }
     };
 
-    // Voices might not be loaded immediately
     if (speechSynthesis.getVoices().length > 0) {
       loadAvailableVoices();
     } else {
@@ -119,10 +101,9 @@ export class VocabularyDetailComponent implements OnInit {
       next: (entry) => {
         this.entry.set(entry);
         this.loading.set(false);
-        // Load related words
         this.loadRelatedWords(id);
       },
-      error: (err) => {
+      error: () => {
         this.error.set('Failed to load dictionary entry');
         this.loading.set(false);
       },
@@ -155,10 +136,9 @@ export class VocabularyDetailComponent implements OnInit {
     }
 
     const utterance = new SpeechSynthesisUtterance(word);
-    utterance.rate = 0.9; // Slightly slower for clarity
+    utterance.rate = 0.9;
     utterance.pitch = 1;
 
-    // Select voice based on accent
     const voice = accent === 'uk' ? this.ukVoice : this.usVoice;
     if (voice) {
       utterance.voice = voice;
@@ -174,7 +154,6 @@ export class VocabularyDetailComponent implements OnInit {
     speechSynthesis.speak(utterance);
   }
 
-  // Legacy method for audio URLs (fallback)
   playAudio(url: string | null) {
     if (url) {
       const audio = new Audio(url);
@@ -182,8 +161,8 @@ export class VocabularyDetailComponent implements OnInit {
     }
   }
 
-  getCefrColor(level: string | null): string {
-    return level ? this.cefrColors[level] || '#9e9e9e' : '#9e9e9e';
+  getCefrColorClass(level: string | null): string {
+    return level ? this.cefrColors[level] || 'bg-gray-400' : 'bg-gray-400';
   }
 
   formatPartOfSpeech(pos: string | null): string {

@@ -2,12 +2,6 @@ import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faClock,
@@ -41,12 +35,6 @@ import {
     CommonModule,
     FormsModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatRadioModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatProgressBarModule,
     FontAwesomeModule,
     // New exercise type components
     SentenceBuildingComponent,

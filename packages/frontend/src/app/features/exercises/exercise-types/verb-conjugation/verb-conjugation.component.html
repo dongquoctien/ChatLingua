@@ -1,0 +1,78 @@
+<div class="flex flex-col gap-6">
+  <p class="text-gray-600 flex items-center gap-2">
+    <fa-icon [icon]="faBook" class="text-gray-700"></fa-icon>
+    Conjugate the verb in the correct form:
+  </p>
+
+  <!-- Verb Info Card -->
+  <div class="flex flex-wrap gap-4 p-4 bg-gradient-to-r from-gray-600 to-gray-800 rounded-lg text-white">
+    <div class="flex items-center gap-2">
+      <span class="opacity-80 text-sm">Verb:</span>
+      <span class="text-2xl font-bold italic">{{ exerciseData?.verb }}</span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="opacity-80 text-sm">Tense:</span>
+      <span class="px-3 py-1 bg-white/20 rounded-full font-medium">{{ exerciseData?.tense }}</span>
+    </div>
+
+    @if (exerciseData?.subject) {
+      <div class="flex items-center gap-2">
+        <span class="opacity-80 text-sm">Subject:</span>
+        <span class="font-semibold">{{ exerciseData.subject }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Tense Helper -->
+  @if (tenseInfo()) {
+    <div class="p-3 bg-gray-100 rounded border-l-4 border-gray-900 text-sm">
+      <div class="mb-2">{{ tenseInfo()!.description }}</div>
+      <div class="text-gray-700">
+        <strong>Example:</strong> {{ tenseInfo()!.example }}
+      </div>
+    </div>
+  }
+
+  <!-- Sentence Frame -->
+  @if (exerciseData?.subject) {
+    <div class="flex items-center gap-2 text-xl p-4 bg-gray-100 rounded-lg">
+      <span class="font-semibold">{{ exerciseData.subject }}</span>
+      <input type="text"
+             class="input w-48"
+             [ngModel]="userAnswer()"
+             (ngModelChange)="onAnswerChange($event)"
+             [disabled]="disabled"
+             (keyup.enter)="confirmAnswer()"
+             placeholder="conjugated verb">
+      <span class="text-gray-400">...</span>
+    </div>
+  } @else {
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">
+        Conjugated form of "{{ exerciseData?.verb }}"
+      </label>
+      <input type="text"
+             class="input"
+             [ngModel]="userAnswer()"
+             (ngModelChange)="onAnswerChange($event)"
+             [disabled]="disabled"
+             (keyup.enter)="confirmAnswer()">
+    </div>
+  }
+
+  <!-- Hint -->
+  @if (exerciseData?.hint) {
+    <div class="p-3 bg-amber-50 rounded border-l-4 border-amber-500 text-sm">
+      <strong>Hint:</strong> {{ exerciseData.hint }}
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-4">
+    <button class="btn btn-secondary" (click)="reset()" [disabled]="disabled">
+      <fa-icon [icon]="faUndo" class="mr-2"></fa-icon>
+      Reset
+    </button>
+  </div>
+</div>

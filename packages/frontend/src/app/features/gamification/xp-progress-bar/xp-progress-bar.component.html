@@ -1,0 +1,66 @@
+<div class="flex items-center gap-4 py-3 px-4 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl text-white relative overflow-hidden"
+     [class.py-2]="compact" [class.px-3]="compact" [class.gap-3]="compact">
+  <!-- Level Badge -->
+  <div class="flex flex-col items-center gap-1 flex-shrink-0"
+       [title]="'Level ' + xpData.currentLevel + ': ' + xpData.title">
+    <div class="relative w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg"
+         [class.w-9]="compact" [class.h-9]="compact"
+         [class.pulse-animation]="levelUp()">
+      <fa-icon [icon]="faStar" class="absolute -top-1 -right-1 text-white drop-shadow-md"
+               [class.text-xs]="compact" [class.text-sm]="!compact"></fa-icon>
+      <span class="font-bold text-gray-900" [class.text-base]="compact" [class.text-xl]="!compact">
+        {{ xpData.currentLevel }}
+      </span>
+    </div>
+    @if (!compact) {
+      <span class="text-xs text-yellow-400 font-medium uppercase tracking-wide">{{ xpData.title }}</span>
+    }
+  </div>
+
+  <!-- Progress Section -->
+  <div class="flex-1 flex flex-col gap-2">
+    @if (!compact) {
+      <div class="flex justify-between items-center text-sm">
+        <span class="flex items-center gap-2 font-semibold text-gray-300">
+          <fa-icon [icon]="faBolt" class="text-yellow-400"></fa-icon>
+          {{ formatNumber(xpData.totalXp) }} XP
+        </span>
+        <span class="text-gray-400 text-xs">
+          {{ formatNumber(xpData.xpToNextLevel) }} to Level {{ xpData.currentLevel + 1 }}
+        </span>
+      </div>
+    }
+
+    <!-- Custom Progress Bar -->
+    <div class="relative h-3 rounded-md overflow-hidden bg-white/10"
+         [class.h-2]="compact">
+      <div class="absolute inset-0 h-full rounded-md transition-all duration-500"
+           [class.bg-gray-400]="!levelUp()"
+           [class.bg-yellow-400]="levelUp()"
+           [class.level-up-glow]="levelUp()"
+           [style.width.%]="displayProgress()"></div>
+      @if (animated) {
+        <div class="shimmer-effect" [style.width.%]="displayProgress()"></div>
+      }
+    </div>
+
+    @if (compact) {
+      <div class="text-xs text-gray-300 font-semibold text-right">{{ formatNumber(xpData.totalXp) }} XP</div>
+    }
+  </div>
+
+  <!-- Level Up Indicator -->
+  @if (levelUp()) {
+    <div class="absolute top-2 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1 bounce-animation shadow-lg">
+      <fa-icon [icon]="faArrowUp" class="text-sm"></fa-icon>
+      <span>Level Up!</span>
+    </div>
+  }
+
+  <!-- XP Gain Animation -->
+  @if (showXpGain() && xpGainAmount() > 0) {
+    <div class="xp-gain-popup" [class.show]="showXpGain()">
+      +{{ xpGainAmount() }} XP
+    </div>
+  }
+</div>

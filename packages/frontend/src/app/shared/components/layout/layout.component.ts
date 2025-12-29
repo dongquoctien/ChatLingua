@@ -1,14 +1,6 @@
-import { Component, inject, ViewChild, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, NavigationEnd, Router } from '@angular/router';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
-import { MatListModule } from '@angular/material/list';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatDividerModule } from '@angular/material/divider';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faGraduationCap,
@@ -25,6 +17,8 @@ import {
   faBook,
   faBell,
   faTrophy,
+  faTimes,
+  faChevronDown,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -36,30 +30,22 @@ import { Subscription, filter, interval } from 'rxjs';
   imports: [
     CommonModule,
     RouterModule,
-    MatToolbarModule,
-    MatButtonModule,
-    MatSidenavModule,
-    MatListModule,
-    MatMenuModule,
-    MatBadgeModule,
-    MatDividerModule,
     FontAwesomeModule,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
 })
 export class LayoutComponent implements OnInit, OnDestroy {
-  @ViewChild('drawer') drawer!: MatSidenav;
-
   authService = inject(AuthService);
   private apiService = inject(ApiService);
-  private breakpointObserver = inject(BreakpointObserver);
   private router = inject(Router);
   private subscriptions: Subscription[] = [];
 
-  isMobile = false;
-  sidenavMode: 'side' | 'over' = 'side';
-  sidenavOpened = true;
+  // State
+  sidebarOpen = signal(true);
+  isMobile = signal(false);
+  userMenuOpen = signal(false);
+  notificationMenuOpen = signal(false);
 
   // Notification badge
   notificationBadge = signal<{ unreadCount: number; hasNewAchievements: boolean }>({
@@ -82,25 +68,37 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faSignOutAlt = faSignOutAlt;
   faBell = faBell;
   faTrophy = faTrophy;
+  faTimes = faTimes;
+  faChevronDown = faChevronDown;
+
+  // Navigation items
+  navItems = [
+    { path: '/dashboard', icon: this.faHome, label: 'Dashboard' },
+    { path: '/conversations', icon: this.faComments, label: 'Conversations' },
+    { path: '/vocabulary', icon: this.faLanguage, label: 'Vocabulary' },
+    { path: '/review', icon: this.faBrain, label: 'Daily Review' },
+    { path: '/grammar', icon: this.faBook, label: 'Grammar' },
+    { path: '/exercises', icon: this.faDumbbell, label: 'Exercises' },
+    { path: '/quizzes', icon: this.faQuestionCircle, label: 'Quizzes' },
+    { path: '/reports', icon: this.faChartLine, label: 'Reports' },
+  ];
+
+  @HostListener('window:resize')
+  onResize() {
+    this.checkMobile();
+  }
 
   ngOnInit() {
-    // Listen for screen size changes
-    const breakpointSub = this.breakpointObserver
-      .observe([Breakpoints.Handset, Breakpoints.TabletPortrait])
-      .subscribe(result => {
-        this.isMobile = result.matches;
-        this.sidenavMode = this.isMobile ? 'over' : 'side';
-        this.sidenavOpened = !this.isMobile;
-      });
-    this.subscriptions.push(breakpointSub);
+    this.checkMobile();
 
-    // Close sidenav on navigation when in mobile mode
+    // Close sidebar on navigation when in mobile mode
     const routerSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
-        if (this.isMobile && this.drawer) {
-          this.drawer.close();
+        if (this.isMobile()) {
+          this.sidebarOpen.set(false);
         }
+        this.closeMenus();
       });
     this.subscriptions.push(routerSub);
 
@@ -118,6 +116,35 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
+  checkMobile() {
+    const mobile = window.innerWidth < 768;
+    this.isMobile.set(mobile);
+    if (mobile) {
+      this.sidebarOpen.set(false);
+    } else {
+      this.sidebarOpen.set(true);
+    }
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen.update(v => !v);
+  }
+
+  toggleUserMenu() {
+    this.userMenuOpen.update(v => !v);
+    this.notificationMenuOpen.set(false);
+  }
+
+  toggleNotificationMenu() {
+    this.notificationMenuOpen.update(v => !v);
+    this.userMenuOpen.set(false);
+  }
+
+  closeMenus() {
+    this.userMenuOpen.set(false);
+    this.notificationMenuOpen.set(false);
+  }
+
   loadNotificationBadge() {
     this.apiService.getNotificationBadge().subscribe({
       next: badge => {
@@ -131,9 +158,11 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   logout() {
     this.authService.logout();
+    this.closeMenus();
   }
 
   goToAchievements() {
     this.router.navigate(['/achievements']);
+    this.closeMenus();
   }
 }

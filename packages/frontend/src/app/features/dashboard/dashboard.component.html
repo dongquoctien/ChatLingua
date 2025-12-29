@@ -1,228 +1,234 @@
-<div class="dashboard">
-  <div class="page-header">
-    <h1>Welcome back, {{ authService.currentUser()?.username }}!</h1>
-    <p>Continue your English learning journey</p>
+<div class="max-w-6xl mx-auto p-6">
+  <div class="mb-6 md:mb-8">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Welcome back, {{ authService.currentUser()?.username }}!</h1>
+    <p class="text-gray-600 mt-1">Continue your English learning journey</p>
   </div>
 
-  <!-- XP Progress Bar -->
   @if (xpStatus()) {
-    <div class="xp-section">
+    <div class="mb-6">
       <app-xp-progress-bar [xpData]="getXpData()" [animated]="true"></app-xp-progress-bar>
     </div>
   }
 
   @if (loading()) {
-    <div class="loading-spinner">
-      <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+    <div class="flex items-center justify-center py-16">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-600"></fa-icon>
     </div>
   } @else if (stats()) {
-    <div class="stats-grid">
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faFire" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()!.currentStreak }}</div>
-        <div class="stat-label">Day Streak</div>
-      </mat-card>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="card text-center p-4 md:p-6">
+        <fa-icon [icon]="faFire" class="text-3xl md:text-4xl text-orange-500 mb-2"></fa-icon>
+        <div class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats()!.currentStreak }}</div>
+        <div class="text-sm text-gray-500">Day Streak</div>
+      </div>
 
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faComments" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()!.totalConversations }}</div>
-        <div class="stat-label">Conversations</div>
-      </mat-card>
+      <div class="card text-center p-4 md:p-6">
+        <fa-icon [icon]="faComments" class="text-3xl md:text-4xl text-gray-600 mb-2"></fa-icon>
+        <div class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats()!.totalConversations }}</div>
+        <div class="text-sm text-gray-500">Conversations</div>
+      </div>
 
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faLanguage" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()!.totalVocabulary }}</div>
-        <div class="stat-label">Words Learned</div>
-      </mat-card>
+      <div class="card text-center p-4 md:p-6">
+        <fa-icon [icon]="faLanguage" class="text-3xl md:text-4xl text-gray-900 mb-2"></fa-icon>
+        <div class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats()!.totalVocabulary }}</div>
+        <div class="text-sm text-gray-500">Words Learned</div>
+      </div>
 
-      <mat-card class="stat-card">
-        <fa-icon [icon]="faCheckCircle" class="stat-icon"></fa-icon>
-        <div class="stat-value">{{ stats()!.correctRate }}%</div>
-        <div class="stat-label">Accuracy</div>
-      </mat-card>
+      <div class="card text-center p-4 md:p-6">
+        <fa-icon [icon]="faCheckCircle" class="text-3xl md:text-4xl text-gray-700 mb-2"></fa-icon>
+        <div class="text-2xl md:text-3xl font-bold text-gray-900">{{ stats()!.correctRate }}%</div>
+        <div class="text-sm text-gray-500">Accuracy</div>
+      </div>
     </div>
 
-    <!-- Daily Review Widget -->
     @if (queueStats()) {
-      <div class="review-widget-section">
-        <mat-card class="review-widget" routerLink="/review">
-          <div class="review-header">
-            <div class="review-title">
-              <fa-icon [icon]="faBrain" class="review-icon"></fa-icon>
-              <h3>Daily Review</h3>
+      <div class="mb-6">
+        <div class="card p-4 md:p-6 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg transition-all" routerLink="/review">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <fa-icon [icon]="faBrain" class="text-2xl text-purple-600"></fa-icon>
+              <h3 class="text-lg font-semibold text-gray-900">Daily Review</h3>
             </div>
-            @if (streak()) {
-              @if (streak()!.currentStreak > 0) {
-                <div class="streak-badge">
-                  <fa-icon [icon]="faFire"></fa-icon>
-                  {{ streak()!.currentStreak }} day streak
-                </div>
-              }
+            @if (streak() && streak()!.currentStreak > 0) {
+              <div class="flex items-center gap-1.5 bg-orange-100 text-orange-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                <fa-icon [icon]="faFire"></fa-icon>
+                {{ streak()!.currentStreak }} day streak
+              </div>
             }
           </div>
 
-          <div class="review-stats">
-            <div class="review-stat">
-              <span class="number due">{{ dueCount() }}</span>
-              <span class="label">Due</span>
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="text-center">
+              <span class="block text-2xl font-bold text-amber-600">{{ dueCount() }}</span>
+              <span class="text-sm text-gray-500">Due</span>
             </div>
-            <div class="review-stat">
-              <span class="number new">{{ newCount() }}</span>
-              <span class="label">New</span>
+            <div class="text-center">
+              <span class="block text-2xl font-bold text-gray-600">{{ newCount() }}</span>
+              <span class="text-sm text-gray-500">New</span>
             </div>
-            <div class="review-stat">
-              <span class="number done">{{ doneCount() }}</span>
-              <span class="label">Done</span>
+            <div class="text-center">
+              <span class="block text-2xl font-bold text-gray-900">{{ doneCount() }}</span>
+              <span class="text-sm text-gray-500">Done</span>
             </div>
           </div>
 
           @if (getTotalDue() > 0) {
-            <button mat-raised-button color="primary" class="start-review-btn">
+            <button class="btn btn-primary w-full py-3 text-base">
               <fa-icon [icon]="faPlay"></fa-icon>
               Start Review ({{ getTotalDue() }} cards)
             </button>
           } @else {
-            <div class="all-done-message">
+            <div class="flex items-center justify-center gap-2 text-gray-900 py-2">
               <fa-icon [icon]="faCheckCircle"></fa-icon>
               All caught up for today!
             </div>
           }
-        </mat-card>
+        </div>
       </div>
     }
 
-    <div class="quick-actions">
-      <h2>Quick Actions</h2>
-      <div class="actions-grid">
-        <mat-card class="action-card" routerLink="/review">
-          <fa-icon [icon]="faGraduationCap" class="action-icon primary"></fa-icon>
-          <h3>Spaced Review</h3>
-          <p>Practice with flashcards</p>
-        </mat-card>
-
-        <mat-card class="action-card" routerLink="/exercises">
-          <fa-icon [icon]="faDumbbell" class="action-icon accent"></fa-icon>
-          <h3>Practice Exercises</h3>
-          <p>Test your knowledge</p>
-        </mat-card>
-
-        <mat-card class="action-card" routerLink="/quizzes">
-          <fa-icon [icon]="faQuestionCircle" class="action-icon warn"></fa-icon>
-          <h3>Take a Quiz</h3>
-          <p>Challenge yourself</p>
-        </mat-card>
-
-        <mat-card class="action-card" routerLink="/conversations">
-          <fa-icon [icon]="faHistory" class="action-icon"></fa-icon>
-          <h3>View Conversations</h3>
-          <p>Review past learning sessions</p>
-        </mat-card>
-      </div>
-    </div>
-
-    <div class="progress-section">
-      <h2>Your Progress</h2>
-      <div class="progress-grid">
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Exercises Completed</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="big-number">{{ stats()!.totalExercises }}</div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Quizzes Taken</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="big-number">{{ stats()!.totalQuizzes }}</div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Longest Streak</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="big-number">{{ stats()!.longestStreak }} days</div>
-          </mat-card-content>
-        </mat-card>
-      </div>
-    </div>
-
-    <!-- Gamification Section -->
-    <div class="gamification-section">
-      <!-- Daily Challenges -->
-      @if (dailyChallenges().length > 0) {
-        <div class="gamification-widget">
-          <app-daily-challenges [challenges]="dailyChallenges()"></app-daily-challenges>
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card p-4 md:p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all text-center" routerLink="/review">
+          <fa-icon [icon]="faGraduationCap" class="text-3xl md:text-4xl text-gray-700 mb-3"></fa-icon>
+          <h3 class="font-semibold text-gray-900 mb-1">Spaced Review</h3>
+          <p class="text-sm text-gray-500">Practice with flashcards</p>
         </div>
+
+        <div class="card p-4 md:p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all text-center" routerLink="/exercises">
+          <fa-icon [icon]="faDumbbell" class="text-3xl md:text-4xl text-gray-700 mb-3"></fa-icon>
+          <h3 class="font-semibold text-gray-900 mb-1">Practice Exercises</h3>
+          <p class="text-sm text-gray-500">Test your knowledge</p>
+        </div>
+
+        <div class="card p-4 md:p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all text-center" routerLink="/quizzes">
+          <fa-icon [icon]="faQuestionCircle" class="text-3xl md:text-4xl text-amber-600 mb-3"></fa-icon>
+          <h3 class="font-semibold text-gray-900 mb-1">Take a Quiz</h3>
+          <p class="text-sm text-gray-500">Challenge yourself</p>
+        </div>
+
+        <div class="card p-4 md:p-6 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all text-center" routerLink="/conversations">
+          <fa-icon [icon]="faHistory" class="text-3xl md:text-4xl text-gray-600 mb-3"></fa-icon>
+          <h3 class="font-semibold text-gray-900 mb-1">Conversations</h3>
+          <p class="text-sm text-gray-500">Review past learning</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Your Progress</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="card p-4 md:p-6">
+          <h4 class="text-sm font-medium text-gray-500 mb-2">Exercises Completed</h4>
+          <div class="text-3xl font-bold text-gray-900">{{ stats()!.totalExercises }}</div>
+        </div>
+
+        <div class="card p-4 md:p-6">
+          <h4 class="text-sm font-medium text-gray-500 mb-2">Quizzes Taken</h4>
+          <div class="text-3xl font-bold text-purple-600">{{ stats()!.totalQuizzes }}</div>
+        </div>
+
+        <div class="card p-4 md:p-6">
+          <h4 class="text-sm font-medium text-gray-500 mb-2">Longest Streak</h4>
+          <div class="text-3xl font-bold text-orange-600">{{ stats()!.longestStreak }} days</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      @if (dailyChallenges().length > 0) {
+        <app-daily-challenges [challenges]="dailyChallenges()"></app-daily-challenges>
       }
 
-      <!-- Two Column Layout for Achievements and Leaderboard -->
-      <div class="gamification-row">
-        <!-- Recent Achievements -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         @if (getRecentAchievements().length > 0) {
-          <mat-card class="achievements-preview">
-            <div class="widget-header">
-              <h3>
-                <fa-icon [icon]="faTrophy" class="trophy-icon"></fa-icon>
+          <div class="card p-4 md:p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <fa-icon [icon]="faTrophy" class="text-yellow-500"></fa-icon>
                 Recent Achievements
               </h3>
-              <a routerLink="/achievements" class="view-all-link">
+              <a routerLink="/achievements" class="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm font-medium">
                 View All
                 <fa-icon [icon]="faArrowRight"></fa-icon>
               </a>
             </div>
-            <div class="achievements-grid-small">
+            <div class="grid grid-cols-2 gap-3">
               @for (achievement of getRecentAchievements(); track achievement.id) {
-                <div class="achievement-badge-small"
-                     [class.new]="achievement.isNew"
+                <div class="relative flex flex-col items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                     [class.ring-2]="achievement.isNew"
+                     [class.ring-yellow-400]="achievement.isNew"
                      (click)="onAchievementClick(achievement)">
-                  <div class="badge-icon">
+                  <div class="w-10 h-10 flex items-center justify-center bg-yellow-100 text-yellow-600 rounded-full mb-2">
                     <fa-icon [icon]="faTrophy"></fa-icon>
                   </div>
-                  <span class="badge-name">{{ achievement.name }}</span>
+                  <span class="text-sm font-medium text-gray-900 text-center">{{ achievement.name }}</span>
                   @if (achievement.isNew) {
-                    <span class="new-indicator">NEW</span>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">NEW</span>
                   }
                 </div>
               }
             </div>
-          </mat-card>
+          </div>
         }
 
-        <!-- Leaderboard Preview -->
         @if (leaderboard() && leaderboard()!.entries.length > 0) {
-          <mat-card class="leaderboard-preview">
-            <div class="widget-header">
-              <h3>
-                <fa-icon [icon]="faTrophy" class="trophy-icon gold"></fa-icon>
-                This Week's Top Learners
+          <div class="card p-4 md:p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <fa-icon [icon]="faTrophy" class="text-yellow-500"></fa-icon>
+                Top Learners
               </h3>
-              <a routerLink="/leaderboard" class="view-all-link">
+              <a routerLink="/leaderboard" class="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm font-medium">
                 View Full
                 <fa-icon [icon]="faArrowRight"></fa-icon>
               </a>
             </div>
-            <div class="leaderboard-mini">
+            <div class="space-y-2">
               @for (entry of leaderboard()!.entries.slice(0, 5); track entry.userId) {
-                <div class="leaderboard-row" [class.current-user]="entry.isCurrentUser">
-                  <span class="rank" [class.top-3]="entry.rank <= 3">{{ entry.rank }}</span>
-                  <span class="name">{{ entry.displayName || entry.username }}</span>
-                  <span class="xp">{{ entry.totalXp }} XP</span>
+                <div class="flex items-center justify-between p-2 rounded-lg"
+                     [class.bg-gray-100]="entry.isCurrentUser">
+                  <div class="flex items-center gap-3">
+                    <span class="w-6 h-6 flex items-center justify-center text-sm font-bold rounded-full"
+                          [class.bg-yellow-400]="entry.rank === 1"
+                          [class.text-white]="entry.rank === 1"
+                          [class.bg-gray-300]="entry.rank === 2"
+                          [class.bg-amber-600]="entry.rank === 3"
+                          [class.text-gray-600]="entry.rank > 3">
+                      {{ entry.rank }}
+                    </span>
+                    <span class="font-medium text-gray-900">{{ entry.displayName || entry.username }}</span>
+                  </div>
+                  <span class="text-sm font-semibold text-gray-900">{{ entry.totalXp }} XP</span>
                 </div>
               }
             </div>
             @if (leaderboard()!.currentUserRank && leaderboard()!.currentUserRank! > 5) {
-              <div class="your-rank">
-                Your rank: #{{ leaderboard()!.currentUserRank }}
+              <div class="mt-3 pt-3 border-t text-center text-sm text-gray-600">
+                Your rank: <span class="font-semibold">#{{ leaderboard()!.currentUserRank }}</span>
               </div>
             }
-          </mat-card>
+          </div>
         }
+      </div>
+    </div>
+  }
+
+  @if (showAchievementDialog() && selectedAchievement()) {
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" (click)="closeAchievementDialog()">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center relative" (click)="$event.stopPropagation()">
+        <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600" (click)="closeAchievementDialog()">
+          <fa-icon [icon]="faTimes"></fa-icon>
+        </button>
+        <div class="w-20 h-20 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+          <fa-icon [icon]="faTrophy" class="text-4xl text-yellow-500"></fa-icon>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Achievement Unlocked!</h2>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ selectedAchievement()!.name }}</h3>
+        <p class="text-gray-600 mb-4">{{ selectedAchievement()!.description }}</p>
+        <div class="text-sm text-gray-500 mb-4">+{{ selectedAchievement()!.xpReward }} XP</div>
+        <button class="btn btn-primary px-8" (click)="closeAchievementDialog()">Awesome!</button>
       </div>
     </div>
   }

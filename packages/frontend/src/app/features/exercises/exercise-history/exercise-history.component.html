@@ -1,123 +1,140 @@
-<div class="page-header">
-  <div class="header-content">
-    <button mat-icon-button (click)="goBack()" class="back-button">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+  <div class="flex items-center gap-3">
+    <button class="btn btn-secondary p-2" (click)="goBack()">
       <fa-icon [icon]="faArrowLeft"></fa-icon>
     </button>
-    <div class="header-text">
-      <h1>
-        <fa-icon [icon]="faHistory"></fa-icon>
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-3">
+        <fa-icon [icon]="faHistory" class="text-gray-700"></fa-icon>
         Exercise History
       </h1>
-      <p>Review your past practice sessions</p>
+      <p class="text-gray-600 mt-1">Review your past practice sessions</p>
     </div>
   </div>
-  <button mat-raised-button color="primary" (click)="startNewPractice()">
+  <button class="btn btn-primary w-full md:w-auto" (click)="startNewPractice()">
     Start New Practice
   </button>
 </div>
 
 <!-- Loading -->
 @if (loading()) {
-  <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
-    <p>Loading history...</p>
+  <div class="flex flex-col items-center justify-center py-20">
+    <fa-icon [icon]="faSpinner" animation="spin" class="text-5xl text-gray-600 mb-4"></fa-icon>
+    <p class="text-gray-600">Loading history...</p>
   </div>
 }
 
 <!-- Error -->
 @if (error()) {
-  <mat-card class="error-card">
-    <mat-card-content>
-      <p class="error-message">{{ error() }}</p>
-      <button mat-button color="primary" (click)="loadHistory()">Try Again</button>
-    </mat-card-content>
-  </mat-card>
+  <div class="card max-w-md mx-auto text-center p-6">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn btn-primary" (click)="loadHistory()">Try Again</button>
+  </div>
 }
 
 <!-- Empty State -->
 @if (isEmpty()) {
-  <mat-card class="empty-card">
-    <mat-card-content>
-      <fa-icon [icon]="faChartLine" class="empty-icon"></fa-icon>
-      <h2>No Practice Sessions Yet</h2>
-      <p>Complete your first practice session to see your history here.</p>
-      <button mat-raised-button color="primary" (click)="startNewPractice()">
-        Start Your First Practice
-      </button>
-    </mat-card-content>
-  </mat-card>
+  <div class="card max-w-md mx-auto text-center p-8 md:p-12">
+    <fa-icon [icon]="faChartLine" class="text-6xl text-gray-400 mb-4"></fa-icon>
+    <h2 class="text-xl font-bold text-gray-900 mb-2">No Practice Sessions Yet</h2>
+    <p class="text-gray-600 mb-6">Complete your first practice session to see your history here.</p>
+    <button class="btn btn-primary" (click)="startNewPractice()">
+      Start Your First Practice
+    </button>
+  </div>
 }
 
 <!-- Session List -->
 @if (!loading() && !isEmpty()) {
-  <div class="sessions-list">
+  <div class="space-y-4">
     @for (session of sessions(); track session.id) {
-      <mat-card class="session-card" [class.expanded]="isExpanded(session.id)">
-        <mat-card-header (click)="toggleSessionDetails(session.id)">
-          <div class="session-header">
-            <div class="session-score" [ngClass]="getScoreClass(session.scorePercentage)">
-              <fa-icon [icon]="session.scorePercentage >= 70 ? faTrophy : faFrown"></fa-icon>
-              <span class="percentage">{{ session.scorePercentage }}%</span>
+      <div class="card overflow-hidden transition-shadow hover:shadow-lg"
+           [class.ring-2]="isExpanded(session.id)"
+           [class.ring-gray-900]="isExpanded(session.id)">
+        <div class="p-4 cursor-pointer" (click)="toggleSessionDetails(session.id)">
+          <div class="flex flex-col md:flex-row md:items-center gap-4">
+            <!-- Score Badge -->
+            <div class="flex md:flex-col items-center justify-center gap-3 md:gap-1 p-3 md:w-20 md:h-20 rounded-xl"
+                 [ngClass]="getScoreClasses(session.scorePercentage)">
+              <fa-icon [icon]="session.scorePercentage >= 70 ? faTrophy : faFrown" class="text-xl md:text-2xl"></fa-icon>
+              <span class="text-lg font-bold">{{ session.scorePercentage }}%</span>
             </div>
-            <div class="session-info">
-              <div class="session-stats">
-                <span class="score">{{ session.correctAnswers }}/{{ session.totalQuestions }} correct</span>
-                <mat-chip [ngClass]="getStatusClass(session.status)">{{ session.status | titlecase }}</mat-chip>
+
+            <!-- Session Info -->
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-2 mb-2">
+                <span class="font-semibold text-gray-800">{{ session.correctAnswers }}/{{ session.totalQuestions }} correct</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                      [ngClass]="getStatusClasses(session.status)">
+                  {{ session.status | titlecase }}
+                </span>
               </div>
-              <div class="session-meta">
-                <span class="time">
-                  <fa-icon [icon]="faClock"></fa-icon>
+              <div class="flex flex-wrap gap-4 text-sm text-gray-600 mb-2">
+                <span class="flex items-center gap-1">
+                  <fa-icon [icon]="faClock" class="text-xs"></fa-icon>
                   {{ formatTime(session.totalTimeSeconds) }}
                 </span>
-                <span class="date">
-                  <fa-icon [icon]="faCalendarAlt"></fa-icon>
+                <span class="flex items-center gap-1">
+                  <fa-icon [icon]="faCalendarAlt" class="text-xs"></fa-icon>
                   {{ formatDate(session.startedAt) }}
                 </span>
               </div>
-              <div class="exercise-types">
+              <div class="flex flex-wrap gap-2">
                 @for (type of session.exerciseTypes; track type) {
-                  <mat-chip class="type-chip">{{ type | titlecase }}</mat-chip>
+                  <span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                    {{ type | titlecase }}
+                  </span>
                 }
               </div>
             </div>
-            <div class="expand-indicator">
+
+            <!-- Expand Indicator -->
+            <div class="flex items-center gap-2 text-gray-700 font-medium text-sm self-end md:self-auto">
               <span>{{ isExpanded(session.id) ? 'Hide' : 'View' }} Details</span>
+              <fa-icon [icon]="isExpanded(session.id) ? faChevronUp : faChevronDown"></fa-icon>
             </div>
           </div>
-        </mat-card-header>
+        </div>
 
+        <!-- Expanded Details -->
         @if (isExpanded(session.id)) {
-          <mat-card-content class="session-details">
-            <mat-divider></mat-divider>
-
+          <div class="border-t border-gray-200 p-4 bg-gray-50">
             @if (isLoadingDetails(session.id)) {
-              <div class="loading-details">
+              <div class="flex items-center justify-center gap-3 py-6 text-gray-600">
                 <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
                 <span>Loading details...</span>
               </div>
             } @else {
               @if (getSessionDetail(session.id); as detail) {
-                <h3>Question Review</h3>
-                <div class="questions-list">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Question Review</h3>
+                <div class="space-y-3">
                   @for (answer of detail.results; track answer.exerciseId) {
-                    <div class="question-item" [class.correct]="answer.isCorrect" [class.incorrect]="!answer.isCorrect">
-                      <div class="question-header">
-                        <span class="question-num">Q{{ answer.questionOrder }}</span>
+                    <div class="p-3 rounded-lg border-l-4"
+                         [class.bg-gray-100]="answer.isCorrect"
+                         [class.border-gray-900]="answer.isCorrect"
+                         [class.bg-red-50]="!answer.isCorrect"
+                         [class.border-red-500]="!answer.isCorrect">
+                      <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold text-gray-800">Q{{ answer.questionOrder }}</span>
                         <fa-icon [icon]="answer.isCorrect ? faCheckCircle : faTimesCircle"
-                                 [class.icon-correct]="answer.isCorrect"
-                                 [class.icon-incorrect]="!answer.isCorrect"></fa-icon>
-                        <mat-chip class="type-chip small">{{ answer.exerciseType | titlecase }}</mat-chip>
+                                 [class.text-gray-900]="answer.isCorrect"
+                                 [class.text-red-500]="!answer.isCorrect"></fa-icon>
+                        <span class="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">
+                          {{ answer.exerciseType | titlecase }}
+                        </span>
                       </div>
-                      <p class="question-text">{{ answer.questionText }}</p>
-                      <div class="answer-details">
-                        <div class="your-answer">
+                      <p class="text-gray-800 mb-3 leading-relaxed">{{ answer.questionText }}</p>
+                      <div class="text-sm space-y-1">
+                        <div>
                           <strong>Your answer:</strong>
-                          <span [class.wrong]="!answer.isCorrect">{{ formatAnswerForDisplay(answer.userAnswer, answer.exerciseType) }}</span>
+                          <span [class.text-red-600]="!answer.isCorrect" [class.line-through]="!answer.isCorrect">
+                            {{ formatAnswerForDisplay(answer.userAnswer, answer.exerciseType) }}
+                          </span>
                         </div>
                         @if (!answer.isCorrect) {
-                          <div class="correct-answer">
+                          <div>
                             <strong>Correct:</strong>
-                            <span class="correct-text">{{ formatAnswerForDisplay(answer.correctAnswer, answer.exerciseType) }}</span>
+                            <span class="text-gray-900 font-medium">{{ formatAnswerForDisplay(answer.correctAnswer, answer.exerciseType) }}</span>
                           </div>
                         }
                       </div>
@@ -126,18 +143,44 @@
                 </div>
               }
             }
-          </mat-card-content>
+          </div>
         }
-      </mat-card>
+      </div>
     }
 
-    <mat-paginator
-      [length]="totalSessions()"
-      [pageSize]="limit()"
-      [pageIndex]="page() - 1"
-      [pageSizeOptions]="[5, 10, 20]"
-      (page)="onPageChange($event)"
-      showFirstLastButtons>
-    </mat-paginator>
+    <!-- Custom Pagination -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 bg-white rounded-lg shadow-sm">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Show</span>
+        <select class="input py-1 px-2 w-auto" [value]="limit()" (change)="onLimitChange($event)">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+        </select>
+        <span>per page</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-600">
+          {{ (page() - 1) * limit() + 1 }} - {{ page() * limit() > totalSessions() ? totalSessions() : page() * limit() }} of {{ totalSessions() }}
+        </span>
+        <div class="flex gap-1">
+          <button class="btn btn-secondary p-2" [disabled]="page() === 1" (click)="onPageChange(1)">
+            <fa-icon [icon]="faChevronLeft"></fa-icon>
+            <fa-icon [icon]="faChevronLeft" class="-ml-2"></fa-icon>
+          </button>
+          <button class="btn btn-secondary p-2" [disabled]="page() === 1" (click)="onPageChange(page() - 1)">
+            <fa-icon [icon]="faChevronLeft"></fa-icon>
+          </button>
+          <button class="btn btn-secondary p-2" [disabled]="page() === totalPages()" (click)="onPageChange(page() + 1)">
+            <fa-icon [icon]="faChevronRight"></fa-icon>
+          </button>
+          <button class="btn btn-secondary p-2" [disabled]="page() === totalPages()" (click)="onPageChange(totalPages())">
+            <fa-icon [icon]="faChevronRight"></fa-icon>
+            <fa-icon [icon]="faChevronRight" class="-ml-2"></fa-icon>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 }

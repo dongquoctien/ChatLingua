@@ -2,19 +2,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatTableModule } from '@angular/material/table';
-import { MatSortModule, Sort } from '@angular/material/sort';
-import { MatIconModule } from '@angular/material/icon';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faSearch, faLanguage, faSpinner, faBook, faListUl, faVolumeUp, faEye } from '../../../shared/icons';
+import { faSearch, faLanguage, faSpinner, faBook, faListUl, faVolumeUp, faEye, faChevronLeft, faChevronRight } from '../../../shared/icons';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
 
 @Component({
@@ -24,17 +13,6 @@ import { ApiService, Vocabulary } from '../../../core/services/api.service';
     CommonModule,
     FormsModule,
     RouterLink,
-    MatCardModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatPaginatorModule,
-    MatChipsModule,
-    MatTooltipModule,
-    MatTableModule,
-    MatSortModule,
-    MatIconModule,
     FontAwesomeModule,
   ],
   templateUrl: './vocabulary-list.component.html',
@@ -52,9 +30,8 @@ export class VocabularyListComponent implements OnInit {
   faListUl = faListUl;
   faVolumeUp = faVolumeUp;
   faEye = faEye;
-
-  // Table columns
-  displayedColumns: string[] = ['vietnameseWord', 'englishWord', 'partOfSpeech', 'phonetic', 'cefrLevel', 'mastery', 'actions'];
+  faChevronLeft = faChevronLeft;
+  faChevronRight = faChevronRight;
 
   vocabulary = signal<Vocabulary[]>([]);
   total = signal(0);
@@ -68,14 +45,14 @@ export class VocabularyListComponent implements OnInit {
   partOfSpeech = '';
   cefrLevel = '';
 
-  // CEFR level colors
+  // CEFR level colors (Tailwind classes) - color-coded by difficulty
   cefrColors: Record<string, string> = {
-    A1: '#4caf50',
-    A2: '#8bc34a',
-    B1: '#ffeb3b',
-    B2: '#ff9800',
-    C1: '#f44336',
-    C2: '#9c27b0',
+    A1: 'bg-green-500',      // Beginner - easiest
+    A2: 'bg-teal-500',       // Elementary
+    B1: 'bg-amber-500',      // Intermediate
+    B2: 'bg-orange-500',     // Upper Intermediate
+    C1: 'bg-rose-500',       // Advanced
+    C2: 'bg-purple-600',     // Proficiency - hardest
   };
 
   ngOnInit() {
@@ -108,9 +85,15 @@ export class VocabularyListComponent implements OnInit {
     this.loadVocabulary();
   }
 
-  onPageChange(event: PageEvent) {
-    this.page.set(event.pageIndex + 1);
-    this.pageSize.set(event.pageSize);
+  onPageChange(newPage: number) {
+    this.page.set(newPage);
+    this.loadVocabulary();
+  }
+
+  onPageSizeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.pageSize.set(parseInt(select.value, 10));
+    this.page.set(1);
     this.loadVocabulary();
   }
 
@@ -118,8 +101,8 @@ export class VocabularyListComponent implements OnInit {
     this.router.navigate(['/vocabulary', word.id]);
   }
 
-  getCefrColor(level: string | null | undefined): string {
-    return level ? this.cefrColors[level] || '#9e9e9e' : '#9e9e9e';
+  getCefrColorClass(level: string | null | undefined): string {
+    return level ? this.cefrColors[level] || 'bg-gray-400' : 'bg-gray-400';
   }
 
   formatPartOfSpeech(pos: string | null): string {
@@ -142,7 +125,7 @@ export class VocabularyListComponent implements OnInit {
   }
 
   speak(wordId: number, wordText: string, event: Event) {
-    event.stopPropagation(); // Prevent card click
+    event.stopPropagation();
     if (this.speakingWordId()) {
       speechSynthesis.cancel();
     }
@@ -156,5 +139,17 @@ export class VocabularyListComponent implements OnInit {
     utterance.onerror = () => this.speakingWordId.set(null);
 
     speechSynthesis.speak(utterance);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.total() / this.pageSize());
+  }
+
+  get startItem(): number {
+    return (this.page() - 1) * this.pageSize() + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(this.page() * this.pageSize(), this.total());
   }
 }

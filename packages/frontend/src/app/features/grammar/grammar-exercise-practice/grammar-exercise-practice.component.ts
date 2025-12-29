@@ -2,18 +2,11 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatChipsModule } from '@angular/material/chips';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faGraduationCap, faSpinner, faCheckCircle, faTimes,
   faArrowRight, faRedo, faLightbulb, faPen, faBook
-} from '@fortawesome/free-solid-svg-icons';
+} from '../../../shared/icons';
 import {
   ApiService,
   GrammarExerciseInfo,
@@ -35,13 +28,6 @@ interface ExerciseSession {
     CommonModule,
     RouterModule,
     FormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatRadioModule,
-    MatProgressBarModule,
-    MatChipsModule,
     FontAwesomeModule,
   ],
   templateUrl: './grammar-exercise-practice.component.html',
@@ -207,7 +193,12 @@ export class GrammarExercisePracticeComponent implements OnInit {
   }
 
   getDifficultyClass(difficulty: string): string {
-    return `difficulty-${difficulty}`;
+    switch (difficulty) {
+      case 'beginner': return 'bg-gray-100 text-gray-700';
+      case 'intermediate': return 'bg-orange-50 text-orange-700';
+      case 'advanced': return 'bg-red-50 text-red-700';
+      default: return 'bg-gray-50 text-gray-700';
+    }
   }
 
   getAccuracyPercentage(): number {

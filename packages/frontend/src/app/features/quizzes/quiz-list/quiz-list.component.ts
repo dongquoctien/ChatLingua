@@ -1,11 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faQuestionCircle,
@@ -17,6 +12,8 @@ import {
   faListOl,
   faChevronDown,
   faChevronUp,
+  faChevronLeft,
+  faChevronRight,
   faHistory,
   faPlay,
 } from '../../../shared/icons';
@@ -29,19 +26,14 @@ import { CreateQuizDialogComponent } from '../create-quiz-dialog/create-quiz-dia
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatPaginatorModule,
-    MatChipsModule,
-    MatDialogModule,
     FontAwesomeModule,
+    CreateQuizDialogComponent,
   ],
   templateUrl: './quiz-list.component.html',
   styleUrl: './quiz-list.component.scss',
 })
 export class QuizListComponent implements OnInit {
   private apiService = inject(ApiService);
-  private dialog = inject(MatDialog);
 
   // Icons
   faQuestionCircle = faQuestionCircle;
@@ -53,6 +45,8 @@ export class QuizListComponent implements OnInit {
   faListOl = faListOl;
   faChevronDown = faChevronDown;
   faChevronUp = faChevronUp;
+  faChevronLeft = faChevronLeft;
+  faChevronRight = faChevronRight;
   faHistory = faHistory;
   faPlay = faPlay;
 
@@ -62,6 +56,7 @@ export class QuizListComponent implements OnInit {
   pageSize = signal(12);
   loading = signal(true);
   expandedQuizzes = signal<Set<number>>(new Set());
+  showCreateDialog = signal(false);
 
   ngOnInit() {
     this.loadQuizzes();
@@ -81,23 +76,42 @@ export class QuizListComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent) {
-    this.page.set(event.pageIndex + 1);
-    this.pageSize.set(event.pageSize);
+  // Pagination helpers
+  get totalPages(): number {
+    return Math.ceil(this.total() / this.pageSize());
+  }
+
+  get startItem(): number {
+    return (this.page() - 1) * this.pageSize() + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(this.page() * this.pageSize(), this.total());
+  }
+
+  onPageChange(newPage: number) {
+    this.page.set(newPage);
+    this.loadQuizzes();
+  }
+
+  onPageSizeChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.pageSize.set(parseInt(select.value, 10));
+    this.page.set(1);
     this.loadQuizzes();
   }
 
   openCreateDialog() {
-    const dialogRef = this.dialog.open(CreateQuizDialogComponent, {
-      width: '600px',
-      maxHeight: '90vh',
-    });
+    this.showCreateDialog.set(true);
+  }
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.loadQuizzes();
-      }
-    });
+  closeCreateDialog() {
+    this.showCreateDialog.set(false);
+  }
+
+  onQuizCreated() {
+    this.showCreateDialog.set(false);
+    this.loadQuizzes();
   }
 
   togglePreview(quizId: number) {

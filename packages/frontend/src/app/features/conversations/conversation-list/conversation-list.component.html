@@ -1,54 +1,81 @@
-<div class="page-header">
-  <h1>Conversations</h1>
-  <p>Your learning sessions with Claude</p>
-</div>
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-medium text-gray-800 mb-2">Conversations</h1>
+    <p class="text-gray-500">Your learning sessions with Claude</p>
+  </div>
 
-@if (loading()) {
-  <div class="loading-spinner">
-    <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
-  </div>
-} @else if (conversations().length === 0) {
-  <div class="empty-state">
-    <fa-icon [icon]="faComment" class="empty-icon"></fa-icon>
-    <h3>No conversations yet</h3>
-    <p>Start a conversation with Claude to begin learning!</p>
-  </div>
-} @else {
-  <div class="conversation-list">
-    @for (conv of conversations(); track conv.id) {
-      <mat-card class="conversation-card" [routerLink]="['/conversations', conv.id]">
-        <mat-card-header>
-          <mat-card-title>{{ conv.topic || 'Untitled Conversation' }}</mat-card-title>
-          <mat-card-subtitle>{{ conv.createdAt | date:'medium' }}</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <p class="vietnamese-text">{{ conv.vietnameseText | slice:0:200 }}{{ conv.vietnameseText.length > 200 ? '...' : '' }}</p>
-          <div class="stats">
-            <mat-chip-set>
-              <mat-chip>
-                <fa-icon [icon]="faLanguage"></fa-icon>
-                {{ conv.vocabularyCount }} words
-              </mat-chip>
-              <mat-chip>
-                <fa-icon [icon]="faSpellCheck"></fa-icon>
-                {{ conv.grammarCount }} grammar points
-              </mat-chip>
-              <mat-chip [class]="'difficulty-' + conv.difficultyLevel.toLowerCase()">
-                {{ conv.difficultyLevel }}
-              </mat-chip>
-            </mat-chip-set>
+  @if (loading()) {
+    <div class="flex justify-center items-center min-h-[200px]">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-5xl text-gray-900"></fa-icon>
+    </div>
+  } @else if (conversations().length === 0) {
+    <div class="text-center py-16">
+      <fa-icon [icon]="faComment" class="text-6xl text-gray-300 mb-6"></fa-icon>
+      <h3 class="text-xl font-medium text-gray-800 mb-2">No conversations yet</h3>
+      <p class="text-gray-500">Start a conversation with Claude to begin learning!</p>
+    </div>
+  } @else {
+    <!-- Conversation List -->
+    <div class="flex flex-col gap-4 mb-6">
+      @for (conv of conversations(); track conv.id) {
+        <a [routerLink]="['/conversations', conv.id]"
+           class="block bg-white rounded-xl shadow-sm p-5 cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <div class="mb-3">
+            <h3 class="text-lg font-medium text-gray-800 mb-1">{{ conv.topic || 'Untitled Conversation' }}</h3>
+            <p class="text-sm text-gray-400">{{ conv.createdAt | date:'medium' }}</p>
           </div>
-        </mat-card-content>
-      </mat-card>
-    }
-  </div>
+          <p class="text-gray-600 leading-relaxed mb-4">
+            {{ conv.vietnameseText | slice:0:200 }}{{ conv.vietnameseText.length > 200 ? '...' : '' }}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm">
+              <fa-icon [icon]="faLanguage"></fa-icon>
+              {{ conv.vocabularyCount }} words
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm">
+              <fa-icon [icon]="faSpellCheck"></fa-icon>
+              {{ conv.grammarCount }} grammar points
+            </span>
+            <span class="px-3 py-1.5 rounded-full text-sm font-medium"
+                  [ngClass]="getDifficultyClass(conv.difficultyLevel)">
+              {{ conv.difficultyLevel }}
+            </span>
+          </div>
+        </a>
+      }
+    </div>
 
-  <mat-paginator
-    [length]="total()"
-    [pageSize]="pageSize()"
-    [pageIndex]="page() - 1"
-    [pageSizeOptions]="[5, 10, 20]"
-    (page)="onPageChange($event)"
-    showFirstLastButtons>
-  </mat-paginator>
-}
+    <!-- Pagination -->
+    <div class="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm">
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-gray-500">Items per page:</span>
+        <select [value]="pageSize()"
+                (change)="onPageSizeChange($event)"
+                class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900">
+          @for (size of pageSizeOptions; track size) {
+            <option [value]="size">{{ size }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-gray-500">
+          {{ startItem }} – {{ endItem }} of {{ total() }}
+        </span>
+        <div class="flex gap-1">
+          <button (click)="previousPage()"
+                  [disabled]="page() === 1"
+                  class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <fa-icon [icon]="faChevronLeft"></fa-icon>
+          </button>
+          <button (click)="nextPage()"
+                  [disabled]="page() >= totalPages"
+                  class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <fa-icon [icon]="faChevronRight"></fa-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

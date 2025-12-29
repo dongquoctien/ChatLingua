@@ -1,17 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatIconModule } from '@angular/material/icon';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faSpinner, faChevronDown, faChevronUp, faTrash } from '../../../shared/icons';
-import { ApiService, Exercise, Conversation } from '../../../core/services/api.service';
+import { faSpinner, faChevronDown, faChevronUp, faTrash, faTimes } from '../../../shared/icons';
+import { ApiService, Exercise } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-create-quiz-dialog',
@@ -19,348 +11,22 @@ import { ApiService, Exercise, Conversation } from '../../../core/services/api.s
   imports: [
     CommonModule,
     FormsModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckboxModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
     FontAwesomeModule,
   ],
-  template: `
-    <h2 mat-dialog-title>Create Quiz</h2>
-    <mat-dialog-content>
-      @if (loadingConversations()) {
-        <div class="loading">
-          <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
-          <span>Loading...</span>
-        </div>
-      } @else {
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Quiz Title</mat-label>
-          <input matInput [(ngModel)]="title" placeholder="e.g., Daily Vocabulary Quiz" required>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Description (optional)</mat-label>
-          <textarea matInput [(ngModel)]="description" rows="2"></textarea>
-        </mat-form-field>
-
-        <div class="row">
-          <mat-form-field appearance="outline">
-            <mat-label>Time Limit (minutes)</mat-label>
-            <input matInput type="number" [(ngModel)]="timeLimitMinutes" min="1" max="60">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Max Attempts</mat-label>
-            <input matInput type="number" [(ngModel)]="maxAttempts" min="1" max="10">
-          </mat-form-field>
-        </div>
-
-        <div class="exercises-section">
-          <div class="filter-row">
-            <mat-form-field appearance="outline" class="conversation-filter">
-              <mat-label>Select Conversation ({{ totalExerciseCount() }} exercises total)</mat-label>
-              <mat-select [(ngModel)]="selectedConversationId" (selectionChange)="onConversationFilterChange()">
-                <mat-option [value]="null">-- Select a conversation --</mat-option>
-                @for (conv of conversations(); track conv.id) {
-                  <mat-option [value]="conv.id">
-                    {{ conv.topic || 'Conversation #' + conv.id }} ({{ conv.count }} exercises)
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          @if (loadingExercises()) {
-            <div class="loading-inline">
-              <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
-              <span>Loading exercises...</span>
-            </div>
-          } @else if (exercises().length === 0) {
-            <div class="empty-state">
-              <p>Select a conversation above to load exercises</p>
-            </div>
-          } @else {
-            <div class="section-header">
-              <span>Select Exercises ({{ selectedIds.size }} selected)</span>
-              <button mat-button (click)="toggleAll()">
-                {{ isAllSelected() ? 'Deselect All' : 'Select All' }}
-              </button>
-            </div>
-
-            <div class="exercises-list">
-              @for (exercise of exercises(); track exercise.id) {
-                <div class="exercise-item" (click)="toggleExercise(exercise.id)">
-                  <mat-checkbox
-                    [checked]="selectedIds.has(exercise.id)"
-                    (change)="toggleExercise(exercise.id)"
-                    (click)="$event.stopPropagation()">
-                  </mat-checkbox>
-                  <div class="exercise-info">
-                    <span class="exercise-type" [class]="exercise.exerciseType">
-                      {{ formatType(exercise.exerciseType) }}
-                    </span>
-                    <span class="exercise-question">{{ exercise.questionText }}</span>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-        </div>
-
-        <!-- Selected Exercises Panel -->
-        @if (selectedExercises().length > 0) {
-          <div class="selected-panel">
-            <div class="selected-header" (click)="showSelectedPanel = !showSelectedPanel">
-              <span>
-                <fa-icon [icon]="showSelectedPanel ? faChevronUp : faChevronDown"></fa-icon>
-                Selected Exercises ({{ selectedExercises().length }})
-              </span>
-              <button mat-button color="warn" (click)="clearAllSelected(); $event.stopPropagation()">
-                Clear All
-              </button>
-            </div>
-            @if (showSelectedPanel) {
-              <div class="selected-list">
-                @for (exercise of selectedExercises(); track exercise.id) {
-                  <div class="selected-item">
-                    <div class="selected-info">
-                      <span class="exercise-type" [class]="exercise.exerciseType">
-                        {{ formatType(exercise.exerciseType) }}
-                      </span>
-                      <span class="exercise-question">{{ exercise.questionText }}</span>
-                    </div>
-                    <button mat-icon-button (click)="removeSelected(exercise.id)" class="remove-btn">
-                      <fa-icon [icon]="faTrash"></fa-icon>
-                    </button>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        }
-      }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-raised-button color="primary"
-              (click)="create()"
-              [disabled]="!canCreate() || creating()">
-        @if (creating()) {
-          <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
-          Creating...
-        } @else {
-          Create Quiz
-        }
-      </button>
-    </mat-dialog-actions>
-  `,
-  styles: [`
-    mat-dialog-content {
-      min-width: 500px;
-      max-height: 70vh;
-    }
-
-    .full-width {
-      width: 100%;
-    }
-
-    .row {
-      display: flex;
-      gap: 16px;
-
-      mat-form-field {
-        flex: 1;
-      }
-    }
-
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 40px;
-      color: #666;
-    }
-
-    .loading-inline {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 24px;
-      color: #666;
-      font-size: 13px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 32px;
-      color: #999;
-      background: #fafafa;
-      border-radius: 8px;
-
-      p {
-        margin: 0;
-      }
-    }
-
-    .exercises-section {
-      margin-top: 16px;
-    }
-
-    .filter-row {
-      margin-bottom: 8px;
-
-      .conversation-filter {
-        width: 100%;
-      }
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
-
-    .exercises-list {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-    }
-
-    .exercise-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 12px;
-      border-bottom: 1px solid #f0f0f0;
-      cursor: pointer;
-      transition: background 0.2s;
-
-      &:hover {
-        background: #f5f5f5;
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-
-    .exercise-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .exercise-type {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      padding: 2px 6px;
-      border-radius: 3px;
-      width: fit-content;
-
-      &.multiple_choice {
-        background: #e3f2fd;
-        color: #1565c0;
-      }
-
-      &.fill_blank {
-        background: #fff3e0;
-        color: #e65100;
-      }
-
-      &.translation {
-        background: #f3e5f5;
-        color: #7b1fa2;
-      }
-    }
-
-    .exercise-question {
-      font-size: 13px;
-      color: #333;
-      line-height: 1.4;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-
-    .selected-panel {
-      margin-top: 16px;
-      border: 1px solid #1976d2;
-      border-radius: 8px;
-      background: #e3f2fd;
-    }
-
-    .selected-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      cursor: pointer;
-      user-select: none;
-
-      span {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500;
-        color: #1565c0;
-      }
-    }
-
-    .selected-list {
-      max-height: 200px;
-      overflow-y: auto;
-      border-top: 1px solid #bbdefb;
-      background: white;
-      border-radius: 0 0 7px 7px;
-    }
-
-    .selected-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 16px;
-      border-bottom: 1px solid #f0f0f0;
-
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-
-    .selected-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .remove-btn {
-      color: #f44336;
-      flex-shrink: 0;
-    }
-  `]
+  templateUrl: './create-quiz-dialog.component.html',
+  styleUrl: './create-quiz-dialog.component.scss',
 })
 export class CreateQuizDialogComponent implements OnInit {
   private apiService = inject(ApiService);
-  private dialogRef = inject(MatDialogRef<CreateQuizDialogComponent>);
+
+  close = output<void>();
+  created = output<void>();
 
   faSpinner = faSpinner;
   faChevronDown = faChevronDown;
   faChevronUp = faChevronUp;
   faTrash = faTrash;
+  faTimes = faTimes;
 
   exercises = signal<Exercise[]>([]);
   conversations = signal<{ id: number; topic: string | null; count: number }[]>([]);
@@ -505,6 +171,19 @@ export class CreateQuizDialogComponent implements OnInit {
     return labels[type] || type;
   }
 
+  getTypeClass(type: string): string {
+    switch (type) {
+      case 'multiple_choice':
+        return 'bg-gray-100 text-gray-700';
+      case 'fill_blank':
+        return 'bg-orange-100 text-orange-700';
+      case 'translation':
+        return 'bg-purple-100 text-purple-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  }
+
   canCreate(): boolean {
     return this.title.trim().length > 0 && this.selectedIds.size > 0;
   }
@@ -532,6 +211,10 @@ export class CreateQuizDialogComponent implements OnInit {
     this.selectedExercises.set(selected);
   }
 
+  onClose() {
+    this.close.emit();
+  }
+
   create() {
     if (!this.canCreate()) return;
 
@@ -543,8 +226,8 @@ export class CreateQuizDialogComponent implements OnInit {
       timeLimitMinutes: this.timeLimitMinutes || undefined,
       maxAttempts: this.maxAttempts,
     }).subscribe({
-      next: (quiz) => {
-        this.dialogRef.close(quiz);
+      next: () => {
+        this.created.emit();
       },
       error: () => {
         this.creating.set(false);

@@ -1,0 +1,19 @@
+@if (loading()) {
+  <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+    <fa-icon [icon]="faSpinner" animation="spin" class="text-3xl mb-4 text-gray-900"></fa-icon>
+    <p>Loading leaderboard...</p>
+  </div>
+} @else if (error()) {
+  <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+    <p>{{ error() }}</p>
+    <button class="mt-4 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+            (click)="loadLeaderboard()">
+      Try Again
+    </button>
+  </div>
+} @else {
+  <app-leaderboard
+    [leaderboard]="leaderboard()"
+    (userClick)="onUserClick($event)">
+  </app-leaderboard>
+}

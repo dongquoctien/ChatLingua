@@ -1,0 +1,181 @@
+<div class="max-w-6xl mx-auto p-6">
+  <div class="flex justify-between items-center flex-wrap gap-4">
+    <h2 class="flex items-center gap-3 m-0 text-2xl text-gray-800">
+      <fa-icon [icon]="faTrophy" class="text-yellow-400"></fa-icon>
+      Weekly Leaderboard
+    </h2>
+    <div class="flex items-center gap-2 text-sm text-gray-600 px-4 py-2 bg-gray-100 rounded-full">
+      <fa-icon [icon]="faCalendarWeek" class="text-gray-600"></fa-icon>
+      {{ formatDateRange(leaderboard.weekStart, leaderboard.weekEnd) }}
+    </div>
+  </div>
+
+  <!-- Top 3 Podium -->
+  @if (topThree().length > 0) {
+    <div class="flex justify-center items-end gap-2 pt-8 pb-0 px-4 bg-gradient-to-b from-gray-50 to-white rounded-2xl">
+      <!-- Second Place -->
+      @if (topThree()[1]) {
+        <div class="podium-item order-1 cursor-pointer transition-transform hover:-translate-y-1" (click)="onUserClick(topThree()[1])">
+          <div class="w-[60px] h-[60px] rounded-full flex items-center justify-center text-white text-2xl border-[3px] border-white shadow-lg"
+               [ngClass]="topThree()[1].isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700 border-gray-500' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
+            <fa-icon [icon]="faUser"></fa-icon>
+          </div>
+          <div class="relative -mt-3 z-10">
+            <fa-icon [icon]="faMedal" class="text-[2rem] text-gray-400"></fa-icon>
+          </div>
+          <div class="flex flex-col items-center mt-2 mb-2">
+            <span class="font-semibold text-sm text-gray-800 max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ topThree()[1].displayName || topThree()[1].username }}
+            </span>
+            <span class="flex items-center gap-1 text-sm text-gray-600">
+              <fa-icon [icon]="faBolt" class="text-yellow-400 text-xs"></fa-icon>
+              {{ formatNumber(topThree()[1].totalXp) }}
+            </span>
+          </div>
+          <div class="w-20 h-[70px] rounded-t-lg bg-gradient-to-b from-gray-200 to-gray-400"></div>
+        </div>
+      }
+
+      <!-- First Place -->
+      @if (topThree()[0]) {
+        <div class="podium-item order-2 cursor-pointer transition-transform hover:-translate-y-1" (click)="onUserClick(topThree()[0])">
+          <div class="text-yellow-400 text-2xl -mb-2 animate-float">
+            <fa-icon [icon]="faCrown"></fa-icon>
+          </div>
+          <div class="w-[70px] h-[70px] rounded-full flex items-center justify-center text-white text-[2rem] border-[3px] border-white shadow-lg"
+               [ngClass]="topThree()[0].isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700 border-gray-500' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
+            <fa-icon [icon]="faUser"></fa-icon>
+          </div>
+          <div class="relative -mt-3 z-10">
+            <fa-icon [icon]="faMedal" class="text-[2rem] text-yellow-400"></fa-icon>
+          </div>
+          <div class="flex flex-col items-center mt-2 mb-2">
+            <span class="font-semibold text-sm text-gray-800 max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ topThree()[0].displayName || topThree()[0].username }}
+            </span>
+            <span class="flex items-center gap-1 text-sm text-gray-600">
+              <fa-icon [icon]="faBolt" class="text-yellow-400 text-xs"></fa-icon>
+              {{ formatNumber(topThree()[0].totalXp) }}
+            </span>
+          </div>
+          <div class="w-20 h-[100px] rounded-t-lg bg-gradient-to-b from-yellow-400 to-orange-500"></div>
+        </div>
+      }
+
+      <!-- Third Place -->
+      @if (topThree()[2]) {
+        <div class="podium-item order-3 cursor-pointer transition-transform hover:-translate-y-1" (click)="onUserClick(topThree()[2])">
+          <div class="w-[55px] h-[55px] rounded-full flex items-center justify-center text-white text-xl border-[3px] border-white shadow-lg"
+               [ngClass]="topThree()[2].isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700 border-gray-500' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
+            <fa-icon [icon]="faUser"></fa-icon>
+          </div>
+          <div class="relative -mt-3 z-10">
+            <fa-icon [icon]="faMedal" class="text-[2rem] text-amber-700"></fa-icon>
+          </div>
+          <div class="flex flex-col items-center mt-2 mb-2">
+            <span class="font-semibold text-sm text-gray-800 max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ topThree()[2].displayName || topThree()[2].username }}
+            </span>
+            <span class="flex items-center gap-1 text-sm text-gray-600">
+              <fa-icon [icon]="faBolt" class="text-yellow-400 text-xs"></fa-icon>
+              {{ formatNumber(topThree()[2].totalXp) }}
+            </span>
+          </div>
+          <div class="w-20 h-[50px] rounded-t-lg bg-gradient-to-b from-amber-600 to-amber-800"></div>
+        </div>
+      } @else {
+        <div class="podium-item order-3 opacity-60">
+          <div class="w-[55px] h-[55px] rounded-full flex items-center justify-center text-white text-xl border-[3px] border-white shadow-lg bg-gradient-to-br from-gray-400 to-gray-500 opacity-50">
+            <fa-icon [icon]="faUser"></fa-icon>
+          </div>
+          <div class="relative -mt-3 z-10">
+            <fa-icon [icon]="faMedal" class="text-[2rem] text-amber-700"></fa-icon>
+          </div>
+          <div class="flex flex-col items-center mt-2 mb-2">
+            <span class="font-semibold text-sm text-gray-400">---</span>
+          </div>
+          <div class="w-20 h-[50px] rounded-t-lg bg-gradient-to-b from-amber-600 to-amber-800"></div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Rest of Leaderboard -->
+  @if (restOfEntries().length > 0) {
+    <div class="flex flex-col gap-2">
+      @for (entry of restOfEntries(); track entry.userId) {
+        <div class="flex items-center gap-4 px-4 py-3 bg-gray-50 rounded-xl cursor-pointer transition-all hover:bg-gray-100 hover:translate-x-1"
+             [ngClass]="{'bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-gray-900': entry.isCurrentUser}"
+             (click)="onUserClick(entry)">
+          <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-sm text-gray-600 flex-shrink-0">
+            {{ entry.rank }}
+          </div>
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
+               [ngClass]="entry.isCurrentUser ? 'bg-gradient-to-br from-gray-500 to-gray-700' : 'bg-gradient-to-br from-gray-600 to-gray-800'">
+            <fa-icon [icon]="faUser"></fa-icon>
+          </div>
+          <div class="flex-1 flex flex-col">
+            <span class="font-semibold text-gray-800">{{ entry.displayName || entry.username }}</span>
+            <span class="text-sm text-gray-600">Level {{ entry.level }}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <fa-icon [icon]="faBolt" class="text-yellow-400"></fa-icon>
+            <span class="font-bold text-gray-800">{{ formatNumber(entry.totalXp) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Current User Position (if not in top) -->
+  @if (showCurrentUserSection()) {
+    <div class="current-user-section">
+      <div class="flex items-center gap-4 text-gray-400 text-sm mb-3">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <span>Your Position</span>
+        <div class="flex-1 h-px bg-gray-200"></div>
+      </div>
+      <div class="flex items-center gap-4 px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-gray-900 rounded-xl">
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-sm text-gray-600 flex-shrink-0">
+          {{ leaderboard.currentUserRank }}
+        </div>
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center text-white flex-shrink-0">
+          <fa-icon [icon]="faUser"></fa-icon>
+        </div>
+        <div class="flex-1 flex flex-col">
+          <span class="font-semibold text-gray-800">You</span>
+          <span class="text-sm text-gray-600">Keep learning to climb!</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <fa-icon [icon]="faBolt" class="text-yellow-400"></fa-icon>
+          <span class="font-bold text-gray-800">{{ formatNumber(getCurrentUserXp()) }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (leaderboard.entries.length === 0) {
+    <div class="text-center py-12 text-gray-400">
+      <fa-icon [icon]="faTrophy" class="text-5xl mb-4 opacity-30"></fa-icon>
+      <p class="m-2">No leaderboard data yet</p>
+      <p class="m-2 text-sm">Start learning to join the competition!</p>
+    </div>
+  }
+
+  <!-- Stats -->
+  @if (leaderboard.totalParticipants > 0) {
+    <div class="flex justify-center gap-12 p-4 bg-gray-50 rounded-xl">
+      <div class="flex flex-col items-center">
+        <span class="text-xl font-bold text-gray-800">{{ leaderboard.totalParticipants }}</span>
+        <span class="text-xs text-gray-600 uppercase">Learners</span>
+      </div>
+      @if (leaderboard.currentUserRank) {
+        <div class="flex flex-col items-center">
+          <span class="text-xl font-bold text-gray-800">Top {{ getPercentile() }}%</span>
+          <span class="text-xs text-gray-600 uppercase">Your Rank</span>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,180 +1,207 @@
-<div class="review-stats">
-  <div class="page-header">
-    <button mat-icon-button (click)="goBack()">
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center gap-4 mb-6">
+    <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            (click)="goBack()">
       <fa-icon [icon]="faArrowLeft"></fa-icon>
     </button>
-    <h1>Review Statistics</h1>
+    <h1 class="text-2xl font-semibold text-gray-800">Review Statistics</h1>
   </div>
 
   @if (loading()) {
-    <div class="loading-spinner">
-      <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+    <div class="flex justify-center items-center min-h-[200px]">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-3xl text-gray-600"></fa-icon>
     </div>
   } @else {
     <!-- Stats Overview -->
-    <div class="stats-grid">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
       @if (streak()) {
-        <mat-card class="stat-card">
-          <fa-icon [icon]="faFire" class="stat-icon fire"></fa-icon>
-          <div class="stat-value">{{ streak()!.currentStreak }}</div>
-          <div class="stat-label">Current Streak</div>
-        </mat-card>
+        <div class="card text-center py-5 px-4">
+          <fa-icon [icon]="faFire" class="text-2xl md:text-3xl text-orange-500 mb-2"></fa-icon>
+          <div class="text-2xl md:text-3xl font-semibold text-gray-800">{{ streak()!.currentStreak }}</div>
+          <div class="text-xs text-gray-500 mt-1">Current Streak</div>
+        </div>
 
-        <mat-card class="stat-card">
-          <fa-icon [icon]="faTrophy" class="stat-icon trophy"></fa-icon>
-          <div class="stat-value">{{ streak()!.longestStreak }}</div>
-          <div class="stat-label">Best Streak</div>
-        </mat-card>
+        <div class="card text-center py-5 px-4">
+          <fa-icon [icon]="faTrophy" class="text-2xl md:text-3xl text-yellow-500 mb-2"></fa-icon>
+          <div class="text-2xl md:text-3xl font-semibold text-gray-800">{{ streak()!.longestStreak }}</div>
+          <div class="text-xs text-gray-500 mt-1">Best Streak</div>
+        </div>
 
-        <mat-card class="stat-card">
-          <fa-icon [icon]="faCalendarAlt" class="stat-icon calendar"></fa-icon>
-          <div class="stat-value">{{ streak()!.totalReviewDays }}</div>
-          <div class="stat-label">Total Review Days</div>
-        </mat-card>
+        <div class="card text-center py-5 px-4">
+          <fa-icon [icon]="faCalendarAlt" class="text-2xl md:text-3xl text-gray-600 mb-2"></fa-icon>
+          <div class="text-2xl md:text-3xl font-semibold text-gray-800">{{ streak()!.totalReviewDays }}</div>
+          <div class="text-xs text-gray-500 mt-1">Total Days</div>
+        </div>
       }
 
       @if (stats()) {
-        <mat-card class="stat-card">
-          <fa-icon [icon]="faCheck" class="stat-icon check"></fa-icon>
-          <div class="stat-value">{{ stats()!.totalReviews }}</div>
-          <div class="stat-label">Total Reviews</div>
-        </mat-card>
+        <div class="card text-center py-5 px-4">
+          <fa-icon [icon]="faCheck" class="text-2xl md:text-3xl text-gray-900 mb-2"></fa-icon>
+          <div class="text-2xl md:text-3xl font-semibold text-gray-800">{{ stats()!.totalReviews }}</div>
+          <div class="text-xs text-gray-500 mt-1">Total Reviews</div>
+        </div>
       }
     </div>
 
     <!-- Mastery Distribution -->
     @if (stats()) {
-      <mat-card class="mastery-section">
-        <h3>
-          <fa-icon [icon]="faChartPie"></fa-icon>
+      <div class="card p-6 mb-6">
+        <h3 class="flex items-center gap-3 text-lg font-medium text-gray-800 mb-6">
+          <fa-icon [icon]="faChartPie" class="text-gray-700"></fa-icon>
           Vocabulary Mastery
         </h3>
 
-        <div class="mastery-overview">
-          <div class="mastery-circle" [style]="getDonutChartStyle()">
+        <div class="flex flex-col md:flex-row items-center gap-6 md:gap-12 mb-6">
+          <!-- Donut Chart -->
+          <div class="mastery-circle flex-shrink-0" [style]="getDonutChartStyle()">
             <div class="inner-circle">
-              <div class="percentage">{{ getMasteryPercentage() }}%</div>
-              <div class="label">Mastered</div>
+              <div class="text-xl md:text-2xl font-semibold text-gray-900">{{ getMasteryPercentage() }}%</div>
+              <div class="text-xs text-gray-500">Mastered</div>
             </div>
           </div>
 
-          <div class="mastery-breakdown">
-            <div class="mastery-item mastered">
-              <span class="dot"></span>
-              <span class="name">Mastered</span>
-              <span class="count">{{ stats()!.masteredCount }}</span>
+          <!-- Breakdown -->
+          <div class="flex flex-col gap-3 flex-1 w-full">
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 rounded-full bg-gray-900"></span>
+              <span class="flex-1 text-gray-600">Mastered</span>
+              <span class="font-medium text-gray-800">{{ stats()!.masteredCount }}</span>
             </div>
-            <div class="mastery-item reviewing">
-              <span class="dot"></span>
-              <span class="name">Reviewing</span>
-              <span class="count">{{ stats()!.reviewingCount }}</span>
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 rounded-full bg-gray-500"></span>
+              <span class="flex-1 text-gray-600">Reviewing</span>
+              <span class="font-medium text-gray-800">{{ stats()!.reviewingCount }}</span>
             </div>
-            <div class="mastery-item learning">
-              <span class="dot"></span>
-              <span class="name">Learning</span>
-              <span class="count">{{ stats()!.learningCount }}</span>
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 rounded-full bg-orange-500"></span>
+              <span class="flex-1 text-gray-600">Learning</span>
+              <span class="font-medium text-gray-800">{{ stats()!.learningCount }}</span>
             </div>
-            <div class="mastery-item new">
-              <span class="dot"></span>
-              <span class="name">New</span>
-              <span class="count">{{ stats()!.newAvailable }}</span>
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+              <span class="flex-1 text-gray-600">New</span>
+              <span class="font-medium text-gray-800">{{ stats()!.newAvailable }}</span>
             </div>
           </div>
         </div>
 
-        <div class="mastery-bar">
-          <div class="segment mastered" [style.width.%]="stats()!.masteredCount / getTotalVocabulary() * 100"></div>
-          <div class="segment reviewing" [style.width.%]="stats()!.reviewingCount / getTotalVocabulary() * 100"></div>
-          <div class="segment learning" [style.width.%]="stats()!.learningCount / getTotalVocabulary() * 100"></div>
-          <div class="segment new" [style.width.%]="stats()!.newAvailable / getTotalVocabulary() * 100"></div>
+        <!-- Mastery Bar -->
+        <div class="h-3 bg-gray-200 rounded-full overflow-hidden flex">
+          <div class="h-full bg-gray-900 transition-all duration-300"
+               [style.width.%]="getSegmentWidth(stats()!.masteredCount)"></div>
+          <div class="h-full bg-gray-500 transition-all duration-300"
+               [style.width.%]="getSegmentWidth(stats()!.reviewingCount)"></div>
+          <div class="h-full bg-orange-500 transition-all duration-300"
+               [style.width.%]="getSegmentWidth(stats()!.learningCount)"></div>
+          <div class="h-full bg-gray-400 transition-all duration-300"
+               [style.width.%]="getSegmentWidth(stats()!.newAvailable)"></div>
         </div>
-      </mat-card>
+      </div>
 
       <!-- Today's Stats -->
-      <mat-card class="today-section">
-        <h3>Today's Activity</h3>
-        <div class="today-grid">
-          <div class="today-stat">
-            <span class="value">{{ stats()!.dueToday }}</span>
-            <span class="label">Due</span>
+      <div class="card p-6 mb-6">
+        <h3 class="text-lg font-medium text-gray-800 mb-5">Today's Activity</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <span class="block text-2xl font-semibold text-gray-900">{{ stats()!.dueToday }}</span>
+            <span class="text-xs text-gray-500 mt-1">Due</span>
           </div>
-          <div class="today-stat">
-            <span class="value">{{ stats()!.overdueCount }}</span>
-            <span class="label">Overdue</span>
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <span class="block text-2xl font-semibold text-gray-900">{{ stats()!.overdueCount }}</span>
+            <span class="text-xs text-gray-500 mt-1">Overdue</span>
           </div>
-          <div class="today-stat">
-            <span class="value">{{ stats()!.completedToday }}</span>
-            <span class="label">Completed</span>
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <span class="block text-2xl font-semibold text-gray-900">{{ stats()!.completedToday }}</span>
+            <span class="text-xs text-gray-500 mt-1">Completed</span>
           </div>
-          <div class="today-stat">
-            <span class="value">{{ (stats()!.averageEaseFactor).toFixed(2) }}</span>
-            <span class="label">Avg Ease</span>
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <span class="block text-2xl font-semibold text-gray-900">{{ (stats()!.averageEaseFactor).toFixed(2) }}</span>
+            <span class="text-xs text-gray-500 mt-1">Avg Ease</span>
           </div>
         </div>
-      </mat-card>
+      </div>
     }
 
     <!-- Review History -->
-    <mat-card class="history-section">
-      <h3>
-        <fa-icon [icon]="faHistory"></fa-icon>
+    <div class="card p-4 md:p-6">
+      <h3 class="flex items-center gap-3 text-lg font-medium text-gray-800 mb-5">
+        <fa-icon [icon]="faHistory" class="text-gray-500"></fa-icon>
         Recent Reviews
       </h3>
 
       @if (history().length > 0) {
-        <div class="table-container">
-          <table mat-table [dataSource]="history()">
-            <ng-container matColumnDef="word">
-              <th mat-header-cell *matHeaderCellDef>Word</th>
-              <td mat-cell *matCellDef="let item">
-                <div class="word-cell">
-                  <span class="english">{{ item.englishWord }}</span>
-                  <span class="vietnamese">{{ item.vietnameseWord }}</span>
-                </div>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="quality">
-              <th mat-header-cell *matHeaderCellDef>Rating</th>
-              <td mat-cell *matCellDef="let item">
-                <span class="quality-badge" [style.background-color]="getQualityColor(item.quality)">
-                  {{ item.qualityLabel }}
-                </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="interval">
-              <th mat-header-cell *matHeaderCellDef>Next</th>
-              <td mat-cell *matCellDef="let item">{{ formatInterval(item.intervalAfter) }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="type">
-              <th mat-header-cell *matHeaderCellDef>Type</th>
-              <td mat-cell *matCellDef="let item">{{ item.reviewType }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef>Date</th>
-              <td mat-cell *matCellDef="let item">{{ formatDate(item.reviewedAt) }}</td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        <div class="overflow-x-auto -mx-4 md:mx-0">
+          <table class="w-full min-w-[400px]">
+            <thead>
+              <tr class="border-b border-gray-200">
+                <th class="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">Word</th>
+                <th class="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">Rating</th>
+                <th class="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">Next</th>
+                <th class="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Type</th>
+                <th class="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of history(); track item.id) {
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                  <td class="py-3 px-4">
+                    <div class="flex flex-col">
+                      <span class="font-medium text-gray-800">{{ item.englishWord }}</span>
+                      <span class="text-xs text-gray-500">{{ item.vietnameseWord }}</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="inline-block px-2 py-1 rounded text-xs font-medium text-white"
+                          [ngClass]="getQualityClass(item.quality)">
+                      {{ item.qualityLabel }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-sm text-gray-600">{{ formatInterval(item.intervalAfter) }}</td>
+                  <td class="py-3 px-4 text-sm text-gray-600 hidden md:table-cell">{{ item.reviewType }}</td>
+                  <td class="py-3 px-4 text-sm text-gray-500 hidden sm:table-cell">{{ formatDate(item.reviewedAt) }}</td>
+                </tr>
+              }
+            </tbody>
           </table>
         </div>
 
-        <mat-paginator
-          [length]="historyTotal()"
-          [pageSize]="historyPageSize()"
-          [pageSizeOptions]="[5, 10, 20]"
-          (page)="onPageChange($event)"
-          showFirstLastButtons
-        ></mat-paginator>
+        <!-- Custom Pagination -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mt-4 pt-4 border-t border-gray-200">
+          <div class="flex items-center gap-2 text-sm text-gray-600">
+            <span>Rows per page:</span>
+            <select class="input py-1 px-2 text-sm"
+                    [value]="historyPageSize()"
+                    (change)="onPageSizeChange($event)">
+              @for (size of pageSizeOptions; track size) {
+                <option [value]="size">{{ size }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600">
+              {{ (historyPage() - 1) * historyPageSize() + 1 }}-{{ Math.min(historyPage() * historyPageSize(), historyTotal()) }} of {{ historyTotal() }}
+            </span>
+            <div class="flex gap-1">
+              <button class="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      [disabled]="!canGoPrev()"
+                      (click)="prevPage()">
+                <fa-icon [icon]="faChevronLeft" class="text-gray-600"></fa-icon>
+              </button>
+              <button class="p-2 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      [disabled]="!canGoNext()"
+                      (click)="nextPage()">
+                <fa-icon [icon]="faChevronRight" class="text-gray-600"></fa-icon>
+              </button>
+            </div>
+          </div>
+        </div>
       } @else {
-        <div class="empty-history">
+        <div class="text-center py-8 text-gray-500">
           <p>No review history yet. Start reviewing to see your progress!</p>
         </div>
       }
-    </mat-card>
+    </div>
   }
 </div>
