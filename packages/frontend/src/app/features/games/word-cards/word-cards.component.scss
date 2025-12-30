@@ -1,0 +1,695 @@
+// Word Cards TCG - Styles
+
+// Loading & Error Screens
+.loading-screen,
+.error-screen {
+  @apply flex flex-col items-center justify-center min-h-screen bg-gray-100;
+
+  .spinner {
+    @apply w-12 h-12 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mb-4;
+  }
+
+  p {
+    @apply text-gray-600;
+  }
+}
+
+// Menu Container
+.menu-container {
+  @apply min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-6;
+}
+
+.menu-header {
+  @apply text-center mb-6 relative;
+
+  .btn-back {
+    @apply absolute left-0 top-0 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-medium transition-colors;
+  }
+
+  h1 {
+    @apply text-3xl font-bold text-white mb-2;
+  }
+
+  p {
+    @apply text-gray-400;
+  }
+}
+
+// Currency Bar
+.currency-bar {
+  @apply flex justify-center gap-6 mb-8;
+
+  .currency {
+    @apply flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-full;
+
+    .icon {
+      @apply text-xl;
+    }
+
+    .amount {
+      @apply font-bold text-white;
+    }
+
+    &.coins .amount {
+      @apply text-yellow-400;
+    }
+
+    &.gems .amount {
+      @apply text-purple-400;
+    }
+  }
+}
+
+// Menu Grid
+.menu-grid {
+  @apply grid grid-cols-2 gap-4 max-w-md mx-auto mb-8;
+}
+
+.menu-card {
+  @apply bg-gray-800 rounded-2xl p-6 text-center cursor-pointer transition-all;
+  @apply hover:bg-gray-700 hover:scale-105;
+
+  .card-icon {
+    @apply text-4xl mb-3;
+  }
+
+  h3 {
+    @apply text-lg font-bold text-white mb-1;
+  }
+
+  p {
+    @apply text-sm text-gray-400;
+  }
+
+  &.battle {
+    @apply bg-gradient-to-br from-red-900 to-red-800;
+  }
+
+  &.collection {
+    @apply bg-gradient-to-br from-blue-900 to-blue-800;
+  }
+
+  &.gacha {
+    @apply bg-gradient-to-br from-purple-900 to-purple-800;
+  }
+
+  &.deck {
+    @apply bg-gradient-to-br from-green-900 to-green-800;
+  }
+}
+
+// Deck Preview
+.deck-preview {
+  @apply max-w-2xl mx-auto;
+
+  h3 {
+    @apply text-lg font-bold text-white mb-3 text-center;
+  }
+}
+
+.deck-cards {
+  @apply flex justify-center gap-2 flex-wrap;
+}
+
+.mini-card {
+  @apply bg-gray-800 rounded-lg p-3 w-24 text-center border-2;
+
+  .rarity {
+    @apply block text-lg;
+  }
+
+  .name {
+    @apply block text-xs text-white font-medium truncate;
+  }
+
+  .power {
+    @apply block text-xs text-yellow-400;
+  }
+
+  &.empty {
+    @apply border-dashed border-gray-600 text-gray-500 text-xs flex items-center justify-center;
+  }
+}
+
+// Collection View
+.collection-container {
+  @apply min-h-screen bg-gray-100 p-6;
+}
+
+.collection-header {
+  @apply text-center mb-6 relative;
+
+  .btn-back {
+    @apply absolute left-0 top-0 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium transition-colors;
+  }
+
+  h1 {
+    @apply text-2xl font-bold text-gray-900 mb-1;
+  }
+
+  p {
+    @apply text-gray-600 text-sm;
+  }
+}
+
+.cards-grid {
+  @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto;
+}
+
+.card-item {
+  @apply bg-white rounded-xl overflow-hidden shadow-lg cursor-pointer transition-all;
+  @apply border-4 hover:scale-105;
+
+  &.in-deck {
+    @apply ring-4 ring-green-500 ring-offset-2;
+  }
+
+  .card-rarity {
+    @apply text-xs font-bold text-white text-center py-1 uppercase;
+  }
+
+  .card-content {
+    @apply p-3;
+  }
+
+  .card-word {
+    @apply text-lg font-bold text-gray-900 text-center;
+  }
+
+  .card-translation {
+    @apply text-sm text-gray-600 text-center mb-2;
+  }
+
+  .card-stats {
+    @apply flex justify-center gap-3 text-sm mb-2;
+
+    .power {
+      @apply text-orange-500;
+    }
+
+    .defense {
+      @apply text-blue-500;
+    }
+  }
+
+  .card-category {
+    @apply text-xs text-gray-500 text-center;
+  }
+
+  .card-skill {
+    @apply mt-2 bg-purple-50 rounded p-2 text-center;
+
+    .skill-name {
+      @apply block text-xs font-bold text-purple-700;
+    }
+
+    .skill-desc {
+      @apply block text-xs text-purple-600;
+    }
+  }
+
+  .card-level {
+    @apply absolute top-2 right-2 bg-yellow-400 text-gray-900 text-xs font-bold px-2 py-1 rounded;
+  }
+
+  .in-deck-badge {
+    @apply bg-green-500 text-white text-xs font-bold text-center py-1;
+  }
+}
+
+// Gacha View
+.gacha-container {
+  @apply min-h-screen bg-gradient-to-b from-purple-900 to-indigo-900 p-6;
+}
+
+.gacha-header {
+  @apply text-center mb-6 relative;
+
+  .btn-back {
+    @apply absolute left-0 top-0 px-4 py-2 bg-purple-800 hover:bg-purple-700 rounded-lg text-white font-medium transition-colors;
+  }
+
+  h1 {
+    @apply text-3xl font-bold text-white mb-2;
+  }
+
+  p {
+    @apply text-purple-200;
+  }
+}
+
+.gacha-machine {
+  @apply max-w-md mx-auto bg-gray-800 rounded-3xl p-8 mb-6;
+  @apply relative overflow-hidden;
+
+  &.pulling {
+    animation: machine-vibrate 0.15s ease-in-out infinite;
+
+    // Glow effect when pulling
+    &::before {
+      content: '';
+      @apply absolute inset-0 rounded-3xl;
+      background: radial-gradient(circle at center, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
+      animation: glow-pulse 0.8s ease-in-out infinite;
+    }
+  }
+
+  .machine-display {
+    @apply text-center relative z-10;
+  }
+
+  .pulling-animation {
+    @apply relative;
+
+    span {
+      @apply text-8xl block mb-4;
+      animation: slot-bounce 0.4s ease-in-out infinite;
+      text-shadow: 0 0 20px rgba(168, 85, 247, 0.5), 0 0 40px rgba(168, 85, 247, 0.3);
+    }
+
+    // Sparkle effects
+    &::before,
+    &::after {
+      content: '✨';
+      @apply absolute text-2xl;
+      animation: sparkle 0.6s ease-in-out infinite;
+    }
+
+    &::before {
+      top: 10%;
+      left: 20%;
+      animation-delay: 0s;
+    }
+
+    &::after {
+      top: 20%;
+      right: 20%;
+      animation-delay: 0.3s;
+    }
+
+    p {
+      @apply text-white text-xl font-medium;
+      animation: text-pulse 1s ease-in-out infinite;
+    }
+  }
+
+  .rates-display {
+    h4 {
+      @apply text-white font-bold mb-4;
+    }
+
+    .rate {
+      @apply text-sm py-1;
+
+      &.common { @apply text-gray-400; }
+      &.uncommon { @apply text-green-400; }
+      &.rare { @apply text-blue-400; }
+      &.epic { @apply text-purple-400; }
+      &.legendary { @apply text-yellow-400; }
+    }
+  }
+}
+
+// Subtle machine vibration
+@keyframes machine-vibrate {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-2px) translateY(1px); }
+  50% { transform: translateX(2px) translateY(-1px); }
+  75% { transform: translateX(-1px) translateY(1px); }
+}
+
+// Slot machine bounce effect - like a lever being pulled
+@keyframes slot-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.05);
+  }
+}
+
+// Glow pulse effect
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+// Sparkle animation
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
+// Text pulse
+@keyframes text-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.pull-buttons {
+  @apply flex justify-center gap-4 max-w-md mx-auto;
+}
+
+.pull-btn {
+  @apply flex-1 py-4 rounded-xl font-bold transition-all;
+  @apply flex flex-col items-center gap-1;
+
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  &.single {
+    @apply bg-yellow-500 hover:bg-yellow-400 text-gray-900;
+  }
+
+  &.multi {
+    @apply bg-purple-500 hover:bg-purple-400 text-white;
+  }
+
+  .pull-count {
+    @apply text-lg;
+  }
+
+  .pull-cost {
+    @apply text-sm opacity-80;
+  }
+}
+
+// Pull Result
+.pull-result-overlay {
+  @apply fixed inset-0 bg-black/80 flex items-center justify-center z-50;
+}
+
+.pull-result {
+  @apply bg-gray-800 rounded-2xl p-6 max-w-lg w-full mx-4;
+
+  h2 {
+    @apply text-2xl font-bold text-white text-center mb-4;
+  }
+}
+
+.pulled-cards {
+  @apply grid grid-cols-2 md:grid-cols-5 gap-3 mb-6;
+}
+
+.pulled-card {
+  @apply relative bg-gray-700 rounded-xl p-3 text-center border-2;
+  animation: card-reveal 0.5s ease-out;
+
+  .card-glow {
+    @apply absolute inset-0 rounded-xl opacity-20;
+  }
+
+  .rarity-emoji {
+    @apply block text-2xl mb-1;
+  }
+
+  .word {
+    @apply block text-sm font-bold text-white truncate;
+  }
+
+  .stats {
+    @apply block text-xs text-yellow-400;
+  }
+
+  .new-badge {
+    @apply absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded;
+    animation: pulse 1s infinite;
+  }
+}
+
+@keyframes card-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotateY(180deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotateY(0);
+  }
+}
+
+// Battle Container
+.battle-container {
+  @apply min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 p-4;
+}
+
+.battle-header {
+  @apply flex items-center justify-between gap-4 mb-6;
+
+  .player-status,
+  .opponent-status {
+    @apply flex-1;
+
+    .label {
+      @apply block text-sm text-gray-400 mb-1;
+    }
+
+    .hp-bar {
+      @apply h-4 bg-gray-700 rounded-full overflow-hidden mb-1;
+
+      .hp-fill {
+        @apply h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500;
+      }
+
+      &.enemy .hp-fill {
+        @apply from-red-500 to-red-400;
+      }
+    }
+
+    .hp-text {
+      @apply text-xs text-gray-400;
+    }
+  }
+
+  .round-info {
+    @apply text-center;
+
+    .round {
+      @apply block text-white font-bold;
+    }
+
+    .combo {
+      @apply block text-yellow-400 text-sm font-bold;
+      animation: pulse 0.5s ease-out;
+    }
+  }
+}
+
+// Card Select Phase
+.card-select-phase {
+  @apply text-center;
+
+  h2 {
+    @apply text-xl text-white mb-6;
+  }
+}
+
+.hand-cards {
+  @apply flex justify-center gap-3 flex-wrap;
+}
+
+.hand-card {
+  @apply relative bg-gray-700 rounded-xl p-4 w-28 cursor-pointer transition-all border-4;
+  @apply hover:scale-110 hover:-translate-y-2;
+
+  .card-rarity-badge {
+    @apply absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-lg;
+  }
+
+  .card-name {
+    @apply text-white font-bold text-sm mb-2 truncate;
+  }
+
+  .card-power {
+    @apply flex justify-between text-xs text-gray-300;
+  }
+
+  .card-skill-badge {
+    @apply mt-2 text-xs text-purple-300 bg-purple-900 rounded px-2 py-1;
+  }
+}
+
+// Question Phase
+.question-phase {
+  @apply text-center;
+}
+
+.clash-preview {
+  @apply flex items-center justify-center gap-4 mb-6;
+
+  .player-card,
+  .opponent-card {
+    @apply bg-gray-700 rounded-xl p-4 w-32 border-4;
+
+    .emoji {
+      @apply block text-3xl mb-2;
+    }
+
+    .name {
+      @apply block text-white font-bold text-sm;
+    }
+
+    .power {
+      @apply block text-yellow-400 text-sm;
+    }
+  }
+
+  .vs {
+    @apply text-2xl font-black text-red-500;
+  }
+}
+
+.question-area {
+  @apply bg-gray-800 rounded-2xl p-6 max-w-xl mx-auto;
+
+  .question-prompt {
+    @apply text-xl text-white mb-4;
+  }
+}
+
+.options-grid {
+  @apply grid grid-cols-2 gap-3;
+}
+
+.option-btn {
+  @apply w-full py-4 px-4 bg-gray-700 hover:bg-gray-600 rounded-xl;
+  @apply text-lg font-medium text-white transition-all;
+  @apply border-2 border-transparent;
+
+  &:disabled {
+    @apply cursor-not-allowed;
+  }
+
+  &.selected {
+    @apply bg-gray-600 border-gray-400;
+  }
+
+  &.correct {
+    @apply bg-green-600 border-green-400;
+    animation: correct-pulse 0.5s ease-out;
+  }
+
+  &.incorrect {
+    @apply bg-red-600 border-red-400;
+    animation: shake 0.3s ease-out;
+  }
+}
+
+@keyframes correct-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+// Clash Animation
+.clash-animation {
+  @apply fixed inset-0 bg-black/70 flex items-center justify-center z-40;
+}
+
+.clash-result {
+  @apply text-center;
+  animation: result-pop 0.5s ease-out;
+
+  .result-icon {
+    @apply block text-8xl mb-4;
+  }
+
+  .result-text {
+    @apply block text-4xl font-black;
+  }
+
+  &.win .result-text {
+    @apply text-green-400;
+  }
+
+  &.lose .result-text {
+    @apply text-red-400;
+  }
+
+  &.draw .result-text {
+    @apply text-gray-400;
+  }
+}
+
+@keyframes result-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+// Battle Log
+.battle-log {
+  @apply mt-6 max-w-xl mx-auto text-center;
+
+  p {
+    @apply text-sm text-gray-400 mb-1;
+    animation: log-fade 0.3s ease-out;
+  }
+}
+
+@keyframes log-fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Result Screens
+.result-screen {
+  @apply fixed inset-0 flex flex-col items-center justify-center z-40;
+  animation: result-appear 0.5s ease-out;
+
+  &.victory {
+    @apply bg-gradient-to-b from-yellow-800 to-yellow-900;
+  }
+
+  &.defeat {
+    @apply bg-gradient-to-b from-gray-700 to-gray-800;
+  }
+
+  .result-icon {
+    @apply text-8xl mb-4;
+    animation: bounce 1s ease-in-out infinite;
+  }
+
+  h1 {
+    @apply text-4xl font-bold text-white mb-2;
+  }
+
+  p {
+    @apply text-xl text-white/80 mb-4;
+  }
+
+  .rewards-preview {
+    @apply mt-4;
+
+    .reward {
+      @apply text-2xl text-yellow-300;
+    }
+  }
+}
+
+@keyframes result-appear {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+// Utility
+.btn-primary {
+  @apply px-6 py-3 bg-white text-gray-900 rounded-xl font-semibold;
+  @apply hover:bg-gray-100 transition-colors;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}

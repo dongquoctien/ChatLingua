@@ -198,6 +198,19 @@ export const routes: Routes = [
             path: 'translation_race',
             loadComponent: () => import('./features/games/translation-race/translation-race.component').then(m => m.TranslationRaceComponent),
           },
+          // Phase 4: Adventure & Collection
+          {
+            path: 'vocabulary_quest',
+            loadComponent: () => import('./features/games/vocabulary-quest/vocabulary-quest.component').then(m => m.VocabularyQuestComponent),
+          },
+          {
+            path: 'word_cards',
+            loadComponent: () => import('./features/games/word-cards/word-cards.component').then(m => m.WordCardsComponent),
+          },
+          {
+            path: 'language_island',
+            loadComponent: () => import('./features/games/language-island/language-island.component').then(m => m.LanguageIslandComponent),
+          },
         ],
       },
       {

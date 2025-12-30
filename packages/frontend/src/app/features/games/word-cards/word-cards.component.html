@@ -1,0 +1,377 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+<!-- Loading -->
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading cards...</p>
+  </div>
+}
+
+<!-- Error -->
+@if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="goToMenu()">Back</button>
+  </div>
+}
+
+<!-- Main Menu -->
+@if (phase() === 'menu' && !isLoading()) {
+  <div class="menu-container">
+    <div class="menu-header">
+      <button class="btn-back" (click)="onBackToHub()">← Back</button>
+      <h1>Word Cards TCG</h1>
+      <p>Collect, battle, and master vocabulary!</p>
+    </div>
+
+    <!-- Currency Display -->
+    <div class="currency-bar">
+      <div class="currency coins">
+        <span class="icon">💰</span>
+        <span class="amount">{{ coins() }}</span>
+      </div>
+      <div class="currency gems">
+        <span class="icon">💎</span>
+        <span class="amount">{{ gems() }}</span>
+      </div>
+    </div>
+
+    <!-- Menu Options -->
+    <div class="menu-grid">
+      <div class="menu-card battle" (click)="startBattle()">
+        <div class="card-icon">⚔️</div>
+        <h3>Battle</h3>
+        <p>Fight with your deck</p>
+      </div>
+
+      <div class="menu-card collection" (click)="openCollection()">
+        <div class="card-icon">📚</div>
+        <h3>Collection</h3>
+        <p>{{ collection().length }} cards</p>
+      </div>
+
+      <div class="menu-card gacha" (click)="openGacha()">
+        <div class="card-icon">🎰</div>
+        <h3>Gacha</h3>
+        <p>Get new cards!</p>
+      </div>
+
+      <div class="menu-card deck">
+        <div class="card-icon">🃏</div>
+        <h3>Deck</h3>
+        <p>{{ deck().length }}/5 cards</p>
+      </div>
+    </div>
+
+    <!-- Current Deck Preview -->
+    <div class="deck-preview">
+      <h3>Current Deck</h3>
+      <div class="deck-cards">
+        @for (card of deck(); track card.id) {
+          <div class="mini-card" [style.border-color]="getRarityColor(card.rarity)">
+            <span class="rarity">{{ getRarityEmoji(card.rarity) }}</span>
+            <span class="name">{{ card.english }}</span>
+            <span class="power">⚡{{ card.power }}</span>
+          </div>
+        }
+        @for (i of [1,2,3,4,5].slice(deck().length); track i) {
+          <div class="mini-card empty">
+            <span>Empty</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Collection View -->
+@if (phase() === 'collection') {
+  <div class="collection-container">
+    <div class="collection-header">
+      <button class="btn-back" (click)="goToMenu()">← Back</button>
+      <h1>Card Collection</h1>
+      <p>Tap cards to add/remove from deck ({{ deck().length }}/5)</p>
+    </div>
+
+    <div class="cards-grid">
+      @for (card of collection(); track card.id) {
+        <div
+          class="card-item"
+          [class.in-deck]="isInDeck(card)"
+          [style.border-color]="getRarityColor(card.rarity)"
+          (click)="selectForDeck(card)"
+        >
+          <div class="card-rarity" [style.background]="getRarityColor(card.rarity)">
+            {{ card.rarity | titlecase }}
+          </div>
+          <div class="card-content">
+            <div class="card-word">{{ card.english }}</div>
+            <div class="card-translation">{{ card.vietnamese }}</div>
+            <div class="card-stats">
+              <span class="power">⚡{{ card.power }}</span>
+              <span class="defense">🛡️{{ card.defense }}</span>
+            </div>
+            <div class="card-category">{{ card.category }}</div>
+            @if (card.skill) {
+              <div class="card-skill">
+                <span class="skill-name">{{ card.skill.name }}</span>
+                <span class="skill-desc">{{ card.skill.description }}</span>
+              </div>
+            }
+            @if (card.level > 1) {
+              <div class="card-level">Lv.{{ card.level }}</div>
+            }
+          </div>
+          @if (isInDeck(card)) {
+            <div class="in-deck-badge">✓ In Deck</div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Gacha View -->
+@if (phase() === 'gacha') {
+  <div class="gacha-container">
+    <div class="gacha-header">
+      <button class="btn-back" (click)="goToMenu()">← Back</button>
+      <h1>Card Gacha</h1>
+      <p>Try your luck!</p>
+    </div>
+
+    <!-- Currency Display -->
+    <div class="currency-bar">
+      <div class="currency coins">
+        <span class="icon">💰</span>
+        <span class="amount">{{ coins() }}</span>
+      </div>
+      <div class="currency gems">
+        <span class="icon">💎</span>
+        <span class="amount">{{ gems() }}</span>
+      </div>
+    </div>
+
+    <!-- Gacha Machine -->
+    <div class="gacha-machine" [class.pulling]="gachaPulling()">
+      <div class="machine-display">
+        @if (gachaPulling()) {
+          <div class="pulling-animation">
+            <span>🎰</span>
+            <p>Drawing cards...</p>
+          </div>
+        } @else {
+          <div class="rates-display">
+            <h4>Drop Rates</h4>
+            <div class="rate common">⚪ Common: 50%</div>
+            <div class="rate uncommon">🟢 Uncommon: 30%</div>
+            <div class="rate rare">🔵 Rare: 15%</div>
+            <div class="rate epic">🟣 Epic: 4%</div>
+            <div class="rate legendary">🟡 Legendary: 1%</div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Pull Buttons -->
+    <div class="pull-buttons">
+      <button
+        class="pull-btn single"
+        [disabled]="gachaPulling() || !canAffordSinglePull()"
+        (click)="singlePull()"
+      >
+        <span class="pull-count">1x Pull</span>
+        <span class="pull-cost">💰 100</span>
+      </button>
+
+      <button
+        class="pull-btn multi"
+        [disabled]="gachaPulling() || !canAffordMultiPull()"
+        (click)="multiPull()"
+      >
+        <span class="pull-count">10x Pull</span>
+        <span class="pull-cost">💎 10</span>
+      </button>
+    </div>
+
+    <!-- Pull Result -->
+    @if (showPullResult()) {
+      <div class="pull-result-overlay" (click)="closePullResult()">
+        <div class="pull-result" (click)="$event.stopPropagation()">
+          <h2>Cards Obtained!</h2>
+          <div class="pulled-cards">
+            @for (card of pulledCards(); track card.id) {
+              <div class="pulled-card" [style.border-color]="getRarityColor(card.rarity)">
+                <div class="card-glow" [style.background]="getRarityColor(card.rarity)"></div>
+                <span class="rarity-emoji">{{ getRarityEmoji(card.rarity) }}</span>
+                <span class="word">{{ card.english }}</span>
+                <span class="stats">⚡{{ card.power }}</span>
+                @if (card.isNew) {
+                  <span class="new-badge">NEW!</span>
+                }
+              </div>
+            }
+          </div>
+          <button class="btn-primary" (click)="closePullResult()">Continue</button>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- Battle Phase -->
+@if (phase() === 'battle') {
+  <div class="battle-container">
+    <!-- Battle Header -->
+    <div class="battle-header">
+      <div class="player-status">
+        <span class="label">You</span>
+        <div class="hp-bar">
+          <div class="hp-fill" [style.width.%]="playerHpPercent()"></div>
+        </div>
+        <span class="hp-text">{{ battle().playerHp }}/{{ battle().playerMaxHp }}</span>
+      </div>
+
+      <div class="round-info">
+        <span class="round">Round {{ battle().currentRound }}/{{ battle().totalRounds }}</span>
+        @if (battle().combo > 1) {
+          <span class="combo">{{ battle().combo }}x Combo!</span>
+        }
+      </div>
+
+      <div class="opponent-status">
+        <span class="label">Opponent</span>
+        <div class="hp-bar enemy">
+          <div class="hp-fill" [style.width.%]="opponentHpPercent()"></div>
+        </div>
+        <span class="hp-text">{{ battle().opponentHp }}/{{ battle().opponentMaxHp }}</span>
+      </div>
+    </div>
+
+    <!-- Card Selection Phase -->
+    @if (battle().battlePhase === 'select') {
+      <div class="card-select-phase">
+        <h2>Select a card to play</h2>
+        <div class="hand-cards">
+          @for (card of battle().playerCards; track card.id) {
+            <div
+              class="hand-card"
+              [style.border-color]="getRarityColor(card.rarity)"
+              (click)="selectCard(card)"
+            >
+              <div class="card-rarity-badge" [style.background]="getRarityColor(card.rarity)">
+                {{ getRarityEmoji(card.rarity) }}
+              </div>
+              <div class="card-name">{{ card.english }}</div>
+              <div class="card-power">
+                <span>⚡{{ card.power }}</span>
+                <span>🛡️{{ card.defense }}</span>
+              </div>
+              @if (card.skill) {
+                <div class="card-skill-badge">{{ card.skill.name }}</div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Question Phase -->
+    @if (battle().battlePhase === 'question') {
+      <div class="question-phase">
+        <div class="clash-preview">
+          <div class="player-card" [style.border-color]="getRarityColor(battle().playerSelectedCard!.rarity)">
+            <span class="emoji">🎴</span>
+            <span class="name">{{ battle().playerSelectedCard!.english }}</span>
+            <span class="power">⚡{{ battle().playerSelectedCard!.power }}</span>
+          </div>
+          <div class="vs">VS</div>
+          <div class="opponent-card" [style.border-color]="getRarityColor(battle().opponentSelectedCard!.rarity)">
+            <span class="emoji">🎴</span>
+            <span class="name">{{ battle().opponentSelectedCard!.english }}</span>
+            <span class="power">⚡{{ battle().opponentSelectedCard!.power }}</span>
+          </div>
+        </div>
+
+        <div class="question-area">
+          <p class="question-prompt">What is "{{ battle().currentQuestion!.english }}" in Vietnamese?</p>
+          <div class="options-grid">
+            @for (option of battle().currentQuestion!.options; track $index) {
+              <button
+                class="option-btn"
+                [class.selected]="selectedAnswer() === $index"
+                [class.correct]="showFeedback() && $index === battle().currentQuestion!.correctIndex"
+                [class.incorrect]="showFeedback() && selectedAnswer() === $index && $index !== battle().currentQuestion!.correctIndex"
+                [disabled]="selectedAnswer() !== null"
+                (click)="selectAnswer($index)"
+              >
+                {{ option }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Clash Animation -->
+    @if (showClash()) {
+      <div class="clash-animation">
+        <div class="clash-result" [class]="clashResult()">
+          @if (clashResult() === 'win') {
+            <span class="result-icon">🎉</span>
+            <span class="result-text">You Win!</span>
+          } @else if (clashResult() === 'lose') {
+            <span class="result-icon">💥</span>
+            <span class="result-text">You Lose!</span>
+          } @else {
+            <span class="result-icon">🤝</span>
+            <span class="result-text">Draw!</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Battle Log -->
+    <div class="battle-log">
+      @for (log of battle().battleLog.slice(-3); track $index) {
+        <p>{{ log }}</p>
+      }
+    </div>
+  </div>
+}
+
+<!-- Victory Screen -->
+@if (phase() === 'victory') {
+  <div class="result-screen victory">
+    <div class="result-icon">🏆</div>
+    <h1>Victory!</h1>
+    <p>You won the card battle!</p>
+    <div class="rewards-preview">
+      <span class="reward">💰 +150</span>
+    </div>
+  </div>
+}
+
+<!-- Defeat Screen -->
+@if (phase() === 'defeat') {
+  <div class="result-screen defeat">
+    <div class="result-icon">💔</div>
+    <h1>Defeat</h1>
+    <p>Better luck next time!</p>
+    <div class="rewards-preview">
+      <span class="reward">💰 +50</span>
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Word Cards TCG"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

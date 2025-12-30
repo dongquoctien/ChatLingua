@@ -37,6 +37,10 @@ export class GamesHubComponent implements OnInit {
     'fa-swords': '🤺',
     'fa-circle': '🎈',
     'fa-flag-checkered': '🏎️',
+    // Phase 4: Adventure & Collection Games
+    'fa-dragon': '🐉',
+    'fa-layer-group': '🃏',
+    'fa-island-tropical': '🏝️',
   };
 
   // Game categories for filtering (must match GameCategory type from API)
@@ -46,6 +50,8 @@ export class GamesHubComponent implements OnInit {
     { id: 'puzzle', name: 'Puzzle', icon: '🧩' },
     { id: 'audio', name: 'Audio', icon: '🔊' },
     { id: 'competitive', name: 'Competitive', icon: '🏆' },
+    { id: 'adventure', name: 'Adventure', icon: '🗺️' },
+    { id: 'collection', name: 'Collection', icon: '🃏' },
   ];
   selectedCategory = signal('all');
 
