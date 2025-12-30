@@ -1,0 +1,146 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading game...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Hangman"
+      [score]="score()"
+      [timeLeft]="timeElapsed()"
+      [showTimer]="true"
+      [combo]="combo()"
+      [isPaused]="isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()"
+    ></app-game-header>
+
+    <!-- Pause Overlay -->
+    @if (isPaused()) {
+      <div class="pause-overlay">
+        <div class="pause-content">
+          <h2 class="text-2xl font-bold mb-4">Paused</h2>
+          <button class="btn-primary" (click)="onPause()">Resume</button>
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Progress -->
+      <div class="progress-info">
+        <span>Word {{ currentIndex() + 1 }} of {{ vocabulary().length }}</span>
+      </div>
+
+      <!-- Hint (Vietnamese word) -->
+      @if (currentWord()) {
+        <div class="hint-card">
+          <span class="hint-label">Translate:</span>
+          <span class="hint-text">{{ currentWord()!.vietnameseWord }}</span>
+        </div>
+      }
+
+      <!-- Hangman Figure -->
+      <div class="hangman-container">
+        <svg class="hangman-svg" viewBox="0 0 200 250">
+          <!-- Gallows -->
+          <line x1="20" y1="230" x2="100" y2="230" stroke="#374151" stroke-width="4" />
+          <line x1="60" y1="230" x2="60" y2="20" stroke="#374151" stroke-width="4" />
+          <line x1="60" y1="20" x2="140" y2="20" stroke="#374151" stroke-width="4" />
+          <line x1="140" y1="20" x2="140" y2="50" stroke="#374151" stroke-width="4" />
+
+          <!-- Head -->
+          @if (wrongGuesses() >= 1) {
+            <circle cx="140" cy="70" r="20" fill="none" stroke="#111827" stroke-width="3" class="body-part" />
+          }
+
+          <!-- Body -->
+          @if (wrongGuesses() >= 2) {
+            <line x1="140" y1="90" x2="140" y2="150" stroke="#111827" stroke-width="3" class="body-part" />
+          }
+
+          <!-- Left Arm -->
+          @if (wrongGuesses() >= 3) {
+            <line x1="140" y1="110" x2="110" y2="130" stroke="#111827" stroke-width="3" class="body-part" />
+          }
+
+          <!-- Right Arm -->
+          @if (wrongGuesses() >= 4) {
+            <line x1="140" y1="110" x2="170" y2="130" stroke="#111827" stroke-width="3" class="body-part" />
+          }
+
+          <!-- Left Leg -->
+          @if (wrongGuesses() >= 5) {
+            <line x1="140" y1="150" x2="110" y2="190" stroke="#111827" stroke-width="3" class="body-part" />
+          }
+
+          <!-- Right Leg -->
+          @if (wrongGuesses() >= 6) {
+            <line x1="140" y1="150" x2="170" y2="190" stroke="#111827" stroke-width="3" class="body-part" />
+          }
+        </svg>
+
+        <!-- Wrong guesses counter -->
+        <div class="wrong-counter">
+          <span [class.danger]="wrongGuesses() >= 4">
+            {{ wrongGuesses() }} / {{ maxWrongGuesses }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Word Display -->
+      <div class="word-display" [class.complete]="isWordComplete()" [class.failed]="wrongGuesses() >= maxWrongGuesses">
+        @for (letter of displayWord(); track $index) {
+          <span class="letter-slot" [class.revealed]="letter !== '_'">
+            {{ letter }}
+          </span>
+        }
+      </div>
+
+      <!-- Show answer on failure -->
+      @if (wrongGuesses() >= maxWrongGuesses && currentWord()) {
+        <div class="answer-reveal">
+          The word was: <strong>{{ currentWord()!.englishWord }}</strong>
+        </div>
+      }
+
+      <!-- Keyboard -->
+      <div class="keyboard">
+        @for (row of keyboard; track $index) {
+          <div class="keyboard-row">
+            @for (letter of row; track letter) {
+              <button
+                class="key-btn"
+                [class]="getLetterClass(letter)"
+                [disabled]="isLetterGuessed(letter) || wrongGuesses() >= maxWrongGuesses || isWordComplete()"
+                (click)="guessLetter(letter)"
+              >
+                {{ letter }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Hangman"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

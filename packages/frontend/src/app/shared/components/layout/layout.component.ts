@@ -20,6 +20,7 @@ import {
   faTimes,
   faChevronDown,
   faCog,
+  faGamepad,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -72,6 +73,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faTimes = faTimes;
   faChevronDown = faChevronDown;
   faCog = faCog;
+  faGamepad = faGamepad;
 
   // Navigation items
   navItems = [
@@ -82,6 +84,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     { path: '/grammar', icon: this.faBook, label: 'Grammar' },
     { path: '/exercises', icon: this.faDumbbell, label: 'Exercises' },
     { path: '/quizzes', icon: this.faQuestionCircle, label: 'Quizzes' },
+    { path: '/games', icon: this.faGamepad, label: 'Games' },
     { path: '/reports', icon: this.faChartLine, label: 'Reports' },
   ];
 

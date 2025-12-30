@@ -1,0 +1,124 @@
+import { Component, OnInit, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { ApiService, GameWithStats, UserCurrency, GameSessionInfo, GamesHubData } from '../../../core/services/api.service';
+
+@Component({
+  selector: 'app-games-hub',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './games-hub.component.html',
+  styleUrls: ['./games-hub.component.scss']
+})
+export class GamesHubComponent implements OnInit {
+  games = signal<GameWithStats[]>([]);
+  currency = signal<UserCurrency | null>(null);
+  recentSessions = signal<GameSessionInfo[]>([]);
+  isLoading = signal(true);
+  error = signal<string | null>(null);
+
+  // Icon map for FA names to emojis
+  private iconMap: Record<string, string> = {
+    'fa-bolt': '⚡',
+    'fa-clone': '🃏',
+    'fa-user-secret': '🎭',
+    'fa-spell-check': '📝',
+    'fa-puzzle-piece': '🧩',
+    'fa-brain': '🧠',
+    'fa-gamepad': '🎮',
+    'fa-trophy': '🏆',
+    'fa-star': '⭐',
+    'fa-fire': '🔥',
+    'fa-arrow-down': '⬇️',
+  };
+
+  // Game categories for filtering
+  categories = [
+    { id: 'all', name: 'All Games', icon: '🎮' },
+    { id: 'vocabulary', name: 'Vocabulary', icon: '📚' },
+    { id: 'spelling', name: 'Spelling', icon: '✍️' },
+    { id: 'memory', name: 'Memory', icon: '🧠' },
+  ];
+  selectedCategory = signal('all');
+
+  filteredGames = computed(() => {
+    const category = this.selectedCategory();
+    const allGames = this.games();
+    if (category === 'all') return allGames;
+    return allGames.filter(g => g.category === category);
+  });
+
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadHubData();
+  }
+
+  loadHubData(): void {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    this.apiService.getGamesHub().subscribe({
+      next: (data: GamesHubData) => {
+        this.games.set(data.games);
+        this.currency.set(data.userCurrency);
+        this.recentSessions.set(data.recentSessions);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading games hub:', err);
+        this.error.set('Failed to load games. Please try again.');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  selectCategory(categoryId: string): void {
+    this.selectedCategory.set(categoryId);
+  }
+
+  playGame(gameCode: string): void {
+    this.router.navigate(['/games', gameCode]);
+  }
+
+  viewLeaderboard(gameCode: string): void {
+    this.router.navigate(['/games', gameCode, 'leaderboard']);
+  }
+
+  getDifficultyClass(difficulty: string): string {
+    switch (difficulty) {
+      case 'easy': return 'difficulty-easy';
+      case 'medium': return 'difficulty-medium';
+      case 'hard': return 'difficulty-hard';
+      default: return '';
+    }
+  }
+
+  formatDuration(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  getTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffDays > 0) return `${diffDays}d ago`;
+    if (diffHours > 0) return `${diffHours}h ago`;
+    if (diffMins > 0) return `${diffMins}m ago`;
+    return 'Just now';
+  }
+
+  getGameIcon(icon: string | null | undefined): string {
+    if (!icon) return '🎮';
+    return this.iconMap[icon] || icon || '🎮';
+  }
+}

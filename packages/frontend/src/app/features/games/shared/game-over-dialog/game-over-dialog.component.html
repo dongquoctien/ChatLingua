@@ -1,0 +1,115 @@
+@if (isOpen && result) {
+  <div class="dialog-overlay" (click)="onBackToHub()">
+    <div class="dialog-content" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="dialog-header">
+        <h2 class="text-2xl font-bold text-gray-900">Game Over!</h2>
+        <p class="text-gray-600">{{ gameName }}</p>
+      </div>
+
+      <!-- Performance Grade -->
+      <div class="grade-section">
+        <div
+          class="grade-badge"
+          [class.grade-s]="performanceGrade.grade === 'S'"
+          [class.grade-a]="performanceGrade.grade === 'A'"
+          [class.grade-b]="performanceGrade.grade === 'B'"
+          [class.grade-c]="performanceGrade.grade === 'C'"
+          [class.grade-d]="performanceGrade.grade === 'D'"
+        >
+          {{ performanceGrade.grade }}
+        </div>
+        <p class="grade-message">{{ performanceGrade.message }}</p>
+        @if (result.isNewBestScore) {
+          <div class="new-best-badge">
+            🏆 New Best Score!
+          </div>
+        }
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-value text-gray-900">{{ result.score | number }}</span>
+          <span class="stat-label">Score</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value text-gray-900">{{ result.accuracy }}%</span>
+          <span class="stat-label">Accuracy</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value text-gray-900">x{{ result.maxCombo }}</span>
+          <span class="stat-label">Max Combo</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value text-gray-900">{{ formattedDuration }}</span>
+          <span class="stat-label">Time</span>
+        </div>
+      </div>
+
+      <!-- Words Stats -->
+      <div class="words-stats">
+        <div class="words-correct">
+          <span class="text-green-600 font-semibold">✓ {{ result.wordsCorrect }}</span>
+          <span class="text-gray-500">Correct</span>
+        </div>
+        <div class="words-wrong">
+          <span class="text-red-600 font-semibold">✗ {{ result.wordsWrong }}</span>
+          <span class="text-gray-500">Wrong</span>
+        </div>
+      </div>
+
+      <!-- Rewards -->
+      <div class="rewards-section">
+        <h3 class="rewards-title">Rewards Earned</h3>
+        <div class="rewards-list">
+          <div class="reward-item">
+            <span class="reward-icon">⭐</span>
+            <span class="reward-value">+{{ result.xpEarned }} XP</span>
+          </div>
+          <div class="reward-item">
+            <span class="reward-icon">🪙</span>
+            <span class="reward-value">+{{ result.coinsEarned }} Coins</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard Position -->
+      @if (result.leaderboardPosition) {
+        <div class="leaderboard-position">
+          <span class="position-label">Leaderboard Position:</span>
+          <span class="position-value">#{{ result.leaderboardPosition }}</span>
+        </div>
+      }
+
+      <!-- New Achievements -->
+      @if (result.newAchievements.length > 0) {
+        <div class="achievements-section">
+          <h3 class="achievements-title">🎖️ Achievements Unlocked!</h3>
+          <div class="achievements-list">
+            @for (achievement of result.newAchievements; track achievement.id) {
+              <div class="achievement-card">
+                <span class="achievement-icon">{{ achievement.icon || '🏆' }}</span>
+                <div class="achievement-info">
+                  <span class="achievement-name">{{ achievement.name }}</span>
+                  <span class="achievement-desc">{{ achievement.description || '' }}</span>
+                </div>
+                <span class="achievement-xp">+{{ achievement.xpReward }} XP</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Actions -->
+      <div class="dialog-actions">
+        <button class="btn-secondary" (click)="onBackToHub()">
+          Back to Games
+        </button>
+        <button class="btn-primary" (click)="onPlayAgain()">
+          Play Again
+        </button>
+      </div>
+    </div>
+  </div>
+}

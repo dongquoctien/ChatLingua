@@ -921,6 +921,82 @@ export class ApiService {
   getGrammarCategories(): Observable<GrammarCategoryInfo[]> {
     return this.http.get<GrammarCategoryInfo[]>(`${this.baseUrl}/grammar/categories`);
   }
+
+  // ============================================================
+  // Games
+  // ============================================================
+
+  // Get all games with user stats
+  getGames(): Observable<{ games: GameWithStats[] }> {
+    return this.http.get<{ games: GameWithStats[] }>(`${this.baseUrl}/games`);
+  }
+
+  // Get games hub data (games, currency, recent sessions)
+  getGamesHub(): Observable<GamesHubData> {
+    return this.http.get<GamesHubData>(`${this.baseUrl}/games/hub`);
+  }
+
+  // Get specific game details
+  getGame(gameCode: string): Observable<{ game: GameInfo; stats: GameStats }> {
+    return this.http.get<{ game: GameInfo; stats: GameStats }>(`${this.baseUrl}/games/${gameCode}`);
+  }
+
+  // Start a new game session
+  startGame(gameCode: string, options?: { difficulty?: string; gridSize?: number }): Observable<StartGameResponse> {
+    return this.http.post<StartGameResponse>(`${this.baseUrl}/games/${gameCode}/start`, options || {});
+  }
+
+  // End a game session
+  endGame(sessionId: number, data: EndGameRequest): Observable<EndGameResponse> {
+    return this.http.post<EndGameResponse>(`${this.baseUrl}/games/sessions/${sessionId}/end`, data);
+  }
+
+  // Get game leaderboard
+  getGameLeaderboard(gameCode: string, period: 'daily' | 'weekly' | 'all_time' = 'all_time', limit = 10): Observable<GameLeaderboardResponse> {
+    const params = new HttpParams().set('period', period).set('limit', limit.toString());
+    return this.http.get<GameLeaderboardResponse>(`${this.baseUrl}/games/${gameCode}/leaderboard`, { params });
+  }
+
+  // Get game achievements
+  getGameAchievements(gameCode: string): Observable<{ achievements: GameAchievementInfo[] }> {
+    return this.http.get<{ achievements: GameAchievementInfo[] }>(`${this.baseUrl}/games/${gameCode}/achievements`);
+  }
+
+  // Get all game achievements
+  getAllGameAchievements(): Observable<{ achievements: GameAchievementInfo[] }> {
+    return this.http.get<{ achievements: GameAchievementInfo[] }>(`${this.baseUrl}/games/achievements/all`);
+  }
+
+  // Get user power-ups
+  getPowerUps(): Observable<{ powerUps: UserPowerUp[] }> {
+    return this.http.get<{ powerUps: UserPowerUp[] }>(`${this.baseUrl}/games/power-ups/inventory`);
+  }
+
+  // Get power-ups shop
+  getPowerUpsShop(): Observable<{ powerUps: PowerUpInfo[] }> {
+    return this.http.get<{ powerUps: PowerUpInfo[] }>(`${this.baseUrl}/games/power-ups/shop`);
+  }
+
+  // Purchase power-up
+  purchasePowerUp(powerUpCode: string, quantity = 1): Observable<PurchasePowerUpResponse> {
+    return this.http.post<PurchasePowerUpResponse>(`${this.baseUrl}/games/power-ups/purchase`, { powerUpCode, quantity });
+  }
+
+  // Use power-up
+  usePowerUp(sessionId: number, powerUpCode: string): Observable<UsePowerUpResponse> {
+    return this.http.post<UsePowerUpResponse>(`${this.baseUrl}/games/power-ups/use`, { sessionId, powerUpCode });
+  }
+
+  // Get user currency
+  getCurrency(): Observable<UserCurrency> {
+    return this.http.get<UserCurrency>(`${this.baseUrl}/games/currency/balance`);
+  }
+
+  // Get game history
+  getGameHistory(limit = 20): Observable<{ sessions: GameSessionInfo[] }> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<{ sessions: GameSessionInfo[] }>(`${this.baseUrl}/games/history`, { params });
+  }
 }
 
 // ============================================================
@@ -1151,4 +1227,198 @@ export interface GrammarCategoryInfo {
   count: number;
   masteredCount: number;
   reviewingCount: number;
+}
+
+// ============================================================
+// Game Types
+// ============================================================
+
+export type GameCategory = 'speed' | 'puzzle' | 'adventure' | 'competitive' | 'audio' | 'collection';
+export type GameDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface GameConfig {
+  timeLimit?: number;
+  questionsPerRound?: number;
+  comboMultiplier?: boolean;
+  gridSizes?: number[];
+  timeBonus?: boolean;
+  maxMistakes?: number;
+  hintCost?: number;
+  timePerWord?: number;
+  repeatAllowed?: boolean;
+  [key: string]: unknown;
+}
+
+export interface GameWithStats {
+  id: number;
+  gameCode: string;
+  name: string;
+  description: string | null;
+  category: GameCategory;
+  difficulty: GameDifficulty;
+  icon: string | null;
+  color: string | null;
+  minVocabularyRequired: number;
+  unlockLevel: number;
+  config: GameConfig | null;
+  totalPlays: number;
+  bestScore: number;
+  bestCombo: number;
+  bestAccuracy: number | null;
+  isUnlocked: boolean;
+}
+
+export interface GameInfo {
+  id: number;
+  gameCode: string;
+  name: string;
+  description: string | null;
+  category: GameCategory;
+  difficulty: GameDifficulty;
+  icon: string | null;
+  color: string | null;
+  config: GameConfig | null;
+}
+
+export interface GameStats {
+  gameCode: string;
+  totalPlays: number;
+  bestScore: number;
+  bestCombo: number;
+  bestAccuracy: number | null;
+  averageScore: number;
+  totalXpEarned: number;
+  achievements: GameAchievementInfo[];
+}
+
+export interface GameVocabulary {
+  id: number;
+  englishWord: string;
+  vietnameseWord: string;
+  phonetic?: string;
+  audioUrl?: string;
+  hint?: string;
+}
+
+export interface StartGameResponse {
+  sessionId: number;
+  game: GameInfo;
+  vocabulary: GameVocabulary[];
+  config: GameConfig;
+}
+
+export interface EndGameRequest {
+  score: number;
+  maxCombo: number;
+  accuracy: number;
+  wordsCorrect: number;
+  wordsWrong: number;
+  durationSeconds: number;
+  gameData?: Record<string, unknown>;
+}
+
+export interface EndGameResponse {
+  session: {
+    id: number;
+    score: number;
+    maxCombo: number;
+    accuracy: number;
+    wordsCorrect: number;
+    wordsWrong: number;
+    durationSeconds: number;
+    xpEarned: number;
+    coinsEarned: number;
+  };
+  xpEarned: number;
+  coinsEarned: number;
+  newAchievements: GameAchievementInfo[];
+  leaderboardPosition?: number;
+  isNewBestScore: boolean;
+}
+
+export interface GameLeaderboardEntry {
+  rank: number;
+  userId: number;
+  username: string;
+  displayName?: string;
+  score: number;
+  combo?: number;
+  accuracy?: number;
+  isCurrentUser: boolean;
+}
+
+export interface GameLeaderboardResponse {
+  gameCode: string;
+  gameName: string;
+  period: 'daily' | 'weekly' | 'all_time';
+  entries: GameLeaderboardEntry[];
+  currentUserRank?: number;
+  totalParticipants: number;
+}
+
+export interface GameAchievementInfo {
+  id: number;
+  gameCode?: string;
+  achievementCode: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  xpReward: number;
+  unlockedAt?: string;
+}
+
+export interface PowerUpInfo {
+  id: number;
+  powerUpCode: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  effectType: string;
+  effectValue: number | null;
+  coinCost: number;
+  applicableGames: string[] | null;
+}
+
+export interface UserPowerUp extends PowerUpInfo {
+  quantity: number;
+}
+
+export interface PurchasePowerUpResponse {
+  success: boolean;
+  newBalance: number;
+  newQuantity: number;
+}
+
+export interface UsePowerUpResponse {
+  success: boolean;
+  remainingQuantity: number;
+}
+
+export interface UserCurrency {
+  coins: number;
+  gems: number;
+}
+
+export interface GameSessionInfo {
+  id: number;
+  gameCode: string;
+  gameName: string;
+  icon: string;
+  color: string;
+  score: number;
+  maxCombo: number;
+  accuracy: number;
+  wordsCorrect: number;
+  wordsWrong: number;
+  durationSeconds: number;
+  xpEarned: number;
+  coinsEarned: number;
+  endedAt: string;
+}
+
+export interface GamesHubData {
+  games: GameWithStats[];
+  userCurrency: UserCurrency;
+  recentSessions: GameSessionInfo[];
+  dailyBonusClaimed: boolean;
 }

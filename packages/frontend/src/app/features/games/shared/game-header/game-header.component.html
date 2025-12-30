@@ -1,0 +1,71 @@
+<div class="game-header">
+  <!-- Game Name -->
+  <div class="game-title">
+    <h2 class="text-lg font-bold text-gray-900">{{ gameName }}</h2>
+  </div>
+
+  <!-- Stats Section -->
+  <div class="stats-section">
+    <!-- Score -->
+    <div class="stat-item">
+      <span class="stat-label">Score</span>
+      <span class="stat-value text-gray-900 font-bold">{{ score | number }}</span>
+    </div>
+
+    <!-- Timer -->
+    @if (showTimer) {
+      <div class="stat-item" [class.low-time]="isLowTime">
+        <span class="stat-label">Time</span>
+        <span class="stat-value font-mono" [class.text-red-500]="isLowTime" [class.animate-pulse]="isLowTime">
+          {{ formattedTime }}
+        </span>
+      </div>
+    }
+
+    <!-- Combo -->
+    @if (showCombo && combo > 1) {
+      <div class="stat-item combo-display">
+        <span class="stat-label">Combo</span>
+        <span class="stat-value text-orange-500 font-bold">
+          x{{ combo }}
+        </span>
+      </div>
+    }
+
+    <!-- Lives -->
+    @if (showLives) {
+      <div class="stat-item lives-display">
+        <span class="stat-label">Lives</span>
+        <div class="lives-icons">
+          @for (hasLife of livesArray; track $index) {
+            <span class="life-icon" [class.active]="hasLife" [class.lost]="!hasLife">
+              ❤️
+            </span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Actions -->
+  <div class="actions-section">
+    <button
+      class="action-btn pause-btn"
+      (click)="onPause()"
+      [attr.aria-label]="isPaused ? 'Resume game' : 'Pause game'"
+    >
+      @if (isPaused) {
+        <span>▶️</span>
+      } @else {
+        <span>⏸️</span>
+      }
+    </button>
+    <button
+      class="action-btn quit-btn"
+      (click)="onQuit()"
+      aria-label="Quit game"
+    >
+      <span>✕</span>
+    </button>
+  </div>
+</div>

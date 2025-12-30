@@ -84,6 +84,7 @@ import {
   faUserPlus,
   faRocket,
   faSync,
+  faGamepad,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -179,4 +180,5 @@ export {
   faUserPlus,
   faRocket,
   faSync as faRefresh,
+  faGamepad,
 };

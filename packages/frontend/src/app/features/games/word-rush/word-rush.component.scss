@@ -1,0 +1,355 @@
+.loading-screen,
+.error-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f9fafb;
+
+  .spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid #e5e7eb;
+    border-top-color: #111827;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  .btn-primary {
+    padding: 0.75rem 1.5rem;
+    background: #111827;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: #1f2937;
+    }
+  }
+}
+
+.game-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.pause-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+
+  .pause-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+  }
+
+  .btn-primary {
+    padding: 0.75rem 2rem;
+    background: #111827;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: #1f2937;
+    }
+  }
+}
+
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.progress-container {
+  position: absolute;
+  top: 1rem;
+  left: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  .progress-bar {
+    flex: 1;
+    height: 0.5rem;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 9999px;
+    overflow: hidden;
+
+    .progress-fill {
+      height: 100%;
+      background: white;
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+  }
+
+  .progress-text {
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+.word-card {
+  background: white;
+  padding: 2rem 3rem;
+  border-radius: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  &.animate-enter {
+    animation: slideIn 0.3s ease;
+  }
+
+  &.animate-exit {
+    animation: slideOut 0.2s ease;
+  }
+
+  .word-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .word-text {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+  }
+
+  .word-hint {
+    color: #9ca3af;
+    font-size: 0.875rem;
+    font-style: italic;
+  }
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  max-width: 500px;
+  width: 100%;
+}
+
+.option-btn {
+  position: relative;
+  padding: 1.25rem 1.5rem;
+  background: white;
+  border: 2px solid white;
+  border-radius: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &.correct {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+    animation: correctPulse 0.5s ease;
+  }
+
+  &.incorrect {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+    animation: shake 0.5s ease;
+  }
+
+  &.correct-highlight {
+    background: #dcfce7;
+    border-color: #10b981;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .check-icon,
+  .cross-icon {
+    position: absolute;
+    right: 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .check-icon {
+    color: white;
+  }
+
+  .cross-icon {
+    color: white;
+  }
+}
+
+.combo-popup {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: white;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 1.25rem;
+  animation: popIn 0.3s ease;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+}
+
+.feedback-flash {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: 900;
+  pointer-events: none;
+  animation: feedbackPop 0.8s ease forwards;
+  z-index: 100;
+
+  &.correct {
+    color: #10b981;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  }
+
+  &.incorrect {
+    color: #ef4444;
+    text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+}
+
+@keyframes correctPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-10px);
+  }
+  40%, 80% {
+    transform: translateX(10px);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: translateX(-50%) scale(0);
+  }
+  70% {
+    transform: translateX(-50%) scale(1.2);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes feedbackPop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .word-card {
+    padding: 1.5rem 2rem;
+
+    .word-text {
+      font-size: 2rem;
+    }
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .option-btn {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}

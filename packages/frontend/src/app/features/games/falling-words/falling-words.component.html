@@ -1,0 +1,129 @@
+<div class="falling-words-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading game...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" class="error-state">
+    <p class="error-message">{{ error() }}</p>
+    <button class="btn-retry" (click)="startNewGame()">Try Again</button>
+  </div>
+
+  <!-- Countdown -->
+  <app-countdown
+    *ngIf="showCountdown() && !isLoading() && !error()"
+    [startFrom]="3"
+    (countdownComplete)="onCountdownComplete()">
+  </app-countdown>
+
+  <!-- Game Content -->
+  <div *ngIf="gameStarted() && !showCountdown() && !isLoading() && !error()" class="game-content">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Falling Words"
+      [score]="score()"
+      [showTimer]="false"
+      [lives]="lives()"
+      [maxLives]="maxLives()"
+      [showLives]="true"
+      [combo]="combo()"
+      [showCombo]="true"
+      [isPaused]="isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()">
+    </app-game-header>
+
+    <!-- Canvas Area -->
+    <div class="canvas-wrapper">
+      <canvas
+        #gameCanvas
+        [width]="canvasWidth"
+        [height]="canvasHeight"
+        class="game-canvas">
+      </canvas>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <input
+          #inputField
+          type="text"
+          [value]="userInput()"
+          (input)="onInputChange($event)"
+          (keyup.enter)="checkAnswer()"
+          placeholder="Type Vietnamese translation..."
+          [disabled]="isPaused()"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false">
+        <button class="btn-submit" (click)="checkAnswer()" [disabled]="isPaused()">
+          <span>Enter</span>
+        </button>
+      </div>
+      <p class="input-hint">Press Enter or click button to submit</p>
+    </div>
+
+    <!-- Power-ups -->
+    <div class="power-ups">
+      <button
+        class="power-up-btn freeze"
+        [class.active]="freezeActive()"
+        [disabled]="freezeCount() === 0 || isPaused()"
+        (click)="usePowerUp('freeze')">
+        <span class="icon">❄️</span>
+        <span class="label">Freeze</span>
+        <span class="count">{{ freezeCount() }}</span>
+      </button>
+      <button
+        class="power-up-btn slow"
+        [class.active]="slowActive()"
+        [disabled]="slowCount() === 0 || isPaused()"
+        (click)="usePowerUp('slow')">
+        <span class="icon">🐌</span>
+        <span class="label">Slow</span>
+        <span class="count">{{ slowCount() }}</span>
+      </button>
+      <button
+        class="power-up-btn bomb"
+        [disabled]="bombCount() === 0 || isPaused()"
+        (click)="usePowerUp('bomb')">
+        <span class="icon">💣</span>
+        <span class="label">Bomb</span>
+        <span class="count">{{ bombCount() }}</span>
+      </button>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-label">Correct</span>
+        <span class="stat-value correct">{{ correctCount() }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Missed</span>
+        <span class="stat-value wrong">{{ wrongCount() }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Level</span>
+        <span class="stat-value">{{ level() }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Max Combo</span>
+        <span class="stat-value combo">{{ maxCombo() }}x</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Dialog -->
+  <app-game-over-dialog
+    [isOpen]="showGameOver()"
+    gameName="Falling Words"
+    [result]="gameResult()"
+    (playAgain)="onPlayAgain()"
+    (backToHub)="onBackToHub()">
+  </app-game-over-dialog>
+</div>

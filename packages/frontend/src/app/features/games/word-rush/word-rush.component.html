@@ -1,0 +1,119 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading game...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Word Rush"
+      [score]="gameState.score()"
+      [timeLeft]="gameState.timeLeft()"
+      [lives]="gameState.lives()"
+      [maxLives]="gameState.maxLives()"
+      [showLives]="true"
+      [combo]="gameState.combo()"
+      [isPaused]="gameState.isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()"
+    ></app-game-header>
+
+    <!-- Pause Overlay -->
+    @if (gameState.isPaused()) {
+      <div class="pause-overlay">
+        <div class="pause-content">
+          <h2 class="text-2xl font-bold mb-4">Paused</h2>
+          <button class="btn-primary" (click)="onPause()">Resume</button>
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div
+            class="progress-fill"
+            [style.width.%]="gameState.progress()"
+          ></div>
+        </div>
+        <span class="progress-text">
+          {{ gameState.currentIndex() + 1 }} / {{ gameState.vocabulary().length }}
+        </span>
+      </div>
+
+      <!-- Word Card -->
+      @if (currentWord()) {
+        <div
+          class="word-card"
+          [class.animate-enter]="wordAnimation() === 'enter'"
+          [class.animate-exit]="wordAnimation() === 'exit'"
+        >
+          <p class="word-label">Translate this word:</p>
+          <h2 class="word-text">{{ currentWord()!.vietnameseWord }}</h2>
+          @if (currentWord()!.hint) {
+            <p class="word-hint">Hint: {{ currentWord()!.phonetic }}</p>
+          }
+        </div>
+
+        <!-- Options -->
+        <div class="options-grid">
+          @for (option of options(); track option.id) {
+            <button
+              class="option-btn"
+              [class]="getOptionClass(option)"
+              [disabled]="showFeedback()"
+              (click)="selectOption(option)"
+            >
+              {{ option.text }}
+              @if (showFeedback() && option.isCorrect) {
+                <span class="check-icon">✓</span>
+              }
+              @if (showFeedback() && option.id === selectedOption() && !option.isCorrect) {
+                <span class="cross-icon">✗</span>
+              }
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Combo Display -->
+      @if (gameState.combo() > 1) {
+        <div class="combo-popup">
+          🔥 {{ gameState.combo() }}x Combo!
+        </div>
+      }
+
+      <!-- Feedback Flash -->
+      @if (showFeedback()) {
+        <div
+          class="feedback-flash"
+          [class.correct]="feedbackCorrect()"
+          [class.incorrect]="!feedbackCorrect()"
+        >
+          {{ feedbackCorrect() ? '+' + (100 + Math.floor(gameState.timeLeft() / 2)) : '-1 ❤️' }}
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Word Rush"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

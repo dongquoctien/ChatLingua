@@ -1,0 +1,97 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading game...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Memory Match"
+      [score]="score()"
+      [timeLeft]="timeElapsed()"
+      [showTimer]="true"
+      [combo]="combo()"
+      [isPaused]="isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()"
+    ></app-game-header>
+
+    <!-- Pause Overlay -->
+    @if (isPaused()) {
+      <div class="pause-overlay">
+        <div class="pause-content">
+          <h2 class="text-2xl font-bold mb-4">Paused</h2>
+          <button class="btn-primary" (click)="onPause()">Resume</button>
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat-label">Moves</span>
+          <span class="stat-value">{{ moves() }}</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Pairs</span>
+          <span class="stat-value">{{ matchedPairs() }} / {{ totalPairs() }}</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Time</span>
+          <span class="stat-value">{{ formatTime(timeElapsed()) }}</span>
+        </div>
+      </div>
+
+      <!-- Cards Grid -->
+      <div
+        class="cards-grid"
+        [style.grid-template-columns]="'repeat(' + gridSize() + ', 1fr)'"
+      >
+        @for (card of cards(); track card.id) {
+          <div
+            [class]="getCardClass(card)"
+            (click)="flipCard(card)"
+          >
+            <div class="card-inner">
+              <div class="card-front">
+                <span class="card-icon">🎴</span>
+              </div>
+              <div class="card-back" [class.vietnamese]="card.type === 'vietnamese'">
+                <span class="card-text">{{ card.text }}</span>
+                <span class="card-type">{{ card.type === 'vietnamese' ? '🇻🇳' : '🇬🇧' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Combo Display -->
+      @if (combo() > 1) {
+        <div class="combo-popup">
+          🔥 {{ combo() }}x Combo!
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Memory Match"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

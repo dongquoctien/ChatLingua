@@ -1,0 +1,151 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading game...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Spelling Bee"
+      [score]="score()"
+      [timeLeft]="timeLeft()"
+      [showTimer]="true"
+      [combo]="combo()"
+      [isPaused]="isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()"
+    ></app-game-header>
+
+    <!-- Pause Overlay -->
+    @if (isPaused()) {
+      <div class="pause-overlay">
+        <div class="pause-content">
+          <h2 class="text-2xl font-bold mb-4">Paused</h2>
+          <button class="btn-primary" (click)="onPause()">Resume</button>
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Progress -->
+      <div class="progress-info">
+        <span>Word {{ currentIndex() + 1 }} of {{ vocabulary().length }}</span>
+      </div>
+
+      @if (currentWord()) {
+        <!-- Vietnamese hint -->
+        <div class="hint-card">
+          <span class="hint-label">Vietnamese:</span>
+          <span class="hint-text">{{ currentWord()!.vietnameseWord }}</span>
+        </div>
+
+        <!-- Audio Controls -->
+        <div class="audio-section">
+          <button
+            class="play-btn"
+            [disabled]="isPlaying()"
+            (click)="playCurrentWord()"
+          >
+            @if (isPlaying()) {
+              <span class="play-icon">🔊</span>
+              <span>Playing...</span>
+            } @else {
+              <span class="play-icon">🔈</span>
+              <span>Listen</span>
+            }
+          </button>
+        </div>
+
+        <!-- Spelling hint (shows more letters with each attempt) -->
+        @if (attempts() > 0) {
+          <div class="spelling-hint">
+            <span class="hint-label">Hint:</span>
+            <span class="hint-letters">{{ getHint() }}</span>
+          </div>
+        }
+
+        <!-- Input Section -->
+        <div class="input-section" [class.correct]="showFeedback() && isCorrect()" [class.incorrect]="showFeedback() && !isCorrect()">
+          <input
+            #inputField
+            type="text"
+            class="spelling-input"
+            [value]="userInput()"
+            (input)="userInput.set($any($event.target).value)"
+            (keydown)="onKeydown($event)"
+            [disabled]="showFeedback() && isCorrect()"
+            placeholder="Type the English word..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+
+          @if (showFeedback()) {
+            <div class="feedback-icon">
+              @if (isCorrect()) {
+                <span>✓</span>
+              } @else {
+                <span>✗</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Feedback Message -->
+        @if (showFeedback()) {
+          <div class="feedback-message" [class.correct]="isCorrect()" [class.incorrect]="!isCorrect()">
+            @if (isCorrect()) {
+              <span>Correct! 🎉</span>
+            } @else if (attempts() >= maxAttempts) {
+              <span>The answer was: <strong>{{ currentWord()!.englishWord }}</strong></span>
+            } @else {
+              <span>Try again! ({{ maxAttempts - attempts() }} attempts left)</span>
+            }
+          </div>
+        }
+
+        <!-- Attempts indicator -->
+        <div class="attempts-indicator">
+          @for (i of [1, 2, 3]; track i) {
+            <span class="attempt-dot" [class.used]="i <= attempts()"></span>
+          }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          @if (!showFeedback() || (!isCorrect() && attempts() < maxAttempts)) {
+            <button class="btn-skip" (click)="skipWord()">
+              Skip Word
+            </button>
+            <button
+              class="btn-submit"
+              [disabled]="!userInput().trim()"
+              (click)="submitAnswer()"
+            >
+              Check Answer
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Spelling Bee"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

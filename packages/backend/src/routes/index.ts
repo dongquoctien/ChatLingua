@@ -10,6 +10,7 @@ import gamificationRoutes from './gamification.routes.js';
 import grammarRoutes from './grammar.routes.js';
 import ttsRoutes from './tts.routes.js';
 import mcpAuthRoutes from './mcp-auth.routes.js';
+import gameRoutes from './game.routes.js';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/gamification', gamificationRoutes);
 router.use('/grammar', grammarRoutes);
 router.use('/tts', ttsRoutes);
 router.use('/mcp-auth', mcpAuthRoutes);
+router.use('/games', gameRoutes);
 
 export default router;

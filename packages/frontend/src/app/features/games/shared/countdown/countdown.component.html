@@ -1,0 +1,7 @@
+@if (isActive || currentCount === 0) {
+  <div class="countdown-overlay">
+    <div class="countdown-content" [class.go]="currentCount <= 0">
+      <span class="countdown-number">{{ displayText }}</span>
+    </div>
+  </div>
+}

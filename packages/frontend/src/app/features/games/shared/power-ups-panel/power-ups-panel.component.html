@@ -1,0 +1,28 @@
+<div class="power-ups-panel" [class.disabled]="disabled">
+  <div class="panel-header">
+    <span class="panel-title">Power-Ups</span>
+  </div>
+
+  @if (powerUps.length > 0) {
+    <div class="power-ups-list">
+      @for (powerUp of powerUps; track powerUp.powerUpCode) {
+        <button
+          class="power-up-btn"
+          [disabled]="disabled || powerUp.quantity <= 0"
+          [title]="powerUp.description"
+          (click)="onUsePowerUp(powerUp.powerUpCode)"
+        >
+          <span class="power-up-icon">{{ powerUp.icon }}</span>
+          <span class="power-up-effect">{{ getEffectDescription(powerUp) }}</span>
+          @if (powerUp.quantity > 0) {
+            <span class="power-up-quantity">{{ powerUp.quantity }}</span>
+          }
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="no-power-ups">
+      <p class="text-gray-500 text-sm">No power-ups available</p>
+    </div>
+  }
+</div>

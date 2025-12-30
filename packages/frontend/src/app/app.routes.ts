@@ -148,6 +148,35 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'games',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/games/games-hub/games-hub.component').then(m => m.GamesHubComponent),
+          },
+          {
+            path: 'word_rush',
+            loadComponent: () => import('./features/games/word-rush/word-rush.component').then(m => m.WordRushComponent),
+          },
+          {
+            path: 'memory_match',
+            loadComponent: () => import('./features/games/memory-match/memory-match.component').then(m => m.MemoryMatchComponent),
+          },
+          {
+            path: 'hangman',
+            loadComponent: () => import('./features/games/hangman/hangman.component').then(m => m.HangmanComponent),
+          },
+          {
+            path: 'spelling_bee',
+            loadComponent: () => import('./features/games/spelling-bee/spelling-bee.component').then(m => m.SpellingBeeComponent),
+          },
+          {
+            path: 'falling_words',
+            loadComponent: () => import('./features/games/falling-words/falling-words.component').then(m => m.FallingWordsComponent),
+          },
+        ],
+      },
+      {
         path: 'achievements',
         loadComponent: () => import('./features/gamification/achievements-page/achievements-page.component').then(m => m.AchievementsPageComponent),
       },

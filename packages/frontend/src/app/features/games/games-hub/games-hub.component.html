@@ -1,0 +1,130 @@
+<div class="games-hub">
+  <!-- Header -->
+  <div class="hub-header">
+    <div class="header-content">
+      <h1 class="text-2xl font-bold text-gray-900">Games Hub</h1>
+      <p class="text-gray-600">Learn English through fun games!</p>
+    </div>
+
+    <!-- Currency Display -->
+    @if (currency()) {
+      <div class="currency-display">
+        <div class="currency-item">
+          <span class="currency-icon">🪙</span>
+          <span class="currency-value">{{ currency()!.coins | number }}</span>
+        </div>
+        <div class="currency-item">
+          <span class="currency-icon">💎</span>
+          <span class="currency-value">{{ currency()!.gems | number }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading games...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-state">
+      <p class="text-red-600">{{ error() }}</p>
+      <button class="btn-retry" (click)="loadHubData()">Try Again</button>
+    </div>
+  } @else {
+    <!-- Category Filter -->
+    <div class="category-filter">
+      @for (category of categories; track category.id) {
+        <button
+          class="category-btn"
+          [class.active]="selectedCategory() === category.id"
+          (click)="selectCategory(category.id)"
+        >
+          <span class="category-icon">{{ category.icon }}</span>
+          <span class="category-name">{{ category.name }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Games Grid -->
+    <div class="games-section">
+      <div class="games-grid">
+        @for (game of filteredGames(); track game.gameCode) {
+          <div class="game-card" >
+            <div class="game-header" [style.background]="game.color + '15'">
+              <span class="game-icon">{{ getGameIcon(game.icon) }}</span>
+              <div class="game-badges">
+                <span class="difficulty-badge" [class]="getDifficultyClass(game.difficulty)">
+                  {{ game.difficulty }}
+                </span>
+              </div>
+            </div>
+
+            <div class="game-content">
+              <h3 class="game-name">{{ game.name }}</h3>
+              <p class="game-description">{{ game.description }}</p>
+
+              <!-- Stats -->
+              @if (game.totalPlays > 0) {
+                <div class="game-stats">
+                  <div class="stat">
+                    <span class="stat-value">{{ game.totalPlays }}</span>
+                    <span class="stat-label">Plays</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value">{{ game.bestScore | number }}</span>
+                    <span class="stat-label">Best</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-value">{{ game.bestAccuracy || 0 }}%</span>
+                    <span class="stat-label">Accuracy</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="game-actions">
+              <button class="btn-play" (click)="playGame(game.gameCode)">
+                Play Now
+              </button>
+              <button class="btn-leaderboard" (click)="viewLeaderboard(game.gameCode)">
+                🏆
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (filteredGames().length === 0) {
+        <div class="empty-state">
+          <p class="text-gray-500">No games available in this category.</p>
+        </div>
+      }
+    </div>
+
+    <!-- Recent Activity -->
+    @if (recentSessions().length > 0) {
+      <div class="recent-section">
+        <h2 class="section-title">Recent Games</h2>
+        <div class="recent-list">
+          @for (session of recentSessions(); track session.id) {
+            <div class="recent-item">
+              <div class="recent-icon">{{ getGameIcon(session.icon) }}</div>
+              <div class="recent-info">
+                <span class="recent-game">{{ session.gameName }}</span>
+                <span class="recent-time">{{ getTimeAgo(session.endedAt) }}</span>
+              </div>
+              <div class="recent-score">
+                <span class="score-value">{{ session.score | number }}</span>
+                <span class="score-label">pts</span>
+              </div>
+              <div class="recent-accuracy" [class.high]="session.accuracy >= 80">
+                {{ session.accuracy }}%
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>
