@@ -33,6 +33,10 @@ export class GamesHubComponent implements OnInit {
     'fa-th': '🔠',
     'fa-search': '🔍',
     'fa-random': '🔀',
+    // Phase 3: Competitive Games
+    'fa-swords': '🤺',
+    'fa-circle': '🎈',
+    'fa-flag-checkered': '🏎️',
   };
 
   // Game categories for filtering (must match GameCategory type from API)

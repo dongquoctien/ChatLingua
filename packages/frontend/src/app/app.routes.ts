@@ -186,6 +186,18 @@ export const routes: Routes = [
             path: 'anagram',
             loadComponent: () => import('./features/games/anagram/anagram.component').then(m => m.AnagramComponent),
           },
+          {
+            path: 'word_duel',
+            loadComponent: () => import('./features/games/word-duel/word-duel.component').then(m => m.WordDuelComponent),
+          },
+          {
+            path: 'pop_quiz_blitz',
+            loadComponent: () => import('./features/games/pop-quiz-blitz/pop-quiz-blitz.component').then(m => m.PopQuizBlitzComponent),
+          },
+          {
+            path: 'translation_race',
+            loadComponent: () => import('./features/games/translation-race/translation-race.component').then(m => m.TranslationRaceComponent),
+          },
         ],
       },
       {
