@@ -30,6 +30,9 @@ export class GamesHubComponent implements OnInit {
     'fa-star': '⭐',
     'fa-fire': '🔥',
     'fa-arrow-down': '⬇️',
+    'fa-th': '🔠',
+    'fa-search': '🔍',
+    'fa-random': '🔀',
   };
 
   // Game categories for filtering (must match GameCategory type from API)

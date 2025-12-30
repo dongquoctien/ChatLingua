@@ -1,0 +1,151 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Generating crossword puzzle...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Crossword"
+      [score]="score()"
+      [timeLeft]="timeElapsed()"
+      [showTimer]="true"
+      [showCombo]="false"
+      [isPaused]="isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()"
+    ></app-game-header>
+
+    <!-- Pause Overlay -->
+    @if (isPaused()) {
+      <div class="pause-overlay">
+        <div class="pause-content">
+          <h2 class="text-2xl font-bold mb-4">Paused</h2>
+          <button class="btn-primary" (click)="onPause()">Resume</button>
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Progress -->
+      <div class="progress-info">
+        <span>{{ filledCells() }} / {{ totalCells() }} cells</span>
+        <span class="hints-used">Hints: {{ hintsUsed() }}</span>
+      </div>
+
+      <!-- Main Content -->
+      <div class="crossword-layout">
+        <!-- Grid -->
+        <div class="grid-container">
+          <div class="crossword-grid" [style.--grid-size]="gridSize">
+            @for (row of grid(); track $index; let rowIdx = $index) {
+              @for (cell of row; track $index; let colIdx = $index) {
+                <div
+                  class="cell"
+                  [class.blocked]="cell.isBlocked"
+                  [class.selected]="cell.isSelected"
+                  [class.highlighted]="cell.isHighlighted"
+                  [class.correct]="cell.isCorrect === true"
+                  [class.incorrect]="cell.isCorrect === false"
+                  (click)="selectCell(rowIdx, colIdx)"
+                >
+                  @if (!cell.isBlocked) {
+                    @if (cell.clueNumber) {
+                      <span class="clue-number">{{ cell.clueNumber }}</span>
+                    }
+                    <span class="letter">{{ cell.userLetter }}</span>
+                  }
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Hint Button -->
+          <div class="hint-section">
+            <button class="btn-hint" (click)="useHint()" [disabled]="!selectedWord()">
+              <span class="hint-icon">💡</span>
+              <span>Use Hint</span>
+            </button>
+            <button class="btn-check" (click)="checkSolution()" [disabled]="!isComplete()">
+              <span class="check-icon">✓</span>
+              <span>Check</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Clues -->
+        <div class="clues-container">
+          <!-- Across Clues -->
+          <div class="clue-section">
+            <h3 class="clue-header">Across →</h3>
+            <div class="clue-list">
+              @for (word of acrossClues(); track word.id) {
+                <div
+                  class="clue-item"
+                  [class.selected]="isClueSelected(word)"
+                  (click)="selectClue(word)"
+                >
+                  <span class="clue-num">{{ word.clueNumber }}.</span>
+                  <span class="clue-text">{{ word.clue }}</span>
+                  <span class="word-length">({{ word.word.length }})</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Down Clues -->
+          <div class="clue-section">
+            <h3 class="clue-header">Down ↓</h3>
+            <div class="clue-list">
+              @for (word of downClues(); track word.id) {
+                <div
+                  class="clue-item"
+                  [class.selected]="isClueSelected(word)"
+                  (click)="selectClue(word)"
+                >
+                  <span class="clue-num">{{ word.clueNumber }}.</span>
+                  <span class="clue-text">{{ word.clue }}</span>
+                  <span class="word-length">({{ word.word.length }})</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Clue Display -->
+      @if (selectedWord()) {
+        <div class="current-clue">
+          <span class="direction-badge">{{ selectedWord()!.direction | uppercase }}</span>
+          <span class="clue-num">{{ selectedWord()!.clueNumber }}.</span>
+          <span class="clue-text">{{ selectedWord()!.clue }}</span>
+        </div>
+      }
+
+      <!-- Instructions -->
+      <div class="instructions">
+        <p>Type letters • Tab to switch direction • Arrow keys to move</p>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Crossword"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

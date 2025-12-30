@@ -1,0 +1,174 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading anagram game...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Anagram Master"
+      [score]="score()"
+      [timeLeft]="timeElapsed()"
+      [showTimer]="true"
+      [showCombo]="false"
+      [isPaused]="isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()"
+    ></app-game-header>
+
+    <!-- Pause Overlay -->
+    @if (isPaused()) {
+      <div class="pause-overlay">
+        <div class="pause-content">
+          <h2 class="text-2xl font-bold mb-4">Paused</h2>
+          <button class="btn-primary" (click)="onPause()">Resume</button>
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Progress -->
+      <div class="progress-section">
+        <div class="progress-text">
+          <span>Word {{ currentWordIndex() + 1 }} / {{ words().length }}</span>
+          <span class="hints-count">Hints: {{ hintsUsed() }}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progress()"></div>
+        </div>
+      </div>
+
+      @if (currentWord()) {
+        <!-- Hint Section -->
+        <div class="hint-section">
+          <p class="vietnamese-hint">
+            <span class="hint-label">Vietnamese:</span>
+            <span class="hint-value">{{ currentWord()!.vietnamese }}</span>
+          </p>
+          @if (showHint()) {
+            <p class="definition-hint">
+              <span class="hint-label">First letter:</span>
+              <span class="hint-value">{{ currentWord()!.original[0] }}</span>
+            </p>
+          }
+        </div>
+
+        <!-- Answer Area (where arranged letters go) -->
+        <div class="answer-section">
+          <div class="answer-slots">
+            @for (slot of currentWord()!.original.split(''); track $index; let i = $index) {
+              <div
+                class="answer-slot"
+                [class.filled]="arrangedTiles()[i]"
+                [class.correct]="isCorrect() === true"
+                [class.wrong]="isCorrect() === false"
+              >
+                @if (arrangedTiles()[i]) {
+                  <span
+                    class="slot-letter"
+                    (click)="removeLetter(arrangedTiles()[i])"
+                  >
+                    {{ arrangedTiles()[i].letter }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Result Indicator -->
+          @if (isCorrect() !== null) {
+            <div class="result-indicator" [class.correct]="isCorrect()" [class.wrong]="!isCorrect()">
+              @if (isCorrect()) {
+                <span class="result-icon">✓</span>
+                <span>Correct! +{{ 100 + currentWord()!.original.length * 10 }} pts</span>
+              } @else {
+                <span class="result-icon">✗</span>
+                <span>The answer was: {{ currentWord()!.original }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Scrambled Letters -->
+        <div class="scrambled-section">
+          <div class="scrambled-letters">
+            @for (tile of scrambledTiles(); track tile.id) {
+              <button
+                class="letter-tile"
+                [class.used]="tile.isUsed"
+                [disabled]="tile.isUsed || isCorrect() !== null"
+                (click)="selectLetter(tile)"
+              >
+                {{ tile.letter }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button
+            class="btn-shuffle"
+            (click)="shuffleLetters()"
+            [disabled]="isCorrect() !== null"
+          >
+            <span class="btn-icon">🔀</span>
+            <span>Shuffle</span>
+          </button>
+
+          <button
+            class="btn-hint"
+            (click)="useHint()"
+            [disabled]="showHint() || isCorrect() !== null"
+          >
+            <span class="btn-icon">💡</span>
+            <span>Hint (-15)</span>
+          </button>
+
+          <button
+            class="btn-skip"
+            (click)="skipWord()"
+            [disabled]="isCorrect() !== null"
+          >
+            <span class="btn-icon">⏭️</span>
+            <span>Skip</span>
+          </button>
+
+          <button
+            class="btn-submit"
+            (click)="submitAnswer()"
+            [disabled]="!canSubmit() || isCorrect() !== null"
+          >
+            <span class="btn-icon">✓</span>
+            <span>Submit</span>
+          </button>
+        </div>
+      }
+
+      <!-- Instructions -->
+      <div class="instructions">
+        <p>Click letters to arrange them • Form the correct English word</p>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Anagram Master"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

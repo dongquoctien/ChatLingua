@@ -1,0 +1,133 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Generating word search puzzle...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <app-game-header
+      gameName="Word Search"
+      [score]="score()"
+      [timeLeft]="timeElapsed()"
+      [showTimer]="true"
+      [showCombo]="false"
+      [isPaused]="isPaused()"
+      (pause)="onPause()"
+      (quit)="onQuit()"
+    ></app-game-header>
+
+    <!-- Pause Overlay -->
+    @if (isPaused()) {
+      <div class="pause-overlay">
+        <div class="pause-content">
+          <h2 class="text-2xl font-bold mb-4">Paused</h2>
+          <button class="btn-primary" (click)="onPause()">Resume</button>
+        </div>
+      </div>
+    }
+
+    <!-- Game Area -->
+    <div class="game-area">
+      <!-- Progress -->
+      <div class="progress-info">
+        <span>Found: {{ foundWords().length }} / {{ hiddenWords().length }}</span>
+        <span class="hints-used">Hints: {{ hintsUsed() }}</span>
+      </div>
+
+      <!-- Main Content -->
+      <div class="word-search-layout">
+        <!-- Grid -->
+        <div class="grid-container">
+          <div
+            class="word-search-grid"
+            [style.--grid-size]="gridSize"
+          >
+            @for (row of grid(); track $index; let rowIdx = $index) {
+              @for (cell of row; track $index; let colIdx = $index) {
+                <div
+                  class="cell"
+                  [class.selected]="cell.isSelected"
+                  [class.highlighted]="cell.isHighlighted"
+                  [class.found]="cell.isFound"
+                  (mousedown)="onCellMouseDown(rowIdx, colIdx)"
+                  (mouseenter)="onCellMouseEnter(rowIdx, colIdx)"
+                >
+                  <span class="letter">{{ cell.letter }}</span>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Hint Button -->
+          <div class="hint-section">
+            <button
+              class="btn-hint"
+              (click)="useHint()"
+              [disabled]="remainingWords().length === 0"
+            >
+              <span class="hint-icon">💡</span>
+              <span>Hint (-25 pts)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Word List -->
+        <div class="words-container">
+          <h3 class="words-header">Find These Words</h3>
+
+          <div class="word-list">
+            @for (word of hiddenWords(); track word.id) {
+              <div
+                class="word-item"
+                [class.found]="word.isFound"
+              >
+                <span class="word-english" [class.strikethrough]="word.isFound">
+                  {{ word.word }}
+                </span>
+                <span class="word-vietnamese">{{ word.vietnamese }}</span>
+                @if (word.isFound) {
+                  <span class="found-badge">✓</span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Direction Guide -->
+          <div class="direction-guide">
+            <p class="guide-title">Words can be hidden:</p>
+            <div class="directions">
+              <span>→ Horizontal</span>
+              <span>↓ Vertical</span>
+              <span>↘ Diagonal</span>
+              <span>↗ Diagonal Up</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="instructions">
+        <p>Click and drag to select letters • Find all hidden words</p>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Word Search"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

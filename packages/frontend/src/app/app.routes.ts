@@ -174,6 +174,18 @@ export const routes: Routes = [
             path: 'falling_words',
             loadComponent: () => import('./features/games/falling-words/falling-words.component').then(m => m.FallingWordsComponent),
           },
+          {
+            path: 'crossword',
+            loadComponent: () => import('./features/games/crossword/crossword.component').then(m => m.CrosswordComponent),
+          },
+          {
+            path: 'word_search',
+            loadComponent: () => import('./features/games/word-search/word-search.component').then(m => m.WordSearchComponent),
+          },
+          {
+            path: 'anagram',
+            loadComponent: () => import('./features/games/anagram/anagram.component').then(m => m.AnagramComponent),
+          },
         ],
       },
       {
