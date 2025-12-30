@@ -2,6 +2,7 @@ import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { gamificationService } from './gamification.service.js';
 import { challengeService } from './challenge.service.js';
+import { isAnswerCorrect } from '../utils/answer-matching.js';
 
 interface QuizRow extends RowDataPacket {
   id: number;
@@ -299,24 +300,26 @@ export class QuizService {
       throw new Error('Quiz not found');
     }
 
-    // Get correct answers
+    // Get correct answers with exercise type for flexible matching
     const placeholders = quiz.exerciseIds.map(() => '?').join(', ');
     const [exercises] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, correct_answer FROM exercises WHERE id IN (${placeholders})`,
+      `SELECT id, correct_answer, exercise_type FROM exercises WHERE id IN (${placeholders})`,
       quiz.exerciseIds
     );
 
-    // Calculate score
+    // Calculate score using flexible answer matching
     let correctCount = 0;
     const results = exercises.map((exercise) => {
       const userAnswer = input.answers[exercise.id] || '';
-      const isCorrect = userAnswer.trim().toLowerCase() === exercise.correct_answer.trim().toLowerCase();
+      const correctAnswer = exercise.correct_answer || '';
+      const exerciseType = exercise.exercise_type || '';
+      const isCorrect = isAnswerCorrect(userAnswer, correctAnswer, exerciseType);
       if (isCorrect) correctCount++;
 
       return {
         exerciseId: exercise.id,
         userAnswer,
-        correctAnswer: exercise.correct_answer,
+        correctAnswer,
         isCorrect,
       };
     });
@@ -481,10 +484,12 @@ export class QuizService {
       quiz.exerciseIds
     );
 
-    // Build results array
+    // Build results array using flexible answer matching
     const results: AttemptDetailResult[] = exercises.map((e) => {
       const userAnswer = userAnswers[e.id] || '';
-      const isCorrect = userAnswer.trim().toLowerCase() === e.correct_answer.trim().toLowerCase();
+      const correctAnswer = e.correct_answer || '';
+      const exerciseType = e.exercise_type || '';
+      const isCorrect = isAnswerCorrect(userAnswer, correctAnswer, exerciseType);
 
       let options: string[] | null = null;
       if (e.options) {
@@ -506,7 +511,7 @@ export class QuizService {
         exerciseType: e.exercise_type,
         options,
         userAnswer,
-        correctAnswer: e.correct_answer,
+        correctAnswer,
         isCorrect,
       };
     });

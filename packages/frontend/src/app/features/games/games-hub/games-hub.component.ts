@@ -32,12 +32,13 @@ export class GamesHubComponent implements OnInit {
     'fa-arrow-down': '⬇️',
   };
 
-  // Game categories for filtering
+  // Game categories for filtering (must match GameCategory type from API)
   categories = [
     { id: 'all', name: 'All Games', icon: '🎮' },
-    { id: 'vocabulary', name: 'Vocabulary', icon: '📚' },
-    { id: 'spelling', name: 'Spelling', icon: '✍️' },
-    { id: 'memory', name: 'Memory', icon: '🧠' },
+    { id: 'speed', name: 'Speed', icon: '⚡' },
+    { id: 'puzzle', name: 'Puzzle', icon: '🧩' },
+    { id: 'audio', name: 'Audio', icon: '🔊' },
+    { id: 'competitive', name: 'Competitive', icon: '🏆' },
   ];
   selectedCategory = signal('all');
 

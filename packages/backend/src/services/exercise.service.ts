@@ -2,6 +2,7 @@ import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { gamificationService } from './gamification.service.js';
 import { challengeService } from './challenge.service.js';
+import { isAnswerCorrect, normalizeAnswer } from '../utils/answer-matching.js';
 
 // Extended exercise types
 export type ExerciseType =
@@ -304,13 +305,18 @@ export class ExerciseService {
    */
   private gradeAnswer(exercise: ExerciseRow, userAnswer: string | object): GradingResult {
     const exerciseData = this.parseExerciseData(exercise.exercise_data);
+    const exerciseType = exercise.exercise_type;
 
-    switch (exercise.exercise_type) {
+    switch (exerciseType) {
       case 'multiple_choice':
+        // Multiple choice needs exact match (no typo tolerance)
+        return this.gradeExactMatch(exercise.correct_answer, userAnswer as string);
+
       case 'fill_blank':
       case 'translation':
       case 'spelling':
-        return this.gradeSimpleAnswer(exercise.correct_answer, userAnswer as string);
+        // These types get flexible matching with typo tolerance
+        return this.gradeFlexibleAnswer(exercise.correct_answer, userAnswer as string, exerciseType);
 
       case 'sentence_building':
         return this.gradeSentenceBuilding(exerciseData, userAnswer);
@@ -331,18 +337,32 @@ export class ExerciseService {
         return this.gradeListening(exerciseData, userAnswer as string);
 
       default:
-        return this.gradeSimpleAnswer(exercise.correct_answer, userAnswer as string);
+        return this.gradeFlexibleAnswer(exercise.correct_answer, userAnswer as string, exerciseType);
     }
   }
 
   /**
-   * Simple string comparison grading (multiple_choice, fill_blank, translation, spelling)
+   * Exact match grading (for multiple_choice where we need precise match)
    */
-  private gradeSimpleAnswer(correctAnswer: string, userAnswer: string): GradingResult {
-    const isCorrect = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+  private gradeExactMatch(correctAnswer: string, userAnswer: string): GradingResult {
+    const correct = (correctAnswer || '').trim().toLowerCase();
+    const user = (userAnswer || '').trim().toLowerCase();
+    const isCorrect = user === correct;
     return {
       isCorrect,
       score: isCorrect ? 100 : 0,
+    };
+  }
+
+  /**
+   * Flexible answer grading with typo tolerance
+   * Supports multiple correct answers separated by "|"
+   */
+  private gradeFlexibleAnswer(correctAnswer: string, userAnswer: string, exerciseType: string): GradingResult {
+    const correct = isAnswerCorrect(userAnswer, correctAnswer, exerciseType);
+    return {
+      isCorrect: correct,
+      score: correct ? 100 : 0,
     };
   }
 
@@ -449,10 +469,11 @@ export class ExerciseService {
       return { isCorrect: false, score: 0, feedback: 'Invalid exercise data' };
     }
 
-    const isCorrect = userAnswer.trim().toLowerCase() === data.correctWord.trim().toLowerCase();
+    // Use flexible matching for error correction
+    const correct = isAnswerCorrect(userAnswer, data.correctWord, 'error_correction');
     return {
-      isCorrect,
-      score: isCorrect ? 100 : 0,
+      isCorrect: correct,
+      score: correct ? 100 : 0,
     };
   }
 
@@ -460,10 +481,11 @@ export class ExerciseService {
    * Grade verb conjugation exercise
    */
   private gradeVerbConjugation(correctAnswer: string, userAnswer: string): GradingResult {
-    const isCorrect = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+    // Use flexible matching for verb conjugation
+    const correct = isAnswerCorrect(userAnswer, correctAnswer, 'verb_conjugation');
     return {
-      isCorrect,
-      score: isCorrect ? 100 : 0,
+      isCorrect: correct,
+      score: correct ? 100 : 0,
     };
   }
 
@@ -490,24 +512,24 @@ export class ExerciseService {
 
     const blanks = data.blanks as Array<{ index: number; answer: string }>;
 
-    // Count correct answers
+    // Count correct answers using flexible matching
     let correct = 0;
     for (let i = 0; i < blanks.length; i++) {
-      const userAns = userAnswers[i]?.trim().toLowerCase() || '';
-      const correctAns = blanks[i].answer.trim().toLowerCase();
-      if (userAns === correctAns) {
+      const userAns = userAnswers[i] || '';
+      const correctAns = blanks[i].answer || '';
+      if (isAnswerCorrect(userAns, correctAns, 'cloze')) {
         correct++;
       }
     }
 
     const score = Math.round((correct / blanks.length) * 100);
-    const isCorrect = score === 100;
+    const allCorrect = score === 100;
 
     return {
-      isCorrect,
+      isCorrect: allCorrect,
       score,
       partialCredit: score > 0 && score < 100,
-      feedback: isCorrect ? undefined : `${correct}/${blanks.length} blanks filled correctly`,
+      feedback: allCorrect ? undefined : `${correct}/${blanks.length} blanks filled correctly`,
     };
   }
 
@@ -520,22 +542,23 @@ export class ExerciseService {
     }
 
     if (data.questionType === 'dictation') {
-      // For dictation, compare with transcript (allow some leniency)
-      const transcript = data.transcript.trim().toLowerCase();
-      const answer = userAnswer.trim().toLowerCase();
+      // For dictation, compare with transcript using normalization
+      const transcript = normalizeAnswer(data.transcript);
+      const answer = normalizeAnswer(userAnswer);
 
-      // Exact match
+      // Exact match after normalization
       if (transcript === answer) {
         return { isCorrect: true, score: 100 };
       }
 
-      // Calculate word-level accuracy
+      // Calculate word-level accuracy with flexible matching per word
       const transcriptWords = transcript.split(/\s+/);
       const answerWords = answer.split(/\s+/);
 
       let correct = 0;
       for (let i = 0; i < Math.min(transcriptWords.length, answerWords.length); i++) {
-        if (transcriptWords[i] === answerWords[i]) {
+        // Allow typo tolerance per word
+        if (isAnswerCorrect(answerWords[i], transcriptWords[i], 'listening')) {
           correct++;
         }
       }
@@ -550,8 +573,8 @@ export class ExerciseService {
         feedback: `${correct}/${transcriptWords.length} words correct`,
       };
     } else {
-      // Comprehension - simple answer matching
-      return this.gradeSimpleAnswer(data.transcript, userAnswer);
+      // Comprehension - use flexible matching
+      return this.gradeFlexibleAnswer(data.transcript, userAnswer, 'listening');
     }
   }
 

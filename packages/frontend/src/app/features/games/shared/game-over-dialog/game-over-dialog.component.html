@@ -89,7 +89,7 @@
           <div class="achievements-list">
             @for (achievement of result.newAchievements; track achievement.id) {
               <div class="achievement-card">
-                <span class="achievement-icon">{{ achievement.icon || '🏆' }}</span>
+                <span class="achievement-icon">{{ getAchievementIcon(achievement.icon) }}</span>
                 <div class="achievement-info">
                   <span class="achievement-name">{{ achievement.name }}</span>
                   <span class="achievement-desc">{{ achievement.description || '' }}</span>

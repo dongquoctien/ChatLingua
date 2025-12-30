@@ -230,9 +230,9 @@ const typesRequiringData = [
 
 const exerciseSchema = z.object({
   exerciseType: z.enum(exerciseTypes),
-  question: z.string(),
+  question: z.string().min(1, "Question is required"),
   options: z.array(z.string()).optional(),
-  correctAnswer: z.string(),
+  correctAnswer: z.string().min(1, "Correct answer is required"),
   explanation: z.string().optional(),
   relatedVocabularyIds: z.array(z.number()).optional(),
   exerciseData: z.record(z.unknown()).optional(),

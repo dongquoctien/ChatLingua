@@ -31,6 +31,32 @@ export class GameOverDialogComponent {
   @Output() playAgain = new EventEmitter<void>();
   @Output() backToHub = new EventEmitter<void>();
 
+  // Icon map for FA names to emojis
+  private iconMap: Record<string, string> = {
+    'fa-play': '▶️',
+    'fa-bolt': '⚡',
+    'fa-fire': '🔥',
+    'fa-link': '🔗',
+    'fa-check': '✅',
+    'fa-check-double': '✅',
+    'fa-hundred-points': '💯',
+    'fa-star': '⭐',
+    'fa-trophy': '🏆',
+    'fa-medal': '🎖️',
+    'fa-crown': '👑',
+    'fa-brain': '🧠',
+    'fa-stopwatch': '⏱️',
+    'fa-magnifying-glass': '🔍',
+    'fa-keyboard': '⌨️',
+    'fa-level-up-alt': '📈',
+    'fa-repeat': '🔄',
+  };
+
+  getAchievementIcon(icon: string | null): string {
+    if (!icon) return '🏆';
+    return this.iconMap[icon] || '🏆';
+  }
+
   get formattedDuration(): string {
     if (!this.result) return '0:00';
     const minutes = Math.floor(this.result.durationSeconds / 60);

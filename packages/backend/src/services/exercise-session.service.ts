@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { isAnswerCorrect } from '../utils/answer-matching.js';
 
 // ============= Types =============
 
@@ -298,12 +299,14 @@ export class ExerciseSessionService {
     const results: SessionAnswer[] = [];
     let correctCount = 0;
 
-    // Process each answer
+    // Process each answer with flexible matching
     for (const row of answerRows) {
       const userAnswer = input.answers[row.exercise_id.toString()] || '';
-      const isCorrect = userAnswer.trim().toLowerCase() === row.correct_answer?.trim().toLowerCase();
+      const correctAnswer = row.correct_answer || '';
+      const exerciseType = row.exercise_type || '';
+      const correct = isAnswerCorrect(userAnswer, correctAnswer, exerciseType);
 
-      if (isCorrect) {
+      if (correct) {
         correctCount++;
       }
 
@@ -312,7 +315,7 @@ export class ExerciseSessionService {
         `UPDATE exercise_session_answers
          SET user_answer = ?, is_correct = ?, answered_at = NOW()
          WHERE session_id = ? AND exercise_id = ?`,
-        [userAnswer, isCorrect, sessionId, row.exercise_id]
+        [userAnswer, correct, sessionId, row.exercise_id]
       );
 
       let options: string[] | null = null;
@@ -338,7 +341,7 @@ export class ExerciseSessionService {
         options,
         userAnswer,
         correctAnswer: row.correct_answer || '',
-        isCorrect,
+        isCorrect: correct,
       });
     }
 

@@ -3,6 +3,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { calculateSM2, type SM2Result } from './spaced-repetition.service.js';
 import { gamificationService } from './gamification.service.js';
 import { challengeService } from './challenge.service.js';
+import { isAnswerCorrect } from '../utils/answer-matching.js';
 
 // ============================================================
 // Types
@@ -545,7 +546,9 @@ export class GrammarSpacedRepetitionService {
     }
 
     const exercise = exercises[0];
-    const isCorrect = userAnswer.trim().toLowerCase() === exercise.correct_answer.trim().toLowerCase();
+    const correctAnswer = exercise.correct_answer || '';
+    const exerciseType = exercise.exercise_type || '';
+    const isCorrect = isAnswerCorrect(userAnswer, correctAnswer, exerciseType);
 
     // Record attempt
     await pool.execute(
