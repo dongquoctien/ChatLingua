@@ -1,0 +1,140 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Preparing translation challenge...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <div class="game-header">
+      <div class="header-left">
+        <div class="score-display">
+          <span class="score-icon">⭐</span>
+          <span class="score-value">{{ score() }}</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="timer" [class.warning]="timeLeft() <= 5">
+          <span class="timer-icon">⏱️</span>
+          <span class="timer-value">{{ timeLeft() }}s</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        @if (combo() > 1) {
+          <div class="combo-display">
+            <span class="combo-value">{{ combo() }}x</span>
+            <span class="combo-label">COMBO</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="progressPercent()"></div>
+    </div>
+
+    <!-- Translation Area -->
+    <div class="translation-area">
+      <!-- Question -->
+      <div class="question-section">
+        <p class="question-label">Translate to English:</p>
+        <h2 class="vietnamese-text">{{ currentSentence()?.vietnamese }}</h2>
+      </div>
+
+      <!-- Answer Input -->
+      <div class="answer-section">
+        <input
+          #answerInput
+          type="text"
+          class="answer-input"
+          [class.correct]="showFeedback() && feedbackCorrect()"
+          [class.incorrect]="showFeedback() && !feedbackCorrect()"
+          placeholder="Type your translation..."
+          [(ngModel)]="userAnswer"
+          (keydown)="onInputKeydown($event)"
+          [disabled]="!sentenceActive() || showFeedback()"
+        />
+
+        <div class="answer-actions">
+          <button
+            class="btn-skip"
+            (click)="skipSentence()"
+            [disabled]="!sentenceActive() || showFeedback()"
+          >
+            Skip
+          </button>
+          <button
+            class="btn-submit"
+            (click)="submitAnswer()"
+            [disabled]="!sentenceActive() || showFeedback() || !userAnswer()"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+
+      <!-- Feedback -->
+      @if (showFeedback()) {
+        <div class="feedback-section" [class.correct]="feedbackCorrect()" [class.incorrect]="!feedbackCorrect()">
+          <div class="feedback-header">
+            @if (feedbackCorrect()) {
+              <span class="feedback-icon">✓</span>
+              <span class="feedback-text">Correct!</span>
+            } @else {
+              <span class="feedback-icon">✗</span>
+              <span class="feedback-text">Not quite!</span>
+            }
+            <span class="feedback-accuracy">{{ feedbackAccuracy() }}% match</span>
+          </div>
+
+          <div class="correct-answer">
+            <span class="answer-label">Correct answer:</span>
+            <span class="answer-text">{{ correctAnswer() }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Sentence Counter -->
+    <div class="sentence-counter">
+      Sentence {{ currentSentenceIndex() + 1 }} of {{ TOTAL_SENTENCES }}
+    </div>
+
+    <!-- Recent Results -->
+    @if (results().length > 0) {
+      <div class="recent-results">
+        <div class="results-header">Recent Results</div>
+        <div class="results-list">
+          @for (result of results().slice(-5).reverse(); track result.sentence.id) {
+            <div class="result-item" [class.correct]="result.correct" [class.incorrect]="!result.correct">
+              <span class="result-icon">{{ result.correct ? '✓' : '✗' }}</span>
+              <span class="result-word">{{ result.sentence.vietnamese }}</span>
+              <span class="result-accuracy">{{ result.accuracy }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Translation Race"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

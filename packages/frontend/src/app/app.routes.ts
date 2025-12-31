@@ -174,6 +174,43 @@ export const routes: Routes = [
             path: 'falling_words',
             loadComponent: () => import('./features/games/falling-words/falling-words.component').then(m => m.FallingWordsComponent),
           },
+          {
+            path: 'crossword',
+            loadComponent: () => import('./features/games/crossword/crossword.component').then(m => m.CrosswordComponent),
+          },
+          {
+            path: 'word_search',
+            loadComponent: () => import('./features/games/word-search/word-search.component').then(m => m.WordSearchComponent),
+          },
+          {
+            path: 'anagram',
+            loadComponent: () => import('./features/games/anagram/anagram.component').then(m => m.AnagramComponent),
+          },
+          {
+            path: 'word_duel',
+            loadComponent: () => import('./features/games/word-duel/word-duel.component').then(m => m.WordDuelComponent),
+          },
+          {
+            path: 'pop_quiz_blitz',
+            loadComponent: () => import('./features/games/pop-quiz-blitz/pop-quiz-blitz.component').then(m => m.PopQuizBlitzComponent),
+          },
+          {
+            path: 'translation_race',
+            loadComponent: () => import('./features/games/translation-race/translation-race.component').then(m => m.TranslationRaceComponent),
+          },
+          // Phase 4: Adventure & Collection
+          {
+            path: 'vocabulary_quest',
+            loadComponent: () => import('./features/games/vocabulary-quest/vocabulary-quest.component').then(m => m.VocabularyQuestComponent),
+          },
+          {
+            path: 'word_cards',
+            loadComponent: () => import('./features/games/word-cards/word-cards.component').then(m => m.WordCardsComponent),
+          },
+          {
+            path: 'language_island',
+            loadComponent: () => import('./features/games/language-island/language-island.component').then(m => m.LanguageIslandComponent),
+          },
         ],
       },
       {

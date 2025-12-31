@@ -1,0 +1,444 @@
+// Vocabulary Quest - RPG Game Styles
+
+// Loading & Error Screens
+.loading-screen,
+.error-screen {
+  @apply flex flex-col items-center justify-center min-h-screen bg-gray-100;
+
+  .spinner {
+    @apply w-12 h-12 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mb-4;
+  }
+
+  p {
+    @apply text-gray-600;
+  }
+}
+
+// Quest Container
+.quest-container {
+  @apply min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6;
+}
+
+.quest-header {
+  @apply text-center mb-8;
+
+  .btn-back {
+    @apply absolute left-4 top-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium transition-colors;
+  }
+
+  h1 {
+    @apply text-3xl font-bold text-gray-900 mb-2;
+  }
+
+  p {
+    @apply text-gray-600;
+  }
+}
+
+// Map Selection Grid
+.maps-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto;
+}
+
+.map-card {
+  @apply relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer transition-all duration-300;
+  @apply hover:shadow-xl hover:scale-105;
+
+  &.locked {
+    @apply opacity-60 cursor-not-allowed;
+    @apply hover:scale-100 hover:shadow-lg;
+  }
+
+  &.beginner {
+    @apply border-l-4 border-green-500;
+  }
+
+  &.intermediate {
+    @apply border-l-4 border-yellow-500;
+  }
+
+  &.advanced {
+    @apply border-l-4 border-red-500;
+  }
+
+  .map-icon {
+    @apply text-6xl text-center py-8 bg-gradient-to-br from-gray-100 to-gray-200;
+  }
+
+  .map-info {
+    @apply p-4;
+
+    h3 {
+      @apply text-xl font-bold text-gray-900 mb-1;
+    }
+
+    p {
+      @apply text-gray-600 text-sm mb-3;
+    }
+  }
+
+  .map-meta {
+    @apply flex items-center gap-3;
+
+    .difficulty-badge {
+      @apply px-2 py-1 rounded text-xs font-medium uppercase;
+      @apply bg-gray-100 text-gray-700;
+    }
+
+    .stages {
+      @apply text-sm text-gray-500;
+    }
+  }
+
+  .lock-overlay {
+    @apply absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white;
+
+    .lock-icon {
+      @apply text-4xl mb-2;
+    }
+  }
+
+  .stars-earned {
+    @apply flex gap-1 mt-3;
+
+    .star {
+      @apply text-xl opacity-30;
+
+      &.filled {
+        @apply opacity-100;
+      }
+    }
+  }
+}
+
+// Stage Selection Path
+.stages-path {
+  @apply flex items-center justify-center flex-wrap gap-2 max-w-4xl mx-auto py-8;
+}
+
+.stage-node {
+  @apply flex flex-col items-center cursor-pointer transition-all;
+
+  &.locked {
+    @apply opacity-40 cursor-not-allowed;
+  }
+
+  &.completed {
+    .node-circle {
+      @apply bg-green-500 text-white border-green-600;
+    }
+  }
+
+  &.current {
+    .node-circle {
+      @apply bg-gray-900 text-white border-gray-700 scale-110 shadow-lg;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  &.boss {
+    .node-circle {
+      @apply w-16 h-16 text-2xl bg-gradient-to-br from-yellow-400 to-orange-500 border-orange-600;
+    }
+  }
+
+  .node-circle {
+    @apply w-12 h-12 rounded-full bg-gray-200 border-4 border-gray-300;
+    @apply flex items-center justify-center text-lg font-bold;
+    @apply transition-all duration-300;
+  }
+
+  .node-label {
+    @apply text-xs text-gray-600 mt-1;
+  }
+}
+
+.path-line {
+  @apply w-12 h-1 bg-gray-300 rounded;
+
+  &.completed {
+    @apply bg-green-500;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+  }
+}
+
+// Battle Container
+.battle-container {
+  @apply min-h-screen bg-gradient-to-b from-gray-800 to-gray-900 p-4 text-white;
+}
+
+// Battle Header
+.battle-header {
+  @apply flex items-center justify-between gap-4 max-w-2xl mx-auto mb-6;
+
+  .player-info,
+  .enemy-info {
+    @apply flex-1 flex flex-col items-center gap-2;
+
+    .avatar {
+      @apply text-4xl;
+    }
+
+    .hp-bar {
+      @apply w-full h-4 bg-gray-700 rounded-full overflow-hidden;
+
+      .hp-fill {
+        @apply h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500;
+      }
+
+      &.enemy .hp-fill {
+        @apply from-red-500 to-red-400;
+      }
+    }
+
+    .hp-text {
+      @apply text-xs text-gray-400;
+    }
+  }
+
+  .vs-badge {
+    @apply text-2xl font-bold text-yellow-400;
+  }
+}
+
+// Battle Arena
+.battle-arena {
+  @apply flex items-center justify-between max-w-2xl mx-auto h-48 relative;
+
+  .player-side,
+  .enemy-side {
+    @apply relative transition-transform duration-300;
+
+    &.attacking {
+      animation: attack 0.3s ease-out;
+    }
+
+    &.hit {
+      animation: hit 0.3s ease-out;
+    }
+  }
+
+  .player-side {
+    @apply flex items-center justify-start pl-8;
+  }
+
+  .enemy-side {
+    @apply flex items-center justify-end pr-8;
+
+    &.attacking {
+      animation: attack-left 0.3s ease-out;
+    }
+  }
+
+  .character {
+    @apply text-6xl transition-transform;
+
+    &.boss {
+      @apply text-8xl;
+    }
+  }
+
+  .damage-number {
+    @apply absolute -top-4 left-1/2 transform -translate-x-1/2;
+    @apply text-2xl font-bold text-red-500;
+    animation: damage-float 0.8s ease-out forwards;
+  }
+}
+
+@keyframes attack {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(50px); }
+}
+
+@keyframes attack-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-50px); }
+}
+
+@keyframes hit {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes damage-float {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -30px);
+  }
+}
+
+// Combo Display
+.combo-display {
+  @apply text-center mb-4;
+  animation: combo-pop 0.3s ease-out;
+
+  .combo-value {
+    @apply text-4xl font-black text-yellow-400;
+  }
+
+  .combo-label {
+    @apply block text-sm text-yellow-200 uppercase tracking-widest;
+  }
+}
+
+@keyframes combo-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+// Question Area
+.question-area {
+  @apply bg-gray-800/80 rounded-2xl p-6 max-w-2xl mx-auto;
+
+  .question-header {
+    @apply flex items-center justify-between mb-4;
+
+    .question-label {
+      @apply text-gray-400 text-sm uppercase tracking-wide;
+    }
+
+    .question-progress {
+      @apply text-gray-400 text-sm;
+    }
+  }
+
+  .english-word {
+    @apply text-3xl font-bold text-white text-center mb-6;
+  }
+
+  .options-grid {
+    @apply grid grid-cols-2 gap-3;
+  }
+
+  .option-btn {
+    @apply w-full py-4 px-4 bg-gray-700 hover:bg-gray-600 rounded-xl;
+    @apply text-lg font-medium text-white transition-all;
+    @apply border-2 border-transparent;
+
+    &:disabled {
+      @apply cursor-not-allowed;
+    }
+
+    &.selected {
+      @apply bg-gray-600 border-gray-400;
+    }
+
+    &.correct {
+      @apply bg-green-600 border-green-400;
+      animation: correct-pulse 0.5s ease-out;
+    }
+
+    &.incorrect {
+      @apply bg-red-600 border-red-400;
+      animation: shake 0.3s ease-out;
+    }
+  }
+}
+
+@keyframes correct-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+// Battle Log
+.battle-log {
+  @apply mt-4 max-w-2xl mx-auto text-center;
+
+  p {
+    @apply text-sm text-gray-400 mb-1;
+    animation: log-fade 0.3s ease-out;
+  }
+}
+
+@keyframes log-fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Result Screens
+.result-screen {
+  @apply fixed inset-0 flex flex-col items-center justify-center z-40;
+  animation: result-appear 0.5s ease-out;
+
+  &.victory {
+    @apply bg-gradient-to-b from-green-800 to-green-900;
+  }
+
+  &.defeat {
+    @apply bg-gradient-to-b from-red-800 to-red-900;
+  }
+
+  .result-icon {
+    @apply text-8xl mb-4;
+    animation: bounce 1s ease-in-out infinite;
+  }
+
+  h1 {
+    @apply text-4xl font-bold text-white mb-2;
+  }
+
+  p {
+    @apply text-xl text-white/80 mb-4;
+  }
+
+  .retry-text {
+    @apply text-lg text-white/60;
+  }
+
+  .stars-display {
+    @apply flex gap-2 mt-4;
+
+    .star {
+      @apply text-4xl opacity-30 transition-all;
+
+      &.earned {
+        @apply opacity-100;
+        animation: star-pop 0.5s ease-out;
+      }
+    }
+  }
+}
+
+@keyframes result-appear {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes star-pop {
+  0% { transform: scale(0) rotate(-180deg); }
+  50% { transform: scale(1.3) rotate(10deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+// Utility classes
+.btn-primary {
+  @apply px-6 py-3 bg-white text-gray-900 rounded-xl font-semibold;
+  @apply hover:bg-gray-100 transition-colors;
+}

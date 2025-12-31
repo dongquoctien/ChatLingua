@@ -1,0 +1,236 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Preparing duel arena...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (showOpponentSelect()) {
+  <!-- Opponent Selection Screen -->
+  <div class="opponent-select-screen">
+    <div class="select-header">
+      <h1>Word Duel</h1>
+      <p>Choose your opponent</p>
+    </div>
+
+    <div class="opponents-grid">
+      @for (opponent of aiOpponents; track opponent.name) {
+        <div
+          class="opponent-card"
+          [class.selected]="selectedOpponent()?.name === opponent.name"
+          [class]="getDifficultyClass(opponent.difficulty)"
+          (click)="selectOpponent(opponent)"
+        >
+          <div class="opponent-avatar">{{ opponent.avatar }}</div>
+          <div class="opponent-info">
+            <h3>{{ opponent.name }}</h3>
+            <span class="difficulty-badge">{{ opponent.difficulty | titlecase }}</span>
+          </div>
+          <p class="opponent-desc">{{ opponent.description }}</p>
+          @if (selectedOpponent()?.name === opponent.name) {
+            <div class="selected-indicator">Selected</div>
+          }
+        </div>
+      }
+    </div>
+
+    <button
+      class="btn-start-duel"
+      [disabled]="!selectedOpponent()"
+      (click)="startGame()"
+    >
+      <span class="btn-icon">⚔️</span>
+      <span>Start Duel</span>
+    </button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Duel Header -->
+    <div class="duel-header">
+      <div class="player-side">
+        <div class="avatar">👤</div>
+        <div class="player-info">
+          <span class="name">You</span>
+          <span class="score">{{ playerScore() }}</span>
+        </div>
+        <div class="wins-indicator">
+          @for (i of [0,1,2,3,4]; track i) {
+            <span class="win-dot" [class.won]="i < playerWins()"></span>
+          }
+        </div>
+      </div>
+
+      <div class="vs-section">
+        <div class="round-info">
+          <span class="round-label">Round</span>
+          <span class="round-number">{{ currentRound() }}/{{ TOTAL_ROUNDS }}</span>
+        </div>
+        <div class="vs-text">VS</div>
+        <div class="timer" [class.warning]="roundTimeLeft() <= 3">
+          {{ roundTimeLeft() }}
+        </div>
+      </div>
+
+      <div class="player-side ai-side">
+        <div class="wins-indicator">
+          @for (i of [0,1,2,3,4]; track i) {
+            <span class="win-dot" [class.won]="i < aiWins()"></span>
+          }
+        </div>
+        <div class="player-info">
+          <span class="name">{{ selectedOpponent()?.name }}</span>
+          <span class="score">{{ aiScore() }}</span>
+        </div>
+        <div class="avatar ai">{{ selectedOpponent()?.avatar }}</div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="progressPercent()"></div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="game-area">
+      @if (currentWord()) {
+        <!-- Question -->
+        <div class="question-section">
+          <p class="question-label">What does this mean in English?</p>
+          <h2 class="vietnamese-word">{{ currentWord()!.vietnameseWord }}</h2>
+        </div>
+
+        <!-- Player Status Indicators -->
+        <div class="status-row">
+          <div class="status-indicator player" [class.answered]="playerAnswered()">
+            @if (!playerAnswered()) {
+              <span class="thinking">🤔</span>
+              <span>Thinking...</span>
+            } @else if (playerCorrect()) {
+              <span class="correct">✓</span>
+              <span>{{ playerTime() }}ms</span>
+            } @else {
+              <span class="wrong">✗</span>
+              <span>Wrong</span>
+            }
+          </div>
+
+          <div class="status-indicator ai" [class.answered]="aiAnswered()">
+            @if (aiThinking()) {
+              <span class="thinking">💭</span>
+              <span>Thinking...</span>
+            } @else if (aiCorrect()) {
+              <span class="correct">✓</span>
+              <span>{{ aiTime() }}ms</span>
+            } @else {
+              <span class="wrong">✗</span>
+              <span>Wrong</span>
+            }
+          </div>
+        </div>
+
+        <!-- Answer Options -->
+        <div class="options-grid">
+          @for (option of options(); track option.id) {
+            <button
+              class="option-btn"
+              [class]="getOptionClass(option)"
+              [disabled]="playerAnswered()"
+              (click)="selectAnswer(option)"
+            >
+              {{ option.text }}
+            </button>
+          }
+        </div>
+
+        <!-- Round Result -->
+        @if (showingResult() && roundWinner()) {
+          <div class="round-result" [class]="roundWinner()">
+            @if (roundWinner() === 'player') {
+              <span class="result-icon">🎉</span>
+              <span class="result-text">You win this round!</span>
+            } @else if (roundWinner() === 'ai') {
+              <span class="result-icon">😔</span>
+              <span class="result-text">{{ selectedOpponent()?.name }} wins!</span>
+            } @else {
+              <span class="result-icon">🤝</span>
+              <span class="result-text">It's a draw!</span>
+            }
+
+            <div class="correct-answer">
+              Answer: <strong>{{ currentWord()!.englishWord }}</strong>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Word Duel"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>
+
+<!-- Custom Game Over Overlay for Duel Results -->
+@if (showGameOver() && gameResult()) {
+  <div class="duel-result-overlay">
+    <div class="duel-result-content">
+      <div class="duel-winner" [class.player-won]="playerWins() > aiWins()" [class.ai-won]="aiWins() > playerWins()">
+        <h2>{{ getWinnerMessage() }}</h2>
+      </div>
+
+      <div class="final-score">
+        <div class="score-side player">
+          <span class="avatar">👤</span>
+          <span class="name">You</span>
+          <span class="score">{{ playerScore() }}</span>
+          <span class="wins">{{ playerWins() }} wins</span>
+        </div>
+        <div class="score-divider">-</div>
+        <div class="score-side ai">
+          <span class="avatar">{{ selectedOpponent()?.avatar }}</span>
+          <span class="name">{{ selectedOpponent()?.name }}</span>
+          <span class="score">{{ aiScore() }}</span>
+          <span class="wins">{{ aiWins() }} wins</span>
+        </div>
+      </div>
+
+      <div class="rewards-section">
+        <div class="reward">
+          <span class="reward-icon">⭐</span>
+          <span class="reward-value">+{{ gameResult()!.xpEarned }} XP</span>
+        </div>
+        <div class="reward">
+          <span class="reward-icon">🪙</span>
+          <span class="reward-value">+{{ gameResult()!.coinsEarned }} Coins</span>
+        </div>
+      </div>
+
+      @if (gameResult()!.isNewBestScore) {
+        <div class="new-record">🏆 New Personal Best!</div>
+      }
+
+      <div class="action-buttons">
+        <button class="btn-secondary" (click)="onBackToHub()">
+          <span class="btn-icon">🏠</span>
+          <span>Games Hub</span>
+        </button>
+        <button class="btn-primary" (click)="onPlayAgain()">
+          <span class="btn-icon">🔄</span>
+          <span>Rematch</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}

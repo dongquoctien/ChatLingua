@@ -1,0 +1,280 @@
+.loading-screen,
+.error-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #111827;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: #111827;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #374151;
+  }
+}
+
+.game-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.pause-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+
+  .pause-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+  }
+}
+
+.game-area {
+  margin-top: 1rem;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+
+  .hints-used {
+    color: #f59e0b;
+  }
+}
+
+.word-search-layout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2rem;
+  align-items: start;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.word-search-grid {
+  --grid-size: 12;
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size), 1fr);
+  gap: 2px;
+  background: #e5e7eb;
+  border: 3px solid #374151;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  user-select: none;
+}
+
+.cell {
+  width: 32px;
+  height: 32px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: crosshair;
+  transition: all 0.15s;
+
+  @media (max-width: 480px) {
+    width: 24px;
+    height: 24px;
+  }
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  &.selected {
+    background: #3b82f6;
+
+    .letter {
+      color: white;
+    }
+  }
+
+  &.highlighted {
+    background: #fef3c7;
+  }
+
+  &.found {
+    background: #dcfce7;
+
+    .letter {
+      color: #166534;
+    }
+  }
+
+  .letter {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #111827;
+    text-transform: uppercase;
+
+    @media (max-width: 480px) {
+      font-size: 0.75rem;
+    }
+  }
+}
+
+.hint-section {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #fde68a;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.words-container {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+}
+
+.words-header {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #111827;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.word-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.word-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  transition: background 0.15s;
+  cursor: pointer;
+
+  &:hover:not(.found) {
+    background: #e5e7eb;
+  }
+
+  &.found {
+    background: #dcfce7;
+  }
+
+  .word-english {
+    font-weight: 600;
+    color: #111827;
+    min-width: 80px;
+
+    &.strikethrough {
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+  }
+
+  .word-vietnamese {
+    font-size: 0.875rem;
+    color: #6b7280;
+    flex: 1;
+  }
+
+  .found-badge {
+    color: #16a34a;
+    font-weight: 700;
+  }
+}
+
+.direction-guide {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+
+  .guide-title {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+  }
+
+  .directions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #374151;
+
+    span {
+      background: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      border: 1px solid #e5e7eb;
+    }
+  }
+}
+
+.instructions {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}

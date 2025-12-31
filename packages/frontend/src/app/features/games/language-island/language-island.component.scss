@@ -1,0 +1,425 @@
+// Language Island - Building/Management Game Styles
+
+// Loading & Error
+.loading-screen,
+.error-screen {
+  @apply flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-sky-200 to-sky-100;
+
+  .spinner {
+    @apply w-12 h-12 border-4 border-sky-300 border-t-sky-600 rounded-full animate-spin mb-4;
+  }
+
+  p {
+    @apply text-gray-600;
+  }
+}
+
+// Island Container
+.island-container {
+  @apply min-h-screen bg-gradient-to-b from-sky-400 to-sky-300 p-4;
+}
+
+// Header
+.island-header {
+  @apply flex items-center justify-between gap-4 mb-4;
+
+  .btn-back {
+    @apply px-4 py-2 bg-white/80 hover:bg-white rounded-lg text-gray-700 font-medium transition-colors;
+  }
+
+  .level-display {
+    @apply flex items-center gap-2;
+
+    .level-badge {
+      @apply bg-yellow-400 text-gray-900 font-bold px-3 py-1 rounded-full text-sm;
+    }
+
+    .xp-bar {
+      @apply w-24 h-2 bg-gray-200 rounded-full overflow-hidden;
+
+      .xp-fill {
+        @apply h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all;
+      }
+    }
+
+    .xp-text {
+      @apply text-xs text-white;
+    }
+  }
+
+  .resources {
+    @apply flex gap-3;
+
+    .resource {
+      @apply flex items-center gap-1 bg-white/80 px-3 py-1 rounded-full;
+
+      .icon {
+        @apply text-lg;
+      }
+
+      .amount {
+        @apply font-bold text-gray-900;
+      }
+    }
+  }
+}
+
+// Production Bar
+.production-bar {
+  @apply flex items-center gap-4 bg-white/80 rounded-lg px-4 py-2 mb-4;
+
+  .production-label {
+    @apply text-sm text-gray-600;
+  }
+
+  .production-rate {
+    @apply text-sm font-medium text-gray-900;
+  }
+
+  .collect-btn {
+    @apply ml-auto px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors;
+    animation: pulse 2s infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+// Build Mode Banner
+.build-mode-banner {
+  @apply flex items-center justify-between bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg mb-4;
+
+  .cancel-btn {
+    @apply px-4 py-1 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600;
+  }
+}
+
+// Island Grid
+.island-grid {
+  @apply bg-emerald-300 rounded-2xl p-2 shadow-xl mx-auto max-w-lg;
+}
+
+.grid-row {
+  @apply flex;
+}
+
+.grid-cell {
+  @apply w-12 h-12 flex items-center justify-center relative cursor-pointer transition-all;
+  @apply border border-transparent hover:border-white/50;
+
+  &.grass {
+    @apply bg-emerald-400;
+  }
+
+  &.water {
+    @apply bg-blue-400;
+    animation: wave 2s ease-in-out infinite;
+  }
+
+  &.sand {
+    @apply bg-yellow-200;
+  }
+
+  &.rock {
+    @apply bg-gray-400;
+  }
+
+  &.preview {
+    @apply border-2;
+  }
+
+  &.preview-valid {
+    @apply border-green-500 bg-green-400/50;
+  }
+
+  &.preview-invalid {
+    @apply border-red-500 bg-red-400/50;
+  }
+
+  .terrain-icon {
+    @apply text-lg opacity-50;
+  }
+}
+
+@keyframes wave {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+// Building
+.building {
+  @apply absolute inset-0 flex items-center justify-center;
+
+  .building-icon {
+    @apply text-2xl;
+    animation: building-appear 0.3s ease-out;
+  }
+
+  .building-level {
+    @apply absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full;
+    @apply flex items-center justify-center;
+  }
+
+  &.building-in-progress {
+    @apply opacity-60;
+
+    .building-icon {
+      animation: building-construction 1s ease-in-out infinite;
+    }
+  }
+
+  .build-timer {
+    @apply absolute -bottom-4 left-1/2 transform -translate-x-1/2;
+    @apply text-xs bg-gray-800 text-white px-2 py-0.5 rounded whitespace-nowrap;
+  }
+}
+
+@keyframes building-appear {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes building-construction {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+// Island Actions
+.island-actions {
+  @apply flex justify-center gap-4 mt-6;
+}
+
+.action-btn {
+  @apply flex flex-col items-center gap-1 bg-white rounded-xl px-6 py-3;
+  @apply shadow-lg hover:shadow-xl transition-all hover:scale-105;
+
+  .icon {
+    @apply text-2xl;
+  }
+
+  .label {
+    @apply text-sm font-medium text-gray-700;
+  }
+}
+
+// Collection Popup
+.collection-popup {
+  @apply fixed inset-0 flex items-center justify-center pointer-events-none z-50;
+}
+
+.collection-content {
+  @apply bg-green-500 text-white px-8 py-4 rounded-2xl shadow-2xl;
+  animation: collection-pop 0.5s ease-out;
+
+  .icon {
+    @apply text-3xl mr-2;
+  }
+
+  .text {
+    @apply text-xl font-bold;
+  }
+}
+
+@keyframes collection-pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+// Shop Container
+.shop-container {
+  @apply min-h-screen bg-gray-100 p-4;
+}
+
+.shop-header {
+  @apply flex items-center justify-between gap-4 mb-6;
+
+  .btn-back {
+    @apply px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-medium transition-colors;
+  }
+
+  h1 {
+    @apply text-2xl font-bold text-gray-900;
+  }
+
+  .resources {
+    @apply flex gap-3;
+
+    .resource {
+      @apply text-sm font-medium text-gray-600;
+    }
+  }
+}
+
+.shop-categories {
+  @apply max-w-4xl mx-auto;
+
+  h3 {
+    @apply text-lg font-bold text-gray-900 mb-3 mt-6 first:mt-0;
+  }
+}
+
+.buildings-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+.building-card {
+  @apply relative bg-white rounded-xl p-4 cursor-pointer transition-all;
+  @apply border-2 border-transparent hover:border-gray-300;
+  @apply flex gap-4;
+
+  &.selected {
+    @apply border-blue-500 bg-blue-50;
+  }
+
+  &.locked {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  &.affordable {
+    @apply ring-2 ring-green-300;
+  }
+
+  .building-icon {
+    @apply text-4xl;
+  }
+
+  .building-info {
+    @apply flex-1;
+
+    h4 {
+      @apply font-bold text-gray-900 mb-1;
+    }
+
+    .description {
+      @apply text-xs text-gray-500 mb-2;
+    }
+
+    .building-stats {
+      @apply flex gap-2 mb-2;
+
+      .stat {
+        @apply text-xs bg-gray-100 px-2 py-1 rounded;
+      }
+    }
+
+    .building-cost {
+      @apply flex gap-2;
+
+      .cost {
+        @apply text-sm font-medium;
+
+        &.coins {
+          @apply text-yellow-600;
+        }
+
+        &.gems {
+          @apply text-purple-600;
+        }
+      }
+    }
+  }
+
+  .lock-overlay {
+    @apply absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center;
+
+    span {
+      @apply text-white font-bold text-sm;
+    }
+  }
+}
+
+.shop-footer {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t p-4;
+
+  .buy-btn {
+    @apply w-full py-4 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed;
+    @apply text-white font-bold text-lg rounded-xl transition-colors;
+  }
+}
+
+// Building Info Modal
+.building-modal-overlay {
+  @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4;
+}
+
+.building-modal {
+  @apply bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl;
+  animation: modal-appear 0.3s ease-out;
+
+  .modal-header {
+    @apply flex items-center gap-4 mb-4;
+
+    .modal-icon {
+      @apply text-5xl;
+    }
+
+    h2 {
+      @apply text-xl font-bold text-gray-900 flex-1;
+    }
+
+    .modal-level {
+      @apply bg-yellow-400 text-gray-900 font-bold px-3 py-1 rounded-full text-sm;
+    }
+  }
+
+  .modal-content {
+    .description {
+      @apply text-gray-600 mb-4;
+    }
+
+    .modal-stats {
+      @apply bg-gray-50 rounded-lg p-4 mb-4;
+
+      h4 {
+        @apply font-bold text-gray-900 mb-2;
+      }
+
+      .stat-row {
+        @apply flex justify-between text-sm text-gray-600;
+      }
+    }
+
+    .upgrade-section {
+      @apply bg-blue-50 rounded-lg p-4 mb-4;
+
+      h4 {
+        @apply font-bold text-gray-900 mb-2;
+      }
+
+      .upgrade-cost {
+        @apply text-sm text-gray-600 mb-3;
+      }
+
+      .upgrade-btn {
+        @apply w-full py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed;
+        @apply text-white font-bold rounded-lg transition-colors;
+      }
+    }
+
+    .max-level {
+      @apply text-center py-4;
+
+      span {
+        @apply text-yellow-500 font-bold;
+      }
+    }
+  }
+
+  .close-btn {
+    @apply w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors;
+  }
+}
+
+@keyframes modal-appear {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+// Utility
+.btn-primary {
+  @apply px-6 py-3 bg-gray-900 text-white rounded-xl font-semibold;
+  @apply hover:bg-gray-800 transition-colors;
+}

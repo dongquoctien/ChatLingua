@@ -1,0 +1,102 @@
+@if (showCountdown()) {
+  <app-countdown [startFrom]="3" (countdownComplete)="onCountdownComplete()"></app-countdown>
+}
+
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Preparing bubbles...</p>
+  </div>
+} @else if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+} @else if (gameStarted()) {
+  <div class="game-container">
+    <!-- Game Header -->
+    <div class="game-header">
+      <div class="header-left">
+        <div class="score-display">
+          <span class="score-icon">⭐</span>
+          <span class="score-value">{{ score() }}</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="lives-display">
+          @for (i of getLivesArray(); track i) {
+            <span class="life-heart" [class.lost]="i >= lives()">
+              {{ i < lives() ? '❤️' : '🖤' }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="header-right">
+        @if (combo() > 1) {
+          <div class="combo-display">
+            <span class="combo-value">{{ combo() }}x</span>
+            <span class="combo-label">COMBO</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="progressPercent()"></div>
+    </div>
+
+    <!-- Question Display -->
+    <div class="question-section">
+      <p class="question-label">Tap the meaning of:</p>
+      <h2 class="english-word">{{ currentWord()?.englishWord }}</h2>
+    </div>
+
+    <!-- Bubble Area -->
+    <div class="bubble-area">
+      @for (bubble of bubbles(); track bubble.id) {
+        @if (!bubble.popped) {
+          <button
+            class="bubble"
+            [class.correct-pop]="bubble.popped && bubble.isCorrect"
+            [class.wrong-pop]="bubble.popped && !bubble.isCorrect"
+            [style.left.%]="bubble.x"
+            [style.bottom.%]="bubble.y"
+            [style.width.px]="bubble.size"
+            [style.height.px]="bubble.size"
+            [style.backgroundColor]="bubble.color"
+            (click)="popBubble(bubble)"
+          >
+            <span class="bubble-text">{{ bubble.text }}</span>
+          </button>
+        } @else {
+          <div
+            class="bubble-pop"
+            [class.correct]="bubble.isCorrect"
+            [class.wrong]="!bubble.isCorrect"
+            [style.left.%]="bubble.x"
+            [style.bottom.%]="bubble.y"
+          >
+            {{ bubble.isCorrect ? '✓' : '✗' }}
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Question Counter -->
+    <div class="question-counter">
+      {{ currentQuestion() + 1 }} / {{ TOTAL_QUESTIONS }}
+    </div>
+  </div>
+}
+
+<!-- Game Over Dialog -->
+<app-game-over-dialog
+  [isOpen]="showGameOver()"
+  gameName="Pop Quiz Blitz"
+  [result]="gameResult()"
+  (playAgain)="onPlayAgain()"
+  (backToHub)="onBackToHub()"
+></app-game-over-dialog>

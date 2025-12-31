@@ -1,0 +1,319 @@
+<!-- Loading -->
+@if (isLoading()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Loading your island...</p>
+  </div>
+}
+
+<!-- Error -->
+@if (error()) {
+  <div class="error-screen">
+    <p class="text-red-600 mb-4">{{ error() }}</p>
+    <button class="btn-primary" (click)="onBackToHub()">Back to Games</button>
+  </div>
+}
+
+<!-- Main Island View -->
+@if (!isLoading() && (phase() === 'island' || phase() === 'build')) {
+  <div class="island-container">
+    <!-- Header -->
+    <div class="island-header">
+      <button class="btn-back" (click)="onBackToHub()">← Back</button>
+
+      <div class="level-display">
+        <span class="level-badge">Lv.{{ level() }}</span>
+        <div class="xp-bar">
+          <div class="xp-fill" [style.width.%]="levelProgress()"></div>
+        </div>
+        <span class="xp-text">{{ xp() }}/{{ xpToNextLevel() }} XP</span>
+      </div>
+
+      <div class="resources">
+        <div class="resource coins">
+          <span class="icon">💰</span>
+          <span class="amount">{{ coins() }}</span>
+        </div>
+        <div class="resource gems">
+          <span class="icon">💎</span>
+          <span class="amount">{{ gems() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Production Info -->
+    <div class="production-bar">
+      <span class="production-label">Production:</span>
+      <span class="production-rate">⚡{{ totalProductionPerHour().xp }}/hr</span>
+      <span class="production-rate">💰{{ totalProductionPerHour().coins }}/hr</span>
+
+      @if (pendingCollection().xp > 0 || pendingCollection().coins > 0) {
+        <button class="collect-btn" (click)="collectAll()">
+          Collect (+{{ pendingCollection().xp }} XP, +{{ pendingCollection().coins }} 💰)
+        </button>
+      }
+    </div>
+
+    <!-- Build Mode Banner -->
+    @if (phase() === 'build') {
+      <div class="build-mode-banner">
+        <span>📍 Tap a cell to place {{ selectedBuilding()?.name }}</span>
+        <button class="cancel-btn" (click)="cancelBuild()">Cancel</button>
+      </div>
+    }
+
+    <!-- Island Grid -->
+    <div class="island-grid">
+      @for (row of grid(); track $index) {
+        <div class="grid-row">
+          @for (cell of row; track cell.x) {
+            <div
+              class="grid-cell"
+              [class.water]="cell.terrain === 'water'"
+              [class.sand]="cell.terrain === 'sand'"
+              [class.rock]="cell.terrain === 'rock'"
+              [class.grass]="cell.terrain === 'grass'"
+              [class.has-building]="cell.building"
+              [class.preview]="isPreviewCell(cell.x, cell.y)"
+              [class.preview-valid]="isPreviewCell(cell.x, cell.y) && canPlaceBuilding()"
+              [class.preview-invalid]="isPreviewCell(cell.x, cell.y) && !canPlaceBuilding()"
+              (mouseenter)="onGridCellHover(cell)"
+              (click)="onGridCellClick(cell)"
+            >
+              @if (cell.building) {
+                <div class="building" [class.building-in-progress]="cell.building.isBuilding">
+                  <span class="building-icon">{{ getBuildingIcon(cell.building.buildingId) }}</span>
+                  @if (cell.building.level > 1) {
+                    <span class="building-level">{{ cell.building.level }}</span>
+                  }
+                  @if (cell.building.isBuilding) {
+                    <div class="build-timer">{{ getBuildTimeRemaining(cell.building) }}</div>
+                  }
+                </div>
+              } @else if (!cell.isBlocked) {
+                <span class="terrain-icon">{{ getTerrainEmoji(cell.terrain) }}</span>
+              } @else {
+                <span class="terrain-icon">{{ getTerrainEmoji(cell.terrain) }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="island-actions">
+      <button class="action-btn shop" (click)="openShop()">
+        <span class="icon">🏪</span>
+        <span class="label">Shop</span>
+      </button>
+    </div>
+
+    <!-- Collection Animation -->
+    @if (showCollection()) {
+      <div class="collection-popup">
+        <div class="collection-content">
+          <span class="icon">🎉</span>
+          <span class="text">Collected!</span>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- Shop View -->
+@if (phase() === 'shop') {
+  <div class="shop-container">
+    <div class="shop-header">
+      <button class="btn-back" (click)="closeShop()">← Back</button>
+      <h1>Building Shop</h1>
+      <div class="resources">
+        <span class="resource">💰 {{ coins() }}</span>
+        <span class="resource">💎 {{ gems() }}</span>
+      </div>
+    </div>
+
+    <!-- Building Categories -->
+    <div class="shop-categories">
+      <h3>Learning Buildings</h3>
+      <div class="buildings-grid">
+        @for (building of unlockedBuildings(); track building.id) {
+          @if (building.category === 'learning') {
+            <div
+              class="building-card"
+              [class.selected]="selectedBuilding()?.id === building.id"
+              [class.locked]="building.unlockLevel > level()"
+              [class.affordable]="canAffordBuilding(building)"
+              (click)="selectBuildingToBuy(building)"
+            >
+              <div class="building-icon">{{ building.icon }}</div>
+              <div class="building-info">
+                <h4>{{ building.name }}</h4>
+                <p class="description">{{ building.description }}</p>
+                <div class="building-stats">
+                  @if (building.production.xp) {
+                    <span class="stat">⚡{{ building.production.xp }}/hr</span>
+                  }
+                  @if (building.production.coins) {
+                    <span class="stat">💰{{ building.production.coins }}/hr</span>
+                  }
+                </div>
+                <div class="building-cost">
+                  <span class="cost coins">💰{{ building.cost.coins }}</span>
+                  @if (building.cost.gems) {
+                    <span class="cost gems">💎{{ building.cost.gems }}</span>
+                  }
+                </div>
+              </div>
+              @if (building.unlockLevel > level()) {
+                <div class="lock-overlay">
+                  <span>🔒 Level {{ building.unlockLevel }}</span>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <h3>Production Buildings</h3>
+      <div class="buildings-grid">
+        @for (building of unlockedBuildings(); track building.id) {
+          @if (building.category === 'production') {
+            <div
+              class="building-card"
+              [class.selected]="selectedBuilding()?.id === building.id"
+              [class.locked]="building.unlockLevel > level()"
+              [class.affordable]="canAffordBuilding(building)"
+              (click)="selectBuildingToBuy(building)"
+            >
+              <div class="building-icon">{{ building.icon }}</div>
+              <div class="building-info">
+                <h4>{{ building.name }}</h4>
+                <p class="description">{{ building.description }}</p>
+                <div class="building-stats">
+                  @if (building.production.xp) {
+                    <span class="stat">⚡{{ building.production.xp }}/hr</span>
+                  }
+                  @if (building.production.coins) {
+                    <span class="stat">💰{{ building.production.coins }}/hr</span>
+                  }
+                </div>
+                <div class="building-cost">
+                  <span class="cost coins">💰{{ building.cost.coins }}</span>
+                  @if (building.cost.gems) {
+                    <span class="cost gems">💎{{ building.cost.gems }}</span>
+                  }
+                </div>
+              </div>
+              @if (building.unlockLevel > level()) {
+                <div class="lock-overlay">
+                  <span>🔒 Level {{ building.unlockLevel }}</span>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <h3>Decorations</h3>
+      <div class="buildings-grid">
+        @for (building of unlockedBuildings(); track building.id) {
+          @if (building.category === 'decoration') {
+            <div
+              class="building-card"
+              [class.selected]="selectedBuilding()?.id === building.id"
+              [class.locked]="building.unlockLevel > level()"
+              [class.affordable]="canAffordBuilding(building)"
+              (click)="selectBuildingToBuy(building)"
+            >
+              <div class="building-icon">{{ building.icon }}</div>
+              <div class="building-info">
+                <h4>{{ building.name }}</h4>
+                <p class="description">{{ building.description }}</p>
+                <div class="building-cost">
+                  <span class="cost coins">💰{{ building.cost.coins }}</span>
+                  @if (building.cost.gems) {
+                    <span class="cost gems">💎{{ building.cost.gems }}</span>
+                  }
+                </div>
+              </div>
+              @if (building.unlockLevel > level()) {
+                <div class="lock-overlay">
+                  <span>🔒 Level {{ building.unlockLevel }}</span>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Buy Button -->
+    @if (selectedBuilding()) {
+      <div class="shop-footer">
+        <button
+          class="buy-btn"
+          [disabled]="!canAffordBuilding(selectedBuilding()!)"
+          (click)="buyBuilding()"
+        >
+          Buy {{ selectedBuilding()?.name }}
+        </button>
+      </div>
+    }
+  </div>
+}
+
+<!-- Building Info Modal -->
+@if (selectedPlacedBuilding()) {
+  <div class="building-modal-overlay" (click)="closeBuildingInfo()">
+    <div class="building-modal" (click)="$event.stopPropagation()">
+      @if (getBuildingDef(selectedPlacedBuilding()!.buildingId); as def) {
+        <div class="modal-header">
+          <span class="modal-icon">{{ def.icon }}</span>
+          <h2>{{ def.name }}</h2>
+          <span class="modal-level">Level {{ selectedPlacedBuilding()!.level }}</span>
+        </div>
+
+        <div class="modal-content">
+          <p class="description">{{ def.description }}</p>
+
+          <div class="modal-stats">
+            <h4>Production</h4>
+            @if (def.production.xp) {
+              <div class="stat-row">
+                <span>XP per hour:</span>
+                <span>{{ def.production.xp * selectedPlacedBuilding()!.level }}</span>
+              </div>
+            }
+            @if (def.production.coins) {
+              <div class="stat-row">
+                <span>Coins per hour:</span>
+                <span>{{ def.production.coins * selectedPlacedBuilding()!.level }}</span>
+              </div>
+            }
+          </div>
+
+          @if (selectedPlacedBuilding()!.level < 5) {
+            <div class="upgrade-section">
+              <h4>Upgrade to Level {{ selectedPlacedBuilding()!.level + 1 }}</h4>
+              <p class="upgrade-cost">Cost: 💰{{ def.cost.coins * selectedPlacedBuilding()!.level }}</p>
+              <button
+                class="upgrade-btn"
+                [disabled]="!canUpgradeBuilding(selectedPlacedBuilding()!)"
+                (click)="upgradeBuilding(selectedPlacedBuilding()!)"
+              >
+                Upgrade
+              </button>
+            </div>
+          } @else {
+            <div class="max-level">
+              <span>⭐ MAX LEVEL ⭐</span>
+            </div>
+          }
+        </div>
+
+        <button class="close-btn" (click)="closeBuildingInfo()">Close</button>
+      }
+    </div>
+  </div>
+}
