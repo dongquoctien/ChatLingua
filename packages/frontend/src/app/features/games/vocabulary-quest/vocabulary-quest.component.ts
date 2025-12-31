@@ -54,6 +54,8 @@ interface BattleState {
   isPlayerTurn: boolean;
   lastAction: 'attack' | 'defend' | 'heal' | null;
   battleLog: string[];
+  correctCount: number;
+  wrongCount: number;
 }
 
 @Component({
@@ -85,7 +87,9 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
     damage: 0,
     isPlayerTurn: true,
     lastAction: null,
-    battleLog: []
+    battleLog: [],
+    correctCount: 0,
+    wrongCount: 0
   });
 
   // Questions pool
@@ -317,7 +321,9 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
       damage: 0,
       isPlayerTurn: true,
       lastAction: null,
-      battleLog: [`A wild ${stage.enemyName} appears!`]
+      battleLog: [`A wild ${stage.enemyName} appears!`],
+      correctCount: 0,
+      wrongCount: 0
     });
 
     this.phase.set('battle');
@@ -369,7 +375,8 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
           combo,
           damage: b.damage + damage,
           lastAction: 'attack',
-          battleLog: [...b.battleLog, `You deal ${damage} damage! (${combo}x combo)`]
+          battleLog: [...b.battleLog, `You deal ${damage} damage! (${combo}x combo)`],
+          correctCount: b.correctCount + 1
         };
       });
 
@@ -404,7 +411,8 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
           return {
             ...b,
             playerHp: newPlayerHp,
-            battleLog: [...b.battleLog, `${this.currentStage()?.enemyName} deals ${damage} damage!`]
+            battleLog: [...b.battleLog, `${this.currentStage()?.enemyName} deals ${damage} damage!`],
+            wrongCount: b.wrongCount + 1
           };
         });
 
@@ -494,12 +502,15 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
     const b = this.battle();
     const duration = Math.floor((Date.now() - this.startTime.getTime()) / 1000);
 
+    const totalAnswered = b.correctCount + b.wrongCount;
+    const accuracy = totalAnswered > 0 ? Math.round((b.correctCount / totalAnswered) * 100) : 0;
+
     this.apiService.endGame(this.sessionId, {
       score: b.damage,
-      accuracy: victory ? Math.round((b.playerHp / b.playerMaxHp) * 100) : 0,
+      accuracy,
       maxCombo: b.combo,
-      wordsCorrect: b.questionIndex,
-      wordsWrong: b.totalQuestions - b.questionIndex,
+      wordsCorrect: b.correctCount,
+      wordsWrong: b.wrongCount,
       durationSeconds: duration,
       gameData: { stars, stageId: this.currentStage()?.id, completed: victory }
     }).subscribe({
@@ -515,18 +526,21 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
 
   private showResults(victory: boolean, stars: number, rewards: { xp: number; coins: number }): void {
     const b = this.battle();
+    const totalAnswered = b.correctCount + b.wrongCount;
+    const accuracy = totalAnswered > 0 ? Math.round((b.correctCount / totalAnswered) * 100) : 0;
 
     this.gameResult.set({
       score: b.damage,
-      accuracy: victory ? Math.round((b.playerHp / b.playerMaxHp) * 100) : 0,
+      accuracy,
       maxCombo: b.combo,
-      wordsCorrect: b.questionIndex,
-      wordsWrong: b.totalQuestions - b.questionIndex,
+      wordsCorrect: b.correctCount,
+      wordsWrong: b.wrongCount,
       durationSeconds: this.startTime ? Math.floor((Date.now() - this.startTime.getTime()) / 1000) : 0,
       xpEarned: rewards.xp,
       coinsEarned: rewards.coins,
       isNewBestScore: false,
-      newAchievements: []
+      newAchievements: [],
+      victory: victory
     });
 
     this.showGameOver.set(true);
@@ -555,7 +569,9 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
       damage: 0,
       isPlayerTurn: true,
       lastAction: null,
-      battleLog: []
+      battleLog: [],
+      correctCount: 0,
+      wrongCount: 0
     });
     this.selectedAnswer.set(null);
     this.showFeedback.set(false);

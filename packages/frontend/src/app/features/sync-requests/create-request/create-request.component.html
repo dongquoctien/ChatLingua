@@ -1,0 +1,223 @@
+<div class="max-w-3xl mx-auto">
+  <!-- Header -->
+  <div class="mb-6">
+    <a
+      routerLink="/sync-requests/my"
+      class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+    >
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+      <span>Back to My Requests</span>
+    </a>
+    @if (isEditMode()) {
+      <h1 class="text-2xl font-bold text-gray-900">Edit Sync Request</h1>
+      <p class="text-gray-600 mt-1">Update your Vietnamese text</p>
+    } @else {
+      <h1 class="text-2xl font-bold text-gray-900">Create Sync Request</h1>
+      <p class="text-gray-600 mt-1">Submit your Vietnamese text for syncing</p>
+    }
+  </div>
+
+  <!-- Info Box (only show in create mode) -->
+  @if (!isEditMode()) {
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div class="flex gap-3">
+        <fa-icon [icon]="faInfoCircle" class="text-blue-600 mt-0.5"></fa-icon>
+        <div class="text-sm text-blue-800">
+          <p class="font-medium mb-1">How it works:</p>
+          <ol class="list-decimal ml-4 space-y-1">
+            <li>Submit your Vietnamese text describing your day or any topic</li>
+            <li>A helper with MCP will sync it for you</li>
+            <li>You'll receive vocabulary and grammar extracted from your text</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Form -->
+  <form (ngSubmit)="submit()" class="bg-white rounded-lg border border-gray-200 p-6">
+    <!-- Vietnamese Text -->
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        Vietnamese Text <span class="text-red-500">*</span>
+      </label>
+      <textarea
+        [ngModel]="vietnameseText()"
+        (ngModelChange)="vietnameseText.set($event)"
+        name="vietnameseText"
+        rows="6"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+        placeholder="Coversational Vietnamese text..."
+        [maxlength]="maxChars"
+      ></textarea>
+      <div class="flex justify-between mt-1">
+        <span class="text-xs text-gray-500">Enter your Vietnamese text here</span>
+        <span class="text-xs" [class.text-red-500]="charCount > maxChars * 0.9" [class.text-gray-500]="charCount <= maxChars * 0.9">
+          {{ charCount }}/{{ maxChars }}
+        </span>
+      </div>
+    </div>
+
+    <!-- English Translation (Optional) -->
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        English Translation
+        <span class="text-gray-400 font-normal">(Optional)</span>
+      </label>
+      <textarea
+        [ngModel]="englishTranslation()"
+        (ngModelChange)="englishTranslation.set($event)"
+        name="englishTranslation"
+        rows="4"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+        placeholder="If you have an English translation, add it here to help the syncer..."
+      ></textarea>
+    </div>
+
+    <!-- Topic -->
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        Topic
+        <span class="text-gray-400 font-normal">(Optional)</span>
+      </label>
+      <input
+        type="text"
+        [ngModel]="topic()"
+        (ngModelChange)="topic.set($event)"
+        name="topic"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent mb-2"
+        placeholder="e.g., Daily Life, Work, Travel"
+      />
+      <div class="flex flex-wrap gap-2">
+        @for (t of topicSuggestions; track t) {
+          <button
+            type="button"
+            (click)="selectTopic(t)"
+            class="px-3 py-1 text-xs rounded-full border transition-colors"
+            [class.bg-gray-900]="topic() === t"
+            [class.text-white]="topic() === t"
+            [class.border-gray-900]="topic() === t"
+            [class.bg-gray-50]="topic() !== t"
+            [class.text-gray-700]="topic() !== t"
+            [class.border-gray-300]="topic() !== t"
+            [class.hover:bg-gray-100]="topic() !== t"
+          >
+            {{ t }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Difficulty Level -->
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        Difficulty Level
+        <span class="text-gray-400 font-normal">(Optional)</span>
+      </label>
+      <div class="flex gap-3">
+        @for (d of difficultyOptions; track d) {
+          <label
+            class="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer transition-colors"
+            [class.bg-gray-900]="difficultyLevel() === d"
+            [class.text-white]="difficultyLevel() === d"
+            [class.border-gray-900]="difficultyLevel() === d"
+            [class.bg-white]="difficultyLevel() !== d"
+            [class.text-gray-700]="difficultyLevel() !== d"
+            [class.border-gray-300]="difficultyLevel() !== d"
+            [class.hover:bg-gray-50]="difficultyLevel() !== d"
+          >
+            <input
+              type="radio"
+              name="difficultyLevel"
+              [value]="d"
+              [ngModel]="difficultyLevel()"
+              (ngModelChange)="difficultyLevel.set($event)"
+              class="hidden"
+            />
+            {{ d | titlecase }}
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- Priority -->
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        Priority
+      </label>
+      <div class="flex gap-3">
+        @for (p of priorityOptions; track p) {
+          <label
+            class="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer transition-colors"
+            [class.bg-gray-900]="priority() === p"
+            [class.text-white]="priority() === p"
+            [class.border-gray-900]="priority() === p"
+            [class.bg-white]="priority() !== p"
+            [class.text-gray-700]="priority() !== p"
+            [class.border-gray-300]="priority() !== p"
+            [class.hover:bg-gray-50]="priority() !== p"
+          >
+            <input
+              type="radio"
+              name="priority"
+              [value]="p"
+              [ngModel]="priority()"
+              (ngModelChange)="priority.set($event)"
+              class="hidden"
+            />
+            {{ p | titlecase }}
+          </label>
+        }
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">
+        Notes for Syncer
+        <span class="text-gray-400 font-normal">(Optional)</span>
+      </label>
+      <textarea
+        [ngModel]="notes()"
+        (ngModelChange)="notes.set($event)"
+        name="notes"
+        rows="2"
+        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+        placeholder="Any special instructions or context for the syncer..."
+      ></textarea>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
+      <a
+        routerLink="/sync-requests/my"
+        class="px-4 py-2 text-gray-700 hover:text-gray-900"
+      >
+        Cancel
+      </a>
+      <button
+        type="submit"
+        [disabled]="!canSubmit"
+        class="flex items-center gap-2 px-6 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        @if (submitting()) {
+          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          <span>{{ isEditMode() ? 'Updating...' : 'Submitting...' }}</span>
+        } @else if (loading()) {
+          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          <span>Loading...</span>
+        } @else {
+          <fa-icon [icon]="isEditMode() ? faEdit : faPaperPlane"></fa-icon>
+          <span>{{ isEditMode() ? 'Update Request' : 'Submit Request' }}</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>

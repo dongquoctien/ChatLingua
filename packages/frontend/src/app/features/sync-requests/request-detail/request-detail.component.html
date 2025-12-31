@@ -1,0 +1,186 @@
+<div class="max-w-6xl mx-auto">
+  <!-- Back Button -->
+  <div class="mb-6">
+    <a
+      routerLink="/sync-requests"
+      class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900"
+    >
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+      <span>Back to Requests</span>
+    </a>
+  </div>
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+      <fa-icon [icon]="faSpinner" class="text-gray-400 text-2xl animate-spin"></fa-icon>
+      <p class="text-gray-600 mt-2">Loading request...</p>
+    </div>
+  } @else if (request()) {
+    <!-- Request Detail -->
+    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <!-- Header -->
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              <span
+                class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-full border"
+                [ngClass]="getStatusClass(request()!.status)"
+              >
+                <fa-icon [icon]="getStatusIcon(request()!.status)"></fa-icon>
+                {{ request()!.status === 'in_progress' ? 'In Progress' : (request()!.status | titlecase) }}
+              </span>
+              <span class="text-sm text-gray-500">Request #{{ request()!.id }}</span>
+            </div>
+            <div class="flex items-center gap-4 text-sm text-gray-600">
+              @if (request()!.topic) {
+                <span class="px-2 py-0.5 bg-gray-100 rounded">{{ request()!.topic }}</span>
+              }
+              @if (request()!.difficultyLevel) {
+                <span>{{ request()!.difficultyLevel | titlecase }}</span>
+              }
+              <span class="capitalize">{{ request()!.priority }} priority</span>
+            </div>
+          </div>
+
+          <!-- Actions (Owner only - sync happens via MCP) -->
+          <div class="flex items-center gap-2">
+            @if (canEdit) {
+              <a
+                [routerLink]="['/sync-requests', request()!.id, 'edit']"
+                class="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
+              >
+                <fa-icon [icon]="faEdit"></fa-icon>
+                <span>Edit</span>
+              </a>
+            }
+            @if (canCancel) {
+              <button
+                (click)="cancelRequest()"
+                [disabled]="actionLoading()"
+                class="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
+              >
+                <fa-icon [icon]="faTrash"></fa-icon>
+                <span>Cancel</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Sync Info (for in_progress or completed) -->
+      @if (request()!.status === 'in_progress') {
+        <div class="p-4 bg-blue-50 border-b border-blue-200">
+          <p class="text-blue-800 text-sm">
+            <fa-icon [icon]="faSync" class="animate-spin mr-2"></fa-icon>
+            This request is being synced via MCP. Please wait for completion.
+          </p>
+        </div>
+      }
+
+      <!-- Content -->
+      <div class="p-6 space-y-6">
+        <!-- Vietnamese Text -->
+        <div>
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Vietnamese Text</h3>
+          <div class="p-4 bg-gray-50 rounded-lg whitespace-pre-wrap text-gray-900">
+            {{ request()!.vietnameseText }}
+          </div>
+        </div>
+
+        <!-- English Translation -->
+        @if (request()!.englishTranslation) {
+          <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">English Translation</h3>
+            <div class="p-4 bg-gray-50 rounded-lg whitespace-pre-wrap text-gray-700 italic">
+              {{ request()!.englishTranslation }}
+            </div>
+          </div>
+        }
+
+        <!-- Notes -->
+        @if (request()!.notes) {
+          <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Notes</h3>
+            <div class="p-4 bg-blue-50 rounded-lg text-blue-800">
+              {{ request()!.notes }}
+            </div>
+          </div>
+        }
+
+        <!-- Sync Notes -->
+        @if (request()!.syncNotes) {
+          <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Syncer Notes</h3>
+            <div class="p-4 bg-green-50 rounded-lg text-green-800">
+              {{ request()!.syncNotes }}
+            </div>
+          </div>
+        }
+
+        <!-- Conversation Link -->
+        @if (request()!.status === 'completed' && request()!.conversationId) {
+          <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Synced Conversation</h3>
+            <a
+              [routerLink]="['/conversations', request()!.conversationId]"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+            >
+              <fa-icon [icon]="faExternalLink"></fa-icon>
+              <span>View Conversation #{{ request()!.conversationId }}</span>
+            </a>
+          </div>
+        }
+      </div>
+
+      <!-- Footer / Meta -->
+      <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <p class="text-gray-500">Requester</p>
+            <p class="text-gray-900 font-medium flex items-center gap-1">
+              <fa-icon [icon]="faUser" class="text-xs text-gray-400"></fa-icon>
+              {{ request()!.requesterName }}
+            </p>
+          </div>
+          <div>
+            <p class="text-gray-500">Created</p>
+            <p class="text-gray-900 flex items-center gap-1">
+              <fa-icon [icon]="faCalendar" class="text-xs text-gray-400"></fa-icon>
+              {{ formatDate(request()!.createdAt) }}
+            </p>
+          </div>
+          @if (request()!.syncerName) {
+            <div>
+              <p class="text-gray-500">Syncer</p>
+              <p class="text-gray-900 font-medium flex items-center gap-1">
+                <fa-icon [icon]="faUser" class="text-xs text-gray-400"></fa-icon>
+                {{ request()!.syncerName }}
+              </p>
+            </div>
+          }
+          @if (request()!.syncStartedAt) {
+            <div>
+              <p class="text-gray-500">Sync Started</p>
+              <p class="text-gray-900">{{ formatDate(request()!.syncStartedAt!) }}</p>
+            </div>
+          }
+          @if (request()!.syncCompletedAt) {
+            <div>
+              <p class="text-gray-500">Completed</p>
+              <p class="text-gray-900">{{ formatDate(request()!.syncCompletedAt!) }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

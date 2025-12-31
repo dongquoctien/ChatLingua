@@ -41,17 +41,9 @@
       </div>
     </div>
 
-    <!-- Production Info -->
+    <!-- Info Bar - Learn to Earn! -->
     <div class="production-bar">
-      <span class="production-label">Production:</span>
-      <span class="production-rate">⚡{{ totalProductionPerHour().xp }}/hr</span>
-      <span class="production-rate">💰{{ totalProductionPerHour().coins }}/hr</span>
-
-      @if (pendingCollection().xp > 0 || pendingCollection().coins > 0) {
-        <button class="collect-btn" (click)="collectAll()">
-          Collect (+{{ pendingCollection().xp }} XP, +{{ pendingCollection().coins }} 💰)
-        </button>
-      }
+      <span class="production-label">🎓 Tap a building to practice and earn rewards!</span>
     </div>
 
     <!-- Build Mode Banner -->
@@ -277,26 +269,41 @@
         <div class="modal-content">
           <p class="description">{{ def.description }}</p>
 
-          <div class="modal-stats">
-            <h4>Production</h4>
-            @if (def.production.xp) {
-              <div class="stat-row">
-                <span>XP per hour:</span>
-                <span>{{ def.production.xp * selectedPlacedBuilding()!.level }}</span>
+          <!-- Practice Button - Learn to Earn! -->
+          @if (canPractice(selectedPlacedBuilding()!)) {
+            <div class="practice-section">
+              <button class="practice-btn" (click)="startPractice(selectedPlacedBuilding()!)">
+                🎓 Practice Now!
+              </button>
+              <div class="reward-preview">
+                <span class="reward-label">Rewards per correct answer:</span>
+                <div class="rewards">
+                  @if (def.production.xp) {
+                    <span class="reward">⚡{{ def.production.xp * selectedPlacedBuilding()!.level }} XP</span>
+                  }
+                  @if (def.production.coins) {
+                    <span class="reward">💰{{ def.production.coins * selectedPlacedBuilding()!.level }}</span>
+                  }
+                </div>
+                <span class="questions-info">{{ def.questionsPerSession }} questions per session</span>
               </div>
-            }
-            @if (def.production.coins) {
-              <div class="stat-row">
-                <span>Coins per hour:</span>
-                <span>{{ def.production.coins * selectedPlacedBuilding()!.level }}</span>
-              </div>
-            }
-          </div>
+            </div>
+          } @else if (selectedPlacedBuilding()!.isBuilding) {
+            <div class="building-progress">
+              <span>🔨 Building in progress...</span>
+              <span class="timer">{{ getBuildTimeRemaining(selectedPlacedBuilding()!) }}</span>
+            </div>
+          } @else {
+            <div class="decoration-info">
+              <span>🎨 This is a decoration - no practice available</span>
+            </div>
+          }
 
           @if (selectedPlacedBuilding()!.level < 5) {
             <div class="upgrade-section">
               <h4>Upgrade to Level {{ selectedPlacedBuilding()!.level + 1 }}</h4>
               <p class="upgrade-cost">Cost: 💰{{ def.cost.coins * selectedPlacedBuilding()!.level }}</p>
+              <p class="upgrade-benefit">+{{ def.production.xp || 0 }} XP, +{{ def.production.coins || 0 }} coins per answer</p>
               <button
                 class="upgrade-btn"
                 [disabled]="!canUpgradeBuilding(selectedPlacedBuilding()!)"
@@ -314,6 +321,97 @@
 
         <button class="close-btn" (click)="closeBuildingInfo()">Close</button>
       }
+    </div>
+  </div>
+}
+
+<!-- Practice Session UI -->
+@if (phase() === 'practice' && practiceSession() && currentExercise()) {
+  <div class="practice-container">
+    <!-- Practice Header -->
+    <div class="practice-header">
+      <button class="btn-cancel" (click)="cancelPractice()">✕ Quit</button>
+
+      <div class="session-progress">
+        <span class="progress-text">
+          Question {{ practiceSession()!.currentIndex + 1 }} / {{ practiceSession()!.totalQuestions }}
+        </span>
+        <div class="progress-bar">
+          <div class="progress-fill"
+               [style.width.%]="((practiceSession()!.currentIndex + 1) / practiceSession()!.totalQuestions) * 100">
+          </div>
+        </div>
+      </div>
+
+      <div class="session-rewards">
+        <span class="reward-xp">⚡{{ sessionRewards().xp }}</span>
+        <span class="reward-coins">💰{{ sessionRewards().coins }}</span>
+      </div>
+    </div>
+
+    <!-- Exercise Content -->
+    <div class="exercise-card">
+      <!-- Building Icon -->
+      <div class="building-badge">
+        <span class="badge-icon">{{ getBuildingIcon(practiceSession()!.building.buildingId) }}</span>
+        <span class="badge-name">{{ getBuildingDef(practiceSession()!.building.buildingId)?.name }}</span>
+      </div>
+
+      <!-- Question -->
+      <div class="question-section">
+        <h2 class="question">{{ currentExercise()!.question }}</h2>
+        @if (currentExercise()!.questionVi) {
+          <p class="question-vi">{{ currentExercise()!.questionVi }}</p>
+        }
+      </div>
+
+      <!-- Answer Options -->
+      <div class="options-grid">
+        @for (option of currentExercise()!.options; track option) {
+          <button
+            class="option-btn"
+            [class.selected]="selectedAnswer() === option"
+            [class.correct]="showAnswerFeedback() && option === currentExercise()!.correctAnswer"
+            [class.wrong]="showAnswerFeedback() && selectedAnswer() === option && option !== currentExercise()!.correctAnswer"
+            [disabled]="showAnswerFeedback()"
+            (click)="selectAnswer(option)"
+          >
+            {{ option }}
+          </button>
+        }
+      </div>
+
+      <!-- Feedback -->
+      @if (showAnswerFeedback()) {
+        <div class="feedback" [class.correct]="isAnswerCorrect()" [class.wrong]="!isAnswerCorrect()">
+          @if (isAnswerCorrect()) {
+            <span class="feedback-icon">✅</span>
+            <span class="feedback-text">Correct!
+              +{{ getBuildingDef(practiceSession()!.building.buildingId)?.production?.xp || 0 }} XP
+              +{{ getBuildingDef(practiceSession()!.building.buildingId)?.production?.coins || 0 }} 💰
+            </span>
+          } @else {
+            <span class="feedback-icon">❌</span>
+            <span class="feedback-text">
+              Wrong! The answer is: <strong>{{ currentExercise()!.correctAnswer }}</strong>
+            </span>
+          }
+        </div>
+
+        <button class="next-btn" (click)="nextQuestion()">
+          @if (practiceSession()!.currentIndex + 1 < practiceSession()!.totalQuestions) {
+            Next Question →
+          } @else {
+            Finish Session 🎉
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Score Summary -->
+    <div class="score-summary">
+      <span class="correct-count">✅ {{ practiceSession()!.correctCount }}</span>
+      <span class="total-count">/ {{ practiceSession()!.currentIndex + (showAnswerFeedback() ? 1 : 0) }}</span>
     </div>
   </div>
 }

@@ -222,8 +222,37 @@ export const routes: Routes = [
         loadComponent: () => import('./features/gamification/leaderboard-page/leaderboard-page.component').then(m => m.LeaderboardPageComponent),
       },
       {
+        path: 'notifications',
+        loadComponent: () => import('./features/notifications/notification-list.component').then(m => m.NotificationListComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent),
+      },
+      {
+        path: 'sync-requests',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/sync-requests/sync-request-list/sync-request-list.component').then(m => m.SyncRequestListComponent),
+          },
+          {
+            path: 'my',
+            loadComponent: () => import('./features/sync-requests/my-requests/my-requests.component').then(m => m.MyRequestsComponent),
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./features/sync-requests/create-request/create-request.component').then(m => m.CreateRequestComponent),
+          },
+          {
+            path: ':id/edit',
+            loadComponent: () => import('./features/sync-requests/create-request/create-request.component').then(m => m.CreateRequestComponent),
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/sync-requests/request-detail/request-detail.component').then(m => m.RequestDetailComponent),
+          },
+        ],
       },
     ],
   },

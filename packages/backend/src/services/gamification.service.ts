@@ -5,8 +5,8 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 // Types
 // ============================================================
 
-export type AchievementCategory = 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone';
-export type XPSource = 'exercise' | 'quiz' | 'review' | 'streak' | 'achievement' | 'challenge' | 'bonus';
+export type AchievementCategory = 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone' | 'game';
+export type XPSource = 'exercise' | 'quiz' | 'review' | 'streak' | 'achievement' | 'challenge' | 'bonus' | 'game';
 export type NotificationType = 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard';
 
 export interface Achievement {
@@ -227,7 +227,7 @@ interface NotificationRow extends RowDataPacket {
   message: string;
   icon: string | null;
   action_url: string | null;
-  metadata: string | null;
+  metadata: Record<string, unknown> | null; // MySQL JSON column returns parsed object
   is_read: boolean;
   read_at: Date | null;
   created_at: Date;
@@ -695,10 +695,257 @@ export class GamificationService {
   }
 
   /**
+   * Check and award game achievements based on game completion
+   */
+  async checkGameAchievements(
+    userId: number,
+    gameData: {
+      gameCode: string;          // 'word-rush', 'memory-match', 'crossword', 'falling-words', 'word-duel', 'word-cards', 'vocab-quest'
+      score: number;
+      accuracy?: number;         // 0-100
+      combo?: number;            // Highest combo achieved
+      wordsCorrect?: number;     // Words answered correctly
+      timeSeconds?: number;      // Time taken
+      isWin?: boolean;           // Did user win
+      noHints?: boolean;         // Completed without hints
+      cardCount?: number;        // For Word Cards collection
+      isLegendary?: boolean;     // For legendary card pull
+      stageCompleted?: boolean;  // For Vocab Quest
+      bossDefeated?: boolean;    // For Vocab Quest
+      allStagesComplete?: boolean; // For Vocab Quest
+      flawless?: boolean;        // Won without losing a round
+    }
+  ): Promise<AchievementUnlock[]> {
+    const unlocks: AchievementUnlock[] = [];
+
+    // First game achievement
+    let unlock = await this.updateAchievementProgress(userId, 'GAME_FIRST');
+    if (unlock) unlocks.push(unlock);
+
+    // Games played milestones
+    unlock = await this.updateAchievementProgress(userId, 'GAME_10');
+    if (unlock) unlocks.push(unlock);
+    unlock = await this.updateAchievementProgress(userId, 'GAME_50');
+    if (unlock) unlocks.push(unlock);
+    unlock = await this.updateAchievementProgress(userId, 'GAME_100');
+    if (unlock) unlocks.push(unlock);
+
+    // Score achievements (score accumulates)
+    if (gameData.score >= 1000) {
+      unlock = await this.updateAchievementProgress(userId, 'GAME_SCORE_1000');
+      if (unlock) unlocks.push(unlock);
+    }
+    if (gameData.score >= 5000) {
+      unlock = await this.updateAchievementProgress(userId, 'GAME_SCORE_5000');
+      if (unlock) unlocks.push(unlock);
+    }
+    if (gameData.score >= 10000) {
+      unlock = await this.updateAchievementProgress(userId, 'GAME_SCORE_10000');
+      if (unlock) unlocks.push(unlock);
+    }
+
+    // Perfect game achievements (100% accuracy)
+    if (gameData.accuracy === 100) {
+      unlock = await this.updateAchievementProgress(userId, 'GAME_PERFECT');
+      if (unlock) unlocks.push(unlock);
+      unlock = await this.updateAchievementProgress(userId, 'GAME_PERFECT_3');
+      if (unlock) unlocks.push(unlock);
+      unlock = await this.updateAchievementProgress(userId, 'GAME_PERFECT_10');
+      if (unlock) unlocks.push(unlock);
+    }
+
+    // Combo achievements
+    if (gameData.combo) {
+      if (gameData.combo >= 10) {
+        unlock = await this.updateAchievementProgress(userId, 'GAME_COMBO_10');
+        if (unlock) unlocks.push(unlock);
+      }
+      if (gameData.combo >= 25) {
+        unlock = await this.updateAchievementProgress(userId, 'GAME_COMBO_25');
+        if (unlock) unlocks.push(unlock);
+      }
+      if (gameData.combo >= 50) {
+        unlock = await this.updateAchievementProgress(userId, 'GAME_COMBO_50');
+        if (unlock) unlocks.push(unlock);
+      }
+    }
+
+    // Speed game wins (Word Rush, Falling Words)
+    if ((gameData.gameCode === 'word-rush' || gameData.gameCode === 'falling-words') && gameData.isWin) {
+      unlock = await this.updateAchievementProgress(userId, 'GAME_SPEED_WIN');
+      if (unlock) unlocks.push(unlock);
+      unlock = await this.updateAchievementProgress(userId, 'GAME_SPEED_MASTER');
+      if (unlock) unlocks.push(unlock);
+    }
+
+    // Game-specific achievements
+    switch (gameData.gameCode) {
+      case 'word-rush':
+        if (gameData.wordsCorrect) {
+          // Accumulative words correct
+          unlock = await this.updateAchievementProgress(userId, 'WORD_RUSH_50', gameData.wordsCorrect);
+          if (unlock) unlocks.push(unlock);
+          unlock = await this.updateAchievementProgress(userId, 'WORD_RUSH_100', gameData.wordsCorrect);
+          if (unlock) unlocks.push(unlock);
+        }
+        break;
+
+      case 'memory-match':
+        unlock = await this.updateAchievementProgress(userId, 'MEMORY_MATCH_WIN');
+        if (unlock) unlocks.push(unlock);
+        if (gameData.timeSeconds && gameData.timeSeconds < 120) {
+          unlock = await this.updateAchievementProgress(userId, 'MEMORY_MATCH_FAST');
+          if (unlock) unlocks.push(unlock);
+        }
+        break;
+
+      case 'crossword':
+        unlock = await this.updateAchievementProgress(userId, 'CROSSWORD_COMPLETE');
+        if (unlock) unlocks.push(unlock);
+        if (gameData.noHints) {
+          unlock = await this.updateAchievementProgress(userId, 'CROSSWORD_NO_HINTS');
+          if (unlock) unlocks.push(unlock);
+        }
+        break;
+
+      case 'falling-words':
+        if (gameData.wordsCorrect) {
+          unlock = await this.updateAchievementProgress(userId, 'FALLING_WORDS_100', gameData.wordsCorrect);
+          if (unlock) unlocks.push(unlock);
+        }
+        if (gameData.timeSeconds && gameData.timeSeconds >= 180) {
+          unlock = await this.updateAchievementProgress(userId, 'FALLING_WORDS_SURVIVAL');
+          if (unlock) unlocks.push(unlock);
+        }
+        break;
+
+      case 'word-duel':
+        if (gameData.isWin) {
+          unlock = await this.updateAchievementProgress(userId, 'WORD_DUEL_WIN');
+          if (unlock) unlocks.push(unlock);
+          unlock = await this.updateAchievementProgress(userId, 'WORD_DUEL_WIN_10');
+          if (unlock) unlocks.push(unlock);
+          if (gameData.flawless) {
+            unlock = await this.updateAchievementProgress(userId, 'WORD_DUEL_FLAWLESS');
+            if (unlock) unlocks.push(unlock);
+          }
+        }
+        break;
+
+      case 'word-cards':
+        if (gameData.isWin) {
+          unlock = await this.updateAchievementProgress(userId, 'WORD_CARDS_BATTLE');
+          if (unlock) unlocks.push(unlock);
+        }
+        if (gameData.cardCount && gameData.cardCount >= 20) {
+          unlock = await this.updateAchievementProgress(userId, 'WORD_CARDS_COLLECTION');
+          if (unlock) unlocks.push(unlock);
+        }
+        if (gameData.isLegendary) {
+          unlock = await this.updateAchievementProgress(userId, 'WORD_CARDS_LEGENDARY');
+          if (unlock) unlocks.push(unlock);
+        }
+        break;
+
+      case 'vocab-quest':
+        if (gameData.stageCompleted) {
+          unlock = await this.updateAchievementProgress(userId, 'VOCAB_QUEST_STAGE');
+          if (unlock) unlocks.push(unlock);
+        }
+        if (gameData.bossDefeated) {
+          unlock = await this.updateAchievementProgress(userId, 'VOCAB_QUEST_BOSS');
+          if (unlock) unlocks.push(unlock);
+        }
+        if (gameData.allStagesComplete) {
+          unlock = await this.updateAchievementProgress(userId, 'VOCAB_QUEST_ALL_STAGES');
+          if (unlock) unlocks.push(unlock);
+        }
+        break;
+    }
+
+    // Total score achievements (accumulate across all games)
+    await this.updateTotalGameScore(userId, gameData.score);
+
+    // Update leaderboard with games played
+    await this.updateLeaderboard(userId, { games: 1 });
+
+    // Track unique game types played today for GAME_DAILY_3 and GAME_ALL_TYPES
+    await this.trackGameTypePlayed(userId, gameData.gameCode);
+
+    return unlocks;
+  }
+
+  /**
+   * Update total game score and check total score achievements
+   */
+  private async updateTotalGameScore(userId: number, score: number): Promise<void> {
+    // Get current total from xp_transactions with game source
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT COALESCE(SUM(xp_amount), 0) as total_score
+       FROM xp_transactions
+       WHERE user_id = ? AND source = 'game'`,
+      [userId]
+    );
+
+    const currentTotal = Number(rows[0]?.total_score) || 0;
+    const newTotal = currentTotal + score;
+
+    // Check total score achievements
+    if (newTotal >= 10000) {
+      await this.updateAchievementProgress(userId, 'GAME_TOTAL_10000');
+    }
+    if (newTotal >= 50000) {
+      await this.updateAchievementProgress(userId, 'GAME_TOTAL_50000');
+    }
+    if (newTotal >= 100000) {
+      await this.updateAchievementProgress(userId, 'GAME_TOTAL_100000');
+    }
+  }
+
+  /**
+   * Track game type played for variety achievements
+   */
+  private async trackGameTypePlayed(userId: number, gameCode: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Get games played today
+    const [todayGames] = await pool.execute<RowDataPacket[]>(
+      `SELECT DISTINCT description FROM xp_transactions
+       WHERE user_id = ? AND source = 'game' AND DATE(created_at) = ?`,
+      [userId, today]
+    );
+
+    const gameTypesToday = new Set(todayGames.map(g => g.description));
+    gameTypesToday.add(gameCode);
+
+    // Check GAME_DAILY_3 (3 different games in one day)
+    if (gameTypesToday.size >= 3) {
+      await this.updateAchievementProgress(userId, 'GAME_DAILY_3');
+    }
+
+    // Get all-time game types
+    const [allGames] = await pool.execute<RowDataPacket[]>(
+      `SELECT DISTINCT description FROM xp_transactions
+       WHERE user_id = ? AND source = 'game'`,
+      [userId]
+    );
+
+    const allGameTypes = new Set(allGames.map(g => g.description));
+    allGameTypes.add(gameCode);
+
+    // Check GAME_ALL_TYPES (all game types)
+    const allPossibleGames = ['word-rush', 'memory-match', 'crossword', 'falling-words', 'word-duel', 'word-cards', 'vocab-quest'];
+    if (allPossibleGames.every(g => allGameTypes.has(g))) {
+      await this.updateAchievementProgress(userId, 'GAME_ALL_TYPES');
+    }
+  }
+
+  /**
    * Get achievement target based on code
    */
   private getAchievementTarget(code: string): number {
     const targets: Record<string, number> = {
+      // Learning achievements
       'FIRST_EXERCISE': 1,
       'FIRST_STEPS': 1,
       'EXERCISES_10': 10,
@@ -715,6 +962,71 @@ export class GamificationService {
       'SPEED_DEMON': 1,
       'NIGHT_OWL': 1,
       'EARLY_BIRD': 1,
+
+      // Game achievements - Games played
+      'GAME_FIRST': 1,
+      'GAME_10': 10,
+      'GAME_50': 50,
+      'GAME_100': 100,
+
+      // High score achievements
+      'GAME_SCORE_1000': 1000,
+      'GAME_SCORE_5000': 5000,
+      'GAME_SCORE_10000': 10000,
+
+      // Perfect game achievements
+      'GAME_PERFECT': 1,
+      'GAME_PERFECT_3': 3,
+      'GAME_PERFECT_10': 10,
+
+      // Speed game achievements
+      'GAME_SPEED_WIN': 1,
+      'GAME_SPEED_MASTER': 10,
+
+      // Word Rush specific
+      'WORD_RUSH_50': 50,
+      'WORD_RUSH_100': 100,
+
+      // Memory Match specific
+      'MEMORY_MATCH_WIN': 1,
+      'MEMORY_MATCH_FAST': 1,
+
+      // Crossword specific
+      'CROSSWORD_COMPLETE': 1,
+      'CROSSWORD_NO_HINTS': 1,
+
+      // Falling Words specific
+      'FALLING_WORDS_100': 100,
+      'FALLING_WORDS_SURVIVAL': 1,
+
+      // Word Duel specific
+      'WORD_DUEL_WIN': 1,
+      'WORD_DUEL_WIN_10': 10,
+      'WORD_DUEL_FLAWLESS': 1,
+
+      // Word Cards TCG specific
+      'WORD_CARDS_BATTLE': 1,
+      'WORD_CARDS_COLLECTION': 20,
+      'WORD_CARDS_LEGENDARY': 1,
+
+      // Vocabulary Quest specific
+      'VOCAB_QUEST_STAGE': 1,
+      'VOCAB_QUEST_BOSS': 1,
+      'VOCAB_QUEST_ALL_STAGES': 1,
+
+      // Combo achievements
+      'GAME_COMBO_10': 1,
+      'GAME_COMBO_25': 1,
+      'GAME_COMBO_50': 1,
+
+      // Variety achievements
+      'GAME_ALL_TYPES': 1,
+      'GAME_DAILY_3': 1,
+
+      // Total score achievements
+      'GAME_TOTAL_10000': 10000,
+      'GAME_TOTAL_50000': 50000,
+      'GAME_TOTAL_100000': 100000,
     };
     return targets[code] || 1;
   }
@@ -830,7 +1142,7 @@ export class GamificationService {
    */
   async updateLeaderboard(
     userId: number,
-    activity: { xp?: number; exercises?: number; reviews?: number; quizzes?: number }
+    activity: { xp?: number; exercises?: number; reviews?: number; quizzes?: number; games?: number }
   ): Promise<void> {
     const weekStart = this.getWeekStart().toISOString().split('T')[0];
 
@@ -860,6 +1172,10 @@ export class GamificationService {
     if (activity.quizzes) {
       updates.push('quizzes_completed = quizzes_completed + ?');
       values.push(activity.quizzes);
+    }
+    if (activity.games) {
+      updates.push('games_played = games_played + ?');
+      values.push(activity.games);
     }
 
     if (updates.length > 0) {
@@ -937,7 +1253,7 @@ export class GamificationService {
       message: row.message,
       icon: row.icon || undefined,
       actionUrl: row.action_url || undefined,
-      metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
+      metadata: row.metadata || undefined,
       isRead: row.is_read,
       readAt: row.read_at || undefined,
       createdAt: row.created_at,

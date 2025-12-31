@@ -1,0 +1,306 @@
+<div class="max-w-6xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Sync Requests</h1>
+      <p class="text-gray-600 mt-1">Help others by syncing their conversations</p>
+    </div>
+    <a
+      routerLink="/sync-requests/create"
+      class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+    >
+      <fa-icon [icon]="faPlus"></fa-icon>
+      <span>New Request</span>
+    </a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-6">
+    <a
+      routerLink="/sync-requests"
+      routerLinkActive="bg-gray-900 text-white"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+      [class.bg-gray-900]="true"
+      [class.text-white]="true"
+      [class.border-gray-900]="true"
+    >
+      <fa-icon [icon]="faListUl"></fa-icon>
+      <span>Help Others</span>
+    </a>
+    <a
+      routerLink="/sync-requests/my"
+      routerLinkActive="bg-gray-900 text-white border-gray-900"
+      class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+    >
+      <fa-icon [icon]="faPaperPlane"></fa-icon>
+      <span>My Requests</span>
+    </a>
+  </div>
+
+  <!-- Stats Cards -->
+  @if (stats()) {
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
+            <fa-icon [icon]="faClock" class="text-yellow-600"></fa-icon>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-gray-900">{{ stats()!.totalPending }}</p>
+            <p class="text-sm text-gray-600">Pending</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <fa-icon [icon]="faSync" class="text-blue-600"></fa-icon>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-gray-900">{{ stats()!.totalInProgress }}</p>
+            <p class="text-sm text-gray-600">In Progress</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+            <fa-icon [icon]="faCheckCircle" class="text-green-600"></fa-icon>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-gray-900">{{ stats()!.completedToday }}</p>
+            <p class="text-sm text-gray-600">Today</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+            <fa-icon [icon]="faCheckCircle" class="text-purple-600"></fa-icon>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-gray-900">{{ stats()!.mySyncsCompleted }}</p>
+            <p class="text-sm text-gray-600">My Syncs</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Filters -->
+  <div class="bg-white rounded-lg border border-gray-200 mb-6">
+    <div class="p-4 flex items-center justify-between border-b border-gray-200">
+      <button
+        (click)="toggleFilters()"
+        class="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+      >
+        <fa-icon [icon]="faFilter"></fa-icon>
+        <span>Filters</span>
+      </button>
+      <div class="flex items-center gap-4">
+        <select
+          [ngModel]="sortBy()"
+          (ngModelChange)="sortBy.set($event); applyFilters()"
+          class="text-sm border border-gray-300 rounded-md px-3 py-1.5"
+        >
+          <option value="created_at">Date</option>
+          <option value="priority">Priority</option>
+          <option value="updated_at">Updated</option>
+        </select>
+        <select
+          [ngModel]="sortOrder()"
+          (ngModelChange)="sortOrder.set($event); applyFilters()"
+          class="text-sm border border-gray-300 rounded-md px-3 py-1.5"
+        >
+          <option value="desc">Newest first</option>
+          <option value="asc">Oldest first</option>
+        </select>
+      </div>
+    </div>
+
+    @if (showFilters()) {
+      <div class="p-4 bg-gray-50 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+          <select
+            [ngModel]="selectedPriority()"
+            (ngModelChange)="selectedPriority.set($event)"
+            class="w-full border border-gray-300 rounded-md px-3 py-2"
+          >
+            <option value="">All priorities</option>
+            @for (p of priorityOptions; track p) {
+              <option [value]="p">{{ p | titlecase }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+          <select
+            [ngModel]="selectedDifficulty()"
+            (ngModelChange)="selectedDifficulty.set($event)"
+            class="w-full border border-gray-300 rounded-md px-3 py-2"
+          >
+            <option value="">All difficulties</option>
+            @for (d of difficultyOptions; track d) {
+              <option [value]="d">{{ d | titlecase }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex items-end gap-2">
+          <button
+            (click)="applyFilters()"
+            class="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+          >
+            Apply
+          </button>
+          <button
+            (click)="clearFilters()"
+            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Request List -->
+  <div class="bg-white rounded-lg border border-gray-200">
+    @if (loading()) {
+      <div class="p-8 text-center">
+        <fa-icon [icon]="faSpinner" class="text-gray-400 text-2xl animate-spin"></fa-icon>
+        <p class="text-gray-600 mt-2">Loading requests...</p>
+      </div>
+    } @else if (requests().length === 0) {
+      <div class="p-8 text-center">
+        <fa-icon [icon]="faCheckCircle" class="text-gray-300 text-4xl"></fa-icon>
+        <p class="text-gray-600 mt-2">No pending requests</p>
+        <p class="text-gray-500 text-sm">Check back later for new sync requests</p>
+      </div>
+    } @else {
+      <div class="divide-y divide-gray-200">
+        @for (request of requests(); track request.id) {
+          <div class="p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <!-- Header -->
+                <div class="flex items-center gap-2 mb-2">
+                  <span
+                    class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full border"
+                    [ngClass]="getPriorityClass(request.priority)"
+                  >
+                    {{ request.priority | titlecase }}
+                  </span>
+                  @if (request.difficultyLevel) {
+                    <span
+                      class="inline-flex px-2 py-0.5 text-xs font-medium rounded-full"
+                      [ngClass]="getDifficultyClass(request.difficultyLevel)"
+                    >
+                      {{ request.difficultyLevel | titlecase }}
+                    </span>
+                  }
+                  @if (request.topic) {
+                    <span class="text-xs text-gray-500">{{ request.topic }}</span>
+                  }
+                </div>
+
+                <!-- Vietnamese Text Preview -->
+                <p class="text-gray-900 mb-2 whitespace-pre-wrap">
+                  {{ truncateText(request.vietnameseText) }}
+                </p>
+
+                <!-- English Translation (if provided) -->
+                @if (request.englishTranslation) {
+                  <p class="text-gray-600 text-sm mb-2 italic">
+                    {{ truncateText(request.englishTranslation, 100) }}
+                  </p>
+                }
+
+                <!-- Meta -->
+                <div class="flex items-center gap-4 text-sm text-gray-500">
+                  <span class="flex items-center gap-1">
+                    <fa-icon [icon]="faUser" class="text-xs"></fa-icon>
+                    {{ request.requesterName }}
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <fa-icon [icon]="faClock" class="text-xs"></fa-icon>
+                    {{ formatDate(request.createdAt) }}
+                  </span>
+                </div>
+
+                <!-- Notes -->
+                @if (request.notes) {
+                  <div class="mt-2 p-2 bg-gray-50 rounded text-sm text-gray-600">
+                    <fa-icon [icon]="faInfoCircle" class="text-gray-400 mr-1"></fa-icon>
+                    {{ request.notes }}
+                  </div>
+                }
+              </div>
+
+              <!-- Actions -->
+              <div class="flex-shrink-0">
+                <!-- <button
+                  (click)="startSync(request)"
+                  [disabled]="startingSyncId() === request.id"
+                  class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
+                >
+                  @if (startingSyncId() === request.id) {
+                    <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+                  } @else {
+                    <fa-icon [icon]="faPlay"></fa-icon>
+                  }
+                  <span>Start Sync</span>
+                </button> -->
+                <a
+                  [routerLink]="['/sync-requests', request.id]"
+                  class="block text-center text-sm text-gray-600 hover:text-gray-900 mt-2"
+                >
+                  View Details
+                </a>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Pagination -->
+      <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+          <span>Show</span>
+          <select
+            class="border border-gray-300 rounded px-2 py-1"
+            (change)="onPageSizeChange($event)"
+          >
+            @for (size of pageSizeOptions; track size) {
+              <option [value]="size" [selected]="pageSize() === size">{{ size }}</option>
+            }
+          </select>
+          <span>of {{ total() }} requests</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <span class="text-sm text-gray-600">
+            {{ startItem }} - {{ endItem }} of {{ total() }}
+          </span>
+          <div class="flex gap-1">
+            <button
+              (click)="previousPage()"
+              [disabled]="page() === 1"
+              class="p-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              <fa-icon [icon]="faChevronLeft"></fa-icon>
+            </button>
+            <button
+              (click)="nextPage()"
+              [disabled]="page() >= totalPages"
+              class="p-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+            >
+              <fa-icon [icon]="faChevronRight"></fa-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

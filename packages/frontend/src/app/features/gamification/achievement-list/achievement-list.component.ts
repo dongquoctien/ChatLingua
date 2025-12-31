@@ -3,11 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faTrophy, faLock, faStar, faFire, faBolt,
-  faGraduationCap, faCheckCircle, faClock, faRocket
+  faGraduationCap, faCheckCircle, faClock, faRocket, faGamepad
 } from '../../../shared/icons';
 import { UserAchievementInfo } from '../../../core/services/api.service';
 
-type AchievementCategory = 'all' | 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone';
+type AchievementCategory = 'all' | 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone' | 'game';
 
 interface CategoryTab {
   id: AchievementCategory;
@@ -39,6 +39,7 @@ export class AchievementListComponent {
   faCheckCircle = faCheckCircle;
   faClock = faClock;
   faRocket = faRocket;
+  faGamepad = faGamepad;
 
   // Category tabs
   categoryTabs: CategoryTab[] = [
@@ -48,6 +49,7 @@ export class AchievementListComponent {
     { id: 'quiz', label: 'Quiz', icon: faCheckCircle },
     { id: 'speed', label: 'Speed', icon: faClock },
     { id: 'milestone', label: 'Milestone', icon: faRocket },
+    { id: 'game', label: 'Game', icon: faGamepad },
   ];
 
   // State
@@ -97,6 +99,7 @@ export class AchievementListComponent {
       'check-circle': faCheckCircle,
       'clock': faClock,
       'rocket': faRocket,
+      'gamepad': faGamepad,
     };
     return iconMap[iconName] || faTrophy;
   }
@@ -108,6 +111,7 @@ export class AchievementListComponent {
       'quiz': '#374151',
       'speed': '#a855f7',
       'milestone': '#fbbf24',
+      'game': '#ec4899',
     };
     return colors[category] || '#fbbf24';
   }

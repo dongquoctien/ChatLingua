@@ -14,6 +14,7 @@ export interface GameResult {
   isNewBestScore: boolean;
   leaderboardPosition?: number;
   newAchievements: GameAchievementInfo[];
+  victory?: boolean; // true = Victory!, false/undefined = Game Over!
 }
 
 @Component({

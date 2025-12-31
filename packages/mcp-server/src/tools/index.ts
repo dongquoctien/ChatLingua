@@ -21,6 +21,20 @@ import { getGrammarReviewQueue, getGrammarReviewQueueTool } from './get-grammar-
 // Auth tools
 import { login, loginTool, loginStatus, loginStatusTool, getAuthStatus, getAuthStatusTool } from './login';
 
+// Sync Request tools
+import {
+  getPendingSyncRequests,
+  getPendingSyncRequestsTool,
+  getSyncRequestDetail,
+  getSyncRequestDetailTool,
+  startSyncRequest,
+  startSyncRequestTool,
+  completeSyncRequest,
+  completeSyncRequestTool,
+  syncAllPendingRequests,
+  syncAllPendingRequestsTool,
+} from './sync-requests';
+
 // Export all tool definitions
 // Order matters for Claude's understanding of the flow:
 // Auth tools first (so user can login)
@@ -47,6 +61,12 @@ export const tools: Tool[] = [
   getGrammarListTool,
   getGrammarReviewQueueTool,
   submitGrammarReviewTool,
+  // Sync Request tools
+  getPendingSyncRequestsTool,
+  getSyncRequestDetailTool,
+  startSyncRequestTool,
+  completeSyncRequestTool,
+  syncAllPendingRequestsTool,
 ];
 
 // Tool handler router
@@ -97,6 +117,17 @@ export async function handleToolCall(
       return getGrammarReviewQueue(argsWithUser, db);
     case 'submit_grammar_review':
       return submitGrammarReview(argsWithUser, db);
+    // Sync Request tools
+    case 'get_pending_sync_requests':
+      return getPendingSyncRequests(argsWithUser, db);
+    case 'get_sync_request_detail':
+      return getSyncRequestDetail(argsWithUser, db);
+    case 'start_sync_request':
+      return startSyncRequest(argsWithUser, db);
+    case 'complete_sync_request':
+      return completeSyncRequest(argsWithUser, db);
+    case 'sync_all_pending_requests':
+      return syncAllPendingRequests(argsWithUser, db);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

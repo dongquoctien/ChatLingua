@@ -70,7 +70,18 @@ export class LeaderboardComponent {
     if (!this.leaderboard.currentUserRank || !this.leaderboard.totalParticipants) {
       return 100;
     }
-    return Math.round((this.leaderboard.currentUserRank / this.leaderboard.totalParticipants) * 100);
+    // Calculate percentile from top (rank 1 = top 1%, rank last = higher %)
+    const percentile = Math.ceil((this.leaderboard.currentUserRank / this.leaderboard.totalParticipants) * 100);
+    // Cap at 99% so it doesn't show "Top 100%" which is confusing
+    return Math.min(percentile, 99);
+  }
+
+  getRankDisplay(): string {
+    if (!this.leaderboard.currentUserRank || !this.leaderboard.totalParticipants) {
+      return '-';
+    }
+    // Show actual rank position like "#2 of 10"
+    return `#${this.leaderboard.currentUserRank} of ${this.leaderboard.totalParticipants}`;
   }
 
   getCurrentUserXp(): number {

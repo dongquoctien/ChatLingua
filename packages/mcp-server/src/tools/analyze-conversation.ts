@@ -1,6 +1,7 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DatabaseConnection } from '../database/connection';
+import { RowDataPacket } from 'mysql2/promise';
 
 // Tool definition for MCP
 export const analyzeConversationTool: Tool = {
@@ -41,13 +42,37 @@ ALWAYS call enrich_vocabulary with the returned vocabularyIds to add:
 {"vietnameseWord":"ký","englishWord":"sign","partOfSpeech":"verb","phonetic":"/saɪn/","pronunciationUk":"/saɪn/","cefrLevel":"A2"}
 
 Note: Dictionary fields (definitions, wordFamily, synonyms, collocations, etc.) are OPTIONAL here.
-They will be added in the enrich_vocabulary step for better performance.`,
+They will be added in the enrich_vocabulary step for better performance.
+
+=== SYNC REQUEST INTEGRATION ===
+When processing a sync request (from sync_all_pending_requests or start_sync_request),
+provide syncRequestId to:
+- Auto-set userId to the requester's ID
+- Link the conversation to the sync request
+- After this tool, call complete_sync_request with the conversationId
+
+**IMPORTANT FOR SYNC REQUESTS**: Include FULL dictionary data in vocabulary!
+Since enrich_vocabulary is skipped for sync requests, you MUST provide:
+- definitions: Array of {definition, definitionVi, examples: [{en, vi}], grammar, patterns}
+- wordFamily: {noun: [], verb: [], adjective: [], adverb: []}
+- synonyms: Array of synonyms
+- antonyms: Array of antonyms
+- collocations: {adjective: [], verbContract: [], phrases: [], preposition: []}
+- extraExamples: Array of {en, vi} - at least 3-5 examples
+- usageNotes: String with usage tips
+- grammarInfo: {countable, transitive, patterns: []}
+
+Without this data, vocabulary will be incomplete for the user!`,
   inputSchema: {
     type: 'object',
     properties: {
       userId: {
         type: 'number',
-        description: 'User ID (use 1 for default user if not specified)',
+        description: 'User ID (use 1 for default user if not specified). Ignored if syncRequestId is provided.',
+      },
+      syncRequestId: {
+        type: 'number',
+        description: 'Sync request ID. When provided, creates conversation for the requester and links it to the sync request.',
       },
       vietnameseText: {
         type: 'string',
@@ -254,6 +279,7 @@ const topicSchema = z.object({
 // Input validation schema
 const inputSchema = z.object({
   userId: z.number().optional(),
+  syncRequestId: z.number().optional(), // For sync request integration
   _resolvedUserId: z.number().optional(), // Injected by handler from user context
   vietnameseText: z.string().min(1),
   englishTranslation: z.string().min(1),
@@ -323,6 +349,7 @@ export async function analyzeConversation(
   conversationId: number;
   vocabularyIds: number[];
   grammarPointIds: number[];
+  syncRequestId?: number;
   message: string;
   summary: {
     vocabularyCount: number;
@@ -330,18 +357,46 @@ export async function analyzeConversation(
     difficultyLevel: string;
     topic: string;
     pendingEnrichment: boolean;
+    forSyncRequest?: boolean;
   };
   nextStep: {
     tool: string;
     description: string;
     vocabularyIds: number[];
+    syncRequestId?: number;
+    conversationId?: number;
   };
 }> {
   // Validate input
   const input = inputSchema.parse(args);
 
-  // Use explicit userId if provided, otherwise use resolved userId from env auth, fallback to 1
-  const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
+  // Handle sync request integration
+  let effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
+  let syncRequestData: { id: number; requesterUserId: number } | null = null;
+
+  if (input.syncRequestId) {
+    // Look up the sync request to get the requester's user ID
+    const syncRows = await db.query<RowDataPacket[]>(
+      `SELECT id, requester_user_id, status FROM sync_requests WHERE id = ?`,
+      [input.syncRequestId]
+    );
+
+    if (syncRows.length === 0) {
+      throw new Error(`Sync request #${input.syncRequestId} not found`);
+    }
+
+    const syncRequest = syncRows[0];
+    if (syncRequest.status !== 'in_progress') {
+      throw new Error(`Sync request #${input.syncRequestId} is not in_progress (status: ${syncRequest.status}). Call start_sync_request first.`);
+    }
+
+    // Use the requester's user ID for creating the conversation
+    effectiveUserId = syncRequest.requester_user_id;
+    syncRequestData = {
+      id: input.syncRequestId,
+      requesterUserId: syncRequest.requester_user_id,
+    };
+  }
 
   // Start transaction
   const connection = await db.getConnection();
@@ -557,28 +612,63 @@ export async function analyzeConversation(
     // Check if vocabulary needs enrichment (no definitions yet)
     const needsEnrichment = input.vocabulary.some(v => !v.definitions || v.definitions.length === 0);
 
+    // Build message based on context
+    let message = `Successfully analyzed conversation and saved ${input.vocabulary.length} vocabulary items and ${input.grammarPoints.length} grammar points.`;
+    if (syncRequestData) {
+      message += ` Created for sync request #${syncRequestData.id} (user ${syncRequestData.requesterUserId}).`;
+      message += ' Call complete_sync_request to finish the sync.';
+    } else if (needsEnrichment) {
+      message += ' Call enrich_vocabulary next to add dictionary data.';
+    }
+
+    // Determine next step
+    let nextStep: {
+      tool: string;
+      description: string;
+      vocabularyIds: number[];
+      syncRequestId?: number;
+      conversationId?: number;
+    };
+
+    if (syncRequestData) {
+      // For sync requests, next step is always to complete the sync
+      nextStep = {
+        tool: 'complete_sync_request',
+        description: `Call complete_sync_request with requestId: ${syncRequestData.id} and conversationId: ${conversationId} to finish the sync.`,
+        vocabularyIds: [],
+        syncRequestId: syncRequestData.id,
+        conversationId,
+      };
+    } else if (needsEnrichment) {
+      nextStep = {
+        tool: 'enrich_vocabulary',
+        description: 'Call enrich_vocabulary with vocabularyIds to add dictionary data (definitions, examples, word family, etc.)',
+        vocabularyIds,
+      };
+    } else {
+      nextStep = {
+        tool: 'generate_exercises',
+        description: 'All vocabulary enriched. Call generate_exercises to create practice exercises.',
+        vocabularyIds: [],
+      };
+    }
+
     return {
       success: true,
       conversationId,
       vocabularyIds,
       grammarPointIds,
-      message: `Successfully analyzed conversation and saved ${input.vocabulary.length} vocabulary items and ${input.grammarPoints.length} grammar points.${needsEnrichment ? ' Call enrich_vocabulary next to add dictionary data.' : ''}`,
+      ...(syncRequestData ? { syncRequestId: syncRequestData.id } : {}),
+      message,
       summary: {
         vocabularyCount: input.vocabulary.length,
         grammarPointsCount: input.grammarPoints.length,
         difficultyLevel: input.difficultyLevel,
         topic: input.topic,
         pendingEnrichment: needsEnrichment,
+        ...(syncRequestData ? { forSyncRequest: true } : {}),
       },
-      nextStep: needsEnrichment ? {
-        tool: 'enrich_vocabulary',
-        description: 'Call enrich_vocabulary with vocabularyIds to add dictionary data (definitions, examples, word family, etc.)',
-        vocabularyIds,
-      } : {
-        tool: 'generate_exercises',
-        description: 'All vocabulary enriched. Call generate_exercises to create practice exercises.',
-        vocabularyIds: [],
-      },
+      nextStep,
     };
   } catch (error) {
     await connection.rollback();
