@@ -1,0 +1,116 @@
+<div class="max-w-3xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Notifications</h1>
+      <p class="text-gray-600 mt-1">
+        @if (unreadCount() > 0) {
+          {{ unreadCount() }} unread notification{{ unreadCount() > 1 ? 's' : '' }}
+        } @else {
+          All caught up!
+        }
+      </p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-3">
+      @if (unreadCount() > 0) {
+        <button
+          (click)="markAllAsRead()"
+          [disabled]="markingAllRead()"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+          @if (markingAllRead()) {
+            <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          } @else {
+            <fa-icon [icon]="faCheck"></fa-icon>
+          }
+          <span>Mark all as read</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="flex gap-2 mb-6">
+    <button
+      (click)="setFilter('all')"
+      [class]="filter() === 'all'
+        ? 'px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 text-white'
+        : 'px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200'">
+      All
+    </button>
+    <button
+      (click)="setFilter('unread')"
+      [class]="filter() === 'unread'
+        ? 'px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 text-white'
+        : 'px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200'">
+      Unread
+      @if (unreadCount() > 0) {
+        <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full"
+              [class]="filter() === 'unread' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'">
+          {{ unreadCount() }}
+        </span>
+      }
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+      <fa-icon [icon]="faSpinner" class="text-gray-400 text-3xl animate-spin"></fa-icon>
+      <p class="text-gray-600 mt-3">Loading notifications...</p>
+    </div>
+  } @else if (filteredNotifications().length === 0) {
+    <!-- Empty State -->
+    <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
+      <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <fa-icon [icon]="faBell" class="text-gray-400 text-2xl"></fa-icon>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">
+        @if (filter() === 'unread') {
+          No unread notifications
+        } @else {
+          No notifications yet
+        }
+      </h3>
+      <p class="text-gray-600">
+        @if (filter() === 'unread') {
+          You're all caught up! Check the "All" tab to see past notifications.
+        } @else {
+          When you receive notifications, they'll appear here.
+        }
+      </p>
+    </div>
+  } @else {
+    <!-- Notification List -->
+    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden divide-y divide-gray-100">
+      @for (notification of filteredNotifications(); track notification.id) {
+        <div
+          class="flex items-start gap-4 p-4 hover:bg-gray-50 transition-colors"
+          [class.bg-gray-50]="!notification.isRead">
+          <!-- Icon -->
+          <div
+            class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            [ngClass]="getNotificationIconClass(notification.notificationType)">
+            <fa-icon [icon]="getNotificationIcon(notification.notificationType)"></fa-icon>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-medium text-gray-900">{{ notification.title }}</p>
+                <p class="text-sm text-gray-600 mt-0.5">{{ notification.message }}</p>
+              </div>
+              @if (!notification.isRead) {
+                <div class="w-2 h-2 rounded-full bg-gray-900 flex-shrink-0 mt-2"></div>
+              }
+            </div>
+            <p class="text-xs text-gray-400 mt-2">{{ formatDate(notification.createdAt) }}</p>
+
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

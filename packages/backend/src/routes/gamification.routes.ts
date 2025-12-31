@@ -130,6 +130,74 @@ router.post('/achievements/:id/seen', async (req: AuthRequest, res: Response) =>
   }
 });
 
+/**
+ * POST /api/gamification/achievements/game
+ * Check and award game achievements after game completion
+ */
+router.post('/achievements/game', async (req: AuthRequest, res: Response) => {
+  try {
+    const {
+      gameCode,
+      score,
+      accuracy,
+      combo,
+      wordsCorrect,
+      timeSeconds,
+      isWin,
+      noHints,
+      cardCount,
+      isLegendary,
+      stageCompleted,
+      bossDefeated,
+      allStagesComplete,
+      flawless,
+    } = req.body;
+
+    if (!gameCode || score === undefined) {
+      res.status(400).json({ error: 'gameCode and score are required' });
+      return;
+    }
+
+    // Award XP for game completion
+    const xpAmount = Math.floor(score / 10); // 1 XP per 10 points
+    const { newTotal, levelUp } = await gamificationService.awardXP(
+      req.userId!,
+      xpAmount,
+      'game',
+      undefined,
+      gameCode
+    );
+
+    // Check game achievements
+    const achievements = await gamificationService.checkGameAchievements(req.userId!, {
+      gameCode,
+      score,
+      accuracy,
+      combo,
+      wordsCorrect,
+      timeSeconds,
+      isWin,
+      noHints,
+      cardCount,
+      isLegendary,
+      stageCompleted,
+      bossDefeated,
+      allStagesComplete,
+      flawless,
+    });
+
+    res.json({
+      xpAwarded: xpAmount,
+      totalXp: newTotal,
+      levelUp,
+      achievements,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to check game achievements';
+    res.status(500).json({ error: message });
+  }
+});
+
 // ============================================================
 // Daily Challenge Endpoints
 // ============================================================

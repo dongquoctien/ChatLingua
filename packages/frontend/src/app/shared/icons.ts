@@ -85,6 +85,11 @@ import {
   faRocket,
   faSync,
   faGamepad,
+  faPaperPlane,
+  faHourglassHalf,
+  faExternalLinkAlt,
+  faFlag,
+  faExclamationCircle,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -181,4 +186,10 @@ export {
   faRocket,
   faSync as faRefresh,
   faGamepad,
+  faPaperPlane,
+  faHourglassHalf as faHourglass,
+  faExternalLinkAlt as faExternalLink,
+  faFlag,
+  faExclamationCircle,
+  faCalendarAlt as faCalendar,
 };

@@ -2,7 +2,26 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService, Vocabulary } from '../../../core/services/api.service';
+
+// Exercise for building practice
+interface BuildingExercise {
+  type: 'vocabulary' | 'grammar' | 'flashcard' | 'listening';
+  question: string;
+  questionVi?: string;
+  options: string[];
+  correctAnswer: string;
+  vocabulary?: Vocabulary;
+}
+
+// Practice session state
+interface PracticeSession {
+  building: PlacedBuilding;
+  exercises: BuildingExercise[];
+  currentIndex: number;
+  correctCount: number;
+  totalQuestions: number;
+}
 
 // Building definition
 interface BuildingDef {
@@ -13,9 +32,11 @@ interface BuildingDef {
   icon: string;
   unlockLevel: number;
   cost: { coins: number; gems?: number };
-  production: { xp?: number; coins?: number }; // per hour
+  production: { xp?: number; coins?: number }; // per correct answer (not per hour!)
   size: { x: number; y: number };
   buildTime: number; // seconds
+  exerciseType?: 'vocabulary' | 'grammar' | 'flashcard' | 'listening' | 'mixed'; // Type of exercise this building offers
+  questionsPerSession: number; // How many questions per practice session
 }
 
 // Placed building on the island
@@ -38,67 +59,77 @@ interface GridCell {
   isBlocked: boolean;
 }
 
-// Building definitions
+// Building definitions - Now with exercise types!
 const BUILDINGS: BuildingDef[] = [
   {
     id: 'library',
     name: 'Library',
-    description: 'A place to study and learn new words',
+    description: 'Practice vocabulary with multiple choice questions',
     category: 'learning',
     icon: '📚',
     unlockLevel: 1,
     cost: { coins: 100 },
-    production: { xp: 5 },
+    production: { xp: 10, coins: 5 }, // per correct answer
     size: { x: 2, y: 2 },
-    buildTime: 30
+    buildTime: 5,
+    exerciseType: 'vocabulary',
+    questionsPerSession: 5
   },
   {
     id: 'vocabulary_garden',
     name: 'Vocabulary Garden',
-    description: 'Grow your word collection here',
+    description: 'Review flashcards to grow your word garden',
     category: 'learning',
     icon: '🌸',
     unlockLevel: 2,
     cost: { coins: 300 },
-    production: { xp: 10, coins: 5 },
+    production: { xp: 15, coins: 8 },
     size: { x: 3, y: 3 },
-    buildTime: 60
+    buildTime: 10,
+    exerciseType: 'flashcard',
+    questionsPerSession: 8
   },
   {
     id: 'grammar_tower',
     name: 'Grammar Tower',
-    description: 'Master grammar rules from above',
+    description: 'Master grammar rules with challenging exercises',
     category: 'learning',
     icon: '🗼',
     unlockLevel: 3,
     cost: { coins: 500, gems: 5 },
-    production: { xp: 20 },
+    production: { xp: 25 },
     size: { x: 2, y: 3 },
-    buildTime: 120
+    buildTime: 15,
+    exerciseType: 'grammar',
+    questionsPerSession: 5
   },
   {
     id: 'coin_fountain',
     name: 'Coin Fountain',
-    description: 'Generates coins over time',
+    description: 'Answer mixed questions to earn coins',
     category: 'production',
     icon: '⛲',
     unlockLevel: 2,
     cost: { coins: 400 },
-    production: { coins: 15 },
+    production: { coins: 20 },
     size: { x: 2, y: 2 },
-    buildTime: 90
+    buildTime: 10,
+    exerciseType: 'mixed',
+    questionsPerSession: 5
   },
   {
     id: 'xp_shrine',
     name: 'XP Shrine',
-    description: 'A mystical shrine that grants experience',
+    description: 'Challenge yourself for bonus XP',
     category: 'production',
     icon: '⛩️',
     unlockLevel: 4,
     cost: { coins: 800, gems: 10 },
-    production: { xp: 30 },
+    production: { xp: 40 },
     size: { x: 2, y: 2 },
-    buildTime: 180
+    buildTime: 15,
+    exerciseType: 'mixed',
+    questionsPerSession: 10
   },
   {
     id: 'palm_tree',
@@ -110,7 +141,8 @@ const BUILDINGS: BuildingDef[] = [
     cost: { coins: 50 },
     production: {},
     size: { x: 1, y: 1 },
-    buildTime: 10
+    buildTime: 5,
+    questionsPerSession: 0
   },
   {
     id: 'flower_bed',
@@ -122,7 +154,8 @@ const BUILDINGS: BuildingDef[] = [
     cost: { coins: 30 },
     production: {},
     size: { x: 1, y: 1 },
-    buildTime: 5
+    buildTime: 3,
+    questionsPerSession: 0
   },
   {
     id: 'statue',
@@ -134,31 +167,36 @@ const BUILDINGS: BuildingDef[] = [
     cost: { coins: 200, gems: 2 },
     production: {},
     size: { x: 1, y: 2 },
-    buildTime: 60
+    buildTime: 10,
+    questionsPerSession: 0
   },
   {
     id: 'pronunciation_lab',
     name: 'Pronunciation Lab',
-    description: 'Practice speaking here',
+    description: 'Listen and learn correct pronunciation',
     category: 'learning',
     icon: '🎙️',
     unlockLevel: 5,
     cost: { coins: 1000, gems: 15 },
-    production: { xp: 25, coins: 10 },
+    production: { xp: 30, coins: 15 },
     size: { x: 3, y: 2 },
-    buildTime: 300
+    buildTime: 20,
+    exerciseType: 'listening',
+    questionsPerSession: 5
   },
   {
     id: 'lighthouse',
     name: 'Lighthouse',
-    description: 'Guides learners through the fog',
+    description: 'Guides learners with quick vocabulary drills',
     category: 'decoration',
-    icon: '🏠',
+    icon: '🗼',
     unlockLevel: 4,
     cost: { coins: 600 },
-    production: { xp: 5 },
+    production: { xp: 8 },
     size: { x: 2, y: 2 },
-    buildTime: 120
+    buildTime: 15,
+    exerciseType: 'vocabulary',
+    questionsPerSession: 3
   }
 ];
 
@@ -173,7 +211,7 @@ const GRID_SIZE = 8;
 })
 export class LanguageIslandComponent implements OnInit {
   // Game state
-  phase = signal<'island' | 'build' | 'shop' | 'lesson'>('island');
+  phase = signal<'island' | 'build' | 'shop' | 'practice'>('island');
   isLoading = signal(true);
   error = signal<string | null>(null);
 
@@ -197,7 +235,18 @@ export class LanguageIslandComponent implements OnInit {
   buildPreviewPos = signal<{ x: number; y: number } | null>(null);
   canPlaceBuilding = signal(false);
 
-  // Collection
+  // Practice session (NEW - Learn to Earn!)
+  practiceSession = signal<PracticeSession | null>(null);
+  currentExercise = signal<BuildingExercise | null>(null);
+  selectedAnswer = signal<string | null>(null);
+  showAnswerFeedback = signal(false);
+  isAnswerCorrect = signal(false);
+  vocabularyCache = signal<Vocabulary[]>([]);
+
+  // Session rewards
+  sessionRewards = signal<{ xp: number; coins: number }>({ xp: 0, coins: 0 });
+
+  // Collection (simplified - just for showing rewards)
   pendingCollection = signal<{ xp: number; coins: number }>({ xp: 0, coins: 0 });
   showCollection = signal(false);
 
@@ -212,14 +261,15 @@ export class LanguageIslandComponent implements OnInit {
     this.availableBuildings().filter(b => b.unlockLevel <= this.level())
   );
 
-  totalProductionPerHour = computed(() => {
+  // Total potential earnings from all buildings (per correct answer)
+  totalPotentialEarnings = computed(() => {
     let xp = 0;
     let coins = 0;
 
     for (const placed of this.placedBuildings()) {
       if (placed.isBuilding) continue;
       const def = BUILDINGS.find(b => b.id === placed.buildingId);
-      if (def) {
+      if (def && def.exerciseType) {
         xp += (def.production.xp || 0) * placed.level;
         coins += (def.production.coins || 0) * placed.level;
       }
@@ -235,7 +285,38 @@ export class LanguageIslandComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeIsland();
-    this.startProductionTimer();
+    this.loadVocabulary();
+  }
+
+  private loadVocabulary(): void {
+    this.apiService.getVocabulary(1, 100).subscribe({
+      next: (response: { data: Vocabulary[] }) => {
+        if (response.data) {
+          this.vocabularyCache.set(response.data);
+        }
+      },
+      error: (err: Error) => {
+        console.error('Failed to load vocabulary:', err);
+        // Use fallback vocabulary if API fails
+        this.vocabularyCache.set(this.getFallbackVocabulary());
+      }
+    });
+  }
+
+  private getFallbackVocabulary(): Vocabulary[] {
+    // Fallback vocabulary for when API is not available
+    return [
+      { id: 1, vietnameseWord: 'xin chào', englishWord: 'hello', partOfSpeech: 'interjection', phonetic: '/həˈloʊ/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 2, vietnameseWord: 'cảm ơn', englishWord: 'thank you', partOfSpeech: 'phrase', phonetic: '/θæŋk juː/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 3, vietnameseWord: 'tạm biệt', englishWord: 'goodbye', partOfSpeech: 'interjection', phonetic: '/ɡʊdˈbaɪ/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 4, vietnameseWord: 'bạn', englishWord: 'friend', partOfSpeech: 'noun', phonetic: '/frend/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 5, vietnameseWord: 'nhà', englishWord: 'house', partOfSpeech: 'noun', phonetic: '/haʊs/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 6, vietnameseWord: 'ăn', englishWord: 'eat', partOfSpeech: 'verb', phonetic: '/iːt/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 7, vietnameseWord: 'uống', englishWord: 'drink', partOfSpeech: 'verb', phonetic: '/drɪŋk/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 8, vietnameseWord: 'đọc', englishWord: 'read', partOfSpeech: 'verb', phonetic: '/riːd/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 9, vietnameseWord: 'viết', englishWord: 'write', partOfSpeech: 'verb', phonetic: '/raɪt/', difficultyLevel: 'beginner' } as Vocabulary,
+      { id: 10, vietnameseWord: 'học', englishWord: 'learn', partOfSpeech: 'verb', phonetic: '/lɜːrn/', difficultyLevel: 'beginner' } as Vocabulary,
+    ];
   }
 
   private initializeIsland(): void {
@@ -317,38 +398,220 @@ export class LanguageIslandComponent implements OnInit {
     this.grid.set(newGrid);
   }
 
-  private startProductionTimer(): void {
-    // Check production every 10 seconds
-    setInterval(() => {
-      this.calculatePendingCollection();
-    }, 10000);
+  // ========== PRACTICE SESSION METHODS (Learn to Earn!) ==========
 
-    // Initial calculation
-    setTimeout(() => this.calculatePendingCollection(), 1000);
-  }
-
-  private calculatePendingCollection(): void {
-    let totalXp = 0;
-    let totalCoins = 0;
-
-    for (const building of this.placedBuildings()) {
-      if (building.isBuilding) continue;
-
-      const def = BUILDINGS.find(b => b.id === building.buildingId);
-      if (!def) continue;
-
-      const now = new Date();
-      const lastCollected = new Date(building.lastCollected);
-      const hoursPassed = (now.getTime() - lastCollected.getTime()) / (1000 * 60 * 60);
-
-      // Cap at 8 hours
-      const effectiveHours = Math.min(hoursPassed, 8);
-
-      totalXp += Math.floor((def.production.xp || 0) * building.level * effectiveHours);
-      totalCoins += Math.floor((def.production.coins || 0) * building.level * effectiveHours);
+  // Start practice session for a building
+  startPractice(building: PlacedBuilding): void {
+    const def = this.getBuildingDef(building.buildingId);
+    if (!def || !def.exerciseType || def.questionsPerSession === 0) {
+      return; // Decoration buildings can't be practiced
     }
 
-    this.pendingCollection.set({ xp: totalXp, coins: totalCoins });
+    // Generate exercises
+    const exercises = this.generateExercises(def.exerciseType, def.questionsPerSession);
+
+    if (exercises.length === 0) {
+      this.error.set('No vocabulary available. Please learn some words first!');
+      setTimeout(() => this.error.set(null), 3000);
+      return;
+    }
+
+    // Start session
+    this.practiceSession.set({
+      building,
+      exercises,
+      currentIndex: 0,
+      correctCount: 0,
+      totalQuestions: exercises.length
+    });
+
+    this.currentExercise.set(exercises[0]);
+    this.selectedAnswer.set(null);
+    this.showAnswerFeedback.set(false);
+    this.sessionRewards.set({ xp: 0, coins: 0 });
+    this.phase.set('practice');
+    this.closeBuildingInfo();
+  }
+
+  // Generate exercises based on type
+  private generateExercises(type: string, count: number): BuildingExercise[] {
+    const vocabulary = this.vocabularyCache();
+    if (vocabulary.length < 4) return []; // Need at least 4 words for multiple choice
+
+    const exercises: BuildingExercise[] = [];
+    const shuffled = [...vocabulary].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+      const word = shuffled[i];
+      const exercise = this.createExerciseForWord(word, type, vocabulary);
+      if (exercise) exercises.push(exercise);
+    }
+
+    return exercises;
+  }
+
+  private createExerciseForWord(word: Vocabulary, type: string, allWords: Vocabulary[]): BuildingExercise | null {
+    // Get 3 wrong answers
+    const wrongAnswers = allWords
+      .filter(w => w.id !== word.id)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3);
+
+    if (wrongAnswers.length < 3) return null;
+
+    switch (type) {
+      case 'vocabulary':
+      case 'mixed':
+        // Vietnamese -> English multiple choice
+        return {
+          type: 'vocabulary',
+          question: `What is the English word for "${word.vietnameseWord}"?`,
+          questionVi: `"${word.vietnameseWord}" tiếng Anh là gì?`,
+          options: this.shuffleArray([word.englishWord, ...wrongAnswers.map(w => w.englishWord)]),
+          correctAnswer: word.englishWord,
+          vocabulary: word
+        };
+
+      case 'flashcard':
+        // English -> Vietnamese
+        return {
+          type: 'flashcard',
+          question: `What is the meaning of "${word.englishWord}"?`,
+          questionVi: `"${word.englishWord}" nghĩa là gì?`,
+          options: this.shuffleArray([word.vietnameseWord, ...wrongAnswers.map(w => w.vietnameseWord)]),
+          correctAnswer: word.vietnameseWord,
+          vocabulary: word
+        };
+
+      case 'grammar':
+        // Part of speech identification
+        const posOptions = ['noun', 'verb', 'adjective', 'adverb'];
+        const correctPos = word.partOfSpeech || 'noun';
+        return {
+          type: 'grammar',
+          question: `What part of speech is "${word.englishWord}"?`,
+          questionVi: `"${word.englishWord}" thuộc loại từ nào?`,
+          options: posOptions,
+          correctAnswer: correctPos,
+          vocabulary: word
+        };
+
+      case 'listening':
+        // Hear the word, identify Vietnamese meaning
+        return {
+          type: 'listening',
+          question: `🔊 Listen: "${word.englishWord}" [${word.phonetic || ''}]`,
+          questionVi: `Nghe và chọn nghĩa đúng`,
+          options: this.shuffleArray([word.vietnameseWord, ...wrongAnswers.map(w => w.vietnameseWord)]),
+          correctAnswer: word.vietnameseWord,
+          vocabulary: word
+        };
+
+      default:
+        return null;
+    }
+  }
+
+  private shuffleArray<T>(array: T[]): T[] {
+    return [...array].sort(() => Math.random() - 0.5);
+  }
+
+  // Handle answer selection
+  selectAnswer(answer: string): void {
+    if (this.showAnswerFeedback()) return; // Already answered
+
+    this.selectedAnswer.set(answer);
+    const exercise = this.currentExercise();
+    if (!exercise) return;
+
+    const isCorrect = answer === exercise.correctAnswer;
+    this.isAnswerCorrect.set(isCorrect);
+    this.showAnswerFeedback.set(true);
+
+    // Update session
+    const session = this.practiceSession();
+    if (session && isCorrect) {
+      this.practiceSession.update(s => s ? { ...s, correctCount: s.correctCount + 1 } : null);
+
+      // Calculate rewards
+      const def = this.getBuildingDef(session.building.buildingId);
+      if (def) {
+        const multiplier = session.building.level;
+        const xpReward = (def.production.xp || 0) * multiplier;
+        const coinReward = (def.production.coins || 0) * multiplier;
+        this.sessionRewards.update(r => ({
+          xp: r.xp + xpReward,
+          coins: r.coins + coinReward
+        }));
+      }
+    }
+  }
+
+  // Move to next question
+  nextQuestion(): void {
+    const session = this.practiceSession();
+    if (!session) return;
+
+    const nextIndex = session.currentIndex + 1;
+
+    if (nextIndex >= session.exercises.length) {
+      // Session complete!
+      this.completePracticeSession();
+    } else {
+      // Next question
+      this.practiceSession.update(s => s ? { ...s, currentIndex: nextIndex } : null);
+      this.currentExercise.set(session.exercises[nextIndex]);
+      this.selectedAnswer.set(null);
+      this.showAnswerFeedback.set(false);
+    }
+  }
+
+  // Complete practice session
+  private completePracticeSession(): void {
+    const session = this.practiceSession();
+    const rewards = this.sessionRewards();
+
+    if (session && rewards) {
+      // Add rewards to player
+      this.xp.update(x => x + rewards.xp);
+      this.coins.update(c => c + rewards.coins);
+
+      // Check level up
+      while (this.xp() >= this.xpToNextLevel()) {
+        this.xp.update(x => x - this.xpToNextLevel());
+        this.level.update(l => l + 1);
+        this.xpToNextLevel.update(x => Math.floor(x * 1.5));
+      }
+
+      // Show results
+      this.pendingCollection.set(rewards);
+      this.showCollection.set(true);
+    }
+
+    // Reset practice state
+    this.practiceSession.set(null);
+    this.currentExercise.set(null);
+    this.phase.set('island');
+
+    setTimeout(() => {
+      this.showCollection.set(false);
+      this.pendingCollection.set({ xp: 0, coins: 0 });
+    }, 2500);
+  }
+
+  // Cancel practice session
+  cancelPractice(): void {
+    this.practiceSession.set(null);
+    this.currentExercise.set(null);
+    this.sessionRewards.set({ xp: 0, coins: 0 });
+    this.phase.set('island');
+  }
+
+  // Check if building can be practiced
+  canPractice(building: PlacedBuilding): boolean {
+    if (building.isBuilding) return false;
+    const def = this.getBuildingDef(building.buildingId);
+    return !!(def && def.exerciseType && def.questionsPerSession > 0);
   }
 
   // Navigation
@@ -500,35 +763,6 @@ export class LanguageIslandComponent implements OnInit {
 
   getBuildingDef(buildingId: string): BuildingDef | undefined {
     return BUILDINGS.find(b => b.id === buildingId);
-  }
-
-  // Collection
-  collectAll(): void {
-    const pending = this.pendingCollection();
-    if (pending.xp === 0 && pending.coins === 0) return;
-
-    // Add resources
-    this.xp.update(x => x + pending.xp);
-    this.coins.update(c => c + pending.coins);
-
-    // Check level up
-    while (this.xp() >= this.xpToNextLevel()) {
-      this.xp.update(x => x - this.xpToNextLevel());
-      this.level.update(l => l + 1);
-      this.xpToNextLevel.update(x => Math.floor(x * 1.5));
-    }
-
-    // Reset collection times
-    this.placedBuildings.update(buildings =>
-      buildings.map(b => ({ ...b, lastCollected: new Date() }))
-    );
-
-    this.pendingCollection.set({ xp: 0, coins: 0 });
-    this.showCollection.set(true);
-
-    setTimeout(() => {
-      this.showCollection.set(false);
-    }, 2000);
   }
 
   // Upgrade building

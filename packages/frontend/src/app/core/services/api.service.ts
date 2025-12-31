@@ -997,6 +997,71 @@ export class ApiService {
     const params = new HttpParams().set('limit', limit.toString());
     return this.http.get<{ sessions: GameSessionInfo[] }>(`${this.baseUrl}/games/history`, { params });
   }
+
+  // ============================================================
+  // Sync Requests
+  // ============================================================
+
+  // Create a new sync request
+  createSyncRequest(data: CreateSyncRequestDTO): Observable<SyncRequest> {
+    return this.http.post<SyncRequest>(`${this.baseUrl}/sync-requests`, data);
+  }
+
+  // Get user's own requests
+  getMyRequests(page = 1, limit = 10, status?: SyncRequestStatus): Observable<PaginatedSyncRequests> {
+    let params = new HttpParams().set('page', page).set('limit', limit);
+    if (status) params = params.set('status', status);
+    return this.http.get<PaginatedSyncRequests>(`${this.baseUrl}/sync-requests/my`, { params });
+  }
+
+  // Get pending requests (for helpers)
+  getPendingRequests(page = 1, limit = 10, filters?: SyncRequestFilters): Observable<PaginatedSyncRequests> {
+    let params = new HttpParams().set('page', page).set('limit', limit);
+    if (filters?.priority) params = params.set('priority', filters.priority);
+    if (filters?.difficultyLevel) params = params.set('difficultyLevel', filters.difficultyLevel);
+    if (filters?.topic) params = params.set('topic', filters.topic);
+    if (filters?.sortBy) params = params.set('sortBy', filters.sortBy);
+    if (filters?.sortOrder) params = params.set('sortOrder', filters.sortOrder);
+    return this.http.get<PaginatedSyncRequests>(`${this.baseUrl}/sync-requests/pending`, { params });
+  }
+
+  // Get sync request statistics
+  getSyncRequestStats(): Observable<SyncRequestStats> {
+    return this.http.get<SyncRequestStats>(`${this.baseUrl}/sync-requests/stats`);
+  }
+
+  // Get a single sync request by ID
+  getSyncRequest(id: number): Observable<SyncRequest> {
+    return this.http.get<SyncRequest>(`${this.baseUrl}/sync-requests/${id}`);
+  }
+
+  // Update a pending request (owner only)
+  updateSyncRequest(id: number, data: UpdateSyncRequestDTO): Observable<SyncRequest> {
+    return this.http.put<SyncRequest>(`${this.baseUrl}/sync-requests/${id}`, data);
+  }
+
+  // Cancel a pending request (owner only)
+  cancelSyncRequest(id: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/sync-requests/${id}`);
+  }
+
+  // Start syncing a request (helper action)
+  startSync(id: number): Observable<SyncRequest> {
+    return this.http.post<SyncRequest>(`${this.baseUrl}/sync-requests/${id}/start`, {});
+  }
+
+  // Complete syncing a request (helper action)
+  completeSync(id: number, conversationId: number, notes?: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/sync-requests/${id}/complete`, {
+      conversationId,
+      notes
+    });
+  }
+
+  // Cancel an in-progress sync (helper action)
+  cancelSync(id: number): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/sync-requests/${id}/cancel-sync`, {});
+  }
 }
 
 // ============================================================
@@ -1018,7 +1083,7 @@ export interface UserAchievementInfo {
   achievementCode: string;
   name: string;
   description: string;
-  category: 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone';
+  category: 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone' | 'game';
   icon: string;
   xpReward: number;
   isUnlocked: boolean;
@@ -1421,4 +1486,77 @@ export interface GamesHubData {
   userCurrency: UserCurrency;
   recentSessions: GameSessionInfo[];
   dailyBonusClaimed: boolean;
+}
+
+// ============================================================
+// Sync Request Types
+// ============================================================
+
+export type SyncRequestStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type SyncRequestPriority = 'low' | 'normal' | 'high';
+export type SyncDifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+
+export interface CreateSyncRequestDTO {
+  vietnameseText: string;
+  englishTranslation?: string;
+  topic?: string;
+  difficultyLevel?: SyncDifficultyLevel;
+  notes?: string;
+  priority?: SyncRequestPriority;
+}
+
+export interface UpdateSyncRequestDTO {
+  vietnameseText?: string;
+  englishTranslation?: string;
+  topic?: string;
+  difficultyLevel?: SyncDifficultyLevel;
+  notes?: string;
+}
+
+export interface SyncRequestFilters {
+  priority?: SyncRequestPriority;
+  difficultyLevel?: SyncDifficultyLevel;
+  topic?: string;
+  sortBy?: 'created_at' | 'priority' | 'updated_at';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface SyncRequest {
+  id: number;
+  requesterUserId: number;
+  requesterName: string;
+  requesterEmail?: string;
+  vietnameseText: string;
+  englishTranslation?: string;
+  topic?: string;
+  difficultyLevel?: SyncDifficultyLevel;
+  notes?: string;
+  status: SyncRequestStatus;
+  priority: SyncRequestPriority;
+  syncerUserId?: number;
+  syncerName?: string;
+  conversationId?: number;
+  syncStartedAt?: string;
+  syncCompletedAt?: string;
+  syncNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SyncRequestStats {
+  totalPending: number;
+  totalInProgress: number;
+  completedToday: number;
+  completedThisWeek: number;
+  myRequestsPending: number;
+  myRequestsCompleted: number;
+  mySyncsCompleted: number;
+}
+
+export interface PaginatedSyncRequests {
+  items: SyncRequest[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }

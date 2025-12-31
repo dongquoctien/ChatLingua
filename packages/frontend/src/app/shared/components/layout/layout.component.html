@@ -64,29 +64,68 @@
 
           <!-- Notification Dropdown -->
           @if (notificationMenuOpen()) {
-            <div class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-              <div class="px-4 py-3 border-b border-gray-100">
+            <div class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+              <!-- Header -->
+              <div class="flex justify-between items-center px-4 py-3 border-b border-gray-100">
                 <span class="font-semibold text-gray-900">Notifications</span>
+                @if (notifications().length > 0) {
+                  <button
+                    (click)="markAllNotificationsRead()"
+                    class="text-xs text-gray-500 hover:text-gray-900 transition-colors">
+                    Mark all read
+                  </button>
+                }
               </div>
-              @if (notificationBadge().hasNewAchievements) {
-                <button
-                  (click)="goToAchievements()"
-                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-                  <fa-icon [icon]="faTrophy" class="text-yellow-500"></fa-icon>
-                  <span class="text-sm text-gray-700">New achievements unlocked!</span>
-                </button>
-              }
-              @if (notificationBadge().unreadCount === 0 && !notificationBadge().hasNewAchievements) {
+
+              <!-- Loading -->
+              @if (notificationsLoading()) {
+                <div class="px-4 py-6 text-center text-gray-400 text-sm">
+                  Loading...
+                </div>
+              } @else if (notifications().length === 0) {
+                <!-- Empty state -->
                 <div class="px-4 py-6 text-center text-gray-500 text-sm">
-                  No new notifications
+                  No notifications yet
+                </div>
+              } @else {
+                <!-- Notification List -->
+                <div class="max-h-80 overflow-y-auto">
+                  @for (notification of notifications().slice(0, 10); track notification.id) {
+                    <div
+                      class="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer"
+                      [class.bg-gray-50]="!notification.isRead">
+                      <!-- Icon -->
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                           [ngClass]="{
+                             'bg-yellow-100 text-yellow-600': notification.notificationType === 'achievement',
+                             'bg-gray-100 text-gray-600': notification.notificationType === 'level_up',
+                             'bg-red-100 text-red-600': notification.notificationType === 'streak',
+                             'bg-blue-100 text-blue-600': notification.notificationType === 'challenge'
+                           }">
+                        <fa-icon [icon]="notification.notificationType === 'achievement' ? faTrophy : faBell" class="text-sm"></fa-icon>
+                      </div>
+                      <!-- Content -->
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">{{ notification.title }}</p>
+                        <p class="text-xs text-gray-600 line-clamp-2">{{ notification.message }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ formatNotificationTime(notification.createdAt) }}</p>
+                      </div>
+                      <!-- Unread indicator -->
+                      @if (!notification.isRead) {
+                        <div class="w-2 h-2 rounded-full bg-gray-900 flex-shrink-0 mt-2"></div>
+                      }
+                    </div>
+                  }
                 </div>
               }
+
+              <!-- Footer -->
               <div class="border-t border-gray-100">
                 <a
-                  routerLink="/achievements"
+                  routerLink="/notifications"
                   (click)="closeMenus()"
-                  class="block px-4 py-2.5 text-sm text-gray-900 font-medium hover:bg-gray-50 transition-colors">
-                  View All Achievements
+                  class="block px-4 py-2.5 text-sm text-center text-gray-600 font-medium hover:bg-gray-50 transition-colors">
+                  View All Notifications
                 </a>
               </div>
             </div>

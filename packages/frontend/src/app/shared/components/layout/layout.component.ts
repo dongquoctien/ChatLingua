@@ -21,9 +21,10 @@ import {
   faChevronDown,
   faCog,
   faGamepad,
+  faPaperPlane,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
-import { ApiService } from '../../../core/services/api.service';
+import { ApiService, GamificationNotification } from '../../../core/services/api.service';
 import { Subscription, filter, interval } from 'rxjs';
 
 @Component({
@@ -49,11 +50,13 @@ export class LayoutComponent implements OnInit, OnDestroy {
   userMenuOpen = signal(false);
   notificationMenuOpen = signal(false);
 
-  // Notification badge
+  // Notification badge and list
   notificationBadge = signal<{ unreadCount: number; hasNewAchievements: boolean }>({
     unreadCount: 0,
     hasNewAchievements: false,
   });
+  notifications = signal<GamificationNotification[]>([]);
+  notificationsLoading = signal(false);
 
   // Icons
   faGraduationCap = faGraduationCap;
@@ -74,6 +77,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faChevronDown = faChevronDown;
   faCog = faCog;
   faGamepad = faGamepad;
+  faPaperPlane = faPaperPlane;
 
   // Navigation items
   navItems = [
@@ -85,6 +89,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     { path: '/exercises', icon: this.faDumbbell, label: 'Exercises' },
     { path: '/quizzes', icon: this.faQuestionCircle, label: 'Quizzes' },
     { path: '/games', icon: this.faGamepad, label: 'Games' },
+    { path: '/sync-requests', icon: this.faPaperPlane, label: 'Sync Requests' },
     { path: '/reports', icon: this.faChartLine, label: 'Reports' },
   ];
 
@@ -141,8 +146,55 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   toggleNotificationMenu() {
+    const wasOpen = this.notificationMenuOpen();
     this.notificationMenuOpen.update(v => !v);
     this.userMenuOpen.set(false);
+
+    // Load notifications when opening
+    if (!wasOpen) {
+      this.loadNotifications();
+    }
+  }
+
+  loadNotifications() {
+    this.notificationsLoading.set(true);
+    this.apiService.getNotifications().subscribe({
+      next: (notifications) => {
+        this.notifications.set(notifications);
+        this.notificationsLoading.set(false);
+      },
+      error: () => {
+        this.notificationsLoading.set(false);
+      },
+    });
+  }
+
+  formatNotificationTime(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  markAllNotificationsRead() {
+    this.apiService.markAllNotificationsRead().subscribe({
+      next: () => {
+        // Update local state
+        const updated = this.notifications().map(n => ({ ...n, isRead: true }));
+        this.notifications.set(updated);
+        this.notificationBadge.update(b => ({ ...b, unreadCount: 0 }));
+      },
+    });
   }
 
   closeMenus() {
