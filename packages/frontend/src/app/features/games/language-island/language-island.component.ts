@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 
 // Exercise for building practice
 interface BuildingExercise {
@@ -280,7 +281,8 @@ export class LanguageIslandComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -416,6 +418,9 @@ export class LanguageIslandComponent implements OnInit {
       return;
     }
 
+    // Play start practice sound
+    this.audioService.playSound('game-start');
+
     // Start session
     this.practiceSession.set({
       building,
@@ -520,6 +525,7 @@ export class LanguageIslandComponent implements OnInit {
   selectAnswer(answer: string): void {
     if (this.showAnswerFeedback()) return; // Already answered
 
+    this.audioService.playSound('click');
     this.selectedAnswer.set(answer);
     const exercise = this.currentExercise();
     if (!exercise) return;
@@ -527,6 +533,13 @@ export class LanguageIslandComponent implements OnInit {
     const isCorrect = answer === exercise.correctAnswer;
     this.isAnswerCorrect.set(isCorrect);
     this.showAnswerFeedback.set(true);
+
+    // Play feedback sound
+    if (isCorrect) {
+      this.audioService.playSound('correct');
+    } else {
+      this.audioService.playSound('wrong');
+    }
 
     // Update session
     const session = this.practiceSession();
@@ -572,15 +585,28 @@ export class LanguageIslandComponent implements OnInit {
     const rewards = this.sessionRewards();
 
     if (session && rewards) {
+      // Play completion sound
+      if (session.correctCount === session.totalQuestions) {
+        this.audioService.playSound('victory');
+      } else if (session.correctCount >= session.totalQuestions / 2) {
+        this.audioService.playSound('level-up');
+      } else {
+        this.audioService.playSound('ding');
+      }
+
       // Add rewards to player
       this.xp.update(x => x + rewards.xp);
       this.coins.update(c => c + rewards.coins);
 
       // Check level up
+      const prevLevel = this.level();
       while (this.xp() >= this.xpToNextLevel()) {
         this.xp.update(x => x - this.xpToNextLevel());
         this.level.update(l => l + 1);
         this.xpToNextLevel.update(x => Math.floor(x * 1.5));
+      }
+      if (this.level() > prevLevel) {
+        this.audioService.playSound('achievement');
       }
 
       // Show results
@@ -621,15 +647,18 @@ export class LanguageIslandComponent implements OnInit {
 
   // Shop
   openShop(): void {
+    this.audioService.playSound('open');
     this.phase.set('shop');
   }
 
   closeShop(): void {
+    this.audioService.playSound('close');
     this.phase.set('island');
     this.selectedBuilding.set(null);
   }
 
   selectBuildingToBuy(building: BuildingDef): void {
+    this.audioService.playSound('select');
     this.selectedBuilding.set(building);
   }
 
@@ -642,6 +671,9 @@ export class LanguageIslandComponent implements OnInit {
   buyBuilding(): void {
     const building = this.selectedBuilding();
     if (!building || !this.canAffordBuilding(building)) return;
+
+    // Play purchase sound
+    this.audioService.playSound('coin');
 
     // Deduct cost
     this.coins.update(c => c - building.cost.coins);
@@ -693,6 +725,9 @@ export class LanguageIslandComponent implements OnInit {
 
     const building = this.selectedBuilding();
     if (!building) return;
+
+    // Play building placement sound
+    this.audioService.playSound('pop');
 
     // Place building
     const newBuilding: PlacedBuilding = {
@@ -754,6 +789,7 @@ export class LanguageIslandComponent implements OnInit {
   selectedPlacedBuilding = signal<PlacedBuilding | null>(null);
 
   selectPlacedBuilding(building: PlacedBuilding): void {
+    this.audioService.playSound('click');
     this.selectedPlacedBuilding.set(building);
   }
 
@@ -779,6 +815,9 @@ export class LanguageIslandComponent implements OnInit {
 
     const def = this.getBuildingDef(building.buildingId);
     if (!def) return;
+
+    // Play upgrade sound
+    this.audioService.playSound('level-up');
 
     const upgradeCost = def.cost.coins * building.level;
     this.coins.update(c => c - upgradeCost);

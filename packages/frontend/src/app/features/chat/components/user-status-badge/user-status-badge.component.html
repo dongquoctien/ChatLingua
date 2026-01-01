@@ -1,0 +1,15 @@
+<!-- Status dot -->
+<span
+  class="rounded-full border-white"
+  [class]="statusColor() + ' ' + sizeClasses() + ' ' + borderClasses()"
+></span>
+
+<!-- Status text (optional) -->
+@if (showText()) {
+  <div class="flex items-center gap-1 text-xs">
+    <span class="text-gray-700">{{ statusLabel() }}</span>
+    @if (activityLabel()) {
+      <span class="text-gray-500">• {{ activityLabel() }}</span>
+    }
+  </div>
+}

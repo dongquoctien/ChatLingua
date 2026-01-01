@@ -1,8 +1,13 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameAchievementInfo } from '../../../../core/services/api.service';
+import { AudioService } from '../../../../core/services/audio.service';
+import { ShareDialogComponent, ShareableContent } from '../../../chat/components/share-dialog/share-dialog.component';
+import { ChatService } from '../../../chat/services/chat.service';
+import type { UserStatusInfo } from '../../../chat/chat.types';
 
 export interface GameResult {
+  sessionId?: number; // Game session ID for sharing
   score: number;
   maxCombo: number;
   accuracy: number;
@@ -20,17 +25,61 @@ export interface GameResult {
 @Component({
   selector: 'app-game-over-dialog',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ShareDialogComponent],
   templateUrl: './game-over-dialog.component.html',
   styleUrls: ['./game-over-dialog.component.scss']
 })
-export class GameOverDialogComponent {
+export class GameOverDialogComponent implements OnChanges {
+  private chatService = inject(ChatService);
+
   @Input() isOpen: boolean = false;
   @Input() gameName: string = '';
+  @Input() gameType: string = ''; // e.g., 'word-rush', 'anagram', etc.
   @Input() result: GameResult | null = null;
 
   @Output() playAgain = new EventEmitter<void>();
   @Output() backToHub = new EventEmitter<void>();
+
+  // Share dialog state
+  readonly showShareDialog = signal(false);
+  readonly shareableUsers = signal<UserStatusInfo[]>([]);
+  readonly shareContent = signal<ShareableContent | null>(null);
+
+  private hasPlayedSound = false;
+
+  constructor(private audioService: AudioService) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Play sound when dialog opens
+    if (changes['isOpen'] && this.isOpen && !this.hasPlayedSound) {
+      this.hasPlayedSound = true;
+
+      if (this.result?.victory) {
+        this.audioService.playSound('victory');
+      } else {
+        this.audioService.playSound('game-over');
+      }
+
+      // Play achievement sound if there are new achievements
+      if (this.result?.newAchievements && this.result.newAchievements.length > 0) {
+        setTimeout(() => {
+          this.audioService.playSound('achievement');
+        }, 1000);
+      }
+
+      // Play coin sound if earned coins
+      if (this.result?.coinsEarned && this.result.coinsEarned > 0) {
+        setTimeout(() => {
+          this.audioService.playSound('coin');
+        }, 500);
+      }
+    }
+
+    // Reset flag when dialog closes
+    if (changes['isOpen'] && !this.isOpen) {
+      this.hasPlayedSound = false;
+    }
+  }
 
   // Icon map for FA names to emojis
   private iconMap: Record<string, string> = {
@@ -77,10 +126,67 @@ export class GameOverDialogComponent {
   }
 
   onPlayAgain(): void {
+    this.audioService.playSound('select');
     this.playAgain.emit();
   }
 
   onBackToHub(): void {
+    this.audioService.playSound('close');
     this.backToHub.emit();
+  }
+
+  // Share functionality
+  openShareDialog(): void {
+    if (!this.result) return;
+
+    this.audioService.playSound('select');
+
+    // Create shareable content for the game result
+    // Use actual session ID for sharing, fallback to 0 if not available
+    const sessionId = this.result?.sessionId || 0;
+    if (!sessionId) {
+      console.warn('No session ID available for sharing');
+    }
+
+    this.shareContent.set({
+      type: 'game',
+      id: sessionId,
+      title: this.gameName,
+      subtitle: `Score: ${this.result.score} • ${this.result.accuracy}% accuracy`,
+      icon: '🎮',
+      iconBgColor: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      data: {
+        gameName: this.gameName,
+        gameType: this.gameType,
+        score: this.result.score,
+        accuracy: this.result.accuracy,
+        wordsLearned: this.result.wordsCorrect,
+        timeSpent: this.result.durationSeconds,
+        highScore: this.result.isNewBestScore,
+        maxCombo: this.result.maxCombo,
+        victory: this.result.victory,
+      },
+    });
+
+    // Load users for share dialog
+    this.chatService.getAllUsers().subscribe({
+      next: (response) => {
+        this.shareableUsers.set(response.items);
+        this.showShareDialog.set(true);
+      },
+      error: (err) => {
+        console.error('Failed to load users for sharing:', err);
+      },
+    });
+  }
+
+  closeShareDialog(): void {
+    this.showShareDialog.set(false);
+  }
+
+  onShared(event: { recipientId: number; comment: string }): void {
+    this.audioService.playSound('ding');
+    this.showShareDialog.set(false);
   }
 }

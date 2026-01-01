@@ -12,6 +12,7 @@ import ttsRoutes from './tts.routes.js';
 import mcpAuthRoutes from './mcp-auth.routes.js';
 import gameRoutes from './game.routes.js';
 import syncRequestsRoutes from './sync-requests.routes.js';
+import chatRoutes from './chat.routes.js';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/tts', ttsRoutes);
 router.use('/mcp-auth', mcpAuthRoutes);
 router.use('/games', gameRoutes);
 router.use('/sync-requests', syncRequestsRoutes);
+router.use('/chat', chatRoutes);
 
 export default router;

@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AudioService } from '../../../../core/services/audio.service';
 
 @Component({
   selector: 'app-countdown',
@@ -18,6 +19,8 @@ export class CountdownComponent implements OnInit, OnDestroy {
   isActive: boolean = false;
   private intervalId: any = null;
 
+  constructor(private audioService: AudioService) {}
+
   ngOnInit(): void {
     if (this.autoStart) {
       this.start();
@@ -32,8 +35,15 @@ export class CountdownComponent implements OnInit, OnDestroy {
     this.currentCount = this.startFrom;
     this.isActive = true;
 
+    // Play initial countdown sound
+    this.audioService.playCountdown(this.currentCount);
+
     this.intervalId = setInterval(() => {
       this.currentCount--;
+
+      // Play countdown sound for each tick
+      this.audioService.playCountdown(this.currentCount);
+
       if (this.currentCount <= 0) {
         this.stop();
         this.countdownComplete.emit();

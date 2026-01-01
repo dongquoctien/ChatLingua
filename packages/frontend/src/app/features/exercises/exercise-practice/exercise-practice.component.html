@@ -321,12 +321,26 @@
 
     <div class="flex justify-center gap-4 p-6 border-t border-gray-200">
       <button class="btn btn-primary" (click)="practiceAgain()">Practice Again</button>
+      <button class="btn btn-secondary" (click)="openShareDialog()">
+        <fa-icon [icon]="faShare" class="mr-2"></fa-icon>
+        Share
+      </button>
       <button class="btn btn-secondary" (click)="viewHistory()">
         <fa-icon [icon]="faHistory" class="mr-2"></fa-icon>
         View History
       </button>
     </div>
   </div>
+}
+
+<!-- Share Dialog -->
+@if (showShareDialog() && shareContent()) {
+  <app-share-dialog
+    [content]="shareContent()!"
+    [users]="shareableUsers()"
+    (close)="closeShareDialog()"
+    (shared)="onShared($event)"
+  />
 }
 </div>
 

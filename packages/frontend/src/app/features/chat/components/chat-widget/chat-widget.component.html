@@ -1,0 +1,159 @@
+<!-- Floating Chat Button -->
+<button
+  class="fixed bottom-6 right-6 w-14 h-14 bg-gray-900 hover:bg-gray-800 text-white rounded-full shadow-lg flex items-center justify-center transition-all z-50"
+  [class.hidden]="isOpen() && !isMinimized()"
+  (click)="toggleWidget()"
+>
+  <!-- Chat icon -->
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  </svg>
+  <!-- Unread badge -->
+  @if (totalUnread() > 0) {
+    <span class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+      {{ totalUnread() > 99 ? '99+' : totalUnread() }}
+    </span>
+  }
+  <!-- Connection indicator -->
+  <span
+    class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
+    [class.bg-green-500]="isConnected()"
+    [class.bg-gray-400]="!isConnected()"
+  ></span>
+</button>
+
+<!-- Chat Widget Panel -->
+@if (isOpen() && !isMinimized()) {
+  <div class="fixed bottom-6 right-6 w-96 h-[32rem] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden z-50">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-4 py-3 bg-gray-900 text-white">
+      <div class="flex items-center gap-2">
+        @if (showChatWindow()) {
+          <button
+            class="p-1 hover:bg-gray-700 rounded transition-colors"
+            (click)="backToList()"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span class="font-medium truncate">
+            {{ activeConversation()?.settings?.nickname || activeConversation()?.otherUser?.displayName || activeConversation()?.otherUser?.username || 'Chat' }}
+          </span>
+        } @else {
+          <span class="font-medium">Messages</span>
+          @if (totalUnread() > 0) {
+            <span class="px-2 py-0.5 text-xs bg-white/20 rounded-full">
+              {{ totalUnread() }}
+            </span>
+          }
+        }
+      </div>
+      <div class="flex items-center gap-1">
+        <!-- Open in new tab button -->
+        <button
+          class="p-1.5 hover:bg-gray-700 rounded transition-colors"
+          (click)="openInNewTab()"
+          title="Open chat in new tab"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </button>
+        <!-- Minimize button -->
+        <button
+          class="p-1.5 hover:bg-gray-700 rounded transition-colors"
+          (click)="minimizeWidget()"
+          title="Minimize"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+          </svg>
+        </button>
+        <!-- Close button -->
+        <button
+          class="p-1.5 hover:bg-gray-700 rounded transition-colors"
+          (click)="closeWidget()"
+          title="Close"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      @if (showChatWindow()) {
+        <!-- Chat Window -->
+        <app-chat-window
+          class="flex-1 flex flex-col"
+          [conversation]="activeConversation()"
+          [messages]="chatService.messages()"
+          [typingUsers]="typingUsersForConversation()"
+          [compact]="true"
+          (sendMessage)="chatService.sendMessage($event).subscribe()"
+          (loadMore)="chatService.getMessages(selectedConversationId()!, $event).subscribe()"
+          (markRead)="chatService.markMessagesRead(selectedConversationId()!, $event).subscribe()"
+          (startTyping)="socketService.startTyping(selectedConversationId()!)"
+          (stopTyping)="socketService.stopTyping(selectedConversationId()!)"
+          (settingsChange)="chatService.updateConversationSettings(selectedConversationId()!, $event).subscribe()"
+          (blockUser)="onBlockUser($event)"
+        />
+      } @else {
+        <!-- List View -->
+        <div class="flex flex-col h-full">
+          <!-- Status selector (compact) -->
+          <div class="p-3 border-b border-gray-200">
+            <app-status-selector
+              [currentStatus]="currentStatus()"
+              (statusChange)="chatService.updateStatus($event).subscribe()"
+            />
+          </div>
+
+          <!-- View tabs -->
+          <div class="flex bg-gray-100 mx-3 mt-2 rounded-lg p-1">
+            <button
+              class="flex-1 py-1.5 text-sm font-medium rounded-md transition-colors"
+              [class.bg-white]="activeView() === 'conversations'"
+              [class.text-gray-900]="activeView() === 'conversations'"
+              [class.shadow-sm]="activeView() === 'conversations'"
+              [class.text-gray-600]="activeView() !== 'conversations'"
+              (click)="toggleView('conversations')"
+            >
+              Chats
+            </button>
+            <button
+              class="flex-1 py-1.5 text-sm font-medium rounded-md transition-colors"
+              [class.bg-white]="activeView() === 'users'"
+              [class.text-gray-900]="activeView() === 'users'"
+              [class.shadow-sm]="activeView() === 'users'"
+              [class.text-gray-600]="activeView() !== 'users'"
+              (click)="toggleView('users')"
+            >
+              Users
+            </button>
+          </div>
+
+          <!-- List content -->
+          <div class="flex-1 overflow-y-auto">
+            @if (activeView() === 'conversations') {
+              <app-conversation-list
+                [conversations]="conversations()"
+                [selectedId]="selectedConversationId()"
+                [loading]="loading()"
+                (conversationSelect)="selectConversation($event)"
+              />
+            } @else {
+              <app-user-list
+                [compact]="true"
+                (userSelect)="startConversationWithUser($event)"
+              />
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, effect } from '@angular
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -148,7 +149,8 @@ export class WordDuelComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -189,6 +191,8 @@ export class WordDuelComponent implements OnInit, OnDestroy {
   }
 
   selectOpponent(opponent: AIOpponent): void {
+    // Play select sound for opponent selection
+    this.audioService.playSound('select');
     this.selectedOpponent.set(opponent);
   }
 
@@ -312,6 +316,9 @@ export class WordDuelComponent implements OnInit, OnDestroy {
   selectAnswer(option: WordOption): void {
     if (this.playerAnswered() || !this.roundActive()) return;
 
+    // Play click sound for answer selection
+    this.audioService.playSound('click');
+
     const answerTime = Date.now() - this.roundStartTime;
     this.playerAnswered.set(true);
     this.playerCorrect.set(option.isCorrect);
@@ -374,10 +381,15 @@ export class WordDuelComponent implements OnInit, OnDestroy {
     this.playerScore.update(s => s + playerPoints);
     this.aiScore.update(s => s + aiPoints);
 
+    // Play sound based on round result
     if (winner === 'player') {
       this.playerWins.update(w => w + 1);
+      this.audioService.playSound('correct');
     } else if (winner === 'ai') {
       this.aiWins.update(w => w + 1);
+      this.audioService.playSound('wrong');
+    } else {
+      this.audioService.playSound('ding');
     }
 
     // Record round result
@@ -442,6 +454,7 @@ export class WordDuelComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,

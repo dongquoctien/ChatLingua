@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -122,7 +123,8 @@ export class CrosswordComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -490,6 +492,9 @@ export class CrosswordComponent implements OnInit, OnDestroy {
     if (row < 0 || row >= this.gridSize || col < 0 || col >= this.gridSize) return;
     if (g[row][col].isBlocked) return;
 
+    // Play click sound for cell selection
+    this.audioService.playSound('click');
+
     const prevCell = this.selectedCell();
 
     // If clicking same cell, toggle direction
@@ -567,6 +572,9 @@ export class CrosswordComponent implements OnInit, OnDestroy {
     const gridCell = g[cell.row][cell.col];
     if (gridCell.isBlocked) return;
 
+    // Play type sound for letter entry
+    this.audioService.playSound('type');
+
     // Update the cell
     this.grid.update(grid => {
       const newGrid = grid.map(row => [...row]);
@@ -631,6 +639,9 @@ export class CrosswordComponent implements OnInit, OnDestroy {
     const word = this.selectedWord();
     if (!word) return;
 
+    // Play ding sound for hint usage
+    this.audioService.playSound('ding');
+
     // Find first empty or wrong cell in the word
     const g = this.grid();
     for (let i = 0; i < word.word.length; i++) {
@@ -686,7 +697,12 @@ export class CrosswordComponent implements OnInit, OnDestroy {
     this.score.set(finalScore);
 
     if (wrong === 0) {
+      // Perfect solution - play victory sound
+      this.audioService.playSound('victory');
       this.endGame();
+    } else {
+      // Some errors - play wrong sound
+      this.audioService.playSound('wrong');
     }
   }
 
@@ -724,6 +740,7 @@ export class CrosswordComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,

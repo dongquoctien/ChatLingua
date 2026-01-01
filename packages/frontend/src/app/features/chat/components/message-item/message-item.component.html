@@ -1,0 +1,88 @@
+<div
+  class="flex gap-2"
+  [class.flex-row-reverse]="isOwn()"
+>
+  <!-- Avatar -->
+  @if (showAvatar() && !isOwn()) {
+    <div class="flex-shrink-0">
+      @if (message().sender.avatar) {
+        <img
+          [src]="message().sender.avatar"
+          [alt]="message().sender.username"
+          class="w-8 h-8 rounded-full object-cover"
+        />
+      } @else {
+        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+          {{ getInitials() }}
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Message bubble -->
+  <div
+    class="max-w-[70%] flex flex-col"
+    [class.items-end]="isOwn()"
+  >
+    <!-- Shared content (achievement, exercise, game, vocabulary) -->
+    @if (isSpecialMessage()) {
+      <app-shared-content
+        [type]="message().messageType"
+        [data]="message().metadata"
+        [comment]="message().content"
+      />
+    } @else if (isLinkOrImage()) {
+      <!-- Link or Image message -->
+      <div class="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-lg">{{ messageTypeIcon() }}</span>
+          <span class="text-xs font-medium text-gray-500 uppercase">
+            {{ message().messageType }}
+          </span>
+        </div>
+        <p class="text-gray-900 break-all">{{ message().content }}</p>
+      </div>
+    } @else if (message().isDeleted) {
+      <!-- Deleted message -->
+      <div
+        class="px-4 py-2 rounded-2xl italic text-gray-400 bg-gray-100"
+        [class.rounded-br-md]="isOwn()"
+        [class.rounded-bl-md]="!isOwn()"
+      >
+        This message was deleted
+      </div>
+    } @else {
+      <!-- Regular text message -->
+      <div
+        class="px-4 py-2 rounded-2xl"
+        [class.bg-gray-900]="isOwn()"
+        [class.text-white]="isOwn()"
+        [class.rounded-br-md]="isOwn()"
+        [class.bg-gray-100]="!isOwn()"
+        [class.text-gray-900]="!isOwn()"
+        [class.rounded-bl-md]="!isOwn()"
+      >
+        <p class="whitespace-pre-wrap break-words">{{ message().content }}</p>
+      </div>
+    }
+
+    <!-- Time and status -->
+    <div class="flex items-center gap-1 mt-1 px-1">
+      <span class="text-xs text-gray-400">{{ formattedTime() }}</span>
+      @if (isOwn()) {
+        @if (message().isRead) {
+          <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        } @else {
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        }
+      }
+      @if (message().editedAt) {
+        <span class="text-xs text-gray-400">(edited)</span>
+      }
+    </div>
+  </div>
+</div>

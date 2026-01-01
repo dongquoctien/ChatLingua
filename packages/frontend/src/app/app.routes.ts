@@ -254,6 +254,19 @@ export const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'chat',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/chat/chat.component').then(m => m.ChatComponent),
+          },
+          {
+            path: ':conversationId',
+            loadComponent: () => import('./features/chat/chat.component').then(m => m.ChatComponent),
+          },
+        ],
+      },
     ],
   },
   {

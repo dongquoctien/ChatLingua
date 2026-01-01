@@ -73,11 +73,27 @@
       </div>
     </div>
 
-    <!-- Back Button -->
-    <button class="btn btn-primary mt-6" routerLink="/quizzes">
-      Back to Quizzes
-    </button>
+    <!-- Action Buttons -->
+    <div class="flex justify-center gap-4 mt-6">
+      <button class="btn btn-secondary flex items-center gap-2" (click)="openShareDialog()">
+        <fa-icon [icon]="faShare"></fa-icon>
+        Share
+      </button>
+      <button class="btn btn-primary" routerLink="/quizzes">
+        Back to Quizzes
+      </button>
+    </div>
   </div>
+}
+
+<!-- Share Dialog -->
+@if (showShareDialog() && shareContent()) {
+  <app-share-dialog
+    [content]="shareContent()!"
+    [users]="shareableUsers()"
+    (close)="closeShareDialog()"
+    (shared)="onShared($event)"
+  />
 }
 
 <!-- Quiz Player -->

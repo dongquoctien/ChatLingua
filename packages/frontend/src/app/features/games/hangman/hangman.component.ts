@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, HostListener } from '@a
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -82,7 +83,8 @@ export class HangmanComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -165,6 +167,9 @@ export class HangmanComponent implements OnInit, OnDestroy {
   guessLetter(letter: string): void {
     if (this.guessedLetters().has(letter)) return;
 
+    // Play key click sound
+    this.audioService.playSound('click');
+
     const newGuessed = new Set(this.guessedLetters());
     newGuessed.add(letter);
     this.guessedLetters.set(newGuessed);
@@ -174,7 +179,10 @@ export class HangmanComponent implements OnInit, OnDestroy {
 
     const wordUpper = word.englishWord.toUpperCase();
     if (wordUpper.includes(letter)) {
-      // Correct guess
+      // Correct guess - play correct sound with combo
+      this.audioService.playCombo(this.combo());
+      this.audioService.playSound('correct');
+
       const occurrences = (wordUpper.match(new RegExp(letter, 'g')) || []).length;
       const points = occurrences * 20;
       this.score.update(s => s + points);
@@ -186,7 +194,8 @@ export class HangmanComponent implements OnInit, OnDestroy {
         this.wordCompleted(true);
       }
     } else {
-      // Wrong guess
+      // Wrong guess - play wrong sound
+      this.audioService.playSound('wrong');
       this.wrongGuesses.update(w => w + 1);
       this.combo.set(0);
 
@@ -198,12 +207,16 @@ export class HangmanComponent implements OnInit, OnDestroy {
 
   wordCompleted(success: boolean): void {
     if (success) {
+      // Play level up sound for word completion
+      this.audioService.playSound('level-up');
       this.wordsCorrect.update(c => c + 1);
       // Bonus points for completing word
       const remainingGuesses = this.maxWrongGuesses - this.wrongGuesses();
       const bonus = remainingGuesses * 50;
       this.score.update(s => s + bonus);
     } else {
+      // Play game over sound for failed word
+      this.audioService.playSound('game-over');
       this.wordsWrong.update(c => c + 1);
     }
 
@@ -218,6 +231,8 @@ export class HangmanComponent implements OnInit, OnDestroy {
   }
 
   nextWord(): void {
+    // Play whoosh for new word
+    this.audioService.playSound('whoosh');
     this.currentIndex.update(i => i + 1);
     this.guessedLetters.set(new Set());
     this.wrongGuesses.set(0);
@@ -272,6 +287,7 @@ export class HangmanComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -64,7 +65,8 @@ export class MemoryMatchComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -177,6 +179,9 @@ export class MemoryMatchComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Play card flip sound
+    this.audioService.playSound('card-flip');
+
     // Flip the card
     const updatedCards = this.cards().map(c =>
       c.id === card.id ? { ...c, isFlipped: true } : c
@@ -199,7 +204,10 @@ export class MemoryMatchComponent implements OnInit, OnDestroy {
 
     setTimeout(() => {
       if (isMatch) {
-        // Match found!
+        // Match found! Play match sound with combo variation
+        this.audioService.playCombo(this.combo());
+        this.audioService.playSound('match');
+
         const updatedCards = this.cards().map(c =>
           c.pairId === card1.pairId ? { ...c, isMatched: true } : c
         );
@@ -218,7 +226,9 @@ export class MemoryMatchComponent implements OnInit, OnDestroy {
           this.endGame();
         }
       } else {
-        // No match - flip cards back
+        // No match - play wrong sound and flip cards back
+        this.audioService.playSound('wrong');
+
         const updatedCards = this.cards().map(c =>
           c.id === card1.id || c.id === card2.id
             ? { ...c, isFlipped: false }
@@ -274,6 +284,7 @@ export class MemoryMatchComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,

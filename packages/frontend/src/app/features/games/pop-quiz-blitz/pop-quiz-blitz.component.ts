@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -89,7 +90,8 @@ export class PopQuizBlitzComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -229,6 +231,9 @@ export class PopQuizBlitzComponent implements OnInit, OnDestroy {
   popBubble(bubble: Bubble): void {
     if (!this.questionActive() || bubble.popped) return;
 
+    // Play pop sound for bubble pop
+    this.audioService.playSound('pop');
+
     // Mark bubble as popped
     const updatedBubbles = this.bubbles().map(b =>
       b.id === bubble.id ? { ...b, popped: true } : b
@@ -247,6 +252,10 @@ export class PopQuizBlitzComponent implements OnInit, OnDestroy {
   private handleCorrect(answerTime: number): void {
     this.questionActive.set(false);
     this.clearTimers();
+
+    // Play combo sound and correct sound
+    this.audioService.playCombo(this.combo());
+    this.audioService.playSound('correct');
 
     // Calculate points with time bonus
     const timeBonus = Math.max(0, Math.floor((5000 - answerTime) / 100));
@@ -285,6 +294,9 @@ export class PopQuizBlitzComponent implements OnInit, OnDestroy {
   }
 
   private handleWrong(): void {
+    // Play wrong sound
+    this.audioService.playSound('wrong');
+
     // Lose a life
     this.lives.update(l => l - 1);
     this.combo.set(0);
@@ -315,6 +327,9 @@ export class PopQuizBlitzComponent implements OnInit, OnDestroy {
   private handleMiss(): void {
     this.questionActive.set(false);
     this.clearTimers();
+
+    // Play close sound for missed bubble
+    this.audioService.playSound('close');
 
     // Lose a life
     this.lives.update(l => l - 1);
@@ -374,6 +389,7 @@ export class PopQuizBlitzComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,

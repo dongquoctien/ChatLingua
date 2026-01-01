@@ -15,6 +15,7 @@ import {
   faClock,
   faHistory,
   faBolt,
+  faShare,
 } from '../../../shared/icons';
 import {
   ApiService,
@@ -22,6 +23,9 @@ import {
   SessionResult,
   SessionAnswer,
 } from '../../../core/services/api.service';
+import { ShareDialogComponent, ShareableContent } from '../../chat/components/share-dialog/share-dialog.component';
+import { ChatService } from '../../chat/services/chat.service';
+import type { UserStatusInfo } from '../../chat/chat.types';
 
 // New exercise type components
 import { SentenceBuildingComponent, SentenceBuildingData } from '../exercise-types/sentence-building/sentence-building.component';
@@ -50,6 +54,7 @@ type PracticeState = 'start' | 'loading' | 'practice' | 'submitting' | 'results'
     ErrorCorrectionComponent,
     VerbConjugationComponent,
     ClozeComponent,
+    ShareDialogComponent,
   ],
   templateUrl: './exercise-practice.component.html',
   styleUrl: './exercise-practice.component.scss',
@@ -57,6 +62,7 @@ type PracticeState = 'start' | 'loading' | 'practice' | 'submitting' | 'results'
 export class ExercisePracticeComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private router = inject(Router);
+  private chatService = inject(ChatService);
 
   // Icons
   faDumbbell = faDumbbell;
@@ -70,6 +76,7 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
   faClock = faClock;
   faHistory = faHistory;
   faBolt = faBolt;
+  faShare = faShare;
 
   // State
   state = signal<PracticeState>('start');
@@ -84,6 +91,11 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
   slideDirection = signal<'left' | 'right' | 'none'>('none');
   isAnimating = signal(false);
   showCelebration = signal(false);
+
+  // Share dialog state
+  showShareDialog = signal(false);
+  shareableUsers = signal<UserStatusInfo[]>([]);
+  shareContent = signal<ShareableContent | null>(null);
 
   // Touch gesture state
   private touchStartX = 0;
@@ -457,5 +469,59 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     } catch {
       return answer;
     }
+  }
+
+  // Share functionality
+  openShareDialog(): void {
+    const res = this.result();
+    if (!res) return;
+
+    const percentage = res.percentage;
+    let performanceText = '';
+    if (percentage >= 90) {
+      performanceText = 'Excellent!';
+    } else if (percentage >= 70) {
+      performanceText = 'Great Job!';
+    } else if (percentage >= 50) {
+      performanceText = 'Good Effort!';
+    } else {
+      performanceText = 'Keep Practicing!';
+    }
+
+    this.shareContent.set({
+      type: 'exercise',
+      id: this.sessionId() || Date.now(),
+      title: 'Exercise Practice',
+      subtitle: `${res.score}/${res.total} (${percentage}%) • ${performanceText}`,
+      icon: '📝',
+      iconBgColor: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      data: {
+        sessionId: this.sessionId(),
+        score: res.score,
+        total: res.total,
+        percentage: percentage,
+        timeSpent: this.formattedTime(),
+        xpAwarded: res.xpAwarded || 0,
+      },
+    });
+
+    this.chatService.getAllUsers().subscribe({
+      next: (response) => {
+        this.shareableUsers.set(response.items);
+        this.showShareDialog.set(true);
+      },
+      error: (err) => {
+        console.error('Failed to load users for sharing:', err);
+      },
+    });
+  }
+
+  closeShareDialog(): void {
+    this.showShareDialog.set(false);
+  }
+
+  onShared(event: { recipientId: number; comment: string }): void {
+    this.showShareDialog.set(false);
   }
 }
