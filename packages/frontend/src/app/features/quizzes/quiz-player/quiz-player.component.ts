@@ -14,8 +14,12 @@ import {
   faSpinner,
   faBolt,
   faStar,
+  faShare,
 } from '../../../shared/icons';
 import { ApiService, Exercise, Quiz, QuizSubmitResponse } from '../../../core/services/api.service';
+import { ShareDialogComponent, ShareableContent } from '../../chat/components/share-dialog/share-dialog.component';
+import { ChatService } from '../../chat/services/chat.service';
+import type { UserStatusInfo } from '../../chat/chat.types';
 
 // Import new exercise type components
 import {
@@ -44,6 +48,7 @@ import {
     ErrorCorrectionComponent,
     VerbConjugationComponent,
     ClozeComponent,
+    ShareDialogComponent,
   ],
   templateUrl: './quiz-player.component.html',
   styleUrl: './quiz-player.component.scss',
@@ -52,6 +57,7 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private chatService = inject(ChatService);
 
   // Icons
   faClock = faClock;
@@ -64,6 +70,7 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
   faSpinner = faSpinner;
   faBolt = faBolt;
   faStar = faStar;
+  faShare = faShare;
 
   quiz = signal<Quiz | null>(null);
   exercises = signal<Exercise[]>([]);
@@ -78,6 +85,11 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
   timeSpent = signal(0);
   private timerInterval: any;
   private startTime = 0;
+
+  // Share dialog state
+  showShareDialog = signal(false);
+  shareableUsers = signal<UserStatusInfo[]>([]);
+  shareContent = signal<ShareableContent | null>(null);
 
   currentExercise = computed(() => this.exercises()[this.currentIndex()]);
   progressPercent = computed(() => ((this.currentIndex() + 1) / this.exercises().length) * 100);
@@ -341,5 +353,62 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
       // If parsing fails, return as-is
       return answer;
     }
+  }
+
+  // Share functionality
+  openShareDialog(): void {
+    const res = this.result();
+    const quizData = this.quiz();
+    if (!res || !quizData) return;
+
+    const score = res.score;
+    let performanceText = '';
+    if (score >= 90) {
+      performanceText = 'Excellent!';
+    } else if (score >= 70) {
+      performanceText = 'Great Job!';
+    } else if (score >= 50) {
+      performanceText = 'Good Effort!';
+    } else {
+      performanceText = 'Keep Practicing!';
+    }
+
+    this.shareContent.set({
+      type: 'quiz',
+      id: quizData.id,
+      title: quizData.title,
+      subtitle: `${score}% • ${this.correctCount()}/${res.totalQuestions} correct • ${performanceText}`,
+      icon: '📋',
+      iconBgColor: 'bg-indigo-100',
+      iconColor: 'text-indigo-600',
+      data: {
+        quizId: quizData.id,
+        quizTitle: quizData.title,
+        score: score,
+        correctCount: this.correctCount(),
+        totalQuestions: res.totalQuestions,
+        timeSpent: this.formatTime(this.timeSpent()),
+        xpAwarded: res.xpAwarded || 0,
+        isPerfect: res.isPerfect || false,
+      },
+    });
+
+    this.chatService.getAllUsers().subscribe({
+      next: (response) => {
+        this.shareableUsers.set(response.items);
+        this.showShareDialog.set(true);
+      },
+      error: (err) => {
+        console.error('Failed to load users for sharing:', err);
+      },
+    });
+  }
+
+  closeShareDialog(): void {
+    this.showShareDialog.set(false);
+  }
+
+  onShared(event: { recipientId: number; comment: string }): void {
+    this.showShareDialog.set(false);
   }
 }

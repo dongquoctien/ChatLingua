@@ -1,0 +1,128 @@
+<div class="audio-control-container" [class.compact]="compact">
+  <!-- Toggle Button -->
+  <button
+    type="button"
+    class="audio-toggle-btn"
+    (click)="toggleExpand()"
+    [attr.aria-label]="isExpanded ? 'Close audio settings' : 'Open audio settings'"
+    [attr.aria-expanded]="isExpanded"
+  >
+    <span class="icon">
+      @if (audioService.musicEnabled() || audioService.sfxEnabled()) {
+        🔊
+      } @else {
+        🔇
+      }
+    </span>
+    @if (showLabels && !compact) {
+      <span class="label">Audio</span>
+    }
+  </button>
+
+  <!-- Expanded Panel -->
+  @if (isExpanded) {
+    <div class="audio-panel" role="dialog" aria-label="Audio settings">
+      <div class="panel-header">
+        <span class="panel-title">Audio Settings</span>
+      </div>
+
+      <div class="panel-content">
+        <!-- Music Control -->
+        <div class="control-row">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="audioService.musicEnabled()"
+            (click)="toggleMusic()"
+            [attr.aria-pressed]="audioService.musicEnabled()"
+          >
+            <span class="toggle-icon">
+              @if (audioService.musicEnabled()) {
+                🎵
+              } @else {
+                <span class="muted">🎵</span>
+              }
+            </span>
+            <span class="toggle-label">Music</span>
+            <span class="toggle-status">
+              {{ audioService.musicEnabled() ? 'ON' : 'OFF' }}
+            </span>
+          </button>
+
+          @if (audioService.musicEnabled()) {
+            <div class="volume-slider">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                [value]="audioService.musicVolume()"
+                (input)="onMusicVolumeChange($event)"
+                aria-label="Music volume"
+              />
+              <span class="volume-value">{{ (audioService.musicVolume() * 100) | number:'1.0-0' }}%</span>
+            </div>
+          }
+        </div>
+
+        <!-- SFX Control -->
+        <div class="control-row">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="audioService.sfxEnabled()"
+            (click)="toggleSfx()"
+            [attr.aria-pressed]="audioService.sfxEnabled()"
+          >
+            <span class="toggle-icon">
+              @if (audioService.sfxEnabled()) {
+                🔔
+              } @else {
+                <span class="muted">🔔</span>
+              }
+            </span>
+            <span class="toggle-label">Sound FX</span>
+            <span class="toggle-status">
+              {{ audioService.sfxEnabled() ? 'ON' : 'OFF' }}
+            </span>
+          </button>
+
+          @if (audioService.sfxEnabled()) {
+            <div class="volume-slider">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                [value]="audioService.sfxVolume()"
+                (input)="onSfxVolumeChange($event)"
+                aria-label="Sound effects volume"
+              />
+              <span class="volume-value">{{ (audioService.sfxVolume() * 100) | number:'1.0-0' }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="panel-footer">
+        <button
+          type="button"
+          class="quick-btn"
+          (click)="audioService.musicEnabled() ? audioService.toggleMusic() : null; audioService.sfxEnabled() ? audioService.toggleSfx() : null"
+          [disabled]="!audioService.musicEnabled() && !audioService.sfxEnabled()"
+        >
+          Mute All
+        </button>
+        <button
+          type="button"
+          class="quick-btn"
+          (click)="!audioService.musicEnabled() ? audioService.toggleMusic() : null; !audioService.sfxEnabled() ? audioService.toggleSfx() : null"
+          [disabled]="audioService.musicEnabled() && audioService.sfxEnabled()"
+        >
+          Unmute All
+        </button>
+      </div>
+    </div>
+  }
+</div>

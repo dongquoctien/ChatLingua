@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
 import { GameOverDialogComponent } from '../shared/game-over-dialog/game-over-dialog.component';
@@ -143,7 +144,8 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -207,6 +209,7 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
 
   selectMap(map: QuestMap): void {
     if (!map.isUnlocked) return;
+    this.audioService.playSound('select');
     this.selectedMap.set(map);
     this.phase.set('stage-select');
   }
@@ -219,6 +222,8 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
   selectStage(stageNumber: number): void {
     const map = this.selectedMap();
     if (!map || stageNumber > map.currentStage) return;
+
+    this.audioService.playSound('click');
 
     // Create stage data
     const isBoss = stageNumber === map.totalStages;
@@ -340,6 +345,7 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
   selectAnswer(index: number): void {
     if (this.selectedAnswer() !== null || !this.battle().isPlayerTurn) return;
 
+    this.audioService.playSound('click');
     this.selectedAnswer.set(index);
     const question = this.battle().currentQuestion;
     if (!question) return;
@@ -348,9 +354,12 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
     this.feedbackCorrect.set(isCorrect);
     this.showFeedback.set(true);
 
+    // Play feedback sound
     if (isCorrect) {
+      this.audioService.playSound('correct');
       this.playerAttack();
     } else {
+      this.audioService.playSound('wrong');
       this.enemyAttack();
     }
   }
@@ -362,10 +371,18 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
       this.playerAttacking.set(false);
       this.enemyHit.set(true);
 
+      // Play attack hit sound
+      this.audioService.playSound('whoosh');
+
       const combo = this.battle().combo + 1;
       const damage = this.PLAYER_BASE_DAMAGE + (combo - 1) * this.COMBO_BONUS;
       this.damageNumber.set(damage);
       this.showDamageNumber.set(true);
+
+      // Play combo sound for streaks
+      if (combo >= 2) {
+        this.audioService.playCombo(combo);
+      }
 
       this.battle.update(b => {
         const newEnemyHp = Math.max(0, b.enemyHp - damage);
@@ -401,6 +418,9 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         this.enemyAttacking.set(false);
         this.playerHit.set(true);
+
+        // Play enemy hit sound
+        this.audioService.playSound('whoosh');
 
         const damage = this.ENEMY_BASE_DAMAGE;
         this.damageNumber.set(damage);
@@ -471,6 +491,7 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
 
   private handleVictory(): void {
     this.phase.set('victory');
+    this.audioService.playSound('victory');
     const stage = this.currentStage();
     const b = this.battle();
 
@@ -487,6 +508,7 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
 
   private handleDefeat(): void {
     this.phase.set('defeat');
+    this.audioService.playSound('game-over');
 
     setTimeout(() => {
       this.endGame(false, 0, { xp: 0, coins: 0 });
@@ -530,6 +552,7 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
     const accuracy = totalAnswered > 0 ? Math.round((b.correctCount / totalAnswered) * 100) : 0;
 
     this.gameResult.set({
+      sessionId: this.sessionId ?? undefined,
       score: b.damage,
       accuracy,
       maxCombo: b.combo,

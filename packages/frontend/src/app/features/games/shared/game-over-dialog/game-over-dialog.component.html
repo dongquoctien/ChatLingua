@@ -106,10 +106,23 @@
         <button class="btn-secondary" (click)="onBackToHub()">
           Back to Games
         </button>
+        <button class="btn-share" (click)="openShareDialog()">
+          <span>📤</span> Share
+        </button>
         <button class="btn-primary" (click)="onPlayAgain()">
           Play Again
         </button>
       </div>
     </div>
   </div>
+}
+
+<!-- Share Dialog -->
+@if (showShareDialog() && shareContent()) {
+  <app-share-dialog
+    [content]="shareContent()!"
+    [users]="shareableUsers()"
+    (close)="closeShareDialog()"
+    (shared)="onShared($event)"
+  />
 }

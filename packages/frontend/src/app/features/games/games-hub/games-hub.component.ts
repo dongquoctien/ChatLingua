@@ -1,16 +1,18 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameWithStats, UserCurrency, GameSessionInfo, GamesHubData } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
+import { AudioControlComponent } from '../shared/audio-control/audio-control.component';
 
 @Component({
   selector: 'app-games-hub',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AudioControlComponent],
   templateUrl: './games-hub.component.html',
   styleUrls: ['./games-hub.component.scss']
 })
-export class GamesHubComponent implements OnInit {
+export class GamesHubComponent implements OnInit, OnDestroy {
   games = signal<GameWithStats[]>([]);
   currency = signal<UserCurrency | null>(null);
   recentSessions = signal<GameSessionInfo[]>([]);
@@ -64,11 +66,19 @@ export class GamesHubComponent implements OnInit {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
     this.loadHubData();
+    // Start background music when entering Game Hub
+    this.audioService.playMusic();
+  }
+
+  ngOnDestroy(): void {
+    // Stop music when leaving Game Hub (unless going to a game)
+    // Music will continue in game components
   }
 
   loadHubData(): void {
@@ -92,13 +102,16 @@ export class GamesHubComponent implements OnInit {
 
   selectCategory(categoryId: string): void {
     this.selectedCategory.set(categoryId);
+    this.audioService.playSound('click');
   }
 
   playGame(gameCode: string): void {
+    this.audioService.playSound('select');
     this.router.navigate(['/games', gameCode]);
   }
 
   viewLeaderboard(gameCode: string): void {
+    this.audioService.playSound('click');
     this.router.navigate(['/games', gameCode, 'leaderboard']);
   }
 

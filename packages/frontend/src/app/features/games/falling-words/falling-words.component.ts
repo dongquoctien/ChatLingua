@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -115,6 +116,7 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private apiService: ApiService,
     private router: Router,
+    private audioService: AudioService,
     public gameState: GameStateService
   ) {
     // Watch for game over state
@@ -281,6 +283,8 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Handle words hitting bottom
     if (hitBottom.length > 0) {
+      // Play wrong sound for missed words
+      this.audioService.playSound('wrong');
       this.lives.update(l => l - hitBottom.length);
       this.combo.set(0);
       this.wrongCount.update(c => c + hitBottom.length);
@@ -471,7 +475,10 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
     );
 
     if (matchedWord) {
-      // Correct answer!
+      // Correct answer! Play combo sound
+      this.audioService.playCombo(this.combo());
+      this.audioService.playSound('correct');
+
       this.words.update(words => words.filter(w => w.id !== matchedWord.id));
 
       // Calculate score with combo
@@ -536,6 +543,7 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (type) {
       case 'freeze':
         if (this.freezeCount() > 0) {
+          this.audioService.playSound('ding');
           this.freezeCount.update(c => c - 1);
           this.freezeActive.set(true);
           setTimeout(() => this.freezeActive.set(false), 5000);
@@ -543,6 +551,7 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
         break;
       case 'slow':
         if (this.slowCount() > 0) {
+          this.audioService.playSound('whoosh');
           this.slowCount.update(c => c - 1);
           this.slowActive.set(true);
           setTimeout(() => this.slowActive.set(false), 8000);
@@ -550,6 +559,7 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
         break;
       case 'bomb':
         if (this.bombCount() > 0) {
+          this.audioService.playSound('victory');
           this.bombCount.update(c => c - 1);
           // Create explosions for all words
           this.words().forEach(w => {
@@ -605,6 +615,7 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,

@@ -270,6 +270,20 @@
       background: #1f2937;
     }
   }
+
+  .btn-share {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    &:hover {
+      background: #e5e7eb;
+    }
+  }
 }
 
 @keyframes fadeIn {

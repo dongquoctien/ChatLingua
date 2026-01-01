@@ -22,9 +22,11 @@ import {
   faCog,
   faGamepad,
   faPaperPlane,
+  faEnvelope,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService, GamificationNotification } from '../../../core/services/api.service';
+import { ChatWidgetComponent } from '../../../features/chat/components/chat-widget/chat-widget.component';
 import { Subscription, filter, interval } from 'rxjs';
 
 @Component({
@@ -34,6 +36,7 @@ import { Subscription, filter, interval } from 'rxjs';
     CommonModule,
     RouterModule,
     FontAwesomeModule,
+    ChatWidgetComponent,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
@@ -78,6 +81,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faCog = faCog;
   faGamepad = faGamepad;
   faPaperPlane = faPaperPlane;
+  faEnvelope = faEnvelope;
 
   // Navigation items
   navItems = [

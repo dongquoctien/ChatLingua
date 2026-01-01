@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 
 // Card rarity types
 type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -149,7 +150,8 @@ export class WordCardsComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -297,8 +299,10 @@ export class WordCardsComponent implements OnInit {
   selectForDeck(card: WordCard): void {
     const currentDeck = this.deck();
     if (currentDeck.includes(card)) {
+      this.audioService.playSound('deselect');
       this.deck.set(currentDeck.filter(c => c.id !== card.id));
     } else if (currentDeck.length < 5) {
+      this.audioService.playSound('select');
       this.deck.set([...currentDeck, card]);
     }
   }
@@ -334,6 +338,7 @@ export class WordCardsComponent implements OnInit {
   singlePull(): void {
     if (!this.canAffordSinglePull()) return;
 
+    this.audioService.playSound('coin');
     this.coins.update(c => c - 100);
     this.gachaPulling.set(true);
 
@@ -344,12 +349,21 @@ export class WordCardsComponent implements OnInit {
       this.addToCollection(card);
       this.gachaPulling.set(false);
       this.showPullResult.set(true);
+      // Play sound based on rarity
+      if (card.rarity === 'legendary' || card.rarity === 'epic') {
+        this.audioService.playSound('achievement');
+      } else if (card.rarity === 'rare') {
+        this.audioService.playSound('level-up');
+      } else {
+        this.audioService.playSound('card-draw');
+      }
     }, 1500);
   }
 
   multiPull(): void {
     if (!this.canAffordMultiPull()) return;
 
+    this.audioService.playSound('coin');
     this.gems.update(g => g - 10);
     this.gachaPulling.set(true);
 
@@ -364,6 +378,17 @@ export class WordCardsComponent implements OnInit {
       this.pulledCards.set(cards);
       this.gachaPulling.set(false);
       this.showPullResult.set(true);
+      // Play sound based on best rarity pulled
+      const hasLegendary = cards.some(c => c.rarity === 'legendary');
+      const hasEpic = cards.some(c => c.rarity === 'epic');
+      const hasRare = cards.some(c => c.rarity === 'rare');
+      if (hasLegendary || hasEpic) {
+        this.audioService.playSound('achievement');
+      } else if (hasRare) {
+        this.audioService.playSound('level-up');
+      } else {
+        this.audioService.playSound('card-draw');
+      }
     }, 2500);
   }
 
@@ -511,6 +536,9 @@ export class WordCardsComponent implements OnInit {
     if (current.battlePhase !== 'select') return;
     if (!current.playerCards.includes(card)) return;
 
+    // Play card selection sound
+    this.audioService.playSound('card-flip');
+
     // Select opponent card randomly
     const opponentCard = current.opponentCards[Math.floor(Math.random() * current.opponentCards.length)];
 
@@ -590,9 +618,20 @@ export class WordCardsComponent implements OnInit {
     const current = this.battle();
     if (!current.currentQuestion) return;
 
+    // Play click sound
+    this.audioService.playSound('click');
+
     this.selectedAnswer.set(index);
-    this.answerCorrect.set(index === current.currentQuestion.correctIndex);
+    const isCorrect = index === current.currentQuestion.correctIndex;
+    this.answerCorrect.set(isCorrect);
     this.showFeedback.set(true);
+
+    // Play feedback sound
+    if (isCorrect) {
+      this.audioService.playSound('correct');
+    } else {
+      this.audioService.playSound('wrong');
+    }
 
     setTimeout(() => {
       this.resolveClash();
@@ -666,6 +705,15 @@ export class WordCardsComponent implements OnInit {
     this.clashResult.set(winner === 'player' ? 'win' : winner === 'opponent' ? 'lose' : 'draw');
     this.showClash.set(true);
 
+    // Play clash result sound
+    if (winner === 'player') {
+      this.audioService.playSound('match');
+    } else if (winner === 'opponent') {
+      this.audioService.playSound('whoosh');
+    } else {
+      this.audioService.playSound('ding');
+    }
+
     // Update battle log
     const logMessage = winner === 'player'
       ? `You win the clash! Dealt ${damage} damage!`
@@ -738,6 +786,13 @@ export class WordCardsComponent implements OnInit {
 
   private endBattle(result: 'victory' | 'defeat'): void {
     const duration = Math.floor((Date.now() - this.startTime) / 1000);
+
+    // Play end battle sound
+    if (result === 'victory') {
+      this.audioService.playSound('victory');
+    } else {
+      this.audioService.playSound('game-over');
+    }
 
     // Calculate rewards
     const xpEarned = result === 'victory' ? this.score + 200 : Math.floor(this.score * 0.5);

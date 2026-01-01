@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, HostListener } from '@a
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse, GameAchievementInfo } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -73,6 +74,7 @@ export class WordSearchComponent implements OnInit, OnDestroy {
     const accuracy = total > 0 ? Math.round((found / total) * 100) : 0;
 
     return {
+      sessionId: this.sessionId() ?? undefined,
       score: this.score(),
       maxCombo: 0,
       accuracy,
@@ -91,7 +93,8 @@ export class WordSearchComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -340,6 +343,9 @@ export class WordSearchComponent implements OnInit, OnDestroy {
   onCellMouseDown(row: number, col: number): void {
     if (this.isPaused() || this.showGameOver()) return;
 
+    // Play click sound for cell selection
+    this.audioService.playSound('click');
+
     this.isSelecting.set(true);
     this.selectionStart.set({ row, col });
     this.selectionEnd.set({ row, col });
@@ -432,10 +438,16 @@ export class WordSearchComponent implements OnInit, OnDestroy {
 
     if (matchedWord) {
       this.foundWord(matchedWord);
+    } else if (cells.length >= 3) {
+      // Play wrong sound for incorrect selection
+      this.audioService.playSound('wrong');
     }
   }
 
   private foundWord(word: HiddenWord): void {
+    // Play match sound for found word
+    this.audioService.playSound('match');
+
     // Update word as found
     const hiddenWords = this.hiddenWords().map(w =>
       w.id === word.id ? { ...w, isFound: true } : w
@@ -456,6 +468,8 @@ export class WordSearchComponent implements OnInit, OnDestroy {
 
     // Check if game is complete
     if (this.remainingWords().length === 0) {
+      // Play victory sound for completing puzzle
+      this.audioService.playSound('victory');
       this.endGame(true);
     }
   }
@@ -475,6 +489,9 @@ export class WordSearchComponent implements OnInit, OnDestroy {
   useHint(): void {
     const remaining = this.remainingWords();
     if (remaining.length === 0) return;
+
+    // Play ding sound for hint usage
+    this.audioService.playSound('ding');
 
     // Find a random unfound word and highlight its first letter
     const word = remaining[Math.floor(Math.random() * remaining.length)];

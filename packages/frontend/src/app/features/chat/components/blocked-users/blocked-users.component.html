@@ -1,0 +1,92 @@
+<!-- Backdrop -->
+<div
+  class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+  (click)="onBackdropClick($event)"
+>
+  <!-- Modal -->
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">Blocked Users</h2>
+      <button
+        class="p-1 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+        (click)="onClose()"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="max-h-96 overflow-y-auto">
+      @if (loading()) {
+        <div class="p-6 text-center">
+          <div class="inline-block w-8 h-8 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
+          <p class="mt-2 text-sm text-gray-500">Loading blocked users...</p>
+        </div>
+      } @else if (blockedUsers().length === 0) {
+        <div class="p-8 text-center">
+          <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <p class="text-gray-500">No blocked users</p>
+          <p class="text-sm text-gray-400 mt-1">Users you block will appear here</p>
+        </div>
+      } @else {
+        <ul class="divide-y divide-gray-100">
+          @for (user of blockedUsers(); track user.userId) {
+            <li class="p-4 flex items-center gap-4">
+              <!-- Avatar -->
+              @if (user.avatar) {
+                <img
+                  [src]="user.avatar"
+                  class="w-12 h-12 rounded-full object-cover"
+                />
+              } @else {
+                <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
+                  {{ getInitials(user) }}
+                </div>
+              }
+
+              <!-- User info -->
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-gray-900 truncate">
+                  {{ user.displayName || user.username }}
+                </p>
+                <p class="text-sm text-gray-500 truncate">
+                  {{ '@' + user.username }}
+                </p>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Blocked on {{ formatDate(user.blockedAt) }}
+                </p>
+              </div>
+
+              <!-- Unblock button -->
+              <button
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                [disabled]="unblockingId() === user.userId"
+                (click)="unblockUser(user.userId)"
+              >
+                @if (unblockingId() === user.userId) {
+                  <span class="inline-block w-4 h-4 border-2 border-gray-400 border-t-gray-700 rounded-full animate-spin"></span>
+                } @else {
+                  Unblock
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+      <p class="text-xs text-gray-500 text-center">
+        Blocked users cannot send you messages or see your online status.
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,138 @@
+<div class="rounded-lg overflow-hidden border border-gray-200 bg-white min-w-[200px]">
+  <!-- Achievement -->
+  @if (type === 'achievement' && achievementData) {
+    <div class="p-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+          <span class="text-xl">🏆</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-gray-500 uppercase font-medium">Achievement Unlocked</p>
+          <p class="font-semibold text-gray-900 truncate">{{ achievementData.title }}</p>
+          <p class="text-sm text-gray-600">+{{ achievementData.xpReward }} XP</p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Game Result -->
+  @if (type === 'game' && gameData) {
+    <div class="p-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+          <span class="text-xl">🎮</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-gray-500 uppercase font-medium">{{ gameData.gameName }}</p>
+          <p class="font-semibold text-gray-900">
+            Score: {{ gameData.score }}
+            @if (gameData.highScore) {
+              <span class="ml-1 text-yellow-500">⭐ New High!</span>
+            }
+          </p>
+          <p class="text-sm text-gray-600">
+            @if (gameData.wordsLearned) {
+              {{ gameData.wordsLearned }} words
+            }
+            @if (gameData.accuracy) {
+              • {{ gameData.accuracy }}%
+            }
+            @if (gameData.timeSpent) {
+              • {{ formatTime(gameData.timeSpent) }}
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Exercise Result -->
+  @if (type === 'exercise' && exerciseData && !quizData) {
+    <div class="p-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+          <span class="text-xl">✅</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-gray-500 uppercase font-medium">Exercise Complete</p>
+          <p class="font-semibold text-gray-900">
+            {{ exerciseData.correctCount }}/{{ exerciseData.totalCount }} correct
+          </p>
+          <p class="text-sm text-gray-600">
+            {{ exerciseData.accuracy }}% accuracy
+            @if (exerciseData.xpEarned) {
+              • +{{ exerciseData.xpEarned }} XP
+            }
+          </p>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div class="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div
+          class="h-full rounded-full transition-all"
+          [class.bg-green-500]="exerciseData.accuracy >= 80"
+          [class.bg-yellow-500]="exerciseData.accuracy >= 50 && exerciseData.accuracy < 80"
+          [class.bg-red-500]="exerciseData.accuracy < 50"
+          [style.width.%]="exerciseData.accuracy"
+        ></div>
+      </div>
+    </div>
+  }
+
+  <!-- Quiz Result -->
+  @if (quizData) {
+    <div class="p-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+          <span class="text-xl">📝</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-gray-500 uppercase font-medium">Quiz Complete</p>
+          <p class="font-semibold text-gray-900 truncate">{{ quizData.quizTitle }}</p>
+          <p class="text-sm text-gray-600">
+            {{ quizData.score }}/{{ quizData.totalQuestions }} • {{ quizData.accuracy }}%
+            @if (quizData.xpEarned) {
+              • +{{ quizData.xpEarned }} XP
+            }
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Vocabulary -->
+  @if (type === 'vocabulary' && vocabularyData) {
+    <div class="p-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+          <span class="text-xl">📚</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs text-gray-500 uppercase font-medium">
+            Vocabulary
+            @if (vocabularyData.partOfSpeech) {
+              <span class="ml-1 text-gray-400">({{ vocabularyData.partOfSpeech }})</span>
+            }
+          </p>
+          <p class="font-semibold text-gray-900">{{ vocabularyData.englishWord }}</p>
+          @if (vocabularyData.phonetic) {
+            <p class="text-xs text-gray-400">{{ vocabularyData.phonetic }}</p>
+          }
+          <p class="text-sm text-gray-600">{{ vocabularyData.vietnameseWord }}</p>
+        </div>
+      </div>
+      @if (vocabularyData.exampleSentence) {
+        <div class="mt-2 pt-2 border-t border-gray-100">
+          <p class="text-sm text-gray-600 italic">"{{ vocabularyData.exampleSentence }}"</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Comment -->
+  @if (contentComment) {
+    <div class="px-3 pb-3 pt-0">
+      <p class="text-sm text-gray-700 italic">"{{ contentComment }}"</p>
+    </div>
+  }
+</div>

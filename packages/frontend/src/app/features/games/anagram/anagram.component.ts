@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -78,6 +79,7 @@ export class AnagramComponent implements OnInit, OnDestroy {
     const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
 
     return {
+      sessionId: this.sessionId() ?? undefined,
       score: this.score(),
       maxCombo: 0,
       accuracy,
@@ -96,7 +98,8 @@ export class AnagramComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -231,6 +234,9 @@ export class AnagramComponent implements OnInit, OnDestroy {
   selectLetter(tile: LetterTile): void {
     if (this.isPaused() || this.showGameOver() || tile.isUsed || this.isCorrect() !== null) return;
 
+    // Play click sound for letter selection
+    this.audioService.playSound('click');
+
     // Mark as used
     this.scrambledTiles.update(tiles =>
       tiles.map(t => t.id === tile.id ? { ...t, isUsed: true } : t)
@@ -244,6 +250,9 @@ export class AnagramComponent implements OnInit, OnDestroy {
   removeLetter(tile: LetterTile): void {
     if (this.isPaused() || this.showGameOver() || this.isCorrect() !== null) return;
 
+    // Play close sound for removing letter
+    this.audioService.playSound('close');
+
     // Remove from arranged
     this.arrangedTiles.update(tiles => tiles.filter(t => t.id !== tile.id));
 
@@ -256,6 +265,9 @@ export class AnagramComponent implements OnInit, OnDestroy {
   // Shuffle the scrambled letters
   shuffleLetters(): void {
     if (this.isPaused() || this.isCorrect() !== null) return;
+
+    // Play whoosh sound for shuffle
+    this.audioService.playSound('whoosh');
 
     // Reset all tiles
     this.arrangedTiles.set([]);
@@ -278,6 +290,9 @@ export class AnagramComponent implements OnInit, OnDestroy {
   useHint(): void {
     if (this.showHint()) return;
 
+    // Play ding sound for hint usage
+    this.audioService.playSound('ding');
+
     this.showHint.set(true);
     this.hintsUsed.update(h => h + 1);
     this.score.update(s => Math.max(0, s - 15)); // Penalty for hint
@@ -291,7 +306,8 @@ export class AnagramComponent implements OnInit, OnDestroy {
     const correct = this.currentWord()?.original;
 
     if (arranged === correct) {
-      // Correct!
+      // Correct! - Play correct sound
+      this.audioService.playSound('correct');
       this.isCorrect.set(true);
       this.wordsCorrect.update(c => c + 1);
 
@@ -303,7 +319,8 @@ export class AnagramComponent implements OnInit, OnDestroy {
       // Auto advance after delay
       setTimeout(() => this.nextWord(), 1500);
     } else {
-      // Wrong
+      // Wrong - Play wrong sound
+      this.audioService.playSound('wrong');
       this.isCorrect.set(false);
       this.wordsWrong.update(w => w + 1);
 
@@ -316,12 +333,16 @@ export class AnagramComponent implements OnInit, OnDestroy {
   skipWord(): void {
     if (this.isCorrect() !== null) return;
 
+    // Play close sound for skip
+    this.audioService.playSound('close');
     this.wordsWrong.update(w => w + 1);
     this.nextWord();
   }
 
   // Move to next word
   private nextWord(): void {
+    // Play whoosh sound for next word transition
+    this.audioService.playSound('whoosh');
     this.currentWordIndex.update(i => i + 1);
     this.loadCurrentWord();
   }

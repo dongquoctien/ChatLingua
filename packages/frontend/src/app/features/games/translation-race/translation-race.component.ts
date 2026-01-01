@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -90,7 +91,8 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -186,6 +188,11 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
       const newTime = this.timeLeft() - 1;
       this.timeLeft.set(newTime);
 
+      // Play warning sound when time is low
+      if (newTime <= 5 && newTime > 0) {
+        this.audioService.playSound('timer-warning');
+      }
+
       if (newTime <= 0) {
         this.submitAnswer();
       }
@@ -225,6 +232,10 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
       if (newCombo > this.maxCombo()) {
         this.maxCombo.set(newCombo);
       }
+      // Play combo sound for streaks
+      if (newCombo >= 2) {
+        this.audioService.playCombo(newCombo);
+      }
     } else {
       this.combo.set(0);
     }
@@ -241,6 +252,13 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
       timeToAnswer: answerTime,
       pointsEarned: points
     }]);
+
+    // Play sound based on result
+    if (isCorrect) {
+      this.audioService.playSound('correct');
+    } else {
+      this.audioService.playSound('wrong');
+    }
 
     // Show feedback
     this.feedbackCorrect.set(isCorrect);
@@ -294,6 +312,8 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
 
   onInputKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
+      // Play click sound on submit
+      this.audioService.playSound('click');
       this.submitAnswer();
     }
   }
@@ -331,6 +351,7 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,
@@ -395,6 +416,9 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
     }
 
     this.combo.set(0);
+
+    // Play skip sound
+    this.audioService.playSound('wrong');
 
     // Show correct answer
     this.feedbackCorrect.set(false);

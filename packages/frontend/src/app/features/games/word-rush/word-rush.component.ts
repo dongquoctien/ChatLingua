@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, signal, computed, effect, untracked } fro
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -52,6 +53,7 @@ export class WordRushComponent implements OnInit, OnDestroy {
   constructor(
     private apiService: ApiService,
     private router: Router,
+    private audioService: AudioService,
     public gameState: GameStateService
   ) {
     // Watch for game over state from timer expiration
@@ -112,6 +114,9 @@ export class WordRushComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Play whoosh sound for new word
+    this.audioService.playSound('whoosh');
+
     const word = vocab[currentIndex];
     this.currentWord.set(word);
     this.generateOptions(word);
@@ -154,13 +159,18 @@ export class WordRushComponent implements OnInit, OnDestroy {
     this.feedbackCorrect.set(option.isCorrect);
 
     if (option.isCorrect) {
-      // Correct answer
+      // Correct answer - play combo sound
+      this.audioService.playCombo(this.gameState.combo());
+      this.audioService.playSound('correct');
+
       const basePoints = 100;
       const timeBonus = Math.floor(this.gameState.timeLeft() / 2);
       this.gameState.recordCorrect(basePoints + timeBonus);
       this.gameState.addTime(2); // Bonus time for correct answer
     } else {
       // Wrong answer
+      this.audioService.playSound('wrong');
+
       this.gameState.recordWrong();
       const isGameOver = this.gameState.loseLife();
       if (isGameOver) {
@@ -213,6 +223,7 @@ export class WordRushComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,

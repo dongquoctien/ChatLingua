@@ -2,10 +2,16 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { createServer } from 'http';
 import routes from './routes/index.js';
+import { initializeSocket } from './socket/index.js';
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Initialize Socket.IO
+initializeSocket(httpServer);
 
 // Disable ETag to prevent 304 caching issues
 app.set('etag', false);
@@ -39,11 +45,12 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server with HTTP server (for Socket.IO)
+httpServer.listen(PORT, () => {
   console.log(`ChatLingua Backend running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`API base: http://localhost:${PORT}/api`);
+  console.log(`Socket.IO: ws://localhost:${PORT}`);
 });
 
 export default app;

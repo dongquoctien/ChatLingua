@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -68,7 +69,8 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private audioService: AudioService
   ) {}
 
   ngOnInit(): void {
@@ -159,6 +161,8 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
     if (!word || this.isPlaying()) return;
 
     this.isPlaying.set(true);
+    // Play ding sound when playing word
+    this.audioService.playSound('ding');
 
     // Use browser speech synthesis
     const utterance = new SpeechSynthesisUtterance(word.englishWord);
@@ -173,6 +177,9 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
   submitAnswer(): void {
     if (!this.userInput().trim() || this.showFeedback()) return;
 
+    // Play click on submit
+    this.audioService.playSound('click');
+
     const word = this.currentWord();
     if (!word) return;
 
@@ -181,7 +188,10 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
     this.isCorrect.set(correct);
 
     if (correct) {
-      // Correct answer
+      // Correct answer - play combo sound
+      this.audioService.playCombo(this.combo());
+      this.audioService.playSound('correct');
+
       const attemptsBonus = (this.maxAttempts - this.attempts()) * 20;
       const comboMultiplier = Math.min(1 + this.combo() * 0.15, 2);
       const points = Math.round((100 + attemptsBonus) * comboMultiplier);
@@ -194,6 +204,8 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
 
       setTimeout(() => this.nextWord(), 1200);
     } else {
+      // Wrong answer
+      this.audioService.playSound('wrong');
       this.attempts.update(a => a + 1);
 
       if (this.attempts() >= this.maxAttempts) {
@@ -214,6 +226,8 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
 
   nextWord(): void {
     if (this.currentIndex() < this.vocabulary().length - 1) {
+      // Play whoosh for new word
+      this.audioService.playSound('whoosh');
       this.currentIndex.update(i => i + 1);
       this.userInput.set('');
       this.showFeedback.set(false);
@@ -227,6 +241,7 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
   }
 
   skipWord(): void {
+    this.audioService.playSound('close');
     this.wordsWrong.update(c => c + 1);
     this.combo.set(0);
     this.nextWord();
@@ -282,6 +297,7 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
     this.apiService.endGame(sessionId, endData).subscribe({
       next: (response: EndGameResponse) => {
         this.gameResult.set({
+          sessionId,
           score: response.session.score,
           maxCombo: response.session.maxCombo,
           accuracy: response.session.accuracy,
