@@ -1,0 +1,136 @@
+<div class="leaderboard-page">
+  <header class="page-header">
+    <a routerLink="/forum" class="back-link">
+      <i class="fa fa-arrow-left"></i>
+      Back to Forum
+    </a>
+    <h1 class="page-title">Forum Leaderboard</h1>
+    <p class="page-subtitle">Top contributors in our learning community</p>
+  </header>
+
+  <!-- Period Filter -->
+  <div class="period-filter">
+    <button
+      class="period-btn"
+      [class.active]="period() === 'week'"
+      (click)="setPeriod('week')"
+    >
+      This Week
+    </button>
+    <button
+      class="period-btn"
+      [class.active]="period() === 'month'"
+      (click)="setPeriod('month')"
+    >
+      This Month
+    </button>
+    <button
+      class="period-btn"
+      [class.active]="period() === 'all'"
+      (click)="setPeriod('all')"
+    >
+      All Time
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Loading leaderboard...</p>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (error()) {
+    <div class="error-state">
+      <i class="fa fa-exclamation-circle"></i>
+      <p>{{ error() }}</p>
+      <button class="btn-primary" (click)="loadLeaderboard()">Try Again</button>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading() && !error() && entries().length === 0) {
+    <div class="empty-state">
+      <i class="fa fa-trophy"></i>
+      <h2>No Rankings Yet</h2>
+      <p>Be the first to share and contribute to our learning community!</p>
+      <a routerLink="/forum" class="btn-primary">
+        Browse Forum
+      </a>
+    </div>
+  }
+
+  <!-- Leaderboard Table -->
+  @if (!loading() && !error() && entries().length > 0) {
+    <!-- Top 3 Podium -->
+    <div class="podium">
+      @for (entry of entries().slice(0, 3); track entry.userId) {
+        <div class="podium-entry" [ngClass]="getRankClass(entry.rank)">
+          <div class="rank-badge-large">
+            @if (entry.rank === 1) {
+              <i class="fa fa-trophy"></i>
+            } @else if (entry.rank === 2) {
+              <i class="fa fa-medal"></i>
+            } @else {
+              <i class="fa fa-award"></i>
+            }
+          </div>
+          <div class="user-avatar large">
+            @if (entry.avatar) {
+              <img [src]="entry.avatar" [alt]="entry.displayName">
+            } @else {
+              {{ getInitial(entry.displayName || entry.username) }}
+            }
+          </div>
+          <div class="user-name">{{ entry.displayName || entry.username }}</div>
+          <span class="forum-rank-badge" [ngClass]="getForumRankClass(entry.forumRank)">
+            {{ getForumRankLabel(entry.forumRank) }}
+          </span>
+          <div class="reputation">{{ entry.reputation }} rep</div>
+          <div class="stats">
+            <span><i class="fa fa-file-alt"></i> {{ entry.totalPosts }}</span>
+            <span><i class="fa fa-download"></i> {{ entry.totalImports }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Rest of the list -->
+    @if (entries().length > 3) {
+      <div class="leaderboard-list">
+        @for (entry of entries().slice(3); track entry.userId) {
+          <div class="leaderboard-entry">
+            <div class="rank-number">{{ entry.rank }}</div>
+            <div class="user-avatar">
+              @if (entry.avatar) {
+                <img [src]="entry.avatar" [alt]="entry.displayName">
+              } @else {
+                {{ getInitial(entry.displayName || entry.username) }}
+              }
+            </div>
+            <div class="user-info">
+              <div class="user-name">{{ entry.displayName || entry.username }}</div>
+              <span class="forum-rank-badge small" [ngClass]="getForumRankClass(entry.forumRank)">
+                {{ getForumRankLabel(entry.forumRank) }}
+              </span>
+            </div>
+            <div class="user-stats">
+              <span class="stat" title="Posts">
+                <i class="fa fa-file-alt"></i> {{ entry.totalPosts }}
+              </span>
+              <span class="stat" title="Imports">
+                <i class="fa fa-download"></i> {{ entry.totalImports }}
+              </span>
+            </div>
+            <div class="reputation-score">
+              {{ entry.reputation }}
+              <span class="label">rep</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,35 @@
+.dialog-backdrop {
+  animation: fadeIn 0.15s ease-out;
+}
+
+.dialog-content {
+  animation: slideIn 0.2s ease-out;
+}
+
+.share-btn {
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

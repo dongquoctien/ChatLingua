@@ -1,0 +1,17 @@
+.collection-detail-page {
+  .collection-header {
+    border: 1px solid theme('colors.gray.200');
+  }
+
+  .post-wrapper {
+    &:hover {
+      .remove-btn {
+        opacity: 1;
+      }
+    }
+  }
+
+  .remove-btn {
+    transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  }
+}

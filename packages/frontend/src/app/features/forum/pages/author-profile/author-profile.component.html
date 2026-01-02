@@ -1,0 +1,135 @@
+<div class="author-profile-page min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-4xl mx-auto px-4 py-4">
+      <a routerLink="/forum" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <fa-icon [icon]="faArrowLeft"></fa-icon>
+        <span>Back to Forum</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="max-w-4xl mx-auto px-4 py-6">
+    <!-- Loading state -->
+    <div *ngIf="loading()" class="loading-state py-16 text-center">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-400"></fa-icon>
+      <p class="text-gray-500 mt-4">Loading profile...</p>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error()" class="error-state bg-white rounded-xl p-8 text-center">
+      <p class="text-red-600 mb-4">{{ error() }}</p>
+      <a routerLink="/forum" class="text-gray-900 hover:underline">Return to forum</a>
+    </div>
+
+    <!-- Profile content -->
+    <div *ngIf="!loading() && !error() && author()">
+      <!-- Profile header -->
+      <div class="profile-header bg-white rounded-xl p-6 mb-6">
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+          <!-- Avatar -->
+          <img
+            [src]="author()!.avatar || '/assets/default-avatar.png'"
+            [alt]="author()!.displayName"
+            class="w-24 h-24 rounded-full object-cover border-4 border-gray-100"
+          />
+
+          <!-- Info -->
+          <div class="flex-1 text-center md:text-left">
+            <div class="flex flex-col md:flex-row items-center gap-3 mb-2">
+              <h1 class="text-2xl font-bold text-gray-900">{{ author()!.displayName }}</h1>
+              <app-author-badge [rank]="author()!.rank" size="medium"></app-author-badge>
+            </div>
+
+            <p class="text-gray-500 mb-3">&#64;{{ author()!.username }}</p>
+
+            <p *ngIf="author()!.bio" class="text-gray-700 mb-4">{{ author()!.bio }}</p>
+
+            <!-- Meta info -->
+            <div class="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-gray-500">
+              <div class="flex items-center gap-1">
+                <fa-icon [icon]="faCalendar"></fa-icon>
+                <span>Joined {{ formatDate(author()!.joinedAt) }}</span>
+              </div>
+              <div *ngIf="author()!.location" class="flex items-center gap-1">
+                <fa-icon [icon]="faGlobe"></fa-icon>
+                <span>{{ author()!.location }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+          <div class="stat-item text-center">
+            <div class="flex items-center justify-center gap-1 text-gray-600 mb-1">
+              <fa-icon [icon]="faFileAlt"></fa-icon>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">{{ formatNumber(author()!.postCount) }}</div>
+            <div class="text-sm text-gray-500">Posts</div>
+          </div>
+          <div class="stat-item text-center">
+            <div class="flex items-center justify-center gap-1 text-gray-600 mb-1">
+              <fa-icon [icon]="faThumbsUp"></fa-icon>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">{{ formatNumber(author()!.totalUpvotes) }}</div>
+            <div class="text-sm text-gray-500">Upvotes</div>
+          </div>
+          <div class="stat-item text-center">
+            <div class="flex items-center justify-center gap-1 text-gray-600 mb-1">
+              <fa-icon [icon]="faComment"></fa-icon>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">{{ formatNumber(author()!.commentCount) }}</div>
+            <div class="text-sm text-gray-500">Comments</div>
+          </div>
+        </div>
+
+        <!-- Reputation -->
+        <div class="reputation-section mt-6 pt-6 border-t border-gray-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-gray-600">Reputation Points</span>
+            <span class="font-semibold text-gray-900">{{ formatNumber(author()!.reputation) }}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div
+              class="bg-gray-900 h-2 rounded-full transition-all duration-300"
+              [style.width.%]="Math.min((author()!.reputation % 1000) / 10, 100)"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Posts section -->
+      <div class="posts-section">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          Posts by {{ author()!.displayName }}
+          <span class="text-gray-500 font-normal">({{ totalPosts() }})</span>
+        </h2>
+
+        <!-- Posts list -->
+        <div *ngIf="posts().length > 0" class="posts-list space-y-4">
+          <app-post-card *ngFor="let post of posts()" [post]="post"></app-post-card>
+        </div>
+
+        <!-- Empty posts -->
+        <div *ngIf="!loadingPosts() && posts().length === 0" class="empty-posts bg-white rounded-xl p-8 text-center">
+          <fa-icon [icon]="faFileAlt" class="text-4xl text-gray-300"></fa-icon>
+          <p class="text-gray-500 mt-2">No posts yet</p>
+        </div>
+
+        <!-- Load more -->
+        <div *ngIf="hasMorePosts" class="load-more mt-6 text-center">
+          <button
+            type="button"
+            (click)="loadMore()"
+            [disabled]="loadingPosts()"
+            class="px-6 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <fa-icon *ngIf="loadingPosts()" [icon]="faSpinner" animation="spin" class="mr-2"></fa-icon>
+            <span>{{ loadingPosts() ? 'Loading...' : 'Load More Posts' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

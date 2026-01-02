@@ -1,0 +1,43 @@
+<div class="vote-buttons flex items-center gap-1" [ngClass]="containerClass">
+  <!-- Upvote button -->
+  <button
+    type="button"
+    (click)="onUpvote($event)"
+    [disabled]="disabled"
+    class="vote-btn rounded-lg flex items-center justify-center transition-all"
+    [ngClass]="[
+      buttonSizeClass,
+      isUpvoted ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-green-600'
+    ]"
+    [class.opacity-50]="disabled"
+    [class.cursor-not-allowed]="disabled"
+    title="Upvote"
+  >
+    <fa-icon [icon]="faArrowUp"></fa-icon>
+  </button>
+
+  <!-- Score -->
+  <span
+    class="vote-score text-center font-medium"
+    [ngClass]="[scoreSizeClass, scoreClass]"
+  >
+    {{ score }}
+  </span>
+
+  <!-- Downvote button -->
+  <button
+    type="button"
+    (click)="onDownvote($event)"
+    [disabled]="disabled"
+    class="vote-btn rounded-lg flex items-center justify-center transition-all"
+    [ngClass]="[
+      buttonSizeClass,
+      isDownvoted ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-red-600'
+    ]"
+    [class.opacity-50]="disabled"
+    [class.cursor-not-allowed]="disabled"
+    title="Downvote"
+  >
+    <fa-icon [icon]="faArrowDown"></fa-icon>
+  </button>
+</div>

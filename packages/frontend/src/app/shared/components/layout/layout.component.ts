@@ -23,6 +23,7 @@ import {
   faGamepad,
   faPaperPlane,
   faEnvelope,
+  faUsers,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService, GamificationNotification } from '../../../core/services/api.service';
@@ -82,6 +83,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faGamepad = faGamepad;
   faPaperPlane = faPaperPlane;
   faEnvelope = faEnvelope;
+  faUsers = faUsers;
 
   // Navigation items
   navItems = [
@@ -93,6 +95,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     { path: '/exercises', icon: this.faDumbbell, label: 'Exercises' },
     { path: '/quizzes', icon: this.faQuestionCircle, label: 'Quizzes' },
     { path: '/games', icon: this.faGamepad, label: 'Games' },
+    { path: '/forum', icon: this.faUsers, label: 'Forum' },
     { path: '/sync-requests', icon: this.faPaperPlane, label: 'Sync Requests' },
     { path: '/reports', icon: this.faChartLine, label: 'Reports' },
   ];

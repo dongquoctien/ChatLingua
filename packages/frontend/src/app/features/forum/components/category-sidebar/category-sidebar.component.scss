@@ -1,0 +1,113 @@
+.category-sidebar {
+  @apply w-64 flex-shrink-0;
+}
+
+.sidebar-section {
+  @apply bg-white border border-gray-200 rounded-lg p-4 mb-4;
+}
+
+.section-title {
+  @apply text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3;
+}
+
+// Loading Skeleton
+.loading-skeleton {
+  @apply space-y-2;
+}
+
+.skeleton-item {
+  @apply h-10 bg-gray-100 rounded animate-pulse;
+}
+
+// Category List
+.category-list {
+  @apply space-y-1;
+}
+
+.category-item {
+  @apply w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors;
+  @apply hover:bg-gray-100;
+
+  &.active {
+    @apply bg-gray-900 text-white;
+
+    .category-icon {
+      @apply bg-white text-gray-900;
+    }
+
+    .category-count {
+      @apply bg-white/20 text-white;
+    }
+  }
+}
+
+.category-icon {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm flex-shrink-0;
+}
+
+.category-name {
+  @apply flex-1 text-sm font-medium truncate;
+}
+
+.category-count {
+  @apply px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full;
+}
+
+// Tags Container
+.tags-container {
+  @apply flex flex-wrap gap-2;
+}
+
+.tag-btn {
+  @apply inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full;
+  @apply hover:bg-gray-200 transition-colors;
+
+  &.active {
+    @apply bg-gray-900 text-white;
+
+    .tag-count {
+      @apply bg-white/20 text-white;
+    }
+  }
+}
+
+.tag-count {
+  @apply text-gray-400 text-xs;
+}
+
+.show-more-btn {
+  @apply mt-3 text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1;
+
+  i {
+    @apply text-xs;
+  }
+}
+
+// Quick Links
+.quick-links {
+  @apply space-y-1;
+
+  a {
+    @apply flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg;
+    @apply hover:bg-gray-100 transition-colors;
+
+    &.active {
+      @apply bg-gray-900 text-white;
+    }
+
+    i {
+      @apply w-5 text-center text-gray-400;
+    }
+
+    &.active i {
+      @apply text-white;
+    }
+  }
+}
+
+// Responsive - hide on mobile
+@media (max-width: 1024px) {
+  .category-sidebar {
+    @apply hidden;
+  }
+}

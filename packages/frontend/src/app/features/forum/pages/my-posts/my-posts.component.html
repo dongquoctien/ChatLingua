@@ -1,0 +1,72 @@
+<div class="my-posts-page">
+  <header class="page-header">
+    <a routerLink="/forum" class="back-link">
+      <i class="fa fa-arrow-left"></i>
+      Back to Forum
+    </a>
+    <h1 class="page-title">My Posts</h1>
+    <p class="page-subtitle">View and manage your shared conversations</p>
+  </header>
+
+  <!-- Loading state -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Loading your posts...</p>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (error()) {
+    <div class="error-state">
+      <i class="fa fa-exclamation-circle"></i>
+      <p>{{ error() }}</p>
+      <button class="btn-primary" (click)="loadPosts()">Try Again</button>
+    </div>
+  }
+
+  <!-- Empty state -->
+  @if (!loading() && !error() && posts().length === 0) {
+    <div class="empty-state">
+      <i class="fa fa-file-alt"></i>
+      <h2>No Posts Yet</h2>
+      <p>Your posts will appear here once you share a conversation.</p>
+      <a routerLink="/forum/create" class="btn-primary">
+        <i class="fa fa-plus"></i>
+        Share Conversation
+      </a>
+    </div>
+  }
+
+  <!-- Posts list -->
+  @if (!loading() && !error() && posts().length > 0) {
+    <div class="posts-list">
+      @for (post of posts(); track post.id) {
+        <app-post-card [post]="post" [showAuthor]="false"></app-post-card>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button
+          class="btn-secondary"
+          [disabled]="page() === 1"
+          (click)="prevPage()"
+        >
+          <i class="fa fa-chevron-left"></i>
+          Previous
+        </button>
+        <span class="page-info">Page {{ page() }} of {{ totalPages() }}</span>
+        <button
+          class="btn-secondary"
+          [disabled]="page() === totalPages()"
+          (click)="nextPage()"
+        >
+          Next
+          <i class="fa fa-chevron-right"></i>
+        </button>
+      </div>
+    }
+  }
+</div>

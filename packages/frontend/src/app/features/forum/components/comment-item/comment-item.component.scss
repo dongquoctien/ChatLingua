@@ -1,0 +1,13 @@
+.comment-item {
+  .comment-content {
+    transition: all 0.2s ease;
+  }
+
+  .replies {
+    .comment-item {
+      .comment-content {
+        @apply bg-gray-50;
+      }
+    }
+  }
+}

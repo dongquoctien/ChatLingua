@@ -1,0 +1,16 @@
+.content-preview {
+  .section-header {
+    &:focus {
+      outline: none;
+      @apply ring-2 ring-gray-300;
+    }
+  }
+
+  .vocab-item, .grammar-item {
+    transition: all 0.2s ease;
+
+    &:hover {
+      @apply shadow-sm border-gray-200;
+    }
+  }
+}

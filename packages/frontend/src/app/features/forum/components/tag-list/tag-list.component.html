@@ -1,0 +1,39 @@
+<div class="tag-list flex flex-wrap gap-1" *ngIf="tags.length > 0">
+  <ng-container *ngFor="let tag of visibleTags">
+    <!-- Clickable tag with router link -->
+    <a
+      *ngIf="clickable"
+      [routerLink]="['/forum']"
+      [queryParams]="{ tag: tag.slug }"
+      class="tag bg-gray-100 text-gray-600 hover:text-gray-900"
+      [ngClass]="tagClasses"
+      (click)="onTagClick($event, tag)"
+    >
+      <span class="tag-hash text-gray-400">#</span>
+      <span class="tag-name">{{ tag.name }}</span>
+      <span *ngIf="showCount" class="tag-count ml-1 text-gray-400">({{ tag.usageCount }})</span>
+    </a>
+
+    <!-- Non-clickable tag -->
+    <span
+      *ngIf="!clickable"
+      class="tag bg-gray-100 text-gray-600"
+      [ngClass]="tagClasses"
+    >
+      <span class="tag-hash text-gray-400">#</span>
+      <span class="tag-name">{{ tag.name }}</span>
+      <span *ngIf="showCount" class="tag-count ml-1 text-gray-400">({{ tag.usageCount }})</span>
+    </span>
+  </ng-container>
+
+  <!-- Show remaining count -->
+  <span
+    *ngIf="remainingCount > 0"
+    class="tag bg-gray-50 text-gray-500"
+    [ngClass]="tagClasses"
+    [class.cursor-default]="true"
+    title="And {{ remainingCount }} more tags"
+  >
+    +{{ remainingCount }}
+  </span>
+</div>

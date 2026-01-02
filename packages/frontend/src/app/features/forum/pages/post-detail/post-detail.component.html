@@ -1,0 +1,436 @@
+<div class="post-detail-page">
+  <!-- Back navigation -->
+  <header class="page-header">
+    <a routerLink="/forum" class="back-link">
+      <fa-icon [icon]="faArrowLeft"></fa-icon>
+      Back to Forum
+    </a>
+  </header>
+
+  <!-- Loading state -->
+  @if (loading()) {
+    <div class="loading-state">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-3xl text-gray-400"></fa-icon>
+      <p>Loading post...</p>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (error()) {
+    <div class="error-state">
+      <fa-icon [icon]="faExclamationCircle" class="text-4xl text-gray-400"></fa-icon>
+      <h2>Unable to load post</h2>
+      <p>{{ error() }}</p>
+      <a routerLink="/forum" class="btn-primary">Return to Forum</a>
+    </div>
+  }
+
+  <!-- Post content -->
+  @if (post(); as p) {
+    <div class="post-container">
+      <!-- Main content area -->
+      <article class="post-article">
+        <!-- Post header -->
+        <header class="post-header">
+          <div class="post-meta-top">
+            @if (p.category) {
+              <a [routerLink]="['/forum']" [queryParams]="{category: p.category.slug}" class="category-badge">
+                @if (p.category.icon) {
+                  <i class="fa fa-{{ p.category.icon }}"></i>
+                }
+                {{ p.category.name }}
+              </a>
+            }
+            <span class="difficulty-badge" [class]="difficultyClass()">
+              {{ difficultyLabel() }}
+            </span>
+            @if (p.isPinned) {
+              <span class="pinned-badge">
+                <fa-icon [icon]="faThumbTack"></fa-icon>
+                Pinned
+              </span>
+            }
+            @if (p.isFeatured) {
+              <span class="featured-badge">
+                <fa-icon [icon]="faStar"></fa-icon>
+                Featured
+              </span>
+            }
+          </div>
+
+          <h1 class="post-title">{{ p.title }}</h1>
+
+          @if (p.description) {
+            <p class="post-description">{{ p.description }}</p>
+          }
+
+          <!-- Author info -->
+          <div class="author-row">
+            @if (p.author) {
+              <div class="author-info">
+                <div class="author-avatar">
+                  @if (p.author.avatar) {
+                    <img [src]="p.author.avatar" [alt]="p.author.displayName">
+                  } @else {
+                    <span>{{ p.author.displayName[0] }}</span>
+                  }
+                </div>
+                <div class="author-details">
+                  <span class="author-name">{{ p.author.displayName }}</span>
+                  <span class="rank-badge" [class]="getRankBadgeClass(p.author.rank)">
+                    {{ getRankLabel(p.author.rank) }}
+                  </span>
+                </div>
+              </div>
+            } @else {
+              <div class="author-info anonymous">
+                <div class="author-avatar">
+                  <i class="fa fa-user-secret"></i>
+                </div>
+                <span class="author-name">Anonymous</span>
+              </div>
+            }
+            <span class="post-time">{{ formatDate(p.publishedAt || p.createdAt) }}</span>
+          </div>
+        </header>
+
+        <!-- Content preview section -->
+        <div class="content-section">
+          <h2 class="section-title">
+            <fa-icon [icon]="faBook"></fa-icon>
+            Conversation Content
+          </h2>
+
+          <!-- Vietnamese text -->
+          <div class="text-block vietnamese">
+            <h3>Vietnamese</h3>
+            <p>{{ p.vietnameseText }}</p>
+          </div>
+
+          <!-- English translation -->
+          <div class="text-block english">
+            <h3>English Translation</h3>
+            <p>{{ p.englishTranslation }}</p>
+          </div>
+        </div>
+
+        <!-- Learning content stats -->
+        <div class="content-stats">
+          <div class="stat-item">
+            <fa-icon [icon]="faLanguage"></fa-icon>
+            <span class="stat-value">{{ p.vocabularyCount }}</span>
+            <span class="stat-label">Vocabulary</span>
+          </div>
+          <div class="stat-item">
+            <fa-icon [icon]="faGraduationCap"></fa-icon>
+            <span class="stat-value">{{ p.grammarCount }}</span>
+            <span class="stat-label">Grammar Points</span>
+          </div>
+          <div class="stat-item">
+            <fa-icon [icon]="faTasks"></fa-icon>
+            <span class="stat-value">{{ p.exerciseCount }}</span>
+            <span class="stat-label">Exercises</span>
+          </div>
+        </div>
+
+        <!-- Vocabulary preview -->
+        @if (p.vocabulary && p.vocabulary.length > 0) {
+          <div class="vocab-preview">
+            <h3>Vocabulary Preview</h3>
+            <div class="vocab-list">
+              @for (v of p.vocabulary.slice(0, 6); track v.id) {
+                <div class="vocab-item">
+                  <span class="vn-word">{{ v.vietnameseWord }}</span>
+                  <span class="en-word">{{ v.englishWord }}</span>
+                  <span class="pos">{{ v.partOfSpeech }}</span>
+                </div>
+              }
+            </div>
+            @if (p.vocabulary.length > 6) {
+              <p class="more-hint">+ {{ p.vocabulary.length - 6 }} more vocabulary items</p>
+            }
+          </div>
+        }
+
+        <!-- Grammar preview -->
+        @if (p.grammarPoints && p.grammarPoints.length > 0) {
+          <div class="grammar-preview">
+            <h3>Grammar Points Preview</h3>
+            <ul class="grammar-list">
+              @for (g of p.grammarPoints.slice(0, 4); track g.id) {
+                <li>
+                  <strong>{{ g.grammarRule }}</strong>
+                  @if (g.explanation) {
+                    <span> - {{ g.explanation }}</span>
+                  }
+                </li>
+              }
+            </ul>
+            @if (p.grammarPoints.length > 4) {
+              <p class="more-hint">+ {{ p.grammarPoints.length - 4 }} more grammar points</p>
+            }
+          </div>
+        }
+
+        <!-- Tags -->
+        @if (p.tags && p.tags.length > 0) {
+          <div class="tags-section">
+            @for (tag of p.tags; track tag.id) {
+              <a [routerLink]="['/forum']" [queryParams]="{tag: tag.slug}" class="tag-chip">
+                #{{ tag.name }}
+              </a>
+            }
+          </div>
+        }
+
+        <!-- Action bar -->
+        <div class="action-bar">
+          <!-- Voting -->
+          <div class="vote-section">
+            <button
+              class="vote-btn upvote"
+              [class.active]="p.userVote === 'upvote'"
+              (click)="vote('upvote')"
+              title="Upvote"
+            >
+              <fa-icon [icon]="faArrowUp"></fa-icon>
+            </button>
+            <span class="vote-score" [class.positive]="voteScore() > 0" [class.negative]="voteScore() < 0">
+              {{ voteScore() }}
+            </span>
+            <button
+              class="vote-btn downvote"
+              [class.active]="p.userVote === 'downvote'"
+              (click)="vote('downvote')"
+              title="Downvote"
+            >
+              <fa-icon [icon]="faArrowDown"></fa-icon>
+            </button>
+          </div>
+
+          <div class="action-buttons">
+            <!-- Import button -->
+            @if (p.isImported) {
+              <button class="action-btn imported" disabled>
+                <fa-icon [icon]="faCheck"></fa-icon>
+                Imported
+              </button>
+            } @else {
+              <button class="action-btn import" (click)="openImportDialog()">
+                <fa-icon [icon]="faDownload"></fa-icon>
+                Import to My Learning
+              </button>
+            }
+
+            <!-- Bookmark -->
+            <button
+              class="action-btn bookmark"
+              [class.active]="p.isBookmarked"
+              (click)="toggleBookmark()"
+            >
+              <fa-icon [icon]="p.isBookmarked ? faBookmarkSolid : faBookmark"></fa-icon>
+              {{ p.isBookmarked ? 'Saved' : 'Save' }}
+            </button>
+
+            <!-- Add to Collection -->
+            <button class="action-btn collection" (click)="openCollectionPicker()">
+              <fa-icon [icon]="faFolderPlus"></fa-icon>
+              Add to Collection
+            </button>
+
+            <!-- Share -->
+            <button class="action-btn share" (click)="openShareDialog()">
+              <fa-icon [icon]="faShareAlt"></fa-icon>
+              Share
+            </button>
+
+            <!-- Report -->
+            <button class="action-btn report" (click)="openReportDialog()">
+              <fa-icon [icon]="faFlag"></fa-icon>
+              Report
+            </button>
+          </div>
+        </div>
+
+        <!-- Post stats -->
+        <div class="post-stats">
+          <span><fa-icon [icon]="faEye"></fa-icon> {{ p.viewCount }} views</span>
+          <span><fa-icon [icon]="faDownload"></fa-icon> {{ p.importCount }} imports</span>
+          <span><fa-icon [icon]="faComment"></fa-icon> {{ p.commentCount }} comments</span>
+        </div>
+      </article>
+
+      <!-- Comments section -->
+      <section class="comments-section">
+        <h2 class="section-title">
+          <fa-icon [icon]="faComments"></fa-icon>
+          Comments ({{ p.commentCount }})
+        </h2>
+
+        <!-- New comment form -->
+        @if (p.allowComments) {
+          <div class="comment-form">
+            <textarea
+              [ngModel]="newComment()"
+              (ngModelChange)="newComment.set($event)"
+              placeholder="Write a comment..."
+              rows="3"
+              class="comment-input"
+            ></textarea>
+            <div class="comment-form-actions">
+              <button
+                class="btn-primary"
+                [disabled]="!newComment().trim() || submittingComment()"
+                (click)="submitComment()"
+              >
+                @if (submittingComment()) {
+                  <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+                } @else {
+                  <fa-icon [icon]="faPaperPlane"></fa-icon>
+                }
+                Post Comment
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Comments list -->
+        @if (commentsLoading() && comments().length === 0) {
+          <div class="comments-loading">
+            <fa-icon [icon]="faSpinner" animation="spin" class="text-gray-400"></fa-icon>
+            <span>Loading comments...</span>
+          </div>
+        } @else if (comments().length === 0) {
+          <div class="no-comments">
+            <fa-icon [icon]="faCommentSlash" class="text-3xl text-gray-300"></fa-icon>
+            <p>No comments yet. Be the first to comment!</p>
+          </div>
+        } @else {
+          <div class="comments-list">
+            @for (comment of comments(); track comment.id) {
+              <div class="comment">
+                <div class="comment-avatar">
+                  @if (comment.author.avatar) {
+                    <img [src]="comment.author.avatar" [alt]="comment.author.displayName">
+                  } @else {
+                    <span>{{ comment.author.displayName[0] }}</span>
+                  }
+                </div>
+                <div class="comment-body">
+                  <div class="comment-header">
+                    <span class="comment-author">{{ comment.author.displayName }}</span>
+                    <span class="rank-badge small" [class]="getRankBadgeClass(comment.author.rank)">
+                      {{ getRankLabel(comment.author.rank) }}
+                    </span>
+                    <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
+                    @if (comment.isEdited) {
+                      <span class="edited-tag">(edited)</span>
+                    }
+                  </div>
+                  <p class="comment-content">{{ comment.content }}</p>
+                  <div class="comment-actions">
+                    <button class="comment-action" (click)="startReply(comment.id)">
+                      <fa-icon [icon]="faReply"></fa-icon>
+                      Reply
+                    </button>
+                  </div>
+
+                  <!-- Reply form -->
+                  @if (replyingTo() === comment.id) {
+                    <div class="reply-form">
+                      <textarea
+                        [ngModel]="replyContent()"
+                        (ngModelChange)="replyContent.set($event)"
+                        placeholder="Write a reply..."
+                        rows="2"
+                        class="comment-input"
+                      ></textarea>
+                      <div class="reply-actions">
+                        <button class="btn-secondary" (click)="cancelReply()">Cancel</button>
+                        <button
+                          class="btn-primary"
+                          [disabled]="!replyContent().trim() || submittingComment()"
+                          (click)="submitReply(comment.id)"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Nested replies -->
+                  @if (comment.replies && comment.replies.length > 0) {
+                    <div class="replies">
+                      @for (reply of comment.replies; track reply.id) {
+                        <div class="comment reply">
+                          <div class="comment-avatar small">
+                            @if (reply.author.avatar) {
+                              <img [src]="reply.author.avatar" [alt]="reply.author.displayName">
+                            } @else {
+                              <span>{{ reply.author.displayName[0] }}</span>
+                            }
+                          </div>
+                          <div class="comment-body">
+                            <div class="comment-header">
+                              <span class="comment-author">{{ reply.author.displayName }}</span>
+                              <span class="comment-time">{{ formatDate(reply.createdAt) }}</span>
+                            </div>
+                            <p class="comment-content">{{ reply.content }}</p>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Load more comments -->
+          @if (commentPage() < commentTotalPages()) {
+            <button class="load-more-btn" (click)="loadMoreComments()" [disabled]="commentsLoading()">
+              @if (commentsLoading()) {
+                <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+              }
+              Load more comments
+            </button>
+          }
+        }
+      </section>
+    </div>
+  }
+
+  <!-- Import Dialog -->
+  <app-import-dialog
+    [isOpen]="showImportDialog()"
+    [content]="{ vocabularyCount: post()?.vocabularyCount || 0, grammarCount: post()?.grammarCount || 0, exerciseCount: post()?.exerciseCount || 0 }"
+    [postTitle]="post()?.title || ''"
+    (close)="closeImportDialog()"
+    (import)="handleImport($event)"
+  ></app-import-dialog>
+
+  <!-- Share Dialog -->
+  <app-share-dialog
+    [isOpen]="showShareDialog()"
+    [url]="shareUrl"
+    [title]="post()?.title || ''"
+    [description]="post()?.description || ''"
+    (close)="closeShareDialog()"
+  ></app-share-dialog>
+
+  <!-- Report Dialog -->
+  <app-report-dialog
+    [isOpen]="showReportDialog()"
+    [type]="'post'"
+    (close)="closeReportDialog()"
+    (submit)="handleReport($event)"
+  ></app-report-dialog>
+
+  <!-- Collection Picker -->
+  <app-collection-picker
+    [isOpen]="showCollectionPicker()"
+    [postId]="post()?.id || 0"
+    (close)="closeCollectionPicker()"
+    (collectionSelected)="handleCollectionSelected($event)"
+  ></app-collection-picker>
+</div>

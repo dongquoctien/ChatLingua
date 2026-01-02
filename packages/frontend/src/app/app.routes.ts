@@ -267,6 +267,10 @@ export const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'forum',
+        loadChildren: () => import('./features/forum/forum.routes').then(m => m.FORUM_ROUTES),
+      },
     ],
   },
   {

@@ -1,0 +1,149 @@
+<div
+  *ngIf="isOpen"
+  class="dialog-backdrop fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+  (click)="onBackdropClick($event)"
+>
+  <div class="dialog-content bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200">
+      <div class="flex items-center gap-2">
+        <fa-icon [icon]="faDownload" class="text-gray-700"></fa-icon>
+        <h2 class="text-lg font-semibold text-gray-900">Import Content</h2>
+      </div>
+      <button
+        type="button"
+        (click)="onClose()"
+        class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+      >
+        <fa-icon [icon]="faTimes"></fa-icon>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-4">
+      <!-- Success state -->
+      <div *ngIf="success" class="success-state text-center py-6">
+        <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <fa-icon [icon]="faCheck" class="text-3xl text-green-600"></fa-icon>
+        </div>
+        <h3 class="font-semibold text-gray-900 mb-2">Import Successful!</h3>
+        <p class="text-gray-600 text-sm">
+          Content has been added to your learning collection.
+        </p>
+      </div>
+
+      <!-- Import options -->
+      <div *ngIf="!success">
+        <p class="text-sm text-gray-600 mb-4">
+          Select what content to import from "<span class="font-medium">{{ postTitle }}</span>":
+        </p>
+
+        <!-- No content warning -->
+        <div *ngIf="!hasContent" class="flex items-start gap-2 p-3 bg-gray-50 rounded-lg mb-4">
+          <fa-icon [icon]="faInfoCircle" class="text-gray-400 mt-0.5"></fa-icon>
+          <p class="text-sm text-gray-600">This post doesn't have any importable content yet.</p>
+        </div>
+
+        <!-- Options list -->
+        <div class="space-y-3" *ngIf="hasContent">
+          <!-- Vocabulary option -->
+          <label
+            *ngIf="hasVocabulary"
+            class="option-item flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all"
+            [class.border-gray-900]="options().importVocabulary"
+            [class.bg-gray-50]="options().importVocabulary"
+            [class.border-gray-200]="!options().importVocabulary"
+          >
+            <div class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                [checked]="options().importVocabulary"
+                (change)="toggleVocabulary()"
+                class="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+              />
+              <div class="flex items-center gap-2">
+                <fa-icon [icon]="faBook" class="text-blue-600"></fa-icon>
+                <span class="font-medium text-gray-900">Vocabulary</span>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500">{{ content.vocabularyCount }} words</span>
+          </label>
+
+          <!-- Grammar option -->
+          <label
+            *ngIf="hasGrammar"
+            class="option-item flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all"
+            [class.border-gray-900]="options().importGrammar"
+            [class.bg-gray-50]="options().importGrammar"
+            [class.border-gray-200]="!options().importGrammar"
+          >
+            <div class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                [checked]="options().importGrammar"
+                (change)="toggleGrammar()"
+                class="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+              />
+              <div class="flex items-center gap-2">
+                <fa-icon [icon]="faGraduationCap" class="text-purple-600"></fa-icon>
+                <span class="font-medium text-gray-900">Grammar Points</span>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500">{{ content.grammarCount }} points</span>
+          </label>
+
+          <!-- Exercises option -->
+          <label
+            *ngIf="hasExercises"
+            class="option-item flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-all"
+            [class.border-gray-900]="options().importExercises"
+            [class.bg-gray-50]="options().importExercises"
+            [class.border-gray-200]="!options().importExercises"
+          >
+            <div class="flex items-center gap-3">
+              <input
+                type="checkbox"
+                [checked]="options().importExercises"
+                (change)="toggleExercises()"
+                class="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+              />
+              <div class="flex items-center gap-2">
+                <fa-icon [icon]="faTasks" class="text-green-600"></fa-icon>
+                <span class="font-medium text-gray-900">Exercises</span>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500">{{ content.exerciseCount }} exercises</span>
+          </label>
+        </div>
+
+        <!-- Summary -->
+        <div *ngIf="hasContent && canImport" class="mt-4 p-3 bg-gray-50 rounded-lg">
+          <p class="text-sm text-gray-600">
+            <span class="font-medium text-gray-900">{{ selectedCount }}</span> items will be added to your learning collection.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-2 p-4 border-t border-gray-200">
+      <button
+        type="button"
+        (click)="onClose()"
+        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        {{ success ? 'Close' : 'Cancel' }}
+      </button>
+      <button
+        *ngIf="!success"
+        type="button"
+        (click)="onImport()"
+        [disabled]="!canImport || loading"
+        class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        <fa-icon [icon]="loading ? faSpinner : faDownload" [animation]="loading ? 'spin' : undefined"></fa-icon>
+        <span>{{ loading ? 'Importing...' : 'Import' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

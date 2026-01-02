@@ -92,6 +92,7 @@ import {
   faExclamationCircle,
   faShare,
   faShareAlt,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -196,4 +197,5 @@ export {
   faCalendarAlt as faCalendar,
   faShare,
   faShareAlt,
+  faUsers,
 };

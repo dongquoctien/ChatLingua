@@ -1,0 +1,547 @@
+.post-detail-page {
+  @apply min-h-screen;
+}
+
+.page-header {
+  @apply mb-6;
+}
+
+.back-link {
+  @apply inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors;
+}
+
+// Loading & Error states
+.loading-state,
+.error-state {
+  @apply text-center py-20 bg-white border border-gray-200 rounded-lg;
+
+  .loading-spinner {
+    @apply w-8 h-8 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4;
+
+    &.small {
+      @apply w-5 h-5;
+    }
+  }
+
+  p {
+    @apply text-gray-500;
+  }
+
+  i {
+    @apply text-5xl text-gray-300 mb-4;
+  }
+
+  h2 {
+    @apply text-xl font-semibold text-gray-900 mb-2;
+  }
+}
+
+// Main container
+.post-container {
+  @apply max-w-4xl mx-auto;
+}
+
+// Post article
+.post-article {
+  @apply bg-white border border-gray-200 rounded-lg p-6 mb-6;
+}
+
+.post-header {
+  @apply mb-6 pb-6 border-b border-gray-100;
+}
+
+.post-meta-top {
+  @apply flex flex-wrap items-center gap-2 mb-4;
+}
+
+.category-badge {
+  @apply inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium;
+  @apply hover:bg-gray-200 transition-colors;
+
+  i {
+    @apply text-xs;
+  }
+}
+
+.difficulty-badge {
+  @apply px-2 py-0.5 text-xs font-medium rounded;
+
+  &.difficulty-beginner {
+    @apply bg-green-50 text-green-700;
+  }
+  &.difficulty-intermediate {
+    @apply bg-orange-50 text-orange-700;
+  }
+  &.difficulty-advanced {
+    @apply bg-red-50 text-red-700;
+  }
+}
+
+.pinned-badge,
+.featured-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded;
+}
+
+.pinned-badge {
+  @apply bg-gray-900 text-white;
+}
+
+.featured-badge {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.post-title {
+  @apply text-2xl font-bold text-gray-900 mb-2;
+}
+
+.post-description {
+  @apply text-gray-600 mb-4;
+}
+
+.author-row {
+  @apply flex items-center justify-between;
+}
+
+.author-info {
+  @apply flex items-center gap-3;
+
+  &.anonymous {
+    .author-avatar {
+      @apply bg-gray-300 text-gray-600;
+    }
+  }
+}
+
+.author-avatar {
+  @apply w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-medium;
+
+  img {
+    @apply w-full h-full rounded-full object-cover;
+  }
+
+  &.small {
+    @apply w-7 h-7 text-xs;
+  }
+}
+
+.author-details {
+  @apply flex flex-col;
+}
+
+.author-name {
+  @apply font-medium text-gray-900;
+}
+
+.rank-badge {
+  @apply text-xs px-1.5 py-0.5 rounded font-medium;
+
+  &.rank-newcomer { @apply bg-gray-100 text-gray-600; }
+  &.rank-contributor { @apply bg-blue-50 text-blue-700; }
+  &.rank-active { @apply bg-green-50 text-green-700; }
+  &.rank-trusted { @apply bg-purple-50 text-purple-700; }
+  &.rank-expert { @apply bg-orange-50 text-orange-700; }
+  &.rank-master { @apply bg-red-50 text-red-700; }
+  &.rank-legend { @apply bg-yellow-50 text-yellow-700; }
+
+  &.small {
+    @apply text-[10px] px-1;
+  }
+}
+
+.post-time {
+  @apply text-sm text-gray-500;
+}
+
+// Content section
+.content-section {
+  @apply mb-6;
+}
+
+.section-title {
+  @apply flex items-center gap-2 text-lg font-semibold text-gray-900 mb-4;
+
+  i {
+    @apply text-gray-500;
+  }
+}
+
+.text-block {
+  @apply p-4 rounded-lg mb-4;
+
+  h3 {
+    @apply text-sm font-medium text-gray-500 mb-2;
+  }
+
+  p {
+    @apply text-gray-900 leading-relaxed whitespace-pre-wrap;
+  }
+
+  &.vietnamese {
+    @apply bg-gray-50 border-l-4 border-gray-300;
+  }
+
+  &.english {
+    @apply bg-gray-50 border-l-4 border-gray-900;
+  }
+}
+
+// Content stats
+.content-stats {
+  @apply grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg mb-6;
+}
+
+.stat-item {
+  @apply flex flex-col items-center text-center;
+
+  i {
+    @apply text-2xl text-gray-400 mb-2;
+  }
+
+  .stat-value {
+    @apply text-xl font-bold text-gray-900;
+  }
+
+  .stat-label {
+    @apply text-xs text-gray-500;
+  }
+}
+
+// Vocabulary preview
+.vocab-preview,
+.grammar-preview {
+  @apply mb-6;
+
+  h3 {
+    @apply text-sm font-semibold text-gray-700 mb-3;
+  }
+}
+
+.vocab-list {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.vocab-item {
+  @apply flex items-center gap-2 p-2 bg-gray-50 rounded;
+
+  .vn-word {
+    @apply font-medium text-gray-900;
+  }
+
+  .en-word {
+    @apply text-gray-600 text-sm;
+  }
+
+  .pos {
+    @apply text-xs text-gray-400 ml-auto;
+  }
+}
+
+.grammar-list {
+  @apply space-y-2 list-disc list-inside;
+
+  li {
+    @apply text-sm text-gray-700;
+
+    strong {
+      @apply text-gray-900;
+    }
+  }
+}
+
+.more-hint {
+  @apply text-sm text-gray-500 mt-2 italic;
+}
+
+// Tags
+.tags-section {
+  @apply flex flex-wrap gap-2 mb-6;
+}
+
+.tag-chip {
+  @apply px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200 transition-colors;
+}
+
+// Action bar
+.action-bar {
+  @apply flex items-center justify-between py-4 border-t border-b border-gray-100 mb-4;
+}
+
+.vote-section {
+  @apply flex items-center gap-1;
+}
+
+.vote-btn {
+  @apply w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 transition-colors;
+
+  &.upvote:hover,
+  &.upvote.active {
+    @apply text-green-600 bg-green-50;
+  }
+
+  &.downvote:hover,
+  &.downvote.active {
+    @apply text-red-600 bg-red-50;
+  }
+}
+
+.vote-score {
+  @apply text-lg font-bold text-gray-700 min-w-[2rem] text-center;
+
+  &.positive {
+    @apply text-green-600;
+  }
+
+  &.negative {
+    @apply text-red-600;
+  }
+}
+
+.action-buttons {
+  @apply flex items-center gap-2;
+}
+
+.action-btn {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors;
+
+  &.import {
+    @apply bg-gray-900 text-white hover:bg-gray-800;
+  }
+
+  &.imported {
+    @apply bg-green-100 text-green-700 cursor-default;
+  }
+
+  &.bookmark {
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+
+    &.active {
+      @apply bg-yellow-100 text-yellow-700;
+    }
+  }
+
+  &.share {
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+  }
+}
+
+.post-stats {
+  @apply flex items-center gap-6 text-sm text-gray-500;
+
+  span {
+    @apply flex items-center gap-1;
+  }
+}
+
+// Comments section
+.comments-section {
+  @apply bg-white border border-gray-200 rounded-lg p-6;
+}
+
+.comment-form {
+  @apply mb-6;
+}
+
+.comment-input {
+  @apply w-full px-4 py-3 border border-gray-200 rounded-lg resize-none;
+  @apply focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent;
+}
+
+.comment-form-actions {
+  @apply flex justify-end mt-2;
+}
+
+.comments-loading,
+.no-comments {
+  @apply text-center py-8 text-gray-500;
+
+  i {
+    @apply text-3xl text-gray-300 mb-2;
+  }
+
+  .loading-spinner {
+    @apply w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-2;
+  }
+}
+
+.comments-list {
+  @apply space-y-4;
+}
+
+.comment {
+  @apply flex gap-3;
+
+  &.reply {
+    @apply mt-3;
+  }
+}
+
+.comment-body {
+  @apply flex-1;
+}
+
+.comment-header {
+  @apply flex items-center gap-2 mb-1;
+}
+
+.comment-author {
+  @apply font-medium text-gray-900 text-sm;
+}
+
+.comment-time {
+  @apply text-xs text-gray-400;
+}
+
+.edited-tag {
+  @apply text-xs text-gray-400 italic;
+}
+
+.comment-content {
+  @apply text-gray-700 text-sm mb-2;
+}
+
+.comment-actions {
+  @apply flex items-center gap-4;
+}
+
+.comment-action {
+  @apply text-xs text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-1;
+}
+
+.reply-form {
+  @apply mt-3 pl-4 border-l-2 border-gray-200;
+
+  .comment-input {
+    @apply text-sm;
+  }
+}
+
+.reply-actions {
+  @apply flex justify-end gap-2 mt-2;
+}
+
+.replies {
+  @apply mt-3 pl-4 border-l-2 border-gray-100;
+}
+
+.load-more-btn {
+  @apply w-full py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors mt-4;
+  @apply flex items-center justify-center gap-2;
+
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+// Buttons
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg;
+  @apply hover:bg-gray-800 transition-colors font-medium text-sm;
+
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+.btn-secondary {
+  @apply inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg;
+  @apply hover:bg-gray-200 transition-colors font-medium text-sm;
+}
+
+// Modal
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+}
+
+.modal-content {
+  @apply bg-white rounded-xl shadow-xl w-full max-w-md;
+}
+
+.modal-header {
+  @apply flex items-center justify-between p-4 border-b border-gray-100;
+
+  h2 {
+    @apply text-lg font-semibold text-gray-900;
+  }
+}
+
+.modal-close {
+  @apply w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors;
+}
+
+.modal-body {
+  @apply p-4;
+}
+
+.import-intro {
+  @apply text-gray-600 mb-4;
+}
+
+.import-options {
+  @apply space-y-3;
+}
+
+.import-option {
+  @apply flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer;
+  @apply hover:bg-gray-50 transition-colors;
+
+  &.disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  input[type="checkbox"] {
+    @apply w-5 h-5 rounded border-gray-300 text-gray-900 focus:ring-gray-900;
+  }
+
+  .option-content {
+    @apply flex-1 flex items-center justify-between;
+  }
+
+  .option-title {
+    @apply flex items-center gap-2 font-medium text-gray-900;
+
+    i {
+      @apply text-gray-500;
+    }
+  }
+
+  .option-count {
+    @apply text-sm text-gray-500;
+  }
+}
+
+.modal-footer {
+  @apply flex justify-end gap-2 p-4 border-t border-gray-100;
+}
+
+// Import success
+.import-success {
+  @apply text-center py-8 px-4;
+
+  > i {
+    @apply text-5xl text-green-500 mb-4;
+  }
+
+  h2 {
+    @apply text-xl font-semibold text-gray-900 mb-4;
+  }
+}
+
+.success-stats {
+  @apply space-y-2 mb-6;
+
+  p {
+    @apply text-gray-600;
+
+    strong {
+      @apply text-gray-900;
+    }
+  }
+
+  .xp-earned {
+    @apply text-lg font-bold text-green-600 mt-4;
+  }
+}
+
+.success-actions {
+  @apply flex justify-center gap-3;
+}

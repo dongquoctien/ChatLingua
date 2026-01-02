@@ -1,0 +1,14 @@
+.collections-page {
+  .collection-card {
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: theme('colors.gray.200');
+    }
+  }
+
+  .create-form {
+    border: 1px solid theme('colors.gray.200');
+  }
+}

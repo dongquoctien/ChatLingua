@@ -1,0 +1,196 @@
+.leaderboard-page {
+  @apply min-h-screen;
+}
+
+.page-header {
+  @apply mb-8;
+}
+
+.back-link {
+  @apply inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-4 transition-colors;
+}
+
+.page-title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.page-subtitle {
+  @apply text-gray-500 mt-1;
+}
+
+// Period filter
+.period-filter {
+  @apply flex gap-2 mb-8 bg-gray-100 p-1 rounded-lg w-fit;
+}
+
+.period-btn {
+  @apply px-4 py-2 text-sm font-medium text-gray-600 rounded-md transition-colors;
+
+  &:hover {
+    @apply text-gray-900;
+  }
+
+  &.active {
+    @apply bg-white text-gray-900 shadow-sm;
+  }
+}
+
+// Loading & Error states
+.loading-state,
+.error-state,
+.empty-state {
+  @apply text-center py-20 bg-white border border-gray-200 rounded-lg;
+
+  .loading-spinner {
+    @apply w-8 h-8 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4;
+  }
+
+  i {
+    @apply text-5xl text-gray-300 mb-4 block;
+  }
+
+  h2 {
+    @apply text-xl font-semibold text-gray-900 mb-2;
+  }
+
+  p {
+    @apply text-gray-500 mb-6;
+  }
+}
+
+// Podium
+.podium {
+  @apply grid grid-cols-3 gap-4 mb-8;
+}
+
+.podium-entry {
+  @apply flex flex-col items-center p-6 bg-white border border-gray-200 rounded-lg text-center;
+
+  &.rank-gold {
+    @apply border-yellow-300 bg-yellow-50;
+
+    .rank-badge-large {
+      @apply text-yellow-500;
+    }
+  }
+
+  &.rank-silver {
+    @apply border-gray-300 bg-gray-50;
+
+    .rank-badge-large {
+      @apply text-gray-400;
+    }
+  }
+
+  &.rank-bronze {
+    @apply border-orange-200 bg-orange-50;
+
+    .rank-badge-large {
+      @apply text-orange-400;
+    }
+  }
+}
+
+.rank-badge-large {
+  @apply text-3xl mb-3;
+}
+
+.user-avatar {
+  @apply w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center font-medium text-sm;
+
+  img {
+    @apply w-full h-full rounded-full object-cover;
+  }
+
+  &.large {
+    @apply w-16 h-16 text-xl mb-3;
+  }
+}
+
+.podium-entry .user-name {
+  @apply font-semibold text-gray-900 mb-1;
+}
+
+.podium-entry .reputation {
+  @apply text-lg font-bold text-gray-900 mt-2;
+}
+
+.podium-entry .stats {
+  @apply flex gap-4 mt-2 text-sm text-gray-500;
+
+  span {
+    @apply flex items-center gap-1;
+  }
+}
+
+// Forum rank badge
+.forum-rank-badge {
+  @apply text-xs px-2 py-0.5 rounded font-medium;
+
+  &.rank-newcomer { @apply bg-gray-100 text-gray-600; }
+  &.rank-contributor { @apply bg-gray-200 text-gray-700; }
+  &.rank-active { @apply bg-gray-300 text-gray-800; }
+  &.rank-trusted { @apply bg-gray-400 text-gray-900; }
+  &.rank-expert { @apply bg-gray-500 text-white; }
+  &.rank-master { @apply bg-gray-700 text-white; }
+  &.rank-legend { @apply bg-gray-900 text-white; }
+
+  &.small {
+    @apply text-[10px] px-1.5;
+  }
+}
+
+// Leaderboard list
+.leaderboard-list {
+  @apply bg-white border border-gray-200 rounded-lg divide-y divide-gray-100;
+}
+
+.leaderboard-entry {
+  @apply flex items-center gap-4 p-4;
+
+  &:hover {
+    @apply bg-gray-50;
+  }
+}
+
+.rank-number {
+  @apply w-8 text-center font-semibold text-gray-500;
+}
+
+.leaderboard-entry .user-avatar {
+  @apply w-10 h-10;
+}
+
+.user-info {
+  @apply flex-1 flex items-center gap-2;
+}
+
+.leaderboard-entry .user-name {
+  @apply font-medium text-gray-900;
+}
+
+.user-stats {
+  @apply flex gap-4 text-sm text-gray-500;
+
+  .stat {
+    @apply flex items-center gap-1;
+  }
+}
+
+.reputation-score {
+  @apply text-lg font-bold text-gray-900 min-w-[4rem] text-right;
+
+  .label {
+    @apply text-xs font-normal text-gray-500;
+  }
+}
+
+// Buttons
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg;
+  @apply hover:bg-gray-800 transition-colors font-medium;
+
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}

@@ -1,0 +1,15 @@
+.comment-section {
+  .add-comment-form {
+    textarea {
+      transition: border-color 0.2s ease;
+    }
+  }
+
+  .comments-list {
+    > app-comment-item {
+      &:not(:last-child) {
+        @apply pb-4 border-b border-gray-100;
+      }
+    }
+  }
+}

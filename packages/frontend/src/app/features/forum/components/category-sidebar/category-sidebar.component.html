@@ -1,0 +1,106 @@
+<aside class="category-sidebar">
+  <!-- Categories Section -->
+  <section class="sidebar-section">
+    <h3 class="section-title">Categories</h3>
+
+    @if (loading()) {
+      <div class="loading-skeleton">
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <div class="skeleton-item"></div>
+        }
+      </div>
+    } @else {
+      <ul class="category-list">
+        <!-- All Posts -->
+        <li>
+          <button
+            class="category-item"
+            [class.active]="!selectedCategory"
+            (click)="onCategoryClick(null)"
+          >
+            <span class="category-icon" style="background-color: #6b7280">
+              <i class="fa fa-globe"></i>
+            </span>
+            <span class="category-name">All Posts</span>
+          </button>
+        </li>
+
+        <!-- Category Items -->
+        @for (category of categories(); track category.id) {
+          <li>
+            <button
+              class="category-item"
+              [class.active]="selectedCategory === category.slug"
+              (click)="onCategoryClick(category.slug)"
+            >
+              <span
+                class="category-icon"
+                [style.background-color]="category.color || '#6b7280'"
+              >
+                <i class="fa {{ category.icon || 'fa-folder' }}"></i>
+              </span>
+              <span class="category-name">{{ category.name }}</span>
+              <span class="category-count">{{ category.postCount }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- Popular Tags Section -->
+  <section class="sidebar-section">
+    <h3 class="section-title">Popular Tags</h3>
+
+    <div class="tags-container">
+      @for (tag of displayedTags; track tag.id) {
+        <button
+          class="tag-btn"
+          [class.active]="selectedTag === tag.slug"
+          (click)="onTagClick(tag.slug)"
+        >
+          {{ tag.name }}
+          <span class="tag-count">{{ tag.usageCount }}</span>
+        </button>
+      }
+    </div>
+
+    @if (popularTags().length > 10) {
+      <button class="show-more-btn" (click)="toggleShowAllTags()">
+        {{ showAllTags() ? 'Show less' : 'Show more' }}
+        <i class="fa" [class.fa-chevron-up]="showAllTags()" [class.fa-chevron-down]="!showAllTags()"></i>
+      </button>
+    }
+  </section>
+
+  <!-- Quick Links Section -->
+  <section class="sidebar-section">
+    <h3 class="section-title">Quick Links</h3>
+    <ul class="quick-links">
+      <li>
+        <a routerLink="/forum/my-posts" routerLinkActive="active">
+          <i class="fa fa-user"></i>
+          My Posts
+        </a>
+      </li>
+      <li>
+        <a routerLink="/forum/bookmarks" routerLinkActive="active">
+          <i class="fa fa-bookmark"></i>
+          Bookmarks
+        </a>
+      </li>
+      <li>
+        <a routerLink="/forum/imports" routerLinkActive="active">
+          <i class="fa fa-download"></i>
+          My Imports
+        </a>
+      </li>
+      <li>
+        <a routerLink="/forum/leaderboard" routerLinkActive="active">
+          <i class="fa fa-trophy"></i>
+          Leaderboard
+        </a>
+      </li>
+    </ul>
+  </section>
+</aside>

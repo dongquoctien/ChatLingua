@@ -13,6 +13,7 @@ import mcpAuthRoutes from './mcp-auth.routes.js';
 import gameRoutes from './game.routes.js';
 import syncRequestsRoutes from './sync-requests.routes.js';
 import chatRoutes from './chat.routes.js';
+import forumRoutes from './forum.routes.js';
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/mcp-auth', mcpAuthRoutes);
 router.use('/games', gameRoutes);
 router.use('/sync-requests', syncRequestsRoutes);
 router.use('/chat', chatRoutes);
+router.use('/forum', forumRoutes);
 
 export default router;

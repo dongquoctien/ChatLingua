@@ -1,0 +1,272 @@
+.forum-home {
+  @apply min-h-screen;
+}
+
+// Header
+.forum-header {
+  @apply flex items-center justify-between mb-6 pb-6 border-b border-gray-200;
+}
+
+.header-content {
+  @apply flex-1;
+}
+
+.page-title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.page-subtitle {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+.create-btn {
+  @apply inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg;
+  @apply hover:bg-gray-800 transition-colors font-medium;
+
+  i {
+    @apply text-sm;
+  }
+}
+
+// Layout
+.forum-layout {
+  @apply flex gap-6;
+}
+
+.forum-content {
+  @apply flex-1 min-w-0;
+}
+
+// Filters Bar
+.filters-bar {
+  @apply flex items-center gap-4 mb-4 bg-white p-3 rounded-lg border border-gray-200;
+}
+
+.search-box {
+  @apply flex-1 relative max-w-md;
+}
+
+.search-icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400;
+}
+
+.search-input {
+  @apply w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg;
+  @apply focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400;
+  @apply text-sm;
+}
+
+.clear-search {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600;
+}
+
+.sort-tabs {
+  @apply flex bg-gray-100 rounded-lg p-1;
+}
+
+.sort-tab {
+  @apply px-4 py-1.5 text-sm font-medium text-gray-600 rounded-md transition-colors;
+
+  &:hover {
+    @apply text-gray-900;
+  }
+
+  &.active {
+    @apply bg-white text-gray-900 shadow-sm;
+  }
+}
+
+.filter-toggle {
+  @apply lg:hidden flex items-center gap-2 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg;
+  @apply hover:bg-gray-50;
+}
+
+// Extended Filters
+.extended-filters {
+  @apply bg-white p-4 rounded-lg border border-gray-200 mb-4 space-y-4;
+}
+
+.filter-group {
+  label {
+    @apply block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2;
+  }
+}
+
+.filter-options {
+  @apply flex flex-wrap gap-2;
+}
+
+.filter-btn {
+  @apply px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg;
+  @apply hover:bg-gray-200 transition-colors;
+
+  &.active {
+    @apply bg-gray-900 text-white;
+  }
+}
+
+// Active Filters
+.active-filters {
+  @apply flex flex-wrap items-center gap-2 mb-4;
+}
+
+.filter-label {
+  @apply text-sm text-gray-500;
+}
+
+.filter-chip {
+  @apply inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-full;
+
+  button {
+    @apply text-gray-400 hover:text-gray-600 ml-1;
+  }
+}
+
+// Results Info
+.results-info {
+  @apply text-sm text-gray-500 mb-4;
+}
+
+// Posts List
+.posts-list {
+  @apply space-y-4;
+}
+
+// Loading State
+.loading-state {
+  @apply space-y-4;
+}
+
+.post-skeleton {
+  @apply flex bg-white border border-gray-200 rounded-lg overflow-hidden;
+}
+
+.skeleton-vote {
+  @apply w-12 bg-gray-50 flex-shrink-0;
+}
+
+.skeleton-content {
+  @apply flex-1 p-4 space-y-3;
+}
+
+.skeleton-header {
+  @apply h-3 bg-gray-100 rounded w-48 animate-pulse;
+}
+
+.skeleton-title {
+  @apply h-5 bg-gray-100 rounded w-3/4 animate-pulse;
+}
+
+.skeleton-text {
+  @apply h-4 bg-gray-100 rounded w-full animate-pulse;
+}
+
+.skeleton-footer {
+  @apply h-3 bg-gray-100 rounded w-1/2 animate-pulse;
+}
+
+// Error State
+.error-state {
+  @apply text-center py-12;
+
+  i {
+    @apply text-4xl text-red-400 mb-4;
+  }
+
+  p {
+    @apply text-gray-600 mb-4;
+  }
+}
+
+.retry-btn {
+  @apply px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors;
+}
+
+// Empty State
+.empty-state {
+  @apply text-center py-12 bg-white border border-gray-200 rounded-lg;
+
+  i {
+    @apply text-4xl text-gray-300 mb-4;
+  }
+
+  h3 {
+    @apply text-lg font-semibold text-gray-900 mb-2;
+  }
+
+  p {
+    @apply text-gray-500 mb-4;
+  }
+}
+
+// Pagination
+.pagination {
+  @apply flex items-center justify-center gap-1 mt-8;
+}
+
+.page-btn {
+  @apply w-10 h-10 flex items-center justify-center text-sm text-gray-600 rounded-lg;
+  @apply hover:bg-gray-100 transition-colors;
+
+  &.active {
+    @apply bg-gray-900 text-white;
+  }
+
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed hover:bg-transparent;
+  }
+
+  &.prev,
+  &.next {
+    @apply w-auto px-3;
+  }
+}
+
+.page-ellipsis {
+  @apply px-2 text-gray-400;
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .forum-layout {
+    @apply flex-col;
+  }
+
+  .filters-bar {
+    @apply flex-wrap;
+  }
+
+  .search-box {
+    @apply w-full max-w-none order-1;
+  }
+
+  .sort-tabs {
+    @apply order-2;
+  }
+
+  .filter-toggle {
+    @apply order-3 ml-auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .forum-header {
+    @apply flex-col items-start gap-4;
+  }
+
+  .create-btn {
+    @apply w-full justify-center;
+  }
+
+  .sort-tabs {
+    @apply w-full justify-center;
+  }
+
+  .filter-options {
+    @apply flex-col;
+  }
+
+  .filter-btn {
+    @apply w-full text-center;
+  }
+}

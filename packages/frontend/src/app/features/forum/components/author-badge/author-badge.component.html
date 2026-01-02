@@ -1,0 +1,8 @@
+<span
+  class="author-badge inline-flex items-center rounded-full font-medium"
+  [ngClass]="[config.bgClass, config.textClass, sizeClasses]"
+  [title]="config.description"
+>
+  <fa-icon [icon]="config.icon" [ngClass]="iconSize"></fa-icon>
+  <span *ngIf="showLabel && size !== 'small'">{{ config.label }}</span>
+</span>

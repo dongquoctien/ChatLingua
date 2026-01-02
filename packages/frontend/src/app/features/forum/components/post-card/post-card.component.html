@@ -1,0 +1,150 @@
+<article class="post-card" [class.compact]="compact">
+  <!-- Vote Column -->
+  <div class="vote-column">
+    <button
+      class="vote-btn upvote"
+      [class.active]="post.userVote === 'upvote'"
+      (click)="onUpvote($event)"
+      title="Upvote"
+    >
+      <i class="fa fa-arrow-up"></i>
+    </button>
+    <span class="score" [class.positive]="score > 0" [class.negative]="score < 0">
+      {{ score }}
+    </span>
+    <button
+      class="vote-btn downvote"
+      [class.active]="post.userVote === 'downvote'"
+      (click)="onDownvote($event)"
+      title="Downvote"
+    >
+      <i class="fa fa-arrow-down"></i>
+    </button>
+  </div>
+
+  <!-- Content Column -->
+  <div class="content-column">
+    <!-- Header -->
+    <div class="post-header">
+      @if (showCategory && post.category) {
+        <a
+          [routerLink]="['/forum']"
+          [queryParams]="{ category: post.category.slug }"
+          class="category-badge"
+          [style.background-color]="post.category.color + '20'"
+          [style.color]="post.category.color"
+        >
+          <i class="fa {{ post.category.icon }}"></i>
+          {{ post.category.name }}
+        </a>
+      }
+
+      @if (showAuthor && post.author) {
+        <span class="author-info">
+          Posted by
+          <a [routerLink]="['/forum/user', post.author.id]" class="author-link">
+            {{ post.author.username }}
+          </a>
+          <span class="author-rank" [ngClass]="rankClass">{{ rankLabel }}</span>
+        </span>
+      } @else if (!post.author) {
+        <span class="author-info anonymous">Anonymous</span>
+      }
+
+      <span class="post-time">{{ getTimeAgo(post.createdAt) }}</span>
+
+      @if (post.isPinned) {
+        <span class="pinned-badge">
+          <i class="fa fa-thumbtack"></i> Pinned
+        </span>
+      }
+
+      @if (post.isFeatured) {
+        <span class="featured-badge">
+          <i class="fa fa-star"></i> Featured
+        </span>
+      }
+    </div>
+
+    <!-- Title -->
+    <h3 class="post-title">
+      <a [routerLink]="['/forum', post.slug]">{{ post.title }}</a>
+    </h3>
+
+    <!-- Preview -->
+    @if (!compact) {
+      <p class="post-preview">{{ post.vietnameseTextPreview }}</p>
+    }
+
+    <!-- Tags & Difficulty -->
+    <div class="post-meta">
+      <span class="difficulty-badge" [ngClass]="difficultyClass">
+        {{ difficultyLabel }}
+      </span>
+
+      @if (post.tags && post.tags.length > 0) {
+        <div class="tags">
+          @for (tag of post.tags.slice(0, 3); track tag.id) {
+            <a
+              [routerLink]="['/forum']"
+              [queryParams]="{ tag: tag.slug }"
+              class="tag"
+            >
+              {{ tag.name }}
+            </a>
+          }
+          @if (post.tags.length > 3) {
+            <span class="tag more-tags">+{{ post.tags.length - 3 }}</span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Stats Footer -->
+    <div class="post-footer">
+      <div class="content-stats">
+        @if (post.vocabularyCount > 0) {
+          <span class="stat" title="Vocabulary items">
+            <i class="fa fa-book"></i> {{ post.vocabularyCount }}
+          </span>
+        }
+        @if (post.grammarCount > 0) {
+          <span class="stat" title="Grammar points">
+            <i class="fa fa-lightbulb"></i> {{ post.grammarCount }}
+          </span>
+        }
+        @if (post.exerciseCount > 0) {
+          <span class="stat" title="Exercises">
+            <i class="fa fa-pen"></i> {{ post.exerciseCount }}
+          </span>
+        }
+      </div>
+
+      <div class="engagement-stats">
+        <a [routerLink]="['/forum', post.slug]" class="stat" title="Comments">
+          <i class="fa fa-comment"></i> {{ post.commentCount }}
+        </a>
+        <span class="stat" title="Imports">
+          <i class="fa fa-download"></i> {{ post.importCount }}
+        </span>
+        <span class="stat" title="Views">
+          <i class="fa fa-eye"></i> {{ post.viewCount }}
+        </span>
+      </div>
+
+      <div class="actions">
+        <button
+          class="action-btn bookmark-btn"
+          [class.active]="post.isBookmarked"
+          (click)="onBookmark($event)"
+          title="Bookmark"
+        >
+          <i class="fa" [class.fa-bookmark]="post.isBookmarked" [class.fa-bookmark-o]="!post.isBookmarked"></i>
+        </button>
+        <button class="action-btn share-btn" title="Share">
+          <i class="fa fa-share"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</article>

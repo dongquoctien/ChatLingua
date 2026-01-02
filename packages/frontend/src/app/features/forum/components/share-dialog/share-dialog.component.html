@@ -1,0 +1,107 @@
+<div
+  *ngIf="isOpen"
+  class="dialog-backdrop fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+  (click)="onBackdropClick($event)"
+>
+  <div class="dialog-content bg-white rounded-xl shadow-xl w-full max-w-sm mx-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200">
+      <div class="flex items-center gap-2">
+        <fa-icon [icon]="faShare" class="text-gray-700"></fa-icon>
+        <h2 class="text-lg font-semibold text-gray-900">Share Post</h2>
+      </div>
+      <button
+        type="button"
+        (click)="onClose()"
+        class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+      >
+        <fa-icon [icon]="faTimes"></fa-icon>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-4">
+      <!-- Social share buttons -->
+      <div class="social-buttons grid grid-cols-3 gap-3 mb-4">
+        <button
+          type="button"
+          (click)="onShare('facebook')"
+          class="share-btn flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <fa-icon [icon]="faFacebook" class="text-2xl text-[#1877F2]"></fa-icon>
+          <span class="text-xs text-gray-600">Facebook</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="onShare('twitter')"
+          class="share-btn flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <fa-icon [icon]="faTwitter" class="text-2xl text-[#1DA1F2]"></fa-icon>
+          <span class="text-xs text-gray-600">Twitter</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="onShare('linkedin')"
+          class="share-btn flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <fa-icon [icon]="faLinkedin" class="text-2xl text-[#0A66C2]"></fa-icon>
+          <span class="text-xs text-gray-600">LinkedIn</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="onShare('telegram')"
+          class="share-btn flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <fa-icon [icon]="faTelegram" class="text-2xl text-[#0088CC]"></fa-icon>
+          <span class="text-xs text-gray-600">Telegram</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="onShare('whatsapp')"
+          class="share-btn flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <fa-icon [icon]="faWhatsapp" class="text-2xl text-[#25D366]"></fa-icon>
+          <span class="text-xs text-gray-600">WhatsApp</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="onShare('email')"
+          class="share-btn flex flex-col items-center gap-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          <fa-icon [icon]="faEnvelope" class="text-2xl text-gray-600"></fa-icon>
+          <span class="text-xs text-gray-600">Email</span>
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div class="relative my-4">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-gray-200"></div>
+        </div>
+        <div class="relative flex justify-center">
+          <span class="px-2 bg-white text-xs text-gray-500">or copy link</span>
+        </div>
+      </div>
+
+      <!-- Copy link -->
+      <div class="copy-link flex items-center gap-2">
+        <div class="flex-1 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600 truncate">
+          {{ shareUrl }}
+        </div>
+        <button
+          type="button"
+          (click)="copyLink()"
+          class="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+        >
+          <fa-icon [icon]="copied() ? faCheck : faCopy"></fa-icon>
+          <span>{{ copied() ? 'Copied!' : 'Copy' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

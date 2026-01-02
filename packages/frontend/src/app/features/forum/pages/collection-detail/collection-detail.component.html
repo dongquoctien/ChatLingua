@@ -1,0 +1,203 @@
+<div class="collection-detail-page min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-4xl mx-auto px-4 py-4">
+      <a routerLink="/forum/collections" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <fa-icon [icon]="faArrowLeft"></fa-icon>
+        <span>Back to Collections</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="max-w-4xl mx-auto px-4 py-6">
+    <!-- Loading state -->
+    <div *ngIf="loading()" class="loading-state py-16 text-center">
+      <fa-icon [icon]="faSpinner" animation="spin" class="text-4xl text-gray-400"></fa-icon>
+      <p class="text-gray-500 mt-4">Loading collection...</p>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="error()" class="error-state bg-white rounded-xl p-8 text-center">
+      <p class="text-red-600 mb-4">{{ error() }}</p>
+      <a routerLink="/forum/collections" class="text-gray-900 hover:underline">Return to collections</a>
+    </div>
+
+    <!-- Collection content -->
+    <div *ngIf="!loading() && !error() && collection()">
+      <!-- Collection header -->
+      <div class="collection-header bg-white rounded-xl p-6 mb-6" [class.opacity-50]="deleting()">
+        <!-- Edit mode -->
+        <div *ngIf="isEditing()" class="edit-mode">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <input
+                type="text"
+                [(ngModel)]="editName"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                [disabled]="updating()"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea
+                [(ngModel)]="editDescription"
+                rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent resize-none"
+                placeholder="Description (optional)"
+                [disabled]="updating()"
+              ></textarea>
+            </div>
+
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                [(ngModel)]="editPrivate"
+                class="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900"
+                [disabled]="updating()"
+              />
+              <span class="text-sm text-gray-700">Private collection</span>
+            </label>
+
+            <div class="flex justify-end gap-2">
+              <button
+                type="button"
+                (click)="cancelEdit()"
+                class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                [disabled]="updating()"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                (click)="saveEdit()"
+                [disabled]="!editName.trim() || updating()"
+                class="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
+              >
+                <fa-icon [icon]="updating() ? faSpinner : faCheck" [animation]="updating() ? 'spin' : undefined"></fa-icon>
+                <span>{{ updating() ? 'Saving...' : 'Save Changes' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Normal mode -->
+        <div *ngIf="!isEditing()">
+          <div class="flex items-start justify-between">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+                <fa-icon [icon]="faFolder" class="text-2xl text-gray-400"></fa-icon>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <h1 class="text-2xl font-bold text-gray-900">{{ collection()!.name }}</h1>
+                  <fa-icon
+                    [icon]="collection()!.isPrivate ? faLock : faGlobe"
+                    class="text-gray-400"
+                    [title]="collection()!.isPrivate ? 'Private' : 'Public'"
+                  ></fa-icon>
+                </div>
+                <p *ngIf="collection()!.description" class="text-gray-600 mb-2">
+                  {{ collection()!.description }}
+                </p>
+                <div class="flex items-center gap-3 text-sm text-gray-500">
+                  <span>{{ totalPosts() }} posts</span>
+                  <span>•</span>
+                  <span>Created {{ formatDate(collection()!.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-2">
+              <button
+                *ngIf="!collection()!.isPrivate"
+                type="button"
+                (click)="openShareDialog()"
+                class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Share"
+              >
+                <fa-icon [icon]="faShare"></fa-icon>
+              </button>
+              <button
+                type="button"
+                (click)="startEdit()"
+                class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Edit"
+              >
+                <fa-icon [icon]="faEdit"></fa-icon>
+              </button>
+              <button
+                type="button"
+                (click)="deleteCollection()"
+                class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                title="Delete"
+                [disabled]="deleting()"
+              >
+                <fa-icon [icon]="deleting() ? faSpinner : faTrash" [animation]="deleting() ? 'spin' : undefined"></fa-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Posts section -->
+      <div class="posts-section">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Posts in this collection</h2>
+
+        <!-- Loading posts -->
+        <div *ngIf="loadingPosts() && posts().length === 0" class="loading-state py-8 text-center">
+          <fa-icon [icon]="faSpinner" animation="spin" class="text-2xl text-gray-400"></fa-icon>
+          <p class="text-gray-500 mt-2">Loading posts...</p>
+        </div>
+
+        <!-- Empty posts -->
+        <div *ngIf="!loadingPosts() && posts().length === 0" class="empty-posts bg-white rounded-xl p-8 text-center">
+          <fa-icon [icon]="faFolder" class="text-4xl text-gray-300"></fa-icon>
+          <p class="text-gray-500 mt-2">No posts in this collection yet</p>
+          <a routerLink="/forum" class="inline-block mt-4 text-gray-900 hover:underline">
+            Browse posts to add
+          </a>
+        </div>
+
+        <!-- Posts list -->
+        <div *ngIf="posts().length > 0" class="posts-list space-y-4">
+          <div *ngFor="let post of posts()" class="post-wrapper relative">
+            <app-post-card [post]="post"></app-post-card>
+            <button
+              type="button"
+              (click)="removePost(post.id)"
+              class="remove-btn absolute top-2 right-2 p-1.5 bg-white/90 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 shadow-sm transition-all opacity-0"
+              title="Remove from collection"
+            >
+              <fa-icon [icon]="faTimes"></fa-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Load more -->
+        <div *ngIf="hasMorePosts" class="load-more mt-6 text-center">
+          <button
+            type="button"
+            (click)="loadMore()"
+            [disabled]="loadingPosts()"
+            class="px-6 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <fa-icon *ngIf="loadingPosts()" [icon]="faSpinner" animation="spin" class="mr-2"></fa-icon>
+            <span>{{ loadingPosts() ? 'Loading...' : 'Load More Posts' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share dialog -->
+  <app-share-dialog
+    [isOpen]="showShareDialog()"
+    [url]="shareUrl"
+    [title]="collection()?.name || ''"
+    [description]="collection()?.description || ''"
+    (close)="closeShareDialog()"
+  ></app-share-dialog>
+</div>

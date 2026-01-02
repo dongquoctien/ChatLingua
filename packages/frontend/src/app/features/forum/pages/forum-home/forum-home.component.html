@@ -1,0 +1,220 @@
+<div class="forum-home">
+  <!-- Header -->
+  <header class="forum-header">
+    <div class="header-content">
+      <h1 class="page-title">Community Forum</h1>
+      <p class="page-subtitle">Discover and share Vietnamese learning conversations</p>
+    </div>
+    <a routerLink="/forum/create" class="create-btn">
+      <i class="fa fa-plus"></i>
+      Share Conversation
+    </a>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="forum-layout">
+    <!-- Sidebar -->
+    <app-category-sidebar
+      [selectedCategory]="selectedCategory()"
+      [selectedTag]="selectedTag()"
+      (categorySelect)="onCategorySelect($event)"
+      (tagSelect)="onTagSelect($event)"
+    ></app-category-sidebar>
+
+    <!-- Main Content -->
+    <main class="forum-content">
+      <!-- Search & Filters Bar -->
+      <div class="filters-bar">
+        <!-- Search -->
+        <div class="search-box">
+          <i class="fa fa-search search-icon"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchInput"
+            (keyup.enter)="onSearch()"
+            placeholder="Search posts..."
+            class="search-input"
+          >
+          @if (searchInput) {
+            <button class="clear-search" (click)="clearSearch()">
+              <i class="fa fa-times"></i>
+            </button>
+          }
+        </div>
+
+        <!-- Sort Tabs -->
+        <div class="sort-tabs">
+          @for (option of sortOptions; track option.value) {
+            <button
+              class="sort-tab"
+              [class.active]="sortBy() === option.value"
+              (click)="onSortChange(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+
+        <!-- Filter Toggle (Mobile) -->
+        <button class="filter-toggle" (click)="toggleFilters()">
+          <i class="fa fa-filter"></i>
+          Filters
+        </button>
+      </div>
+
+      <!-- Extended Filters -->
+      @if (showFilters() || sortBy() === 'top') {
+        <div class="extended-filters">
+          @if (sortBy() === 'top') {
+            <div class="filter-group">
+              <label>Time Period</label>
+              <div class="filter-options">
+                @for (option of periodOptions; track option.value) {
+                  <button
+                    class="filter-btn"
+                    [class.active]="period() === option.value"
+                    (click)="onPeriodChange(option.value)"
+                  >
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="filter-group">
+            <label>Difficulty</label>
+            <div class="filter-options">
+              @for (option of difficultyOptions; track option.value) {
+                <button
+                  class="filter-btn"
+                  [class.active]="selectedDifficulty() === option.value"
+                  (click)="onDifficultyChange(option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Active Filters -->
+      @if (selectedCategory() || selectedTag() || selectedDifficulty() || searchQuery()) {
+        <div class="active-filters">
+          <span class="filter-label">Active filters:</span>
+
+          @if (selectedCategory()) {
+            <span class="filter-chip">
+              Category: {{ selectedCategory() }}
+              <button (click)="onCategorySelect(null)"><i class="fa fa-times"></i></button>
+            </span>
+          }
+
+          @if (selectedTag()) {
+            <span class="filter-chip">
+              Tag: {{ selectedTag() }}
+              <button (click)="onTagSelect(null)"><i class="fa fa-times"></i></button>
+            </span>
+          }
+
+          @if (selectedDifficulty()) {
+            <span class="filter-chip">
+              {{ selectedDifficulty() }}
+              <button (click)="onDifficultyChange(null)"><i class="fa fa-times"></i></button>
+            </span>
+          }
+
+          @if (searchQuery()) {
+            <span class="filter-chip">
+              "{{ searchQuery() }}"
+              <button (click)="clearSearch()"><i class="fa fa-times"></i></button>
+            </span>
+          }
+        </div>
+      }
+
+      <!-- Results Info -->
+      <div class="results-info">
+        <span>{{ totalPosts() }} posts found</span>
+      </div>
+
+      <!-- Posts List -->
+      @if (loading()) {
+        <div class="loading-state">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="post-skeleton">
+              <div class="skeleton-vote"></div>
+              <div class="skeleton-content">
+                <div class="skeleton-header"></div>
+                <div class="skeleton-title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-footer"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (error()) {
+        <div class="error-state">
+          <i class="fa fa-exclamation-circle"></i>
+          <p>{{ error() }}</p>
+          <button class="retry-btn" (click)="loadPosts()">Try Again</button>
+        </div>
+      } @else if (posts().length === 0) {
+        <div class="empty-state">
+          <i class="fa fa-inbox"></i>
+          <h3>No posts found</h3>
+          <p>Be the first to share a conversation in this category!</p>
+          <a routerLink="/forum/create" class="create-btn">
+            <i class="fa fa-plus"></i>
+            Share Conversation
+          </a>
+        </div>
+      } @else {
+        <div class="posts-list">
+          @for (post of posts(); track post.id) {
+            <app-post-card
+              [post]="post"
+              (vote)="onVote($event)"
+              (bookmark)="onBookmark($event)"
+            ></app-post-card>
+          }
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <nav class="pagination">
+            <button
+              class="page-btn prev"
+              [disabled]="currentPage() === 1"
+              (click)="goToPage(currentPage() - 1)"
+            >
+              <i class="fa fa-chevron-left"></i>
+            </button>
+
+            @for (page of pageNumbers; track page; let i = $index) {
+              @if (i > 0 && page - pageNumbers[i - 1] > 1) {
+                <span class="page-ellipsis">...</span>
+              }
+              <button
+                class="page-btn"
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            }
+
+            <button
+              class="page-btn next"
+              [disabled]="currentPage() === totalPages()"
+              (click)="goToPage(currentPage() + 1)"
+            >
+              <i class="fa fa-chevron-right"></i>
+            </button>
+          </nav>
+        }
+      }
+    </main>
+  </div>
+</div>

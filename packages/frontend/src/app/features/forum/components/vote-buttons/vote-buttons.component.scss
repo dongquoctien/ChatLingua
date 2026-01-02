@@ -1,0 +1,7 @@
+.vote-buttons {
+  .vote-btn {
+    &:not(:disabled):active {
+      transform: scale(0.95);
+    }
+  }
+}
