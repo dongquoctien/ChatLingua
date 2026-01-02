@@ -33,14 +33,18 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   // From services
   readonly isConnected = this.socketService.isConnected;
+  readonly isBrowserOnline = this.socketService.isBrowserOnline;
   readonly conversations = this.chatService.conversations;
   readonly activeConversation = this.chatService.activeConversation;
   readonly currentStatus = this.chatService.currentStatus;
   readonly totalUnread = this.chatService.totalUnread;
   readonly loading = this.chatService.loading;
+  readonly pendingMessages = this.chatService.pendingMessages;
+  readonly isOfflineMode = this.chatService.isOfflineMode;
 
   // Computed
   readonly showChatWindow = computed(() => this.activeView() === 'chat' && this.selectedConversationId() !== null);
+  readonly isOffline = computed(() => !this.isBrowserOnline() || !this.isConnected());
 
   // Typing users for current conversation (reactive computed)
   readonly typingUsersForConversation = computed(() => {
@@ -69,11 +73,17 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Clean up subscriptions first
     this.unsubscribeMessage?.();
     this.unsubscribeOnline?.();
     this.unsubscribeOffline?.();
     this.unsubscribeOnlineUsersList?.();
     this.unsubscribeStatusChanged?.();
+
+    // Force disconnect socket when widget is destroyed (e.g., on logout)
+    // ChatWidgetComponent is the primary socket manager (always present in layout)
+    // so when it's destroyed, we definitely want to disconnect
+    this.socketService.forceDisconnect();
   }
 
   private loadInitialData(): void {

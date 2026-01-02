@@ -37,9 +37,19 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
+          <!-- Status indicator -->
+          
           <span class="font-medium truncate">
             {{ activeConversation()?.settings?.nickname || activeConversation()?.otherUser?.displayName || activeConversation()?.otherUser?.username || 'Chat' }}
           </span>
+          <span
+            class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            [class.bg-green-500]="activeConversation()?.otherUser?.status?.statusType === 'online'"
+            [class.bg-yellow-500]="activeConversation()?.otherUser?.status?.statusType === 'away'"
+            [class.bg-red-500]="activeConversation()?.otherUser?.status?.statusType === 'busy'"
+            [class.bg-gray-400]="!activeConversation()?.otherUser?.status?.isOnline || activeConversation()?.otherUser?.status?.statusType === 'offline' || activeConversation()?.otherUser?.status?.statusType === 'invisible'"
+            [title]="activeConversation()?.otherUser?.status?.statusType || 'offline'"
+          ></span>
         } @else {
           <span class="font-medium">Messages</span>
           @if (totalUnread() > 0) {
@@ -91,8 +101,10 @@
           class="flex-1 flex flex-col"
           [conversation]="activeConversation()"
           [messages]="chatService.messages()"
+          [pendingMessages]="pendingMessages()"
           [typingUsers]="typingUsersForConversation()"
           [compact]="true"
+          [isOffline]="isOffline()"
           (sendMessage)="chatService.sendMessage($event).subscribe()"
           (loadMore)="chatService.getMessages(selectedConversationId()!, $event).subscribe()"
           (markRead)="chatService.markMessagesRead(selectedConversationId()!, $event).subscribe()"

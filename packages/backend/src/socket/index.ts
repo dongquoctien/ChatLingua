@@ -41,7 +41,7 @@ export function getIO(): SocketIOServer<
   return ioInstance;
 }
 
-export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
+export async function initializeSocket(httpServer: HTTPServer): Promise<SocketIOServer> {
   const io = new SocketIOServer<
     ClientToServerEvents,
     ServerToClientEvents,
@@ -59,6 +59,17 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
 
   // Store instance
   ioInstance = io;
+
+  // Clean up stale online statuses from previous server run
+  // This handles the case where server crashed/restarted while users were connected
+  try {
+    const cleaned = await statusService.cleanupStaleOnlineUsers();
+    if (cleaned > 0) {
+      console.log(`[Socket] Cleaned up ${cleaned} stale online users from previous session`);
+    }
+  } catch (error) {
+    console.error('[Socket] Error cleaning up stale online users:', error);
+  }
 
   // Authentication middleware
   io.use(async (socket, next) => {
@@ -100,11 +111,24 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
     authSocket.join(`user:${authSocket.userId}`);
 
     try {
+      // Check if user was stuck as online (stale state from server restart/crash)
+      const wasStale = await statusService.wasStaleOnline(authSocket.userId);
+
       // Update online status in database
       await statusService.setOnline(authSocket.userId, authSocket.id);
 
       // Get user's actual status from DB (may have custom status like 'busy', 'studying')
       const userStatus = await statusService.getUserStatus(authSocket.userId);
+
+      // If user was stale online, broadcast offline first to clear stale state on other clients
+      // This ensures other users' UI is updated correctly
+      if (wasStale) {
+        console.log(`[Socket] User ${authSocket.userId} was stale online, broadcasting offline first`);
+        authSocket.broadcast.emit('user:offline', {
+          userId: authSocket.userId,
+          lastSeen: new Date().toISOString(),
+        });
+      }
 
       // Broadcast online status to all other users with actual status type
       authSocket.broadcast.emit('user:online', {
@@ -182,4 +206,22 @@ export function broadcastExcept<K extends keyof ServerToClientEvents>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ioInstance.except(`user:${excludeUserId}`) as any).emit(event, ...args);
   }
+}
+
+// Helper function to check if a user has any active socket connections
+export async function hasActiveConnection(userId: number): Promise<boolean> {
+  if (!ioInstance) return false;
+
+  const room = `user:${userId}`;
+  const sockets = await ioInstance.in(room).fetchSockets();
+  return sockets.length > 0;
+}
+
+// Helper function to get count of active sockets for a user
+export async function getActiveConnectionCount(userId: number): Promise<number> {
+  if (!ioInstance) return 0;
+
+  const room = `user:${userId}`;
+  const sockets = await ioInstance.in(room).fetchSockets();
+  return sockets.length;
 }

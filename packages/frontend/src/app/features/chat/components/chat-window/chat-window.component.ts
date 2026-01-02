@@ -6,6 +6,15 @@ import { MessageItemComponent } from '../message-item/message-item.component';
 import { ConversationSettingsComponent } from '../conversation-settings/conversation-settings.component';
 import type { Conversation, Message, SendMessageDTO, UpdateConversationSettingsDTO } from '../../chat.types';
 import { STATUS_COLORS, STATUS_LABELS, ACTIVITY_LABELS } from '../../chat.types';
+import type { PendingMessage } from '../../services/offline-storage.service';
+
+// Combined display type for messages and pending messages
+export interface DisplayMessage {
+  type: 'message' | 'pending';
+  message?: Message;
+  pending?: PendingMessage;
+  createdAt: string;
+}
 
 @Component({
   selector: 'app-chat-window',
@@ -22,8 +31,10 @@ export class ChatWindowComponent implements AfterViewChecked, OnChanges {
 
   readonly conversation = input<Conversation | null>(null);
   readonly messages = input<Message[]>([]);
+  readonly pendingMessages = input<PendingMessage[]>([]);
   readonly typingUsers = input<number[]>([]);
   readonly compact = input(false); // Hide header when used in widget
+  readonly isOffline = input(false); // Show offline indicator
 
   readonly close = output<void>();
   readonly sendMessage = output<SendMessageDTO>();
@@ -54,6 +65,36 @@ export class ChatWindowComponent implements AfterViewChecked, OnChanges {
   readonly sortedMessages = computed(() => {
     // Backend already returns messages in chronological order (oldest first)
     return this.messages();
+  });
+
+  // Combined display list with messages and pending messages
+  readonly displayMessages = computed((): DisplayMessage[] => {
+    const msgs = this.messages();
+    const pending = this.pendingMessages();
+    const conversationId = this.conversation()?.id;
+
+    // Convert messages to display items
+    const displayMsgs: DisplayMessage[] = msgs.map(m => ({
+      type: 'message' as const,
+      message: m,
+      createdAt: m.createdAt,
+    }));
+
+    // Add pending messages for this conversation
+    const pendingForConv = conversationId
+      ? pending.filter(p => p.conversationId === conversationId)
+      : [];
+
+    const pendingDisplay: DisplayMessage[] = pendingForConv.map(p => ({
+      type: 'pending' as const,
+      pending: p,
+      createdAt: p.createdAt,
+    }));
+
+    // Combine and sort by createdAt
+    return [...displayMsgs, ...pendingDisplay].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
   });
 
   readonly otherUser = computed(() => this.conversation()?.otherUser ?? null);
@@ -216,6 +257,17 @@ export class ChatWindowComponent implements AfterViewChecked, OnChanges {
 
     const currentDate = new Date(message.createdAt).toDateString();
     const prevDate = new Date(prevMessage.createdAt).toDateString();
+    return currentDate !== prevDate;
+  }
+
+  shouldShowDateSeparatorForDisplay(item: DisplayMessage, index: number): boolean {
+    if (index === 0) return true;
+    const displayMsgs = this.displayMessages();
+    const prevItem = displayMsgs[index - 1];
+    if (!prevItem) return false;
+
+    const currentDate = new Date(item.createdAt).toDateString();
+    const prevDate = new Date(prevItem.createdAt).toDateString();
     return currentDate !== prevDate;
   }
 

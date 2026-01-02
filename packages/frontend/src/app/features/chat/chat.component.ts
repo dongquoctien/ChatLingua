@@ -38,14 +38,18 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   // From services
   readonly isConnected = this.socketService.isConnected;
+  readonly isBrowserOnline = this.socketService.isBrowserOnline;
   readonly conversations = this.chatService.conversations;
   readonly activeConversation = this.chatService.activeConversation;
   readonly currentStatus = this.chatService.currentStatus;
   readonly totalUnread = this.chatService.totalUnread;
   readonly loading = this.chatService.loading;
+  readonly pendingMessages = this.chatService.pendingMessages;
+  readonly isOfflineMode = this.chatService.isOfflineMode;
 
   // Computed
   readonly showChatWindow = computed(() => this.selectedConversationId() !== null);
+  readonly isOffline = computed(() => !this.isBrowserOnline() || !this.isConnected());
 
   // Typing users for current conversation (reactive computed)
   readonly typingUsersForConversation = computed(() => {
