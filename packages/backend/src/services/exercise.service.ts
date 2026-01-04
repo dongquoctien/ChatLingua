@@ -278,6 +278,15 @@ export class ExerciseService {
       if (isCorrect) {
         await challengeService.updateProgress(userId, 'perfect_score', 1);
       }
+
+      // Update type-specific challenge progress
+      const exerciseType = exercise.exercise_type;
+      if (exerciseType === 'spelling' && isCorrect) {
+        await challengeService.updateProgress(userId, 'spelling', 1);
+      }
+      if (exerciseType === 'translation') {
+        await challengeService.updateProgress(userId, 'translation', 1);
+      }
     } catch (error) {
       console.error('Failed to update challenge progress:', error);
     }

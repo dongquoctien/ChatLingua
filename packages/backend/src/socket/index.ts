@@ -150,21 +150,30 @@ export async function initializeSocket(httpServer: HTTPServer): Promise<SocketIO
       console.log(`[Socket] User ${authSocket.userId} disconnected: ${reason}`);
 
       try {
-        // Pass socket.id to setOffline - it will only mark user offline if this
-        // socket_id matches the current one in DB. This prevents race conditions
-        // when user refreshes (F5) - new socket connects before old disconnects.
+        // Check if user has other active connections (multiple tabs)
+        // We need to wait a tiny bit for the socket to be fully removed from rooms
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const remainingConnections = await getActiveConnectionCount(authSocket.userId);
+
+        if (remainingConnections > 0) {
+          // User still has other active tabs/connections - don't mark offline
+          console.log(`[Socket] User ${authSocket.userId} still has ${remainingConnections} active connection(s), staying online`);
+          return;
+        }
+
+        // No more active connections - mark user offline
         const wasActuallySetOffline = await statusService.setOffline(authSocket.userId, authSocket.id);
 
         // Only broadcast offline if the user is actually offline
-        // (not if they already reconnected with a new socket)
         if (wasActuallySetOffline) {
           authSocket.broadcast.emit('user:offline', {
             userId: authSocket.userId,
             lastSeen: new Date().toISOString(),
           });
-          console.log(`[Socket] User ${authSocket.userId} is now offline`);
+          console.log(`[Socket] User ${authSocket.userId} is now offline (no remaining connections)`);
         } else {
-          console.log(`[Socket] User ${authSocket.userId} has already reconnected, not broadcasting offline`);
+          console.log(`[Socket] User ${authSocket.userId} already marked offline or reconnected`);
         }
       } catch (error) {
         console.error(`[Socket] Error on disconnect for user ${authSocket.userId}:`, error);

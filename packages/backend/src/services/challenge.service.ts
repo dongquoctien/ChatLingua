@@ -243,6 +243,9 @@ export class ChallengeService {
   async getTodaysChallenges(userId: number): Promise<DailyChallenge[]> {
     const todayStr = this.getLocalDateString();
 
+    // Expire old challenges before loading today's
+    await this.expireOldChallenges();
+
     // Generate if not exists
     const [existing] = await pool.execute<CountRow[]>(
       `SELECT COUNT(*) as count FROM daily_challenges
@@ -302,6 +305,8 @@ export class ChallengeService {
     const todayStr = this.getLocalDateString();
     const results: ChallengeProgress[] = [];
 
+    console.log(`[Challenge] updateProgress called: userId=${userId}, type=${challengeType}, delta=${progressDelta}, date=${todayStr}`);
+
     // Get matching challenges for today that aren't completed
     const [challenges] = await pool.execute<DailyChallengeRow[]>(
       `SELECT dc.*, ct.challenge_type
@@ -314,6 +319,8 @@ export class ChallengeService {
          AND ct.challenge_type = ?`,
       [userId, todayStr, challengeType]
     );
+
+    console.log(`[Challenge] Found ${challenges.length} matching challenges for type=${challengeType}`);
 
     for (const challenge of challenges) {
       const newProgress = Math.min(

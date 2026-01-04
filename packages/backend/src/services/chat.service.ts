@@ -559,16 +559,23 @@ export class ChatService {
 
       case 'game': {
         const [rows] = await pool.execute<RowDataPacket[]>(
-          `SELECT * FROM game_sessions WHERE id = ? AND user_id = ?`,
+          `SELECT gs.*, g.game_code, g.name as game_name
+           FROM game_sessions gs
+           JOIN games g ON gs.game_id = g.id
+           WHERE gs.id = ? AND gs.user_id = ?`,
           [contentId, userId]
         );
         if (rows.length === 0) throw new Error('Game session not found');
         return {
-          gameType: rows[0].game_type,
-          score: rows[0].score,
-          wordsLearned: rows[0].words_learned,
-          timeSpent: rows[0].time_spent_seconds,
-          completedAt: rows[0].completed_at,
+          gameType: rows[0].game_code,
+          score: rows[0].score || 0,
+          wordsLearned: rows[0].words_correct || 0,
+          timeSpent: rows[0].duration_seconds || 0,
+          completedAt: rows[0].ended_at,
+          accuracy: rows[0].accuracy || 0,
+          maxCombo: rows[0].max_combo || 0,
+          level: 1,
+          perfectRounds: 0,
         };
       }
 

@@ -1,0 +1,68 @@
+<div class="rounded-xl border border-gray-200 bg-white overflow-hidden max-w-sm">
+  <!-- Header -->
+  <div class="bg-purple-50 px-4 py-2 border-b border-purple-100">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-xs text-purple-600">
+        <fa-icon [icon]="faGamepad" class="text-purple-400"></fa-icon>
+        <span>Game Result</span>
+      </div>
+      <span
+        class="px-2 py-0.5 rounded-full text-xs font-bold"
+        [ngClass]="getScoreGrade().color"
+      >
+        {{ getScoreGrade().label }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="p-4">
+    <h4 class="font-semibold text-gray-900 mb-1">
+      {{ getGameName() }}
+    </h4>
+
+    <!-- Score -->
+    <div class="flex items-center gap-2 mb-3">
+      <fa-icon [icon]="faTrophy" class="text-yellow-500"></fa-icon>
+      <span class="text-2xl font-bold text-gray-900">{{ data().score }}</span>
+      <span class="text-sm text-gray-500">points</span>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      @if (data().accuracy > 0) {
+        <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-2 py-1.5">
+          <fa-icon [icon]="faBullseye" class="text-green-500"></fa-icon>
+          <span>{{ data().accuracy }}% accuracy</span>
+        </div>
+      }
+      @if (data().maxCombo > 0) {
+        <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-2 py-1.5">
+          <fa-icon [icon]="faFire" class="text-orange-500"></fa-icon>
+          <span>{{ data().maxCombo }}x combo</span>
+        </div>
+      }
+      @if (data().wordsLearned > 0) {
+        <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-2 py-1.5">
+          <fa-icon [icon]="faStar" class="text-blue-500"></fa-icon>
+          <span>{{ data().wordsLearned }} words</span>
+        </div>
+      }
+      @if (data().timeSpent > 0) {
+        <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-2 py-1.5">
+          <fa-icon [icon]="faClock" class="text-gray-400"></fa-icon>
+          <span>{{ formatTime(data().timeSpent) }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="text-xs text-gray-400 text-center">
+      @if (isOwn()) {
+        Shared your game result
+      } @else {
+        Check out this game result!
+      }
+    </div>
+  </div>
+</div>

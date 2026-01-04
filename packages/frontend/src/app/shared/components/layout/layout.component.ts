@@ -89,10 +89,10 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faEnvelope = faEnvelope;
 
   // Navigation items
+  // Note: Chat menu removed - accessible via chat widget expand button
   navItems = [
     { path: '/dashboard', icon: this.faHome, label: 'Dashboard' },
     { path: '/conversations', icon: this.faComments, label: 'Conversations' },
-    { path: '/chat', icon: this.faEnvelope, label: 'Chat' },
     { path: '/vocabulary', icon: this.faLanguage, label: 'Vocabulary' },
     { path: '/review', icon: this.faBrain, label: 'Daily Review' },
     { path: '/grammar', icon: this.faBook, label: 'Grammar' },

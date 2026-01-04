@@ -2,12 +2,13 @@ import { Component, input, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedContentComponent } from '../shared-content/shared-content.component';
 import { SharedConversationCardComponent } from '../shared-conversation-card/shared-conversation-card.component';
+import { SharedGameCardComponent, SharedGamePayload } from '../shared-game-card/shared-game-card.component';
 import type { Message, SharedConversationPayload } from '../../chat.types';
 
 @Component({
   selector: 'app-message-item',
   standalone: true,
-  imports: [CommonModule, SharedContentComponent, SharedConversationCardComponent],
+  imports: [CommonModule, SharedContentComponent, SharedConversationCardComponent, SharedGameCardComponent],
   templateUrl: './message-item.component.html',
   styleUrls: ['./message-item.component.scss'],
 })
@@ -26,7 +27,8 @@ export class MessageItemComponent {
 
   readonly isSpecialMessage = computed(() => {
     const type = this.message().messageType;
-    return ['achievement', 'exercise', 'game', 'vocabulary'].includes(type);
+    // 'game' is handled separately by SharedGameCardComponent
+    return ['achievement', 'exercise', 'vocabulary'].includes(type);
   });
 
   readonly isSharedConversation = computed(() => {
@@ -36,6 +38,15 @@ export class MessageItemComponent {
   readonly sharedConversationPayload = computed(() => {
     if (!this.isSharedConversation()) return null;
     return this.message().metadata as SharedConversationPayload | null;
+  });
+
+  readonly isSharedGame = computed(() => {
+    return this.message().messageType === 'game';
+  });
+
+  readonly sharedGamePayload = computed(() => {
+    if (!this.isSharedGame()) return null;
+    return this.message().metadata as SharedGamePayload | null;
   });
 
   readonly isLinkOrImage = computed(() => {

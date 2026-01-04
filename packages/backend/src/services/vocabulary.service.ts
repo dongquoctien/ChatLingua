@@ -1,5 +1,7 @@
 import pool from '../config/database.js';
 import type { RowDataPacket } from 'mysql2';
+import { gamificationService } from './gamification.service.js';
+import { challengeService } from './challenge.service.js';
 
 interface VocabularyRow extends RowDataPacket {
   id: number;
@@ -441,6 +443,8 @@ export class VocabularyService {
       return null;
     }
 
+    const oldMasteryLevel = vocabulary.masteryLevel;
+
     // Update mastery level (0-100 scale)
     const change = correct ? 10 : -5;
     const newMasteryLevel = Math.max(0, Math.min(100, vocabulary.masteryLevel + change));
@@ -451,6 +455,31 @@ export class VocabularyService {
        WHERE id = ?`,
       [newMasteryLevel, vocabularyId]
     );
+
+    // Update vocabulary challenge progress (when practicing vocabulary)
+    try {
+      if (correct) {
+        await challengeService.updateProgress(userId, 'vocabulary', 1);
+      }
+
+      // Check if vocabulary just became "mastered" (crossed 80% threshold)
+      const MASTERY_THRESHOLD = 80;
+      if (oldMasteryLevel < MASTERY_THRESHOLD && newMasteryLevel >= MASTERY_THRESHOLD) {
+        // Count total mastered vocabulary for achievements
+        const [countResult] = await pool.execute<RowDataPacket[]>(
+          `SELECT COUNT(*) as count FROM vocabulary WHERE user_id = ? AND mastery_level >= ?`,
+          [userId, MASTERY_THRESHOLD]
+        );
+        const masteredCount = countResult[0].count as number;
+
+        // Trigger vocabulary achievement check
+        await gamificationService.checkAchievements(userId, 'vocabulary_learned', {
+          vocabularyCount: masteredCount,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update vocabulary challenge/achievement:', error);
+    }
 
     return this.getVocabularyById(userId, vocabularyId);
   }
