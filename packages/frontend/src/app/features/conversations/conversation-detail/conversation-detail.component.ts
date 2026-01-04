@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { Dialog } from '@angular/cdk/dialog';
 import {
   faArrowLeft,
   faLanguage,
@@ -14,8 +15,9 @@ import {
   faClock,
 } from '../../../shared/icons';
 import { faStar as faStarEmpty } from '@fortawesome/free-regular-svg-icons';
-import { faRobot, faTag } from '@fortawesome/free-solid-svg-icons';
+import { faRobot, faTag, faShare } from '@fortawesome/free-solid-svg-icons';
 import { ApiService, ConversationDetail, Vocabulary } from '../../../core/services/api.service';
+import { ShareToUsersDialogComponent, ShareToUsersDialogData } from '../share-to-users-dialog/share-to-users-dialog.component';
 
 @Component({
   selector: 'app-conversation-detail',
@@ -31,6 +33,7 @@ import { ApiService, ConversationDetail, Vocabulary } from '../../../core/servic
 export class ConversationDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private apiService = inject(ApiService);
+  private dialog = inject(Dialog);
 
   // Icons
   faArrowLeft = faArrowLeft;
@@ -45,6 +48,7 @@ export class ConversationDetailComponent implements OnInit {
   faRobot = faRobot;
   faTag = faTag;
   faClock = faClock;
+  faShare = faShare;
 
   conversation = signal<ConversationDetail | null>(null);
   loading = signal(true);
@@ -97,5 +101,23 @@ export class ConversationDetailComponent implements OnInit {
       case 'advanced': return 'bg-red-50 text-red-700';
       default: return 'bg-gray-50 text-gray-700';
     }
+  }
+
+  openShareDialog(): void {
+    const conv = this.conversation();
+    if (!conv) return;
+
+    const dialogData: ShareToUsersDialogData = {
+      conversationId: conv.id,
+      conversationTitle: conv.vietnameseText.slice(0, 50) + (conv.vietnameseText.length > 50 ? '...' : ''),
+      vocabularyCount: conv.vocabulary?.length || 0,
+      grammarCount: conv.grammarPoints?.length || 0,
+      exerciseCount: conv.exerciseCount || 0,
+    };
+
+    this.dialog.open(ShareToUsersDialogComponent, {
+      data: dialogData,
+      panelClass: 'share-dialog-panel',
+    });
   }
 }

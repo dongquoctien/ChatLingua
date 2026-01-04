@@ -54,7 +54,7 @@ export async function initializeSocket(httpServer: HTTPServer): Promise<SocketIO
     },
     pingTimeout: 60000,
     pingInterval: 25000,
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
   });
 
   // Store instance

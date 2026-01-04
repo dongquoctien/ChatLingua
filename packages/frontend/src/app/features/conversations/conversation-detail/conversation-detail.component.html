@@ -1,11 +1,21 @@
 <div class="max-w-6xl mx-auto">
   <!-- Header -->
-  <div class="mb-6">
+  <div class="mb-6 flex items-center justify-between">
     <a routerLink="/conversations"
        class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
       <fa-icon [icon]="faArrowLeft"></fa-icon>
       Back to Conversations
     </a>
+    @if (conversation()) {
+      <button
+        (click)="openShareDialog()"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+        title="Share with other users"
+      >
+        <fa-icon [icon]="faShare"></fa-icon>
+        Share
+      </button>
+    }
   </div>
 
   @if (loading()) {

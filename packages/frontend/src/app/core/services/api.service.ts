@@ -19,6 +19,7 @@ export interface Conversation {
   difficultyLevel: string;
   vocabularyCount: number;
   grammarCount: number;
+  exerciseCount: number;
   createdAt: string;
 }
 

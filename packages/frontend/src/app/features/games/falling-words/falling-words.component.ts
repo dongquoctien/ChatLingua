@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, signal, computed, effect, untracked, HostListener, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, signal, computed, effect, untracked, HostListener, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -112,6 +113,8 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
     '#10b981', // green
     '#06b6d4', // cyan
   ];
+
+  private dialogService = inject(DialogService);
 
   constructor(
     private apiService: ApiService,
@@ -583,8 +586,14 @@ export class FallingWordsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  onQuit(): void {
-    if (confirm('Are you sure you want to quit? Your progress will be saved.')) {
+  async onQuit(): Promise<void> {
+    const confirmed = await this.dialogService.confirm({
+      title: 'Quit Game',
+      message: 'Are you sure you want to quit? Your progress will be saved.',
+      confirmText: 'Quit',
+      cancelText: 'Continue',
+    });
+    if (confirmed) {
       this.endGame();
     }
   }

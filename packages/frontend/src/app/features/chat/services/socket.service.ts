@@ -96,7 +96,7 @@ export class SocketService implements OnDestroy {
 
     this.socket = io(baseUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,

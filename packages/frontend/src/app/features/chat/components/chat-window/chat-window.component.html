@@ -105,6 +105,8 @@
             [message]="item.message"
             [isOwn]="item.message.senderId === currentUserId()"
             [showAvatar]="true"
+            [refreshTrigger]="refreshTrigger()"
+            (importClick)="onImportConversation($event)"
           />
         } @else if (item.type === 'pending' && item.pending) {
           <!-- Pending Message (sending...) -->

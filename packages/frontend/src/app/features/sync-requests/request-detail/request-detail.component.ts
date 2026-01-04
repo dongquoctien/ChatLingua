@@ -21,6 +21,7 @@ import {
   SyncRequestStatus,
 } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-request-detail',
@@ -32,6 +33,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class RequestDetailComponent implements OnInit {
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
+  private dialogService = inject(DialogService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -97,11 +99,18 @@ export class RequestDetailComponent implements OnInit {
     return this.isOwner && this.request()?.status === 'pending';
   }
 
-  cancelRequest() {
+  async cancelRequest() {
     const request = this.request();
     if (!request) return;
 
-    if (!confirm('Are you sure you want to cancel this request?')) {
+    const confirmed = await this.dialogService.confirm({
+      title: 'Cancel Request',
+      message: 'Are you sure you want to cancel this request?',
+      confirmText: 'Cancel Request',
+      cancelText: 'Keep It',
+    });
+
+    if (!confirmed) {
       return;
     }
 

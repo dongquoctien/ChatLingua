@@ -1,11 +1,13 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Dialog } from '@angular/cdk/dialog';
 import { ChatService } from '../../services/chat.service';
 import { SocketService } from '../../services/socket.service';
 import { UserListComponent } from '../user-list/user-list.component';
 import { ConversationListComponent } from '../conversation-list/conversation-list.component';
 import { ChatWindowComponent } from '../chat-window/chat-window.component';
 import { StatusSelectorComponent } from '../status-selector/status-selector.component';
+import { ImportConversationDialogComponent, ImportConversationDialogData } from '../import-conversation-dialog/import-conversation-dialog.component';
 import type { UserStatusInfo } from '../../chat.types';
 
 @Component({
@@ -24,12 +26,14 @@ import type { UserStatusInfo } from '../../chat.types';
 export class ChatWidgetComponent implements OnInit, OnDestroy {
   readonly chatService = inject(ChatService);
   readonly socketService = inject(SocketService);
+  private dialog = inject(Dialog);
 
   // Widget state
   readonly isOpen = signal(false);
   readonly isMinimized = signal(false);
   readonly activeView = signal<'conversations' | 'users' | 'chat'>('conversations');
   readonly selectedConversationId = signal<number | null>(null);
+  readonly refreshTrigger = signal(0); // Increment to refresh shared conversation cards
 
   // From services
   readonly isConnected = this.socketService.isConnected;
@@ -175,6 +179,20 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
       this.backToList();
       // Refresh conversations to remove blocked user
       this.chatService.getConversations().subscribe();
+    });
+  }
+
+  openImportDialog(messageId: number): void {
+    const dialogRef = this.dialog.open<boolean>(ImportConversationDialogComponent, {
+      data: { messageId } as ImportConversationDialogData,
+      panelClass: 'import-dialog-panel',
+    });
+
+    dialogRef.closed.subscribe(imported => {
+      if (imported) {
+        // Increment refreshTrigger to update shared conversation cards
+        this.refreshTrigger.update(v => v + 1);
+      }
     });
   }
 }

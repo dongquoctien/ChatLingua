@@ -102,6 +102,7 @@
         [pendingMessages]="pendingMessages()"
         [typingUsers]="typingUsersForConversation()"
         [isOffline]="isOffline()"
+        [refreshTrigger]="refreshTrigger()"
         (close)="closeConversation()"
         (sendMessage)="chatService.sendMessage($event).subscribe()"
         (loadMore)="chatService.getMessages(selectedConversationId()!, $event).subscribe()"
@@ -110,6 +111,7 @@
         (stopTyping)="socketService.stopTyping(selectedConversationId()!)"
         (settingsChange)="chatService.updateConversationSettings(selectedConversationId()!, $event).subscribe()"
         (blockUser)="onBlockUser($event)"
+        (importConversation)="openImportDialog($event)"
       />
     } @else {
       <!-- Empty state -->

@@ -626,6 +626,466 @@ export class ChatService {
   }
 
   // ============================================================
+  // Conversation Sharing (Learning Conversations)
+  // ============================================================
+
+  /**
+   * Share a learning conversation to multiple users via chat
+   */
+  async shareConversation(
+    senderId: number,
+    conversationId: number, // Learning conversation ID (from conversations table)
+    recipientIds: number[],
+    message?: string
+  ): Promise<Message[]> {
+    // Get the learning conversation with stats
+    const [convRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT
+        c.id,
+        c.vietnamese_text,
+        c.english_translation,
+        c.topic,
+        c.difficulty_level,
+        c.created_at,
+        u.id AS user_id,
+        u.username,
+        u.display_name
+      FROM conversations c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.id = ? AND c.user_id = ?`,
+      [conversationId, senderId]
+    );
+
+    if (convRows.length === 0) {
+      throw new Error('Conversation not found or not owned by user');
+    }
+
+    const conversation = convRows[0];
+
+    // Get vocabulary count (via vocabulary_contexts junction table)
+    const [vocabCount] = await pool.execute<CountRow[]>(
+      `SELECT COUNT(*) as count FROM vocabulary_contexts WHERE conversation_id = ?`,
+      [conversationId]
+    );
+
+    // Get grammar count
+    const [grammarCount] = await pool.execute<CountRow[]>(
+      `SELECT COUNT(*) as count FROM grammar_points WHERE conversation_id = ?`,
+      [conversationId]
+    );
+
+    // Get exercises count
+    const [exerciseCount] = await pool.execute<CountRow[]>(
+      `SELECT COUNT(*) as count FROM exercises WHERE conversation_id = ?`,
+      [conversationId]
+    );
+
+    // Create shared conversation payload
+    const sharedPayload = {
+      sourceConversationId: conversationId,
+      title: conversation.topic || 'Shared Conversation',
+      preview: (conversation.vietnamese_text || '').substring(0, 100),
+      vocabularyCount: Number(vocabCount[0]?.count) || 0,
+      grammarCount: Number(grammarCount[0]?.count) || 0,
+      exerciseCount: Number(exerciseCount[0]?.count) || 0,
+      difficultyLevel: conversation.difficulty_level,
+      sharedBy: {
+        userId: senderId,
+        username: conversation.username,
+        displayName: conversation.display_name || conversation.username,
+      },
+      importStatus: 'not_imported',
+    };
+
+    const messages: Message[] = [];
+
+    // Send to each recipient
+    for (const recipientId of recipientIds) {
+      // Check if blocked
+      const isBlocked = await this.isBlocked(senderId, recipientId);
+      if (isBlocked) continue;
+
+      // Get or create chat conversation
+      const chatConversation = await this.getOrCreateConversation(senderId, recipientId);
+
+      // Create message with shared_conversation type
+      const msg = await this.createMessage({
+        conversationId: chatConversation.id,
+        senderId,
+        messageType: 'shared_conversation' as MessageType,
+        content: message || `Shared a conversation: ${sharedPayload.title}`,
+        metadata: sharedPayload,
+      });
+
+      messages.push(msg);
+    }
+
+    return messages;
+  }
+
+  /**
+   * Get preview of shared conversation before import
+   */
+  async getSharedPreview(
+    messageId: number,
+    userId: number
+  ): Promise<{
+    payload: Record<string, unknown>;
+    vocabStats: { total: number; new: number; duplicate: number };
+    grammarStats: { total: number; new: number; duplicate: number };
+    exerciseCount: number;
+    alreadyImported: boolean;
+  }> {
+    // Get the message
+    const [msgRows] = await pool.execute<MessageRow[]>(
+      `SELECT m.*, c.participant1_id, c.participant2_id
+       FROM chat_messages m
+       JOIN chat_conversations c ON m.conversation_id = c.id
+       WHERE m.id = ? AND m.message_type = 'shared_conversation'
+         AND (c.participant1_id = ? OR c.participant2_id = ?)`,
+      [messageId, userId, userId]
+    );
+
+    if (msgRows.length === 0) {
+      throw new Error('Shared conversation not found');
+    }
+
+    const message = msgRows[0];
+    const metadata = typeof message.metadata === 'string'
+      ? JSON.parse(message.metadata)
+      : message.metadata;
+
+    const sourceConversationId = metadata.sourceConversationId;
+
+    // Check if already imported
+    const [importRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT * FROM chat_shared_imports WHERE message_id = ? AND recipient_id = ?`,
+      [messageId, userId]
+    );
+    const alreadyImported = importRows.length > 0;
+
+    // Get vocabulary stats (how many are new vs existing)
+    const [vocabRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT v.english_word FROM vocabulary v INNER JOIN vocabulary_contexts vc ON v.id = vc.vocabulary_id WHERE vc.conversation_id = ?`,
+      [sourceConversationId]
+    );
+
+    let vocabNew = 0;
+    let vocabDuplicate = 0;
+    for (const row of vocabRows) {
+      const [existing] = await pool.execute<CountRow[]>(
+        `SELECT COUNT(*) as count FROM vocabulary WHERE user_id = ? AND english_word = ?`,
+        [userId, row.english_word]
+      );
+      if ((existing[0]?.count || 0) > 0) {
+        vocabDuplicate++;
+      } else {
+        vocabNew++;
+      }
+    }
+
+    // Get grammar stats
+    const [grammarRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT g.grammar_rule FROM grammar_points g WHERE g.conversation_id = ?`,
+      [sourceConversationId]
+    );
+
+    let grammarNew = 0;
+    let grammarDuplicate = 0;
+    for (const row of grammarRows) {
+      const [existing] = await pool.execute<CountRow[]>(
+        `SELECT COUNT(*) as count FROM grammar_points WHERE user_id = ? AND grammar_rule = ?`,
+        [userId, row.grammar_rule]
+      );
+      if ((existing[0]?.count || 0) > 0) {
+        grammarDuplicate++;
+      } else {
+        grammarNew++;
+      }
+    }
+
+    // Get exercise count from source
+    const [exerciseCountResult] = await pool.execute<CountRow[]>(
+      `SELECT COUNT(*) as count FROM exercises WHERE conversation_id = ?`,
+      [sourceConversationId]
+    );
+
+    return {
+      payload: metadata,
+      vocabStats: {
+        total: vocabRows.length,
+        new: vocabNew,
+        duplicate: vocabDuplicate,
+      },
+      grammarStats: {
+        total: grammarRows.length,
+        new: grammarNew,
+        duplicate: grammarDuplicate,
+      },
+      exerciseCount: Number(exerciseCountResult[0]?.count) || 0,
+      alreadyImported,
+    };
+  }
+
+  /**
+   * Import a shared conversation to user's library
+   */
+  async importSharedConversation(
+    messageId: number,
+    userId: number,
+    options: {
+      importVocabulary: boolean;
+      importGrammar: boolean;
+      importExercises: boolean;
+    }
+  ): Promise<{
+    success: boolean;
+    createdConversationId: number;
+    stats: {
+      vocabularyImported: number;
+      vocabularySkipped: number;
+      grammarImported: number;
+      grammarSkipped: number;
+      exercisesImported: number;
+    };
+  }> {
+    // Check if already imported
+    const [existingImport] = await pool.execute<RowDataPacket[]>(
+      `SELECT * FROM chat_shared_imports WHERE message_id = ? AND recipient_id = ?`,
+      [messageId, userId]
+    );
+
+    if (existingImport.length > 0) {
+      throw new Error('Already imported this conversation');
+    }
+
+    // Get the message
+    const [msgRows] = await pool.execute<MessageRow[]>(
+      `SELECT m.*, c.participant1_id, c.participant2_id
+       FROM chat_messages m
+       JOIN chat_conversations c ON m.conversation_id = c.id
+       WHERE m.id = ? AND m.message_type = 'shared_conversation'
+         AND (c.participant1_id = ? OR c.participant2_id = ?)`,
+      [messageId, userId, userId]
+    );
+
+    if (msgRows.length === 0) {
+      throw new Error('Shared conversation not found');
+    }
+
+    const message = msgRows[0];
+    const metadata = typeof message.metadata === 'string'
+      ? JSON.parse(message.metadata)
+      : message.metadata;
+
+    const sourceConversationId = metadata.sourceConversationId;
+
+    // Get source conversation
+    const [sourceRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT * FROM conversations WHERE id = ?`,
+      [sourceConversationId]
+    );
+
+    if (sourceRows.length === 0) {
+      throw new Error('Source conversation no longer exists');
+    }
+
+    const source = sourceRows[0];
+
+    // Create new conversation for recipient
+    const [convResult] = await pool.execute<ResultSetHeader>(
+      `INSERT INTO conversations (user_id, vietnamese_text, english_translation, topic, difficulty_level)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, source.vietnamese_text, source.english_translation, source.topic, source.difficulty_level]
+    );
+
+    const createdConversationId = convResult.insertId;
+
+    const stats = {
+      vocabularyImported: 0,
+      vocabularySkipped: 0,
+      grammarImported: 0,
+      grammarSkipped: 0,
+      exercisesImported: 0,
+    };
+
+    // Import vocabulary if requested
+    if (options.importVocabulary) {
+      // Get vocabulary via vocabulary_contexts junction table
+      const [vocabRows] = await pool.execute<RowDataPacket[]>(
+        `SELECT v.*, vc.vietnamese_word as context_vietnamese_word,
+                vc.example_sentence_vi, vc.example_sentence_en
+         FROM vocabulary v
+         INNER JOIN vocabulary_contexts vc ON v.id = vc.vocabulary_id
+         WHERE vc.conversation_id = ?`,
+        [sourceConversationId]
+      );
+
+      for (const vocab of vocabRows) {
+        // Check if already exists for this user
+        const [existing] = await pool.execute<CountRow[]>(
+          `SELECT COUNT(*) as count FROM vocabulary WHERE user_id = ? AND english_word = ?`,
+          [userId, vocab.english_word]
+        );
+
+        if ((existing[0]?.count || 0) > 0) {
+          stats.vocabularySkipped++;
+          continue;
+        }
+
+        // Insert new vocabulary for this user
+        const [insertResult] = await pool.execute<ResultSetHeader>(
+          `INSERT INTO vocabulary (
+            user_id, vietnamese_word, english_word,
+            part_of_speech, phonetic, pronunciation_uk, pronunciation_us,
+            cefr_level, difficulty_level, definitions, word_forms,
+            word_family, synonyms, antonyms, collocations, extra_examples,
+            usage_notes, grammar_info, topics, register
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId, vocab.context_vietnamese_word || vocab.vietnamese_word, vocab.english_word,
+            vocab.part_of_speech, vocab.phonetic, vocab.pronunciation_uk, vocab.pronunciation_us,
+            vocab.cefr_level, vocab.difficulty_level, vocab.definitions, vocab.word_forms,
+            vocab.word_family, vocab.synonyms, vocab.antonyms, vocab.collocations, vocab.extra_examples,
+            vocab.usage_notes, vocab.grammar_info, vocab.topics, vocab.register,
+          ]
+        );
+
+        // Create vocabulary_context to link to the new conversation
+        const newVocabId = insertResult.insertId;
+        await pool.execute(
+          `INSERT INTO vocabulary_contexts (vocabulary_id, conversation_id, vietnamese_word, example_sentence_vi, example_sentence_en)
+           VALUES (?, ?, ?, ?, ?)`,
+          [newVocabId, createdConversationId, vocab.context_vietnamese_word || vocab.vietnamese_word,
+           vocab.example_sentence_vi, vocab.example_sentence_en]
+        );
+
+        stats.vocabularyImported++;
+      }
+    }
+
+    // Import grammar if requested
+    if (options.importGrammar) {
+      const [grammarRows] = await pool.execute<RowDataPacket[]>(
+        `SELECT * FROM grammar_points WHERE conversation_id = ?`,
+        [sourceConversationId]
+      );
+
+      for (const grammar of grammarRows) {
+        // Check if already exists
+        const [existing] = await pool.execute<CountRow[]>(
+          `SELECT COUNT(*) as count FROM grammar_points WHERE user_id = ? AND grammar_rule = ?`,
+          [userId, grammar.grammar_rule]
+        );
+
+        if ((existing[0]?.count || 0) > 0) {
+          stats.grammarSkipped++;
+          continue;
+        }
+
+        // Insert new grammar point
+        await pool.execute(
+          `INSERT INTO grammar_points (
+            user_id, conversation_id, grammar_rule, explanation,
+            example_vi, example_en, category
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId, createdConversationId, grammar.grammar_rule, grammar.explanation,
+            grammar.example_vi, grammar.example_en, grammar.category,
+          ]
+        );
+        stats.grammarImported++;
+      }
+    }
+
+    // Import exercises if requested
+    if (options.importExercises) {
+      const [exerciseRows] = await pool.execute<RowDataPacket[]>(
+        `SELECT * FROM exercises WHERE conversation_id = ?`,
+        [sourceConversationId]
+      );
+
+      for (const exercise of exerciseRows) {
+        await pool.execute(
+          `INSERT INTO exercises (
+            user_id, conversation_id, exercise_type, question,
+            correct_answer, options, explanation, exercise_data,
+            audio_url, time_limit_seconds
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId, createdConversationId, exercise.exercise_type, exercise.question,
+            exercise.correct_answer, exercise.options, exercise.explanation, exercise.exercise_data,
+            exercise.audio_url, exercise.time_limit_seconds,
+          ]
+        );
+        stats.exercisesImported++;
+      }
+    }
+
+    // Record the import
+    await pool.execute(
+      `INSERT INTO chat_shared_imports (
+        message_id, recipient_id, source_conversation_id, created_conversation_id,
+        imported_vocabulary, imported_grammar, imported_exercises,
+        vocabulary_imported, vocabulary_skipped, grammar_imported, grammar_skipped, exercises_imported
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        messageId, userId, sourceConversationId, createdConversationId,
+        options.importVocabulary, options.importGrammar, options.importExercises,
+        stats.vocabularyImported, stats.vocabularySkipped, stats.grammarImported, stats.grammarSkipped, stats.exercisesImported,
+      ]
+    );
+
+    return {
+      success: true,
+      createdConversationId,
+      stats,
+    };
+  }
+
+  /**
+   * Get import status for a shared message
+   */
+  async getImportStatus(
+    messageId: number,
+    userId: number
+  ): Promise<{
+    imported: boolean;
+    importedAt?: string;
+    createdConversationId?: number;
+    stats?: {
+      vocabularyImported: number;
+      vocabularySkipped: number;
+      grammarImported: number;
+      grammarSkipped: number;
+      exercisesImported: number;
+    };
+  }> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT * FROM chat_shared_imports WHERE message_id = ? AND recipient_id = ?`,
+      [messageId, userId]
+    );
+
+    if (rows.length === 0) {
+      return { imported: false };
+    }
+
+    const row = rows[0];
+    return {
+      imported: true,
+      importedAt: row.imported_at ? row.imported_at.toISOString() : undefined,
+      createdConversationId: row.created_conversation_id,
+      stats: {
+        vocabularyImported: row.vocabulary_imported,
+        vocabularySkipped: row.vocabulary_skipped,
+        grammarImported: row.grammar_imported,
+        grammarSkipped: row.grammar_skipped,
+        exercisesImported: row.exercises_imported,
+      },
+    };
+  }
+
+  // ============================================================
   // Users Search
   // ============================================================
 

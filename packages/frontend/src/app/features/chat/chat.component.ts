@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Dialog } from '@angular/cdk/dialog';
 import { ChatService } from './services/chat.service';
 import { SocketService } from './services/socket.service';
 import { UserListComponent } from './components/user-list/user-list.component';
@@ -8,6 +9,7 @@ import { ConversationListComponent } from './components/conversation-list/conver
 import { ChatWindowComponent } from './components/chat-window/chat-window.component';
 import { StatusSelectorComponent } from './components/status-selector/status-selector.component';
 import { BlockedUsersComponent } from './components/blocked-users/blocked-users.component';
+import { ImportConversationDialogComponent, ImportConversationDialogData } from './components/import-conversation-dialog/import-conversation-dialog.component';
 import type { UserStatusInfo, ConversationPreview } from './chat.types';
 
 @Component({
@@ -29,12 +31,14 @@ export class ChatComponent implements OnInit, OnDestroy {
   readonly socketService = inject(SocketService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private dialog = inject(Dialog);
 
   // View state
   readonly activeView = signal<'conversations' | 'users'>('conversations');
   readonly selectedConversationId = signal<number | null>(null);
   readonly isMobileMenuOpen = signal(false);
   readonly showBlockedUsers = signal(false);
+  readonly refreshTrigger = signal(0); // Increment to refresh shared conversation cards
 
   // From services
   readonly isConnected = this.socketService.isConnected;
@@ -173,4 +177,19 @@ export class ChatComponent implements OnInit, OnDestroy {
   closeBlockedUsers(): void {
     this.showBlockedUsers.set(false);
   }
+
+  openImportDialog(messageId: number): void {
+    const dialogRef = this.dialog.open<boolean>(ImportConversationDialogComponent, {
+      data: { messageId } as ImportConversationDialogData,
+      panelClass: 'import-dialog-panel',
+    });
+
+    dialogRef.closed.subscribe(imported => {
+      if (imported) {
+        // Increment refreshTrigger to update shared conversation cards
+        this.refreshTrigger.update(v => v + 1);
+      }
+    });
+  }
+
 }

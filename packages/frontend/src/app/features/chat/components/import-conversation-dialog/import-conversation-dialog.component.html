@@ -1,0 +1,212 @@
+<div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900">Import to Library</h2>
+    <button
+      (click)="close()"
+      class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+    >
+      <fa-icon [icon]="faTimes"></fa-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="px-6 py-4">
+    @if (loading()) {
+      <!-- Loading State -->
+      <div class="flex items-center justify-center py-12">
+        <fa-icon [icon]="faSpinner" class="text-gray-400 text-2xl animate-spin"></fa-icon>
+      </div>
+    } @else if (error()) {
+      <!-- Error State -->
+      <div class="text-center py-8">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+          <fa-icon [icon]="faExclamationTriangle" class="text-red-500 text-xl"></fa-icon>
+        </div>
+        <p class="text-gray-600 mb-4">{{ error() }}</p>
+        <button
+          (click)="loadPreview()"
+          class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    } @else if (importSuccess()) {
+      <!-- Success State -->
+      <div class="text-center py-8">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+          <fa-icon [icon]="faCheck" class="text-green-500 text-xl"></fa-icon>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+          @if (preview()?.alreadyImported) {
+            Already in Your Library
+          } @else {
+            Successfully Imported!
+          }
+        </h3>
+        @if (importResult()) {
+          <div class="space-y-1 text-sm text-gray-600 mb-6">
+            @if (importResult()!.vocabularyImported > 0) {
+              <p>{{ importResult()!.vocabularyImported }} vocabulary items added</p>
+            }
+            @if (importResult()!.grammarImported > 0) {
+              <p>{{ importResult()!.grammarImported }} grammar points added</p>
+            }
+            @if (importResult()!.exercisesImported > 0) {
+              <p>{{ importResult()!.exercisesImported }} exercises added</p>
+            }
+          </div>
+        }
+        <button
+          (click)="close()"
+          class="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    } @else if (preview()) {
+      <!-- Preview Content -->
+      <div class="space-y-4">
+        <!-- Conversation Info -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-start justify-between mb-2">
+            <h3 class="font-semibold text-gray-900 line-clamp-1">
+              {{ preview()!.payload.title || 'Shared Conversation' }}
+            </h3>
+            @if (preview()!.payload.difficultyLevel) {
+              <span
+                class="px-2 py-0.5 rounded-full text-xs font-medium ml-2 shrink-0"
+                [ngClass]="getDifficultyColor(preview()!.payload.difficultyLevel)"
+              >
+                {{ getDifficultyLabel(preview()!.payload.difficultyLevel) }}
+              </span>
+            }
+          </div>
+          <p class="text-sm text-gray-600 line-clamp-2">
+            {{ preview()!.payload.preview || 'No preview available' }}
+          </p>
+          <p class="text-xs text-gray-400 mt-2">
+            Shared by {{ preview()!.payload.sharedBy.displayName || preview()!.payload.sharedBy.username }}
+          </p>
+        </div>
+
+        <!-- Import Options -->
+        <div class="space-y-3">
+          <p class="text-sm font-medium text-gray-700">Select what to import:</p>
+
+          <!-- Vocabulary Option -->
+          <button
+            (click)="toggleVocabulary()"
+            class="w-full flex items-center justify-between p-3 border rounded-lg transition-colors"
+            [ngClass]="importVocabulary() ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'"
+            [disabled]="preview()!.vocabStats.total === 0"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg flex items-center justify-center"
+                [ngClass]="importVocabulary() ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'"
+              >
+                <fa-icon [icon]="faBook"></fa-icon>
+              </div>
+              <div class="text-left">
+                <p class="font-medium text-gray-900">Vocabulary</p>
+                <p class="text-xs text-gray-500">{{ preview()!.vocabStats.total }} words</p>
+              </div>
+            </div>
+            <div
+              class="w-5 h-5 rounded border-2 flex items-center justify-center"
+              [ngClass]="importVocabulary() ? 'bg-gray-900 border-gray-900' : 'border-gray-300'"
+            >
+              @if (importVocabulary()) {
+                <fa-icon [icon]="faCheck" class="text-white text-xs"></fa-icon>
+              }
+            </div>
+          </button>
+
+          <!-- Grammar Option -->
+          <button
+            (click)="toggleGrammar()"
+            class="w-full flex items-center justify-between p-3 border rounded-lg transition-colors"
+            [ngClass]="importGrammar() ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'"
+            [disabled]="preview()!.grammarStats.total === 0"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg flex items-center justify-center"
+                [ngClass]="importGrammar() ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'"
+              >
+                <fa-icon [icon]="faGraduationCap"></fa-icon>
+              </div>
+              <div class="text-left">
+                <p class="font-medium text-gray-900">Grammar</p>
+                <p class="text-xs text-gray-500">{{ preview()!.grammarStats.total }} points</p>
+              </div>
+            </div>
+            <div
+              class="w-5 h-5 rounded border-2 flex items-center justify-center"
+              [ngClass]="importGrammar() ? 'bg-gray-900 border-gray-900' : 'border-gray-300'"
+            >
+              @if (importGrammar()) {
+                <fa-icon [icon]="faCheck" class="text-white text-xs"></fa-icon>
+              }
+            </div>
+          </button>
+
+          <!-- Exercises Option -->
+          <button
+            (click)="toggleExercises()"
+            class="w-full flex items-center justify-between p-3 border rounded-lg transition-colors"
+            [ngClass]="importExercises() ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-300'"
+            [disabled]="preview()!.exerciseCount === 0"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg flex items-center justify-center"
+                [ngClass]="importExercises() ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'"
+              >
+                <fa-icon [icon]="faPencil"></fa-icon>
+              </div>
+              <div class="text-left">
+                <p class="font-medium text-gray-900">Exercises</p>
+                <p class="text-xs text-gray-500">{{ preview()!.exerciseCount }} exercises</p>
+              </div>
+            </div>
+            <div
+              class="w-5 h-5 rounded border-2 flex items-center justify-center"
+              [ngClass]="importExercises() ? 'bg-gray-900 border-gray-900' : 'border-gray-300'"
+            >
+              @if (importExercises()) {
+                <fa-icon [icon]="faCheck" class="text-white text-xs"></fa-icon>
+              }
+            </div>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  @if (!loading() && !error() && !importSuccess() && preview()) {
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+      <button
+        (click)="close()"
+        class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="doImport()"
+        [disabled]="!hasSelection || importing()"
+        class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        @if (importing()) {
+          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          <span>Importing...</span>
+        } @else {
+          <fa-icon [icon]="faDownload"></fa-icon>
+          <span>Import to Library</span>
+        }
+      </button>
+    </div>
+  }
+</div>

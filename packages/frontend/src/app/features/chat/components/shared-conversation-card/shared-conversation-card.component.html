@@ -1,0 +1,86 @@
+<div class="rounded-xl border border-gray-200 bg-white overflow-hidden max-w-sm">
+  <!-- Header -->
+  <div class="bg-gray-50 px-4 py-2 border-b border-gray-100">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2 text-xs text-gray-500">
+        <fa-icon [icon]="faShare" class="text-gray-400"></fa-icon>
+        <span>Shared Conversation</span>
+      </div>
+      @if (data().difficultyLevel) {
+        <span
+          class="px-2 py-0.5 rounded-full text-xs font-medium"
+          [ngClass]="getDifficultyColor()"
+        >
+          {{ getDifficultyLabel() }}
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="p-4">
+    <h4 class="font-semibold text-gray-900 mb-1 line-clamp-1">
+      {{ data().title || 'Shared Conversation' }}
+    </h4>
+    <p class="text-sm text-gray-600 line-clamp-2 mb-3">
+      {{ data().preview || 'No preview available' }}
+    </p>
+
+    <!-- Stats -->
+    <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 mb-4">
+      @if (data().vocabularyCount > 0) {
+        <span class="flex items-center gap-1">
+          <fa-icon [icon]="faBook" class="text-gray-400"></fa-icon>
+          {{ data().vocabularyCount }} vocabulary
+        </span>
+      }
+      @if (data().grammarCount > 0) {
+        <span class="flex items-center gap-1">
+          <fa-icon [icon]="faGraduationCap" class="text-gray-400"></fa-icon>
+          {{ data().grammarCount }} grammar
+        </span>
+      }
+      @if (data().exerciseCount > 0) {
+        <span class="flex items-center gap-1">
+          <fa-icon [icon]="faPencil" class="text-gray-400"></fa-icon>
+          {{ data().exerciseCount }} exercises
+        </span>
+      }
+    </div>
+
+    <!-- Import Button (only for recipients, not for the sender) -->
+    @if (!isOwn()) {
+      @if (isChecking()) {
+        <div class="w-full py-2 px-4 bg-gray-100 text-gray-400 rounded-lg flex items-center justify-center gap-2">
+          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          <span>Checking...</span>
+        </div>
+      } @else if (isImported()) {
+        <div class="w-full py-2 px-4 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center gap-2">
+          <fa-icon [icon]="faCheck" class="text-green-500"></fa-icon>
+          <span>Already in Library</span>
+        </div>
+      } @else {
+        <button
+          (click)="onImportClick()"
+          [disabled]="isOpening()"
+          class="w-full py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (isOpening()) {
+            <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+            <span>Opening...</span>
+          } @else {
+            <fa-icon [icon]="faDownload"></fa-icon>
+            <span>Add to My Library</span>
+          }
+        </button>
+      }
+    } @else {
+      <!-- Sender view - just show it was shared -->
+      <div class="w-full py-2 px-4 bg-gray-50 text-gray-500 rounded-lg flex items-center justify-center gap-2 text-sm">
+        <fa-icon [icon]="faShare" class="text-gray-400"></fa-icon>
+        <span>Shared with recipient</span>
+      </div>
+    }
+  </div>
+</div>

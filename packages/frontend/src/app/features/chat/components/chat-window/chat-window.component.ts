@@ -35,6 +35,7 @@ export class ChatWindowComponent implements AfterViewChecked, OnChanges {
   readonly typingUsers = input<number[]>([]);
   readonly compact = input(false); // Hide header when used in widget
   readonly isOffline = input(false); // Show offline indicator
+  readonly refreshTrigger = input(0); // Increment to force refresh of shared conversation cards
 
   readonly close = output<void>();
   readonly sendMessage = output<SendMessageDTO>();
@@ -44,6 +45,7 @@ export class ChatWindowComponent implements AfterViewChecked, OnChanges {
   readonly stopTyping = output<void>();
   readonly settingsChange = output<UpdateConversationSettingsDTO>();
   readonly blockUser = output<number>();
+  readonly importConversation = output<number>();
 
   readonly STATUS_COLORS = STATUS_COLORS;
   readonly STATUS_LABELS = STATUS_LABELS;
@@ -304,5 +306,9 @@ export class ChatWindowComponent implements AfterViewChecked, OnChanges {
       this.blockUser.emit(otherUserId);
       this.closeSettings();
     }
+  }
+
+  onImportConversation(messageId: number): void {
+    this.importConversation.emit(messageId);
   }
 }

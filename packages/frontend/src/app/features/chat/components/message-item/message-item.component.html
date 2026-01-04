@@ -24,8 +24,21 @@
     class="max-w-[70%] flex flex-col"
     [class.items-end]="isOwn()"
   >
+    <!-- Shared Conversation -->
+    @if (isSharedConversation() && sharedConversationPayload()) {
+      <app-shared-conversation-card
+        [data]="sharedConversationPayload()!"
+        [messageId]="message().id"
+        [isOwn]="isOwn()"
+        [refreshTrigger]="refreshTrigger()"
+        (importClick)="onImportClick($event)"
+      />
+      @if (message().content) {
+        <p class="text-sm text-gray-600 mt-2 px-1">{{ message().content }}</p>
+      }
+    }
     <!-- Shared content (achievement, exercise, game, vocabulary) -->
-    @if (isSpecialMessage()) {
+    @else if (isSpecialMessage()) {
       <app-shared-content
         [type]="message().messageType"
         [data]="message().metadata"

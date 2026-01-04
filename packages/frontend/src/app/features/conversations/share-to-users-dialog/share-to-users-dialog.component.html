@@ -1,0 +1,188 @@
+<div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+    <h2 class="text-lg font-semibold text-gray-900">Share to Users</h2>
+    <button
+      (click)="close()"
+      class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+    >
+      <fa-icon [icon]="faTimes"></fa-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="px-6 py-4 overflow-y-auto flex-1">
+    @if (loading()) {
+      <!-- Loading State -->
+      <div class="flex items-center justify-center py-12">
+        <fa-icon [icon]="faSpinner" class="text-gray-400 text-2xl animate-spin"></fa-icon>
+      </div>
+    } @else if (shareSuccess()) {
+      <!-- Success State -->
+      <div class="text-center py-8">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+          <fa-icon [icon]="faCheck" class="text-green-500 text-xl"></fa-icon>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Shared Successfully!</h3>
+        <p class="text-sm text-gray-600 mb-6">
+          Your conversation has been shared with {{ selectedUserIds().size }} user(s).
+        </p>
+        <button
+          (click)="close()"
+          class="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    } @else {
+      <div class="space-y-6">
+        <!-- Error Message -->
+        @if (error()) {
+          <div class="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+            {{ error() }}
+          </div>
+        }
+
+        <!-- Conversation Info -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p class="text-sm text-gray-600 mb-1">Sharing:</p>
+          <p class="font-medium text-gray-900">{{ conversationTitle }}</p>
+          <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
+            @if (vocabularyCount > 0) {
+              <span>{{ vocabularyCount }} vocabulary</span>
+            }
+            @if (grammarCount > 0) {
+              <span>{{ grammarCount }} grammar points</span>
+            }
+            @if (exerciseCount > 0) {
+              <span>{{ exerciseCount }} exercises</span>
+            }
+          </div>
+        </div>
+
+        <!-- Search Users -->
+        <div class="relative">
+          <fa-icon [icon]="faSearch" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></fa-icon>
+          <input
+            type="text"
+            placeholder="Search users..."
+            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-transparent"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+        </div>
+
+        <!-- Selected Count -->
+        @if (selectedUserIds().size > 0) {
+          <div class="text-sm text-gray-600">
+            {{ selectedUserIds().size }} user(s) selected
+          </div>
+        }
+
+        <!-- Users List -->
+        <div class="space-y-2 max-h-64 overflow-y-auto">
+          @if (filteredUsers().length === 0) {
+            <div class="text-center py-8 text-gray-500">
+              @if (users().length === 0) {
+                <fa-icon [icon]="faUser" class="text-4xl text-gray-300 mb-2"></fa-icon>
+                <p>No users available to share with.</p>
+              } @else {
+                <p>No users match your search.</p>
+              }
+            </div>
+          } @else {
+            @for (user of filteredUsers(); track user.userId) {
+              <button
+                (click)="toggleUser(user.userId)"
+                class="w-full text-left p-3 border rounded-lg transition-colors flex items-center gap-3"
+                [ngClass]="isUserSelected(user.userId)
+                  ? 'border-gray-900 bg-gray-50'
+                  : 'border-gray-200 hover:border-gray-300'"
+              >
+                <!-- Avatar -->
+                <div class="relative shrink-0">
+                  @if (user.avatar) {
+                    <img
+                      [src]="user.avatar"
+                      [alt]="user.displayName || user.username"
+                      class="w-10 h-10 rounded-full object-cover"
+                    />
+                  } @else {
+                    <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-600">
+                      {{ getInitials(user) }}
+                    </div>
+                  }
+                  <span
+                    class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
+                    [ngClass]="getStatusColor(user.statusType)"
+                  ></span>
+                </div>
+
+                <!-- User Info -->
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-gray-900 truncate">
+                    {{ user.displayName || user.username }}
+                  </p>
+                  <p class="text-sm text-gray-500 truncate">
+                    {{ user.username }}
+                  </p>
+                </div>
+
+                <!-- Checkbox -->
+                <div
+                  class="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0"
+                  [ngClass]="isUserSelected(user.userId)
+                    ? 'bg-gray-900 border-gray-900'
+                    : 'border-gray-300'"
+                >
+                  @if (isUserSelected(user.userId)) {
+                    <fa-icon [icon]="faCheck" class="text-white text-xs"></fa-icon>
+                  }
+                </div>
+              </button>
+            }
+          }
+        </div>
+
+        <!-- Optional Message -->
+        @if (selectedUserIds().size > 0) {
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Add a message (optional)</label>
+            <textarea
+              placeholder="Write a message to accompany your shared conversation..."
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-transparent resize-none"
+              rows="2"
+              [ngModel]="shareMessage()"
+              (ngModelChange)="shareMessage.set($event)"
+            ></textarea>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  @if (!loading() && !shareSuccess()) {
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 shrink-0">
+      <button
+        (click)="close()"
+        class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="doShare()"
+        [disabled]="!canShare || sharing()"
+        class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        @if (sharing()) {
+          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          <span>Sharing...</span>
+        } @else {
+          <fa-icon [icon]="faShare"></fa-icon>
+          <span>Share</span>
+        }
+      </button>
+    </div>
+  }
+</div>

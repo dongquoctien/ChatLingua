@@ -2,7 +2,7 @@
 // Enums & Constants
 // ============================================================
 
-export type MessageType = 'text' | 'achievement' | 'exercise' | 'game' | 'vocabulary' | 'image' | 'link';
+export type MessageType = 'text' | 'achievement' | 'exercise' | 'game' | 'vocabulary' | 'image' | 'link' | 'shared_conversation';
 export type StatusType = 'online' | 'offline' | 'away' | 'busy' | 'playing_game' | 'studying' | 'do_not_disturb' | 'invisible';
 export type ActivityType = 'none' | 'playing_word_scramble' | 'playing_memory_match' | 'playing_speed_challenge' | 'playing_hangman' | 'doing_exercises' | 'reviewing_vocabulary' | 'learning_grammar' | 'taking_quiz';
 export type AllowMessagesFrom = 'everyone' | 'friends_only' | 'nobody';
@@ -266,3 +266,68 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   learning_grammar: 'Learning Grammar',
   taking_quiz: 'Taking Quiz',
 };
+
+// ============================================================
+// Conversation Sharing Types
+// ============================================================
+
+export interface SharedConversationPayload {
+  sourceConversationId: number;
+  title: string;
+  preview: string;
+  vocabularyCount: number;
+  grammarCount: number;
+  exerciseCount: number;
+  difficultyLevel?: string;
+  sharedBy: {
+    userId: number;
+    username: string;
+    displayName: string;
+  };
+  importStatus?: 'not_imported' | 'imported' | 'partial';
+  importedAt?: string;
+}
+
+export interface SharedPreview {
+  payload: SharedConversationPayload;
+  vocabStats: {
+    total: number;
+    byPartOfSpeech: Record<string, number>;
+    byCefrLevel: Record<string, number>;
+  };
+  grammarStats: {
+    total: number;
+    byCategory: Record<string, number>;
+  };
+  exerciseCount: number;
+  alreadyImported: boolean;
+  importedAt?: string;
+  createdConversationId?: number;
+}
+
+export interface ImportOptions {
+  importVocabulary: boolean;
+  importGrammar: boolean;
+  importExercises: boolean;
+}
+
+export interface ImportResult {
+  success: boolean;
+  createdConversationId: number;
+  stats: {
+    vocabularyImported: number;
+    grammarImported: number;
+    exercisesImported: number;
+  };
+}
+
+export interface ImportStatus {
+  imported: boolean;
+  importedAt?: string;
+  createdConversationId?: number;
+  stats?: {
+    vocabularyImported: number;
+    grammarImported: number;
+    exercisesImported: number;
+  };
+}

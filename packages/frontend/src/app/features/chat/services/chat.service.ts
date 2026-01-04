@@ -17,6 +17,10 @@ import type {
   MarkMessagesReadDTO,
   ShareContentDTO,
   StatusType,
+  SharedPreview,
+  ImportOptions,
+  ImportResult,
+  ImportStatus,
 } from '../chat.types';
 
 @Injectable({
@@ -432,6 +436,78 @@ export class ChatService {
       catchError(error => {
         this._error.set('Failed to share content');
         throw error;
+      })
+    );
+  }
+
+  // ============================================================
+  // Conversation Sharing (Learning Conversations)
+  // ============================================================
+
+  shareConversation(
+    conversationId: number,
+    recipientIds: number[],
+    message?: string
+  ): Observable<{ messages: Message[]; count: number }> {
+    return this.http.post<{ messages: Message[]; count: number }>(
+      `${this.baseUrl}/share-conversation`,
+      { conversationId, recipientIds, message }
+    ).pipe(
+      tap(result => {
+        // Update conversation previews for each message
+        for (const msg of result.messages) {
+          this._conversations.update(convs =>
+            convs.map(c => {
+              if (c.id === msg.conversationId) {
+                return {
+                  ...c,
+                  lastMessage: msg.content,
+                  lastMessageType: msg.messageType,
+                  lastMessageAt: msg.createdAt,
+                  lastMessageSenderId: msg.senderId,
+                };
+              }
+              return c;
+            })
+          );
+        }
+      }),
+      catchError(error => {
+        this._error.set('Failed to share conversation');
+        throw error;
+      })
+    );
+  }
+
+  getSharedPreview(messageId: number): Observable<SharedPreview> {
+    return this.http.get<SharedPreview>(`${this.baseUrl}/shared/${messageId}/preview`).pipe(
+      catchError(error => {
+        this._error.set('Failed to get shared preview');
+        throw error;
+      })
+    );
+  }
+
+  importSharedConversation(
+    messageId: number,
+    options: ImportOptions
+  ): Observable<ImportResult> {
+    return this.http.post<ImportResult>(
+      `${this.baseUrl}/import-shared/${messageId}`,
+      options
+    ).pipe(
+      catchError(error => {
+        this._error.set('Failed to import conversation');
+        throw error;
+      })
+    );
+  }
+
+  getImportStatus(messageId: number): Observable<ImportStatus> {
+    return this.http.get<ImportStatus>(`${this.baseUrl}/shared/${messageId}/import-status`).pipe(
+      catchError(error => {
+        console.error('Failed to get import status:', error);
+        return of({ imported: false });
       })
     );
   }
