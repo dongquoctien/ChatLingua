@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject, OnDestroy } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth.service';
+import { OfflineStorageService, PendingMessage } from './offline-storage.service';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -20,11 +21,17 @@ type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 })
 export class SocketService implements OnDestroy {
   private authService = inject(AuthService);
+  private offlineStorage = inject(OfflineStorageService);
   private socket: TypedSocket | null = null;
+
+  // Reference count for components using the socket
+  // Only disconnect when count reaches 0
+  private connectionRefCount = 0;
 
   // Connection state
   private _isConnected = signal(false);
   private _connectionError = signal<string | null>(null);
+  private _isBrowserOnline = signal(navigator.onLine);
 
   // Online users
   private _onlineUsers = signal<UserStatusInfo[]>([]);
@@ -32,14 +39,33 @@ export class SocketService implements OnDestroy {
   // Typing indicators (conversationId -> userId[])
   private _typingUsers = signal<Map<number, Set<number>>>(new Map());
 
+  // Message queue callbacks (for notifying when messages are queued/sent)
+  private messageQueuedCallbacks: ((message: PendingMessage) => void)[] = [];
+  private messageSentFromQueueCallbacks: ((tempId: string, message: Message) => void)[] = [];
+
   // Public signals
   readonly isConnected = this._isConnected.asReadonly();
   readonly connectionError = this._connectionError.asReadonly();
+  readonly isBrowserOnline = this._isBrowserOnline.asReadonly();
   readonly onlineUsers = this._onlineUsers.asReadonly();
   readonly typingUsers = this._typingUsers.asReadonly();
 
   // Computed
   readonly onlineCount = computed(() => this._onlineUsers().length);
+  readonly canSendMessages = computed(() => this._isConnected() && this._isBrowserOnline());
+
+  constructor() {
+    // Listen for browser online/offline events
+    window.addEventListener('online', () => {
+      this._isBrowserOnline.set(true);
+      console.log('[Socket] Browser is online');
+    });
+
+    window.addEventListener('offline', () => {
+      this._isBrowserOnline.set(false);
+      console.log('[Socket] Browser is offline');
+    });
+  }
 
   // Event callbacks
   private messageCallbacks: ((message: Message) => void)[] = [];
@@ -52,6 +78,10 @@ export class SocketService implements OnDestroy {
   private onlineUsersListCallbacks: ((users: UserStatusInfo[]) => void)[] = [];
 
   connect(): void {
+    // Increment reference count
+    this.connectionRefCount++;
+    console.log(`[Socket] connect() called, refCount: ${this.connectionRefCount}`);
+
     if (this.socket?.connected) {
       return;
     }
@@ -66,7 +96,7 @@ export class SocketService implements OnDestroy {
 
     this.socket = io(baseUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
@@ -77,6 +107,31 @@ export class SocketService implements OnDestroy {
   }
 
   disconnect(): void {
+    // Decrement reference count
+    this.connectionRefCount--;
+    console.log(`[Socket] disconnect() called, refCount: ${this.connectionRefCount}`);
+
+    // Only actually disconnect when no components are using the socket
+    if (this.connectionRefCount <= 0) {
+      this.connectionRefCount = 0; // Prevent negative count
+      if (this.socket) {
+        console.log('[Socket] Actually disconnecting socket (refCount is 0)');
+        this.socket.disconnect();
+        this.socket = null;
+        this._isConnected.set(false);
+        this._onlineUsers.set([]);
+        this._typingUsers.set(new Map());
+      }
+    }
+  }
+
+  /**
+   * Force disconnect regardless of reference count.
+   * Use this on logout to ensure socket is closed.
+   */
+  forceDisconnect(): void {
+    console.log('[Socket] forceDisconnect() called');
+    this.connectionRefCount = 0;
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
@@ -87,7 +142,7 @@ export class SocketService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.disconnect();
+    this.forceDisconnect();
   }
 
   private setupEventListeners(): void {
@@ -169,7 +224,40 @@ export class SocketService implements OnDestroy {
   // Message Actions
   // ============================================================
 
-  sendMessage(data: {
+  /**
+   * Send a message via socket. If offline or disconnected, queues the message for later.
+   * @returns The pending message if queued, undefined if sent via socket
+   */
+  async sendMessage(data: {
+    conversationId?: number;
+    recipientId?: number;
+    messageType: 'text' | 'achievement' | 'exercise' | 'game' | 'vocabulary' | 'image' | 'link';
+    content: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<PendingMessage | undefined> {
+    // If connected, send via socket
+    if (this.canSendMessages() && this.socket) {
+      this.socket.emit('message:send', data);
+      return undefined;
+    }
+
+    // Otherwise, queue for later
+    console.log('[Socket] Offline or disconnected, queuing message');
+    const pendingMessage = await this.offlineStorage.queueMessage(data);
+
+    // Notify listeners (only if message was queued successfully)
+    if (pendingMessage) {
+      this.messageQueuedCallbacks.forEach(cb => cb(pendingMessage));
+    }
+
+    return pendingMessage ?? undefined;
+  }
+
+  /**
+   * Send a message directly via socket (no queuing).
+   * Use this when you're sure the socket is connected.
+   */
+  sendMessageDirect(data: {
     conversationId?: number;
     recipientId?: number;
     messageType: 'text' | 'achievement' | 'exercise' | 'game' | 'vocabulary' | 'image' | 'link';
@@ -296,6 +384,24 @@ export class SocketService implements OnDestroy {
     this.onlineUsersListCallbacks.push(callback);
     return () => {
       this.onlineUsersListCallbacks = this.onlineUsersListCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  // ============================================================
+  // Offline Queue Subscriptions
+  // ============================================================
+
+  onMessageQueued(callback: (message: PendingMessage) => void): () => void {
+    this.messageQueuedCallbacks.push(callback);
+    return () => {
+      this.messageQueuedCallbacks = this.messageQueuedCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  onMessageSentFromQueue(callback: (tempId: string, message: Message) => void): () => void {
+    this.messageSentFromQueueCallbacks.push(callback);
+    return () => {
+      this.messageSentFromQueueCallbacks = this.messageSentFromQueueCallbacks.filter(cb => cb !== callback);
     };
   }
 

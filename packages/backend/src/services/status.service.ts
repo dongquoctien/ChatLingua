@@ -15,6 +15,21 @@ export class StatusService {
   // Online/Offline Management
   // ============================================================
 
+  /**
+   * Check if user was previously online with a stale socket (e.g., after server restart).
+   * Returns true if user was stuck online and needs an offline broadcast before going online.
+   */
+  async wasStaleOnline(userId: number): Promise<boolean> {
+    const [rows] = await pool.execute<UserStatusRow[]>(
+      `SELECT is_online, socket_id FROM user_status WHERE user_id = ?`,
+      [userId]
+    );
+
+    // User was marked online but might have a stale/null socket_id
+    // This happens after server restart or abnormal disconnect
+    return rows.length > 0 && Boolean(rows[0].is_online);
+  }
+
   async setOnline(userId: number, socketId: string): Promise<void> {
     await pool.execute(
       `INSERT INTO user_status (user_id, is_online, status_type, socket_id, connected_at)
@@ -28,6 +43,22 @@ export class StatusService {
     );
   }
 
+  /**
+   * Force all users offline. Used on server startup to clean stale online statuses.
+   */
+  async cleanupStaleOnlineUsers(): Promise<number> {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `UPDATE user_status
+       SET is_online = FALSE,
+           socket_id = NULL,
+           last_seen_at = NOW(),
+           current_activity = 'none',
+           activity_metadata = NULL
+       WHERE is_online = TRUE`
+    );
+    return result.affectedRows;
+  }
+
   async setOffline(userId: number, socketId?: string): Promise<boolean> {
     // Don't reset status_type - preserve user's custom status (busy, studying, etc.)
     // When they reconnect, they'll have their previous status
@@ -36,6 +67,19 @@ export class StatusService {
     // This prevents a race condition when user refreshes (F5):
     // - New socket connects, sets new socket_id
     // - Old socket disconnects, should NOT overwrite the new connection
+
+    // First, check current state for debugging
+    const [currentRows] = await pool.execute<UserStatusRow[]>(
+      `SELECT socket_id, is_online FROM user_status WHERE user_id = ?`,
+      [userId]
+    );
+    const currentSocketId = currentRows[0]?.socket_id;
+    const isCurrentlyOnline = currentRows[0]?.is_online;
+
+    console.log(`[Status] setOffline called for user ${userId}:`);
+    console.log(`  - Disconnecting socket: ${socketId}`);
+    console.log(`  - Current DB socket_id: ${currentSocketId}`);
+    console.log(`  - Currently online: ${isCurrentlyOnline}`);
 
     let result: ResultSetHeader;
 
@@ -51,6 +95,31 @@ export class StatusService {
          WHERE user_id = ? AND socket_id = ?`,
         [userId, socketId]
       );
+
+      console.log(`  - Update result: affectedRows=${result.affectedRows}, changedRows=${result.changedRows}`);
+
+      // If socket_id didn't match but user has no valid socket, force offline
+      // This handles edge case where socket_id in DB is stale/null
+      if (result.affectedRows === 0 && isCurrentlyOnline) {
+        // Check if the current socket_id in DB is actually still connected
+        // If not, we should mark user offline anyway
+        if (!currentSocketId || currentSocketId === socketId) {
+          console.log(`  - Forcing offline: socket_id mismatch but no valid current socket`);
+          [result] = await pool.execute<ResultSetHeader>(
+            `UPDATE user_status
+             SET is_online = FALSE,
+                 last_seen_at = NOW(),
+                 socket_id = NULL,
+                 current_activity = 'none',
+                 activity_metadata = NULL
+             WHERE user_id = ? AND is_online = TRUE`,
+            [userId]
+          );
+          console.log(`  - Force update result: affectedRows=${result.affectedRows}, changedRows=${result.changedRows}`);
+        } else {
+          console.log(`  - Not forcing offline: user has another active socket (${currentSocketId})`);
+        }
+      }
     } else {
       // No socketId provided - unconditionally set offline (for backwards compatibility)
       [result] = await pool.execute<ResultSetHeader>(
@@ -63,10 +132,13 @@ export class StatusService {
          WHERE user_id = ?`,
         [userId]
       );
+      console.log(`  - Unconditional update result: affectedRows=${result.affectedRows}, changedRows=${result.changedRows}`);
     }
 
     // Return true if a row was actually updated (user is now offline)
-    return result.affectedRows > 0 && result.changedRows > 0;
+    const wasSetOffline = result.affectedRows > 0 && result.changedRows > 0;
+    console.log(`  - Final result: wasSetOffline=${wasSetOffline}`);
+    return wasSetOffline;
   }
 
   // ============================================================

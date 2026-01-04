@@ -389,6 +389,123 @@ router.post('/share', async (req: AuthRequest, res: Response) => {
 });
 
 // ============================================================
+// Conversation Sharing (Learning Conversations)
+// ============================================================
+
+// POST /api/chat/share-conversation - Share a learning conversation to users
+router.post('/share-conversation', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const { conversationId, recipientIds, message } = req.body;
+
+    if (!conversationId) {
+      res.status(400).json({ error: 'conversationId is required' });
+      return;
+    }
+
+    if (!Array.isArray(recipientIds) || recipientIds.length === 0) {
+      res.status(400).json({ error: 'recipientIds array is required and must not be empty' });
+      return;
+    }
+
+    const messages = await chatService.shareConversation(
+      userId,
+      conversationId,
+      recipientIds,
+      message
+    );
+
+    // Emit socket events to recipients
+    for (const msg of messages) {
+      const recipientId = recipientIds.find(id =>
+        msg.conversationId !== undefined
+      );
+      if (recipientId) {
+        // Get the other participant for this message
+        try {
+          const otherParticipant = await chatService.getOtherParticipant(msg.conversationId, userId);
+          emitToUser(otherParticipant, 'message:new', msg);
+        } catch (e) {
+          // Continue with other messages
+        }
+      }
+    }
+
+    res.json({ messages, count: messages.length });
+  } catch (error) {
+    console.error('Error sharing conversation:', error);
+    res.status(500).json({ error: 'Failed to share conversation' });
+  }
+});
+
+// GET /api/chat/shared/:messageId/preview - Get preview before import
+router.get('/shared/:messageId/preview', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const messageId = parseInt(req.params.messageId);
+
+    if (isNaN(messageId)) {
+      res.status(400).json({ error: 'Invalid messageId' });
+      return;
+    }
+
+    const result = await chatService.getSharedPreview(messageId, userId);
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting shared preview:', error);
+    res.status(404).json({ error: 'Shared conversation not found' });
+  }
+});
+
+// POST /api/chat/import-shared/:messageId - Import shared conversation
+router.post('/import-shared/:messageId', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const messageId = parseInt(req.params.messageId);
+    const { importVocabulary = true, importGrammar = true, importExercises = false } = req.body;
+
+    if (isNaN(messageId)) {
+      res.status(400).json({ error: 'Invalid messageId' });
+      return;
+    }
+
+    const result = await chatService.importSharedConversation(messageId, userId, {
+      importVocabulary,
+      importGrammar,
+      importExercises,
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error importing shared conversation:', error);
+    if (error.message === 'Already imported this conversation') {
+      res.status(409).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to import conversation' });
+    }
+  }
+});
+
+// GET /api/chat/shared/:messageId/import-status - Check import status
+router.get('/shared/:messageId/import-status', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const messageId = parseInt(req.params.messageId);
+
+    if (isNaN(messageId)) {
+      res.status(400).json({ error: 'Invalid messageId' });
+      return;
+    }
+
+    const result = await chatService.getImportStatus(messageId, userId);
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting import status:', error);
+    res.status(500).json({ error: 'Failed to get import status' });
+  }
+});
+
+// ============================================================
 // Search
 // ============================================================
 

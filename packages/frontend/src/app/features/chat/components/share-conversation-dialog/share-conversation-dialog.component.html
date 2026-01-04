@@ -1,0 +1,182 @@
+<div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+    <h2 class="text-lg font-semibold text-gray-900">Share Conversation</h2>
+    <button
+      (click)="close()"
+      class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+    >
+      <fa-icon [icon]="faTimes"></fa-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="px-6 py-4 overflow-y-auto flex-1">
+    @if (loading()) {
+      <!-- Loading State -->
+      <div class="flex items-center justify-center py-12">
+        <fa-icon [icon]="faSpinner" class="text-gray-400 text-2xl animate-spin"></fa-icon>
+      </div>
+    } @else if (shareSuccess()) {
+      <!-- Success State -->
+      <div class="text-center py-8">
+        <div class="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+          <fa-icon [icon]="faCheck" class="text-green-500 text-xl"></fa-icon>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Shared Successfully!</h3>
+        <p class="text-sm text-gray-600 mb-6">
+          Your conversation has been shared with {{ selectedRecipientIds().size }} recipient(s).
+        </p>
+        <button
+          (click)="close()"
+          class="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    } @else {
+      <div class="space-y-6">
+        <!-- Error Message -->
+        @if (error()) {
+          <div class="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+            {{ error() }}
+          </div>
+        }
+
+        <!-- Recipient Info (if preselected) -->
+        @if (recipientName) {
+          <div class="bg-gray-50 rounded-lg p-3">
+            <p class="text-sm text-gray-600">
+              Sharing with: <span class="font-medium text-gray-900">{{ recipientName }}</span>
+            </p>
+          </div>
+        }
+
+        <!-- Search -->
+        <div class="relative">
+          <fa-icon [icon]="faSearch" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></fa-icon>
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-transparent"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+        </div>
+
+        <!-- Conversations List -->
+        <div class="space-y-2 max-h-64 overflow-y-auto">
+          @if (filteredConversations().length === 0) {
+            <div class="text-center py-8 text-gray-500">
+              @if (conversations().length === 0) {
+                <p>No conversations with learning content found.</p>
+                <p class="text-sm mt-1">Create conversations with vocabulary or grammar first.</p>
+              } @else {
+                <p>No conversations match your search.</p>
+              }
+            </div>
+          } @else {
+            @for (conv of filteredConversations(); track conv.id) {
+              <button
+                (click)="selectConversation(conv.id)"
+                class="w-full text-left p-3 border rounded-lg transition-colors"
+                [ngClass]="selectedConversationId() === conv.id
+                  ? 'border-gray-900 bg-gray-50'
+                  : 'border-gray-200 hover:border-gray-300'"
+              >
+                <div class="flex items-start justify-between gap-2 mb-1">
+                  <p class="font-medium text-gray-900 line-clamp-1 flex-1">
+                    {{ conv.topic || 'Conversation' }}
+                  </p>
+                  <div class="flex items-center gap-2 shrink-0">
+                    @if (conv.difficultyLevel) {
+                      <span
+                        class="px-2 py-0.5 rounded-full text-xs font-medium"
+                        [ngClass]="getDifficultyColor(conv.difficultyLevel)"
+                      >
+                        {{ getDifficultyLabel(conv.difficultyLevel) }}
+                      </span>
+                    }
+                    <div
+                      class="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0"
+                      [ngClass]="selectedConversationId() === conv.id
+                        ? 'bg-gray-900 border-gray-900'
+                        : 'border-gray-300'"
+                    >
+                      @if (selectedConversationId() === conv.id) {
+                        <fa-icon [icon]="faCheck" class="text-white text-xs"></fa-icon>
+                      }
+                    </div>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 line-clamp-2 mb-2">
+                  {{ getPreviewText(conv) }}
+                </p>
+                <div class="flex items-center gap-3 text-xs text-gray-500">
+                  @if (conv.vocabularyCount > 0) {
+                    <span class="flex items-center gap-1">
+                      <fa-icon [icon]="faBook" class="text-gray-400"></fa-icon>
+                      {{ conv.vocabularyCount }}
+                    </span>
+                  }
+                  @if (conv.grammarCount > 0) {
+                    <span class="flex items-center gap-1">
+                      <fa-icon [icon]="faGraduationCap" class="text-gray-400"></fa-icon>
+                      {{ conv.grammarCount }}
+                    </span>
+                  }
+                  @if (conv.exerciseCount > 0) {
+                    <span class="flex items-center gap-1">
+                      <fa-icon [icon]="faPencil" class="text-gray-400"></fa-icon>
+                      {{ conv.exerciseCount }}
+                    </span>
+                  }
+                  <span class="text-gray-400 ml-auto">{{ formatDate(conv.createdAt) }}</span>
+                </div>
+              </button>
+            }
+          }
+        </div>
+
+        <!-- Optional Message -->
+        @if (selectedConversationId() !== null) {
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Add a message (optional)</label>
+            <textarea
+              placeholder="Write a message to accompany your shared conversation..."
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-transparent resize-none"
+              rows="2"
+              [ngModel]="shareMessage()"
+              (ngModelChange)="shareMessage.set($event)"
+            ></textarea>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Footer -->
+  @if (!loading() && !shareSuccess()) {
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 shrink-0">
+      <button
+        (click)="close()"
+        class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="doShare()"
+        [disabled]="!canShare || sharing()"
+        class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        @if (sharing()) {
+          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+          <span>Sharing...</span>
+        } @else {
+          <fa-icon [icon]="faShare"></fa-icon>
+          <span>Share</span>
+        }
+      </button>
+    </div>
+  }
+</div>

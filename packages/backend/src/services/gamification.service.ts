@@ -642,6 +642,95 @@ export class GamificationService {
   }
 
   /**
+   * Set achievement progress to a specific value (for count-based achievements like vocabulary)
+   */
+  async setAchievementProgress(
+    userId: number,
+    achievementCode: string,
+    progressValue: number
+  ): Promise<AchievementUnlock | null> {
+    // Get achievement
+    const [achievements] = await pool.execute<AchievementRow[]>(
+      `SELECT * FROM achievements WHERE achievement_code = ?`,
+      [achievementCode]
+    );
+
+    if (achievements.length === 0) {
+      return null;
+    }
+
+    const achievement = achievements[0];
+
+    // Get current user achievement state
+    const [userAchievements] = await pool.execute<UserAchievementRow[]>(
+      `SELECT * FROM user_achievements
+       WHERE user_id = ? AND achievement_id = ?`,
+      [userId, achievement.id]
+    );
+
+    if (userAchievements.length === 0) {
+      return null;
+    }
+
+    const userAchievement = userAchievements[0];
+
+    // If already unlocked, skip
+    if (userAchievement.unlocked_at !== null) {
+      return null;
+    }
+
+    // Set progress to the specified value
+    await pool.execute(
+      `UPDATE user_achievements
+       SET progress_value = ?
+       WHERE user_id = ? AND achievement_id = ? AND unlocked_at IS NULL`,
+      [progressValue, userId, achievement.id]
+    );
+
+    // Check if now unlocked
+    if (progressValue >= userAchievement.progress_target) {
+      // Unlock achievement
+      const now = new Date();
+      await pool.execute(
+        `UPDATE user_achievements SET unlocked_at = ? WHERE id = ?`,
+        [now, userAchievement.id]
+      );
+
+      // Award XP
+      if (achievement.xp_reward > 0) {
+        await this.awardXP(userId, achievement.xp_reward, 'achievement', achievement.id, `Achievement: ${achievement.name}`);
+      }
+
+      // Create notification
+      await this.createNotification(userId, {
+        notificationType: 'achievement',
+        title: `Achievement Unlocked!`,
+        message: achievement.name,
+        icon: achievement.icon,
+        metadata: { achievementId: achievement.id, achievementCode: achievement.achievement_code },
+      });
+
+      return {
+        achievement: {
+          id: achievement.id,
+          achievementCode: achievement.achievement_code,
+          name: achievement.name,
+          description: achievement.description,
+          category: achievement.category,
+          icon: achievement.icon,
+          xpReward: achievement.xp_reward,
+          sortOrder: achievement.sort_order,
+          isHidden: achievement.is_hidden,
+        },
+        xpAwarded: achievement.xp_reward,
+        unlockedAt: now,
+      };
+    }
+
+    return null;
+  }
+
+  /**
    * Check and update multiple achievement types based on action
    */
   async checkAchievements(
@@ -664,10 +753,16 @@ export class GamificationService {
         break;
 
       case 'vocabulary_learned':
-        const vocab100 = await this.updateAchievementProgress(userId, 'VOCAB_100');
-        if (vocab100) unlocks.push(vocab100);
-        const vocab500 = await this.updateAchievementProgress(userId, 'VOCAB_500');
-        if (vocab500) unlocks.push(vocab500);
+        // Use vocabularyCount to set progress directly for vocabulary achievements
+        const vocabCount = context?.vocabularyCount || 0;
+        if (vocabCount > 0) {
+          const vocab100 = await this.setAchievementProgress(userId, 'VOCAB_100', vocabCount);
+          if (vocab100) unlocks.push(vocab100);
+          const vocab500 = await this.setAchievementProgress(userId, 'VOCAB_500', vocabCount);
+          if (vocab500) unlocks.push(vocab500);
+          const vocab1000 = await this.setAchievementProgress(userId, 'VOCAB_1000', vocabCount);
+          if (vocab1000) unlocks.push(vocab1000);
+        }
         break;
 
       case 'streak_update':

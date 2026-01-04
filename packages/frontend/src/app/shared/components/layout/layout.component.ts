@@ -19,6 +19,8 @@ import {
   faTrophy,
   faTimes,
   faChevronDown,
+  faChevronLeft,
+  faChevronRight,
   faCog,
   faGamepad,
   faPaperPlane,
@@ -49,6 +51,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   // State
   sidebarOpen = signal(true);
+  sidebarCollapsed = signal(false);
   isMobile = signal(false);
   userMenuOpen = signal(false);
   notificationMenuOpen = signal(false);
@@ -78,12 +81,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faTrophy = faTrophy;
   faTimes = faTimes;
   faChevronDown = faChevronDown;
+  faChevronLeft = faChevronLeft;
+  faChevronRight = faChevronRight;
   faCog = faCog;
   faGamepad = faGamepad;
   faPaperPlane = faPaperPlane;
   faEnvelope = faEnvelope;
 
   // Navigation items
+  // Note: Chat menu removed - accessible via chat widget expand button
   navItems = [
     { path: '/dashboard', icon: this.faHome, label: 'Dashboard' },
     { path: '/conversations', icon: this.faComments, label: 'Conversations' },
@@ -104,6 +110,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.checkMobile();
+    this.loadSidebarCollapsedState();
 
     // Close sidebar on navigation when in mobile mode
     const routerSub = this.router.events
@@ -142,6 +149,18 @@ export class LayoutComponent implements OnInit, OnDestroy {
 
   toggleSidebar() {
     this.sidebarOpen.update(v => !v);
+  }
+
+  toggleSidebarCollapse() {
+    this.sidebarCollapsed.update(v => !v);
+    localStorage.setItem('sidebarCollapsed', String(this.sidebarCollapsed()));
+  }
+
+  loadSidebarCollapsedState() {
+    const collapsed = localStorage.getItem('sidebarCollapsed');
+    if (collapsed === 'true') {
+      this.sidebarCollapsed.set(true);
+    }
   }
 
   toggleUserMenu() {

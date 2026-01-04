@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { challengeService } from './challenge.service.js';
+import { gamificationService } from './gamification.service.js';
 
 // ============================================================
 // Types
@@ -756,6 +757,16 @@ export class SpacedRepetitionService {
          WHERE user_id = ?`,
         [today, today, userId]
       );
+    }
+
+    // Check streak achievements after updating streak
+    try {
+      const updatedStreak = await this.getStreak(userId);
+      await gamificationService.checkAchievements(userId, 'streak_update', {
+        streakDays: updatedStreak.currentStreak,
+      });
+    } catch (error) {
+      console.error('[Streak] Failed to check streak achievements:', error);
     }
   }
 

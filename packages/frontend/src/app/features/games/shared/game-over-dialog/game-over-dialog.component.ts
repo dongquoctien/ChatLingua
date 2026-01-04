@@ -4,6 +4,7 @@ import { GameAchievementInfo } from '../../../../core/services/api.service';
 import { AudioService } from '../../../../core/services/audio.service';
 import { ShareDialogComponent, ShareableContent } from '../../../chat/components/share-dialog/share-dialog.component';
 import { ChatService } from '../../../chat/services/chat.service';
+import { DialogService } from '../../../../shared/services/dialog.service';
 import type { UserStatusInfo } from '../../../chat/chat.types';
 
 export interface GameResult {
@@ -31,6 +32,7 @@ export interface GameResult {
 })
 export class GameOverDialogComponent implements OnChanges {
   private chatService = inject(ChatService);
+  private dialogService = inject(DialogService);
 
   @Input() isOpen: boolean = false;
   @Input() gameName: string = '';
@@ -142,10 +144,16 @@ export class GameOverDialogComponent implements OnChanges {
     this.audioService.playSound('select');
 
     // Create shareable content for the game result
-    // Use actual session ID for sharing, fallback to 0 if not available
+    // Use actual session ID for sharing, check if available
     const sessionId = this.result?.sessionId || 0;
     if (!sessionId) {
       console.warn('No session ID available for sharing');
+      this.dialogService.alert({
+        title: 'Cannot Share',
+        message: 'Game session was not saved properly. Please try playing again.',
+        buttonText: 'OK',
+      });
+      return;
     }
 
     this.shareContent.set({

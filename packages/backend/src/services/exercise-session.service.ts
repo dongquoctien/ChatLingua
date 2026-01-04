@@ -1,6 +1,8 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { isAnswerCorrect } from '../utils/answer-matching.js';
+import { challengeService } from './challenge.service.js';
+import { gamificationService } from './gamification.service.js';
 
 // ============= Types =============
 
@@ -379,6 +381,49 @@ export class ExerciseSessionService {
          correct_answers = COALESCE(correct_answers, 0) + VALUES(correct_answers)`,
       [userId, total, correctCount]
     );
+
+    // Update challenge progress for each exercise completed
+    try {
+      // Update general exercise challenge progress (once per exercise)
+      await challengeService.updateProgress(userId, 'exercise', total);
+      console.log(`[Challenge] Updated exercise progress: userId=${userId}, count=${total}`);
+
+      // Count exercise types for type-specific challenges
+      const typeCounts: Record<string, { total: number; correct: number }> = {};
+      for (const row of answerRows) {
+        const exerciseType = row.exercise_type || '';
+        if (!typeCounts[exerciseType]) {
+          typeCounts[exerciseType] = { total: 0, correct: 0 };
+        }
+        typeCounts[exerciseType].total++;
+        const userAnswer = input.answers[row.exercise_id.toString()] || '';
+        const correctAnswer = row.correct_answer || '';
+        if (isAnswerCorrect(userAnswer, correctAnswer, exerciseType)) {
+          typeCounts[exerciseType].correct++;
+        }
+      }
+
+      // Update spelling challenge (correct spelling answers)
+      if (typeCounts['spelling']?.correct > 0) {
+        await challengeService.updateProgress(userId, 'spelling', typeCounts['spelling'].correct);
+        console.log(`[Challenge] Updated spelling progress: ${typeCounts['spelling'].correct}`);
+      }
+
+      // Update translation challenge (all translation exercises)
+      if (typeCounts['translation']?.total > 0) {
+        await challengeService.updateProgress(userId, 'translation', typeCounts['translation'].total);
+        console.log(`[Challenge] Updated translation progress: ${typeCounts['translation'].total}`);
+      }
+
+      // Check achievements
+      await gamificationService.checkAchievements(userId, 'exercise_complete', {
+        exerciseCount: total,
+        correctCount,
+      });
+    } catch (error) {
+      console.error('[Challenge] Failed to update challenge/achievement progress:', error);
+      // Don't fail the submission if challenge update fails
+    }
 
     return {
       sessionId,

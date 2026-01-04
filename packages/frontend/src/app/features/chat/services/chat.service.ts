@@ -1,7 +1,8 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap, catchError, of } from 'rxjs';
+import { Observable, tap, catchError, of, from, switchMap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { OfflineStorageService, PendingMessage } from './offline-storage.service';
 import type {
   UserStatusInfo,
   ConversationPreview,
@@ -16,6 +17,10 @@ import type {
   MarkMessagesReadDTO,
   ShareContentDTO,
   StatusType,
+  SharedPreview,
+  ImportOptions,
+  ImportResult,
+  ImportStatus,
 } from '../chat.types';
 
 @Injectable({
@@ -23,6 +28,7 @@ import type {
 })
 export class ChatService {
   private http = inject(HttpClient);
+  private offlineStorage = inject(OfflineStorageService);
   private baseUrl = `${environment.apiUrl}/chat`;
 
   // State
@@ -30,18 +36,22 @@ export class ChatService {
   private _conversations = signal<ConversationPreview[]>([]);
   private _activeConversation = signal<Conversation | null>(null);
   private _messages = signal<Message[]>([]);
+  private _pendingMessages = signal<PendingMessage[]>([]);
   private _blockedUsers = signal<BlockedUser[]>([]);
   private _loading = signal(false);
   private _error = signal<string | null>(null);
+  private _isOfflineMode = signal(false);
 
   // Public signals
   readonly currentStatus = this._currentStatus.asReadonly();
   readonly conversations = this._conversations.asReadonly();
   readonly activeConversation = this._activeConversation.asReadonly();
   readonly messages = this._messages.asReadonly();
+  readonly pendingMessages = this._pendingMessages.asReadonly();
   readonly blockedUsers = this._blockedUsers.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+  readonly isOfflineMode = this._isOfflineMode.asReadonly();
 
   // Computed
   readonly totalUnread = computed(() =>
@@ -120,13 +130,38 @@ export class ChatService {
       tap(response => {
         this._conversations.set(response.items);
         this._loading.set(false);
+        this._isOfflineMode.set(false);
+
+        // Cache conversations for offline use
+        this.offlineStorage.cacheConversations(response.items).catch(err =>
+          console.error('[ChatService] Failed to cache conversations:', err)
+        );
       }),
       catchError(error => {
-        this._error.set('Failed to get conversations');
         this._loading.set(false);
+
+        // Try to load from cache if offline
+        if (!navigator.onLine) {
+          this._isOfflineMode.set(true);
+          return from(this.loadCachedConversations());
+        }
+
+        this._error.set('Failed to get conversations');
         throw error;
       })
     );
+  }
+
+  private async loadCachedConversations(): Promise<PaginatedResponse<ConversationPreview>> {
+    const cached = await this.offlineStorage.getCachedConversations();
+    this._conversations.set(cached);
+    return {
+      items: cached,
+      total: cached.length,
+      page: 1,
+      limit: cached.length,
+      totalPages: 1,
+    };
   }
 
   getConversation(conversationId: number): Observable<Conversation> {
@@ -229,13 +264,50 @@ export class ChatService {
           this._messages.update(msgs => [...msgs, ...response.items]);
         }
         this._loading.set(false);
+        this._isOfflineMode.set(false);
+
+        // Cache messages for offline use
+        this.offlineStorage.cacheMessages(response.items).catch(err =>
+          console.error('[ChatService] Failed to cache messages:', err)
+        );
+
+        // Load pending messages for this conversation
+        this.loadPendingMessages(conversationId);
       }),
       catchError(error => {
-        this._error.set('Failed to get messages');
         this._loading.set(false);
+
+        // Try to load from cache if offline
+        if (!navigator.onLine) {
+          this._isOfflineMode.set(true);
+          return from(this.loadCachedMessages(conversationId));
+        }
+
+        this._error.set('Failed to get messages');
         throw error;
       })
     );
+  }
+
+  private async loadCachedMessages(conversationId: number): Promise<PaginatedResponse<Message>> {
+    const cached = await this.offlineStorage.getCachedMessages(conversationId);
+    this._messages.set(cached);
+
+    // Also load pending messages
+    await this.loadPendingMessages(conversationId);
+
+    return {
+      items: cached,
+      total: cached.length,
+      page: 1,
+      limit: cached.length,
+      totalPages: 1,
+    };
+  }
+
+  private async loadPendingMessages(conversationId: number): Promise<void> {
+    const pending = await this.offlineStorage.getPendingMessagesForConversation(conversationId);
+    this._pendingMessages.set(pending);
   }
 
   sendMessage(data: SendMessageDTO): Observable<Message> {
@@ -364,6 +436,78 @@ export class ChatService {
       catchError(error => {
         this._error.set('Failed to share content');
         throw error;
+      })
+    );
+  }
+
+  // ============================================================
+  // Conversation Sharing (Learning Conversations)
+  // ============================================================
+
+  shareConversation(
+    conversationId: number,
+    recipientIds: number[],
+    message?: string
+  ): Observable<{ messages: Message[]; count: number }> {
+    return this.http.post<{ messages: Message[]; count: number }>(
+      `${this.baseUrl}/share-conversation`,
+      { conversationId, recipientIds, message }
+    ).pipe(
+      tap(result => {
+        // Update conversation previews for each message
+        for (const msg of result.messages) {
+          this._conversations.update(convs =>
+            convs.map(c => {
+              if (c.id === msg.conversationId) {
+                return {
+                  ...c,
+                  lastMessage: msg.content,
+                  lastMessageType: msg.messageType,
+                  lastMessageAt: msg.createdAt,
+                  lastMessageSenderId: msg.senderId,
+                };
+              }
+              return c;
+            })
+          );
+        }
+      }),
+      catchError(error => {
+        this._error.set('Failed to share conversation');
+        throw error;
+      })
+    );
+  }
+
+  getSharedPreview(messageId: number): Observable<SharedPreview> {
+    return this.http.get<SharedPreview>(`${this.baseUrl}/shared/${messageId}/preview`).pipe(
+      catchError(error => {
+        this._error.set('Failed to get shared preview');
+        throw error;
+      })
+    );
+  }
+
+  importSharedConversation(
+    messageId: number,
+    options: ImportOptions
+  ): Observable<ImportResult> {
+    return this.http.post<ImportResult>(
+      `${this.baseUrl}/import-shared/${messageId}`,
+      options
+    ).pipe(
+      catchError(error => {
+        this._error.set('Failed to import conversation');
+        throw error;
+      })
+    );
+  }
+
+  getImportStatus(messageId: number): Observable<ImportStatus> {
+    return this.http.get<ImportStatus>(`${this.baseUrl}/shared/${messageId}/import-status`).pipe(
+      catchError(error => {
+        console.error('Failed to get import status:', error);
+        return of({ imported: false });
       })
     );
   }
@@ -498,14 +642,38 @@ export class ChatService {
 
   clearMessages(): void {
     this._messages.set([]);
+    this._pendingMessages.set([]);
   }
 
   clearActiveConversation(): void {
     this._activeConversation.set(null);
     this._messages.set([]);
+    this._pendingMessages.set([]);
   }
 
   clearError(): void {
     this._error.set(null);
+  }
+
+  // ============================================================
+  // Offline Support
+  // ============================================================
+
+  async initOfflineStorage(): Promise<void> {
+    await this.offlineStorage.init();
+  }
+
+  removePendingMessage(tempId: string): void {
+    this._pendingMessages.update(msgs => msgs.filter(m => m.tempId !== tempId));
+  }
+
+  async clearOfflineData(): Promise<void> {
+    await this.offlineStorage.clearAllData();
+    this._pendingMessages.set([]);
+    this._isOfflineMode.set(false);
+  }
+
+  async getOfflineStorageStats(): Promise<{ messages: number; conversations: number; pending: number }> {
+    return this.offlineStorage.getStorageStats();
   }
 }

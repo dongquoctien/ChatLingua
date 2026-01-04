@@ -1,8 +1,9 @@
-import { Component, OnInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
@@ -80,6 +81,8 @@ export class HangmanComponent implements OnInit, OnDestroy {
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
     ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
   ];
+
+  private dialogService = inject(DialogService);
 
   constructor(
     private apiService: ApiService,
@@ -257,8 +260,14 @@ export class HangmanComponent implements OnInit, OnDestroy {
     this.isPaused.update(p => !p);
   }
 
-  onQuit(): void {
-    if (confirm('Are you sure you want to quit? Your progress will be saved.')) {
+  async onQuit(): Promise<void> {
+    const confirmed = await this.dialogService.confirm({
+      title: 'Quit Game',
+      message: 'Are you sure you want to quit? Your progress will be saved.',
+      confirmText: 'Quit',
+      cancelText: 'Continue',
+    });
+    if (confirmed) {
       this.endGame();
     }
   }

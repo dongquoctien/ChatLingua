@@ -16,8 +16,10 @@ import {
   faChevronRight,
   faHistory,
   faPlay,
+  faTrash,
 } from '../../../shared/icons';
 import { ApiService, Quiz } from '../../../core/services/api.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { CreateQuizDialogComponent } from '../create-quiz-dialog/create-quiz-dialog.component';
 
 @Component({
@@ -34,6 +36,7 @@ import { CreateQuizDialogComponent } from '../create-quiz-dialog/create-quiz-dia
 })
 export class QuizListComponent implements OnInit {
   private apiService = inject(ApiService);
+  private dialogService = inject(DialogService);
 
   // Icons
   faQuestionCircle = faQuestionCircle;
@@ -49,6 +52,7 @@ export class QuizListComponent implements OnInit {
   faChevronRight = faChevronRight;
   faHistory = faHistory;
   faPlay = faPlay;
+  faTrash = faTrash;
 
   quizzes = signal<Quiz[]>([]);
   total = signal(0);
@@ -57,6 +61,7 @@ export class QuizListComponent implements OnInit {
   loading = signal(true);
   expandedQuizzes = signal<Set<number>>(new Set());
   showCreateDialog = signal(false);
+  deletingQuizId = signal<number | null>(null);
 
   ngOnInit() {
     this.loadQuizzes();
@@ -142,5 +147,35 @@ export class QuizListComponent implements OnInit {
       translation: 'Trans',
     };
     return labels[type] || type;
+  }
+
+  async deleteQuiz(quiz: Quiz, event: Event) {
+    event.stopPropagation();
+
+    const confirmed = await this.dialogService.confirm({
+      title: 'Delete Quiz',
+      message: `Are you sure you want to delete "${quiz.title}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletingQuizId.set(quiz.id);
+    this.apiService.deleteQuiz(quiz.id).subscribe({
+      next: () => {
+        this.deletingQuizId.set(null);
+        this.loadQuizzes();
+      },
+      error: async () => {
+        this.deletingQuizId.set(null);
+        await this.dialogService.alert({
+          title: 'Error',
+          message: 'Failed to delete quiz. Please try again.',
+        });
+      }
+    });
   }
 }

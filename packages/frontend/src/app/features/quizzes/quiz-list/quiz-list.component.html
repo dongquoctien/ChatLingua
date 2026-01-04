@@ -106,6 +106,16 @@
               History
             </a>
           }
+          <button class="btn btn-secondary text-gray-600 hover:bg-gray-50 hover:text-gray-700"
+                  (click)="deleteQuiz(quiz, $event)"
+                  [disabled]="deletingQuizId() === quiz.id"
+                  title="Delete quiz">
+            @if (deletingQuizId() === quiz.id) {
+              <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+            } @else {
+              <fa-icon [icon]="faTrash"></fa-icon>
+            }
+          </button>
         </div>
       </div>
     }

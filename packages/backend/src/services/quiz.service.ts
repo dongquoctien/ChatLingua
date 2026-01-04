@@ -400,7 +400,7 @@ export class QuizService {
       if (isPerfect) {
         await challengeService.updateProgress(userId, 'perfect_score', 1);
       }
-      if (input.timeSpentSeconds < 180) { // Under 3 minutes
+      if (input.timeSpentSeconds < 120) { // Under 2 minutes (matches Speed Demon challenge)
         await challengeService.updateProgress(userId, 'speed_quiz', 1);
       }
     } catch (error) {

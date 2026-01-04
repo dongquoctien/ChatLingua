@@ -1,11 +1,13 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Dialog } from '@angular/cdk/dialog';
 import { ChatService } from '../../services/chat.service';
 import { SocketService } from '../../services/socket.service';
 import { UserListComponent } from '../user-list/user-list.component';
 import { ConversationListComponent } from '../conversation-list/conversation-list.component';
 import { ChatWindowComponent } from '../chat-window/chat-window.component';
 import { StatusSelectorComponent } from '../status-selector/status-selector.component';
+import { ImportConversationDialogComponent, ImportConversationDialogData } from '../import-conversation-dialog/import-conversation-dialog.component';
 import type { UserStatusInfo } from '../../chat.types';
 
 @Component({
@@ -24,23 +26,29 @@ import type { UserStatusInfo } from '../../chat.types';
 export class ChatWidgetComponent implements OnInit, OnDestroy {
   readonly chatService = inject(ChatService);
   readonly socketService = inject(SocketService);
+  private dialog = inject(Dialog);
 
   // Widget state
   readonly isOpen = signal(false);
   readonly isMinimized = signal(false);
   readonly activeView = signal<'conversations' | 'users' | 'chat'>('conversations');
   readonly selectedConversationId = signal<number | null>(null);
+  readonly refreshTrigger = signal(0); // Increment to refresh shared conversation cards
 
   // From services
   readonly isConnected = this.socketService.isConnected;
+  readonly isBrowserOnline = this.socketService.isBrowserOnline;
   readonly conversations = this.chatService.conversations;
   readonly activeConversation = this.chatService.activeConversation;
   readonly currentStatus = this.chatService.currentStatus;
   readonly totalUnread = this.chatService.totalUnread;
   readonly loading = this.chatService.loading;
+  readonly pendingMessages = this.chatService.pendingMessages;
+  readonly isOfflineMode = this.chatService.isOfflineMode;
 
   // Computed
   readonly showChatWindow = computed(() => this.activeView() === 'chat' && this.selectedConversationId() !== null);
+  readonly isOffline = computed(() => !this.isBrowserOnline() || !this.isConnected());
 
   // Typing users for current conversation (reactive computed)
   readonly typingUsersForConversation = computed(() => {
@@ -69,11 +77,17 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Clean up subscriptions first
     this.unsubscribeMessage?.();
     this.unsubscribeOnline?.();
     this.unsubscribeOffline?.();
     this.unsubscribeOnlineUsersList?.();
     this.unsubscribeStatusChanged?.();
+
+    // Force disconnect socket when widget is destroyed (e.g., on logout)
+    // ChatWidgetComponent is the primary socket manager (always present in layout)
+    // so when it's destroyed, we definitely want to disconnect
+    this.socketService.forceDisconnect();
   }
 
   private loadInitialData(): void {
@@ -165,6 +179,20 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
       this.backToList();
       // Refresh conversations to remove blocked user
       this.chatService.getConversations().subscribe();
+    });
+  }
+
+  openImportDialog(messageId: number): void {
+    const dialogRef = this.dialog.open<boolean>(ImportConversationDialogComponent, {
+      data: { messageId } as ImportConversationDialogData,
+      panelClass: 'import-dialog-panel',
+    });
+
+    dialogRef.closed.subscribe(imported => {
+      if (imported) {
+        // Increment refreshTrigger to update shared conversation cards
+        this.refreshTrigger.update(v => v + 1);
+      }
     });
   }
 }

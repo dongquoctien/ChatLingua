@@ -47,6 +47,7 @@ export interface ConversationSummary {
   difficultyLevel: string;
   vocabularyCount: number;
   grammarCount: number;
+  exerciseCount: number;
   createdAt: Date;
 }
 
@@ -95,7 +96,8 @@ export class ConversationService {
     const [rows] = await pool.query<ConversationRow[]>(
       `SELECT c.*,
         (SELECT COUNT(*) FROM vocabulary_contexts WHERE conversation_id = c.id) as vocabulary_count,
-        (SELECT COUNT(*) FROM grammar_points WHERE conversation_id = c.id) as grammar_count
+        (SELECT COUNT(*) FROM grammar_points WHERE conversation_id = c.id) as grammar_count,
+        (SELECT COUNT(*) FROM exercises WHERE conversation_id = c.id) as exercise_count
        FROM conversations c
        WHERE c.user_id = ?
        ORDER BY c.created_at DESC
@@ -111,6 +113,7 @@ export class ConversationService {
       difficultyLevel: row.difficulty_level,
       vocabularyCount: (row as any).vocabulary_count,
       grammarCount: (row as any).grammar_count,
+      exerciseCount: (row as any).exercise_count,
       createdAt: row.created_at,
     }));
 
@@ -152,6 +155,13 @@ export class ConversationService {
       [conversationId]
     );
 
+    // Get exercise count
+    const [exerciseCountResult] = await pool.execute<RowDataPacket[]>(
+      'SELECT COUNT(*) as count FROM exercises WHERE conversation_id = ?',
+      [conversationId]
+    );
+    const exerciseCount = (exerciseCountResult[0]?.count as number) || 0;
+
     return {
       id: conv.id,
       vietnameseText: conv.vietnamese_text,
@@ -161,6 +171,7 @@ export class ConversationService {
       aiAnalysis: conv.ai_analysis,
       vocabularyCount: vocabulary.length,
       grammarCount: grammarPoints.length,
+      exerciseCount: exerciseCount,
       createdAt: conv.created_at,
       vocabulary: vocabulary.map((v) => ({
         id: v.id,

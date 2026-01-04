@@ -41,7 +41,7 @@ export function getIO(): SocketIOServer<
   return ioInstance;
 }
 
-export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
+export async function initializeSocket(httpServer: HTTPServer): Promise<SocketIOServer> {
   const io = new SocketIOServer<
     ClientToServerEvents,
     ServerToClientEvents,
@@ -54,11 +54,22 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
     },
     pingTimeout: 60000,
     pingInterval: 25000,
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
   });
 
   // Store instance
   ioInstance = io;
+
+  // Clean up stale online statuses from previous server run
+  // This handles the case where server crashed/restarted while users were connected
+  try {
+    const cleaned = await statusService.cleanupStaleOnlineUsers();
+    if (cleaned > 0) {
+      console.log(`[Socket] Cleaned up ${cleaned} stale online users from previous session`);
+    }
+  } catch (error) {
+    console.error('[Socket] Error cleaning up stale online users:', error);
+  }
 
   // Authentication middleware
   io.use(async (socket, next) => {
@@ -100,11 +111,24 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
     authSocket.join(`user:${authSocket.userId}`);
 
     try {
+      // Check if user was stuck as online (stale state from server restart/crash)
+      const wasStale = await statusService.wasStaleOnline(authSocket.userId);
+
       // Update online status in database
       await statusService.setOnline(authSocket.userId, authSocket.id);
 
       // Get user's actual status from DB (may have custom status like 'busy', 'studying')
       const userStatus = await statusService.getUserStatus(authSocket.userId);
+
+      // If user was stale online, broadcast offline first to clear stale state on other clients
+      // This ensures other users' UI is updated correctly
+      if (wasStale) {
+        console.log(`[Socket] User ${authSocket.userId} was stale online, broadcasting offline first`);
+        authSocket.broadcast.emit('user:offline', {
+          userId: authSocket.userId,
+          lastSeen: new Date().toISOString(),
+        });
+      }
 
       // Broadcast online status to all other users with actual status type
       authSocket.broadcast.emit('user:online', {
@@ -126,21 +150,30 @@ export function initializeSocket(httpServer: HTTPServer): SocketIOServer {
       console.log(`[Socket] User ${authSocket.userId} disconnected: ${reason}`);
 
       try {
-        // Pass socket.id to setOffline - it will only mark user offline if this
-        // socket_id matches the current one in DB. This prevents race conditions
-        // when user refreshes (F5) - new socket connects before old disconnects.
+        // Check if user has other active connections (multiple tabs)
+        // We need to wait a tiny bit for the socket to be fully removed from rooms
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const remainingConnections = await getActiveConnectionCount(authSocket.userId);
+
+        if (remainingConnections > 0) {
+          // User still has other active tabs/connections - don't mark offline
+          console.log(`[Socket] User ${authSocket.userId} still has ${remainingConnections} active connection(s), staying online`);
+          return;
+        }
+
+        // No more active connections - mark user offline
         const wasActuallySetOffline = await statusService.setOffline(authSocket.userId, authSocket.id);
 
         // Only broadcast offline if the user is actually offline
-        // (not if they already reconnected with a new socket)
         if (wasActuallySetOffline) {
           authSocket.broadcast.emit('user:offline', {
             userId: authSocket.userId,
             lastSeen: new Date().toISOString(),
           });
-          console.log(`[Socket] User ${authSocket.userId} is now offline`);
+          console.log(`[Socket] User ${authSocket.userId} is now offline (no remaining connections)`);
         } else {
-          console.log(`[Socket] User ${authSocket.userId} has already reconnected, not broadcasting offline`);
+          console.log(`[Socket] User ${authSocket.userId} already marked offline or reconnected`);
         }
       } catch (error) {
         console.error(`[Socket] Error on disconnect for user ${authSocket.userId}:`, error);
@@ -182,4 +215,22 @@ export function broadcastExcept<K extends keyof ServerToClientEvents>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ioInstance.except(`user:${excludeUserId}`) as any).emit(event, ...args);
   }
+}
+
+// Helper function to check if a user has any active socket connections
+export async function hasActiveConnection(userId: number): Promise<boolean> {
+  if (!ioInstance) return false;
+
+  const room = `user:${userId}`;
+  const sockets = await ioInstance.in(room).fetchSockets();
+  return sockets.length > 0;
+}
+
+// Helper function to get count of active sockets for a user
+export async function getActiveConnectionCount(userId: number): Promise<number> {
+  if (!ioInstance) return 0;
+
+  const room = `user:${userId}`;
+  const sockets = await ioInstance.in(room).fetchSockets();
+  return sockets.length;
 }

@@ -26,6 +26,7 @@ import {
   SyncRequestStatus,
   SyncRequestStats,
 } from '../../../core/services/api.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-my-requests',
@@ -36,6 +37,7 @@ import {
 })
 export class MyRequestsComponent implements OnInit {
   private apiService = inject(ApiService);
+  private dialogService = inject(DialogService);
 
   // Icons
   faSync = faRefresh;
@@ -131,8 +133,15 @@ export class MyRequestsComponent implements OnInit {
     }
   }
 
-  cancelRequest(request: SyncRequest) {
-    if (!confirm('Are you sure you want to cancel this request?')) return;
+  async cancelRequest(request: SyncRequest) {
+    const confirmed = await this.dialogService.confirm({
+      title: 'Cancel Request',
+      message: 'Are you sure you want to cancel this request?',
+      confirmText: 'Cancel Request',
+      cancelText: 'Keep It',
+    });
+
+    if (!confirmed) return;
 
     this.cancellingId.set(request.id);
     this.apiService.cancelSyncRequest(request.id).subscribe({

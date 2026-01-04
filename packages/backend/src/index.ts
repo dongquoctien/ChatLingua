@@ -10,8 +10,11 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
-// Initialize Socket.IO
-initializeSocket(httpServer);
+// Initialize Socket.IO (async to clean up stale online users on startup)
+initializeSocket(httpServer).catch(err => {
+  console.error('Failed to initialize Socket.IO:', err);
+  process.exit(1);
+});
 
 // Disable ETag to prevent 304 caching issues
 app.set('etag', false);
