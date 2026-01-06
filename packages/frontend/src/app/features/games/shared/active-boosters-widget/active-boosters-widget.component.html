@@ -1,0 +1,44 @@
+@if (hasActiveBoosters()) {
+  <div class="active-boosters-widget">
+    <div class="widget-header">
+      <span class="header-icon">🚀</span>
+      <span class="header-text">Active Boosters</span>
+    </div>
+
+    <div class="boosters-list">
+      @for (booster of activeBoosters(); track booster.itemId) {
+        <div class="booster-card" [class]="getBoosterBgColor(booster.effectType)">
+          <div class="booster-icon">
+            {{ getBoosterIcon(booster.effectType) }}
+          </div>
+          <div class="booster-info">
+            <span class="booster-name">{{ booster.name }}</span>
+            <span class="booster-multiplier">x{{ booster.multiplier }}</span>
+          </div>
+          <div class="booster-time">
+            <span class="time-icon">⏱️</span>
+            <span class="time-value">{{ formatTime(booster.remainingMinutes) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Multiplier Summary -->
+    @if (xpMultiplier() > 1 || coinMultiplier() > 1) {
+      <div class="multiplier-summary">
+        @if (xpMultiplier() > 1) {
+          <div class="multiplier-badge xp">
+            <span>⚡</span>
+            <span>XP x{{ xpMultiplier() }}</span>
+          </div>
+        }
+        @if (coinMultiplier() > 1) {
+          <div class="multiplier-badge coin">
+            <span>🪙</span>
+            <span>Coins x{{ coinMultiplier() }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

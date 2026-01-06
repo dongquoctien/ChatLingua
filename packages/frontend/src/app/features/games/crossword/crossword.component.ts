@@ -8,6 +8,8 @@ import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface CrosswordCell {
   row: number;
@@ -41,12 +43,20 @@ interface CrosswordWord {
     FormsModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './crossword.component.html',
   styleUrls: ['./crossword.component.scss']
 })
 export class CrosswordComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
+  // Booster signals from GameStateService
+  readonly activeBoosters = this.gameStateService.activeBoosters;
+  readonly xpMultiplier = this.gameStateService.xpMultiplier;
+  readonly coinMultiplier = this.gameStateService.coinMultiplier;
+
   // Game state
   sessionId = signal<number | null>(null);
   isLoading = signal(true);
@@ -180,6 +190,8 @@ export class CrosswordComponent implements OnInit, OnDestroy {
     this.apiService.startGame('crossword').subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         this.generatePuzzle(response.vocabulary);
         this.isLoading.set(false);
         this.showCountdown.set(true);

@@ -8,6 +8,8 @@ import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 @Component({
   selector: 'app-spelling-bee',
@@ -17,12 +19,14 @@ import { CountdownComponent } from '../shared/countdown/countdown.component';
     FormsModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './spelling-bee.component.html',
   styleUrls: ['./spelling-bee.component.scss']
 })
 export class SpellingBeeComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
   @ViewChild('inputField') inputField!: ElementRef<HTMLInputElement>;
 
   // Game state
@@ -92,6 +96,8 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
     this.apiService.startGame('spelling_bee').subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         this.vocabulary.set(response.vocabulary);
         this.isLoading.set(false);
         this.showCountdown.set(true);

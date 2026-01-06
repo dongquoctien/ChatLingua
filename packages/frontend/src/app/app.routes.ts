@@ -267,6 +267,39 @@ export const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'shop',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/shop/shop-home/shop-home.component').then(m => m.ShopHomeComponent),
+          },
+          {
+            path: 'browse',
+            loadComponent: () => import('./features/shop/shop-browse/shop-browse.component').then(m => m.ShopBrowseComponent),
+          },
+          {
+            path: 'inventory',
+            loadComponent: () => import('./features/shop/shop-inventory/shop-inventory.component').then(m => m.ShopInventoryComponent),
+          },
+          {
+            path: 'gifts',
+            loadComponent: () => import('./features/shop/shop-gifts/shop-gifts.component').then(m => m.ShopGiftsComponent),
+          },
+          {
+            path: 'wishlist',
+            loadComponent: () => import('./features/shop/shop-wishlist/shop-wishlist.component').then(m => m.ShopWishlistComponent),
+          },
+          {
+            path: 'items/:slug',
+            loadComponent: () => import('./features/shop/shop-item-detail/shop-item-detail.component').then(m => m.ShopItemDetailComponent),
+          },
+        ],
+      },
+      {
+        path: 'pets',
+        loadChildren: () => import('./features/pets/pets.routes').then(m => m.petsRoutes),
+      },
     ],
   },
   {

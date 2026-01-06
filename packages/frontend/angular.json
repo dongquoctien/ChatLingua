@@ -37,6 +37,8 @@
               }
             ],
             "styles": [
+              "../../node_modules/@fortawesome/fontawesome-free/css/all.min.css",
+              "../../node_modules/@hackernoon/pixel-icon-library/fonts/iconfont.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -102,6 +104,8 @@
               }
             ],
             "styles": [
+              "../../node_modules/@fortawesome/fontawesome-free/css/all.min.css",
+              "../../node_modules/@hackernoon/pixel-icon-library/fonts/iconfont.css",
               "src/styles.scss"
             ],
             "scripts": []

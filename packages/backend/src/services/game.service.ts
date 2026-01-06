@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { petService } from './pet.service.js';
 
 // ============================================================
 // Types
@@ -269,6 +270,44 @@ class GameService {
     );
 
     const session = await this.getSession(sessionId);
+
+    // ============================================================
+    // Pet Care Integration - Award care points based on game score
+    // Higher scores = higher care points for active pet
+    // ============================================================
+    if (session && session.user_id) {
+      try {
+        // Use accuracy as score (0-100), fallback to normalized finalScore
+        const careScore = accuracy ?? Math.min(100, Math.round((finalScore / 1000) * 100));
+        await petService.processCareFromActivity(
+          session.user_id,
+          'play', // Game activities = play care type
+          'game',
+          careScore,
+          sessionId
+        );
+      } catch (error) {
+        // Don't fail game session if pet care fails
+        console.error('Failed to process pet care from game:', error);
+      }
+
+      // ============================================================
+      // Pet Daily Tasks Integration - Update task progress for games
+      // Tracks: win_1_game, win_3_games, high_score_game
+      // ============================================================
+      try {
+        // Consider a game "won" if accuracy >= 50% or score is decent
+        const won = (accuracy !== null && accuracy >= 50) || finalScore >= 100;
+        await petService.recordActivityForTasks(session.user_id, 'game', {
+          won: won,
+          scorePoints: finalScore
+        });
+        console.log(`[Pet Tasks] Updated game task progress: userId=${session.user_id}, won=${won}, score=${finalScore}`);
+      } catch (error) {
+        console.error('Failed to update pet daily tasks from game:', error);
+      }
+    }
+
     return session!;
   }
 
@@ -802,6 +841,14 @@ class GameService {
 
     // Check for level up
     await this.checkLevelUp(userId);
+
+    // Also add XP to user's active egg for hatching progress
+    try {
+      await petService.addHatchXpToActiveEgg(userId, xpAmount, 'game');
+    } catch (error) {
+      // Don't fail XP award if egg XP fails
+      console.error('Failed to add hatch XP to egg from game:', error);
+    }
   }
 
   private async checkLevelUp(userId: number): Promise<void> {

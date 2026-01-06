@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
+import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse, GameActiveBooster } from '../../../core/services/api.service';
 
 export interface GameState {
   sessionId: number | null;
@@ -20,6 +20,7 @@ export interface GameState {
   isGameOver: boolean;
   isCountingDown: boolean;
   startTime: number | null;
+  activeBoosters: GameActiveBooster[];
 }
 
 const initialState: GameState = {
@@ -41,6 +42,7 @@ const initialState: GameState = {
   isGameOver: false,
   isCountingDown: true,
   startTime: null,
+  activeBoosters: [],
 };
 
 @Injectable({
@@ -71,6 +73,30 @@ export class GameStateService {
   readonly isPaused = computed(() => this.state().isPaused);
   readonly isGameOver = computed(() => this.state().isGameOver);
   readonly isCountingDown = computed(() => this.state().isCountingDown);
+  readonly activeBoosters = computed(() => this.state().activeBoosters);
+
+  // Computed booster multipliers
+  readonly xpMultiplier = computed(() => {
+    const boosters = this.state().activeBoosters;
+    let multiplier = 1;
+    for (const b of boosters) {
+      if (b.effectType === 'xp_multiplier') {
+        multiplier = Math.max(multiplier, b.multiplier);
+      }
+    }
+    return multiplier;
+  });
+
+  readonly coinMultiplier = computed(() => {
+    const boosters = this.state().activeBoosters;
+    let multiplier = 1;
+    for (const b of boosters) {
+      if (b.effectType === 'coin_multiplier') {
+        multiplier = Math.max(multiplier, b.multiplier);
+      }
+    }
+    return multiplier;
+  });
 
   readonly accuracy = computed(() => {
     const state = this.state();
@@ -100,6 +126,7 @@ export class GameStateService {
       lives: maxLives,
       maxLives: maxLives,
       isCountingDown: true,
+      activeBoosters: response.activeBoosters || [],
     });
   }
 
@@ -255,5 +282,10 @@ export class GameStateService {
   reset(): void {
     this.stopTimer();
     this.state.set({ ...initialState });
+  }
+
+  // Set active boosters (for games that don't use full initializeGame)
+  setActiveBoosters(boosters: GameActiveBooster[]): void {
+    this.state.update(s => ({ ...s, activeBoosters: boosters || [] }));
   }
 }

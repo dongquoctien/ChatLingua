@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" class="avatar-frame-rare">
+	<!-- Blue pixel border with corner gems -->
+	<path fill="#3B82F6" d="M4,0h28v4h4v28h-4v4H4v-4H0V4h4V0z"/>
+	<!-- Darker blue inner border -->
+	<path fill="#1D4ED8" d="M8,4h20v4h4v16h-4v4H8v-4H4V8h4V4z"/>
+	<!-- Corner gems - lighter blue -->
+	<rect fill="#60A5FA" x="2" y="2" width="4" height="4"/>
+	<rect fill="#60A5FA" x="30" y="2" width="4" height="4"/>
+	<rect fill="#60A5FA" x="2" y="30" width="4" height="4"/>
+	<rect fill="#60A5FA" x="30" y="30" width="4" height="4"/>
+	<!-- Gem highlights -->
+	<rect fill="#BFDBFE" x="2" y="2" width="2" height="2"/>
+	<rect fill="#BFDBFE" x="32" y="2" width="2" height="2"/>
+	<rect fill="#BFDBFE" x="2" y="32" width="2" height="2"/>
+	<rect fill="#BFDBFE" x="32" y="32" width="2" height="2"/>
+</svg>

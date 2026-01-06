@@ -1,0 +1,18 @@
+{
+  "name": "Coin Boost 1.5x",
+  "slug": "coin-boost-1.5x",
+  "rarity": "uncommon",
+  "effectType": "coin_multiplier",
+  "multiplier": 1.5,
+  "durationMinutes": 30,
+  "icon": "fa-coins",
+  "colors": {
+    "primary": "#f59e0b",
+    "secondary": "#d97706",
+    "glow": "#fde68a"
+  },
+  "animation": {
+    "type": "spin",
+    "speed": "slow"
+  }
+}

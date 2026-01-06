@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9" class="pixelicon-scroll">
+	<!-- Top roll -->
+	<rect fill="#D38100" x="1" y="0" width="7" height="1"/>
+	<rect fill="#FFB100" x="2" y="1" width="5" height="1"/>
+	<!-- Scroll body - parchment -->
+	<rect fill="#FFF5DC" x="2" y="2" width="5" height="5"/>
+	<!-- Scroll shadows -->
+	<rect fill="#E8D9B8" x="6" y="2" width="1" height="5"/>
+	<!-- Bottom roll -->
+	<rect fill="#FFB100" x="2" y="7" width="5" height="1"/>
+	<rect fill="#D38100" x="1" y="8" width="7" height="1"/>
+	<!-- Ancient runes/text - mystical symbols -->
+	<rect fill="#8B008B" x="3" y="3" width="1" height="1"/>
+	<rect fill="#8B008B" x="5" y="3" width="1" height="1"/>
+	<rect fill="#8B008B" x="4" y="4" width="1" height="1"/>
+	<rect fill="#8B008B" x="3" y="5" width="3" height="1"/>
+	<!-- Magical glow -->
+	<rect fill="#FFE800" x="0" y="3" width="1" height="1"/>
+	<rect fill="#FFE800" x="8" y="4" width="1" height="1"/>
+	<rect fill="#FFE800" x="1" y="6" width="1" height="1"/>
+</svg>

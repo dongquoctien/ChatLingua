@@ -328,6 +328,9 @@
 <!-- Practice Session UI -->
 @if (phase() === 'practice' && practiceSession() && currentExercise()) {
   <div class="practice-container">
+    <!-- Active Boosters Widget (floating) -->
+    <app-active-boosters-widget></app-active-boosters-widget>
+
     <!-- Practice Header -->
     <div class="practice-header">
       <button class="btn-cancel" (click)="cancelPractice()">✕ Quit</button>

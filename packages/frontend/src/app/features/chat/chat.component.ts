@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { ChatService } from './services/chat.service';
@@ -32,6 +32,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dialog = inject(Dialog);
+  private platformId = inject(PLATFORM_ID);
 
   // View state
   readonly activeView = signal<'conversations' | 'users'>('conversations');
@@ -71,6 +72,14 @@ export class ChatComponent implements OnInit, OnDestroy {
   private unsubscribeStatusChanged: (() => void) | null = null;
 
   ngOnInit(): void {
+    // Check if mobile - redirect to dashboard (chat page only for PC/tablet)
+    if (isPlatformBrowser(this.platformId)) {
+      if (window.innerWidth < 768) {
+        this.router.navigate(['/dashboard']);
+        return;
+      }
+    }
+
     // Set up socket listeners FIRST (before connect to avoid race condition)
     this.setupSocketListeners();
 

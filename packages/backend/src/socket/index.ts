@@ -6,6 +6,7 @@ import { statusService } from '../services/status.service.js';
 import { registerChatHandlers } from './handlers/chat.handlers.js';
 import { registerStatusHandlers } from './handlers/status.handlers.js';
 import { registerTypingHandlers } from './handlers/typing.handlers.js';
+import { registerPetHandlers } from './handlers/pet.handlers.js';
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -140,6 +141,7 @@ export async function initializeSocket(httpServer: HTTPServer): Promise<SocketIO
       registerChatHandlers(io, authSocket);
       registerStatusHandlers(io, authSocket);
       registerTypingHandlers(io, authSocket);
+      registerPetHandlers(io, authSocket);
 
     } catch (error) {
       console.error(`[Socket] Error on connection for user ${authSocket.userId}:`, error);

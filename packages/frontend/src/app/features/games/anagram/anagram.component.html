@@ -14,6 +14,9 @@
   </div>
 } @else if (gameStarted()) {
   <div class="game-container">
+    <!-- Active Boosters Widget (floating) -->
+    <app-active-boosters-widget></app-active-boosters-widget>
+
     <!-- Game Header -->
     <app-game-header
       gameName="Anagram Master"
@@ -22,6 +25,9 @@
       [showTimer]="true"
       [showCombo]="false"
       [isPaused]="isPaused()"
+      [activeBoosters]="activeBoosters()"
+      [xpMultiplier]="xpMultiplier()"
+      [coinMultiplier]="coinMultiplier()"
       (pause)="onPause()"
       (quit)="onQuit()"
     ></app-game-header>

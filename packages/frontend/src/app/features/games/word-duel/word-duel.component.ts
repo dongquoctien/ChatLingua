@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
@@ -6,6 +6,8 @@ import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface AIOpponent {
   name: string;
@@ -81,12 +83,15 @@ const AI_OPPONENTS: AIOpponent[] = [
     CommonModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './word-duel.component.html',
   styleUrls: ['./word-duel.component.scss']
 })
 export class WordDuelComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
   // Game configuration
   readonly TOTAL_ROUNDS = 10;
   readonly ROUND_TIME = 10; // seconds per round
@@ -179,6 +184,8 @@ export class WordDuelComponent implements OnInit, OnDestroy {
     this.apiService.startGame('word_duel').subscribe({
       next: (response: StartGameResponse) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         this.vocabulary.set(this.shuffleArray([...response.vocabulary]));
         this.isLoading.set(false);
       },

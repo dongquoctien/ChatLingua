@@ -1,0 +1,115 @@
+<div class="pet-sprite-container" [class]="animationClass">
+  <!-- Shadow -->
+  @if (showShadow) {
+    <div class="pet-shadow" [style.width.px]="pixelSize * 0.6" [style.height.px]="pixelSize * 0.15"></div>
+  }
+
+  <!-- Pet Image: Priority: imageUrl > SQKhor SVG > PNG > Generated SVG -->
+  <div class="pet-body">
+    @if (imageUrl) {
+      <!-- Direct image URL from database -->
+      <img
+        [src]="imageUrl"
+        [alt]="petSlug"
+        [style.width.px]="pixelSize"
+        [style.height.px]="pixelSize"
+        class="pet-image"
+        (error)="onImageError($event)"
+      />
+    } @else if (hasSqkhorSvg()) {
+      <!-- Beautiful SQKhor pixel art SVG pets -->
+      <img
+        [src]="getSqkhorSvgUrl()"
+        [alt]="petSlug"
+        [style.width.px]="pixelSize"
+        [style.height.px]="pixelSize"
+        class="pet-image sqkhor-pet"
+        (error)="onImageError($event)"
+      />
+    } @else if (hasPngAsset()) {
+      <!-- Fallback to kenney PNG assets -->
+      <img
+        [src]="getPngAssetUrl()"
+        [alt]="petSlug"
+        [style.width.px]="pixelSize"
+        [style.height.px]="pixelSize"
+        class="pet-image"
+        (error)="onImageError($event)"
+      />
+    } @else {
+      <!-- Fallback to generated pixel art SVG -->
+      <div [innerHTML]="generateSvg()"></div>
+    }
+  </div>
+
+  <!-- Equipment Overlays -->
+  @if (equipment.length > 0) {
+    <div class="equipment-overlays" [style.width.px]="pixelSize" [style.height.px]="pixelSize">
+      <!-- Head equipment (top center) -->
+      @if (getEquipment('head'); as headEquip) {
+        <div class="equipment-slot equipment-head" [style.font-size.px]="equipmentFontSize">
+          @if (headEquip.imageUrl) {
+            <img [src]="headEquip.imageUrl" [alt]="'Head equipment'" class="equipment-img">
+          } @else if (headEquip.emoji) {
+            {{ headEquip.emoji }}
+          }
+        </div>
+      }
+
+      <!-- Body equipment (center) -->
+      @if (getEquipment('body'); as bodyEquip) {
+        <div class="equipment-slot equipment-body" [style.font-size.px]="equipmentFontSize">
+          @if (bodyEquip.imageUrl) {
+            <img [src]="bodyEquip.imageUrl" [alt]="'Body equipment'" class="equipment-img">
+          } @else if (bodyEquip.emoji) {
+            {{ bodyEquip.emoji }}
+          }
+        </div>
+      }
+
+      <!-- Accessory (left side) -->
+      @if (getEquipment('accessory'); as accessoryEquip) {
+        <div class="equipment-slot equipment-accessory" [style.font-size.px]="equipmentFontSize">
+          @if (accessoryEquip.imageUrl) {
+            <img [src]="accessoryEquip.imageUrl" [alt]="'Accessory'" class="equipment-img">
+          } @else if (accessoryEquip.emoji) {
+            {{ accessoryEquip.emoji }}
+          }
+        </div>
+      }
+
+      <!-- Weapon (right side) -->
+      @if (getEquipment('weapon'); as weaponEquip) {
+        <div class="equipment-slot equipment-weapon" [style.font-size.px]="equipmentFontSize">
+          @if (weaponEquip.imageUrl) {
+            <img [src]="weaponEquip.imageUrl" [alt]="'Weapon'" class="equipment-img">
+          } @else if (weaponEquip.emoji) {
+            {{ weaponEquip.emoji }}
+          }
+        </div>
+      }
+
+      <!-- Back (behind pet, center-back) -->
+      @if (getEquipment('back'); as backEquip) {
+        <div class="equipment-slot equipment-back" [style.font-size.px]="equipmentFontSize">
+          @if (backEquip.imageUrl) {
+            <img [src]="backEquip.imageUrl" [alt]="'Back equipment'" class="equipment-img">
+          } @else if (backEquip.emoji) {
+            {{ backEquip.emoji }}
+          }
+        </div>
+      }
+
+      <!-- Feet (bottom center) -->
+      @if (getEquipment('feet'); as feetEquip) {
+        <div class="equipment-slot equipment-feet" [style.font-size.px]="equipmentFontSize">
+          @if (feetEquip.imageUrl) {
+            <img [src]="feetEquip.imageUrl" [alt]="'Feet equipment'" class="equipment-img">
+          } @else if (feetEquip.emoji) {
+            {{ feetEquip.emoji }}
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

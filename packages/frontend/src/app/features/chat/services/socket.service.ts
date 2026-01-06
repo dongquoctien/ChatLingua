@@ -14,6 +14,16 @@ import type {
   ShareContentDTO,
 } from '../chat.types';
 
+// Pet notification type from backend pet-scheduler
+export interface PetNotification {
+  userId: number;
+  petId: number;
+  petName: string;
+  type: 'hunger_high' | 'happiness_low' | 'hp_low' | 'dying' | 'died';
+  urgency: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+}
+
 type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 @Injectable({
@@ -76,6 +86,12 @@ export class SocketService implements OnDestroy {
   private statusChangedCallbacks: ((data: { userId: number; status: StatusType; statusText?: string }) => void)[] = [];
   private activityChangedCallbacks: ((data: { userId: number; activity: ActivityType; metadata?: Record<string, unknown> }) => void)[] = [];
   private onlineUsersListCallbacks: ((users: UserStatusInfo[]) => void)[] = [];
+
+  // Pet event callbacks
+  private petStateCallbacks: ((data: { pet: unknown; state: unknown }) => void)[] = [];
+  private petNotificationCallbacks: ((data: { notifications: PetNotification[] }) => void)[] = [];
+  private petDiedCallbacks: ((data: { petId: number; petName: string }) => void)[] = [];
+  private petNeedsAttentionCallbacks: ((data: { message: string }) => void)[] = [];
 
   connect(): void {
     // Increment reference count
@@ -217,6 +233,23 @@ export class SocketService implements OnDestroy {
     this.socket.on('users:online:list', (users) => {
       this._onlineUsers.set(users);
       this.onlineUsersListCallbacks.forEach(cb => cb(users));
+    });
+
+    // Pet events (using 'as any' since these are custom events not in TypedSocket)
+    (this.socket as any).on('pet:state', (data: { pet: unknown; state: unknown }) => {
+      this.petStateCallbacks.forEach(cb => cb(data));
+    });
+
+    (this.socket as any).on('pet:notifications', (data: { notifications: PetNotification[] }) => {
+      this.petNotificationCallbacks.forEach(cb => cb(data));
+    });
+
+    (this.socket as any).on('pet:died', (data: { petId: number; petName: string }) => {
+      this.petDiedCallbacks.forEach(cb => cb(data));
+    });
+
+    (this.socket as any).on('pet:needs_attention', (data: { message: string }) => {
+      this.petNeedsAttentionCallbacks.forEach(cb => cb(data));
     });
   }
 
@@ -384,6 +417,38 @@ export class SocketService implements OnDestroy {
     this.onlineUsersListCallbacks.push(callback);
     return () => {
       this.onlineUsersListCallbacks = this.onlineUsersListCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  // ============================================================
+  // Pet Event Subscriptions
+  // ============================================================
+
+  onPetState(callback: (data: { pet: unknown; state: unknown }) => void): () => void {
+    this.petStateCallbacks.push(callback);
+    return () => {
+      this.petStateCallbacks = this.petStateCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  onPetNotifications(callback: (data: { notifications: PetNotification[] }) => void): () => void {
+    this.petNotificationCallbacks.push(callback);
+    return () => {
+      this.petNotificationCallbacks = this.petNotificationCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  onPetDied(callback: (data: { petId: number; petName: string }) => void): () => void {
+    this.petDiedCallbacks.push(callback);
+    return () => {
+      this.petDiedCallbacks = this.petDiedCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  onPetNeedsAttention(callback: (data: { message: string }) => void): () => void {
+    this.petNeedsAttentionCallbacks.push(callback);
+    return () => {
+      this.petNeedsAttentionCallbacks = this.petNeedsAttentionCallbacks.filter(cb => cb !== callback);
     };
   }
 

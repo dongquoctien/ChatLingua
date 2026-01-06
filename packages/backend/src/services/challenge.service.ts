@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { gamificationService, XP_REWARDS } from './gamification.service.js';
+import { petService } from './pet.service.js';
 
 // ============================================================
 // Types
@@ -358,6 +359,16 @@ export class ChallengeService {
           icon: 'fa-flag-checkered',
           metadata: { challengeId: challenge.id, xpReward: challenge.xp_reward },
         });
+
+        // ============================================================
+        // Pet Daily Tasks Integration - Update task progress for daily_challenge
+        // ============================================================
+        try {
+          await petService.recordActivityForTasks(userId, 'challenge', {});
+          console.log(`[Pet Tasks] Updated daily_challenge task progress: userId=${userId}, challengeId=${challenge.id}`);
+        } catch (error) {
+          console.error('Failed to update pet daily tasks from challenge:', error);
+        }
 
         results.push({
           challengeId: challenge.id,

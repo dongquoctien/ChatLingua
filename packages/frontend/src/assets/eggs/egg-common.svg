@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80">
+  <defs>
+    <linearGradient id="egg-common-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e5e5e5"/>
+      <stop offset="50%" style="stop-color:#d4d4d4"/>
+      <stop offset="100%" style="stop-color:#a3a3a3"/>
+    </linearGradient>
+    <linearGradient id="egg-common-shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <!-- Egg shadow -->
+  <ellipse cx="32" cy="75" rx="20" ry="4" fill="rgba(0,0,0,0.15)"/>
+  <!-- Egg body -->
+  <ellipse cx="32" cy="42" rx="26" ry="32" fill="url(#egg-common-gradient)" stroke="#9ca3af" stroke-width="1"/>
+  <!-- Egg shine -->
+  <ellipse cx="22" cy="30" rx="8" ry="12" fill="url(#egg-common-shine)"/>
+  <!-- Simple spots -->
+  <circle cx="40" cy="35" r="3" fill="#a3a3a3"/>
+  <circle cx="24" cy="50" r="2.5" fill="#a3a3a3"/>
+  <circle cx="38" cy="55" r="2" fill="#a3a3a3"/>
+</svg>

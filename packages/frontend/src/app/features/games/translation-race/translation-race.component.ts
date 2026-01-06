@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,6 +7,8 @@ import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface TranslationSentence {
   id: number;
@@ -32,12 +34,14 @@ interface TranslationResult {
     FormsModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './translation-race.component.html',
   styleUrls: ['./translation-race.component.scss']
 })
 export class TranslationRaceComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
   @ViewChild('answerInput') answerInput!: ElementRef<HTMLInputElement>;
 
   // Game configuration
@@ -117,6 +121,8 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
     this.apiService.startGame('translation_race').subscribe({
       next: (response: StartGameResponse) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         this.vocabulary.set(response.vocabulary);
         this.generateSentences(response.vocabulary);
         this.isLoading.set(false);

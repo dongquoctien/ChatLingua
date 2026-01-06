@@ -84,7 +84,7 @@
           @if (filteredUsers().length === 0) {
             <div class="text-center py-8 text-gray-500">
               @if (users().length === 0) {
-                <fa-icon [icon]="faUser" class="text-4xl text-gray-300 mb-2"></fa-icon>
+                <i class="fa-solid fa-share-nodes text-4xl text-gray-300 mb-2"></i>
                 <p>No users available to share with.</p>
               } @else {
                 <p>No users match your search.</p>
@@ -176,10 +176,10 @@
         class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         @if (sharing()) {
-          <fa-icon [icon]="faSpinner" class="animate-spin"></fa-icon>
+           <i class="fa-solid fa-share-nodes animate-spin"></i>
           <span>Sharing...</span>
         } @else {
-          <fa-icon [icon]="faShare"></fa-icon>
+          <i class="fa-solid fa-share-nodes"></i>
           <span>Share</span>
         }
       </button>

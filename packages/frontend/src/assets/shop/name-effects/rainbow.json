@@ -1,0 +1,19 @@
+{
+  "name": "Rainbow Glow",
+  "slug": "rainbow",
+  "rarity": "legendary",
+  "css": {
+    "background": "linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)",
+    "backgroundSize": "200% auto",
+    "backgroundClip": "text",
+    "webkitBackgroundClip": "text",
+    "color": "transparent",
+    "animation": "rainbow-shift 3s linear infinite"
+  },
+  "keyframes": {
+    "rainbow-shift": {
+      "0%": { "backgroundPosition": "0% center" },
+      "100%": { "backgroundPosition": "200% center" }
+    }
+  }
+}

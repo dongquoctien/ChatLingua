@@ -1,0 +1,52 @@
+// Pet Widget Animations
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.2s ease-out;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.3s ease-in-out infinite;
+}
+
+// Mobile Responsive
+@media (max-width: 640px) {
+  :host {
+    // On mobile, expanded panel takes full width
+    .pet-widget-expanded {
+      width: calc(100vw - 2rem) !important;
+      max-width: 320px;
+    }
+  }
+}
+
+// Very small screens
+@media (max-width: 380px) {
+  :host {
+    .pet-widget-expanded {
+      width: calc(100vw - 1rem) !important;
+    }
+  }
+}

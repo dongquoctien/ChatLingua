@@ -25,10 +25,12 @@ import {
   faGamepad,
   faPaperPlane,
   faEnvelope,
+  faStore,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService, GamificationNotification } from '../../../core/services/api.service';
 import { ChatWidgetComponent } from '../../../features/chat/components/chat-widget/chat-widget.component';
+import { PetWidgetComponent } from '../../../features/pets/components/pet-widget/pet-widget.component';
 import { Subscription, filter, interval } from 'rxjs';
 
 @Component({
@@ -39,6 +41,7 @@ import { Subscription, filter, interval } from 'rxjs';
     RouterModule,
     FontAwesomeModule,
     ChatWidgetComponent,
+    PetWidgetComponent,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
@@ -87,6 +90,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faGamepad = faGamepad;
   faPaperPlane = faPaperPlane;
   faEnvelope = faEnvelope;
+  faStore = faStore;
 
   // Navigation items
   // Note: Chat menu removed - accessible via chat widget expand button
@@ -99,6 +103,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     { path: '/exercises', icon: this.faDumbbell, label: 'Exercises' },
     { path: '/quizzes', icon: this.faQuestionCircle, label: 'Quizzes' },
     { path: '/games', icon: this.faGamepad, label: 'Games' },
+    { path: '/shop', icon: this.faStore, label: 'Shop' },
     { path: '/sync-requests', icon: this.faPaperPlane, label: 'Sync Requests' },
     { path: '/reports', icon: this.faChartLine, label: 'Reports' },
   ];

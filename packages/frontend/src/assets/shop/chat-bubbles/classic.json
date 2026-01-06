@@ -1,0 +1,17 @@
+{
+  "name": "Classic",
+  "slug": "classic",
+  "rarity": "common",
+  "styles": {
+    "sent": {
+      "background": "#1f2937",
+      "color": "#ffffff",
+      "borderRadius": "18px 18px 4px 18px"
+    },
+    "received": {
+      "background": "#f3f4f6",
+      "color": "#111827",
+      "borderRadius": "18px 18px 18px 4px"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
@@ -6,6 +6,8 @@ import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface AnagramWord {
   id: number;
@@ -26,11 +28,18 @@ interface LetterTile {
 @Component({
   selector: 'app-anagram',
   standalone: true,
-  imports: [CommonModule, GameHeaderComponent, GameOverDialogComponent, CountdownComponent],
+  imports: [CommonModule, GameHeaderComponent, GameOverDialogComponent, CountdownComponent, ActiveBoostersWidgetComponent],
   templateUrl: './anagram.component.html',
   styleUrls: ['./anagram.component.scss']
 })
 export class AnagramComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
+  // Booster signals from GameStateService
+  readonly activeBoosters = this.gameStateService.activeBoosters;
+  readonly xpMultiplier = this.gameStateService.xpMultiplier;
+  readonly coinMultiplier = this.gameStateService.coinMultiplier;
+
   // Game state
   isLoading = signal(true);
   error = signal<string | null>(null);
@@ -123,6 +132,8 @@ export class AnagramComponent implements OnInit, OnDestroy {
     this.apiService.startGame('anagram').subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         // Filter vocabulary for anagram suitability (3-10 letters, only letters)
         this.vocabulary = response.vocabulary.filter(v =>
           v.englishWord.length >= 3 &&

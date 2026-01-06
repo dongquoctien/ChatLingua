@@ -1,0 +1,170 @@
+<div class="max-w-6xl mx-auto px-4 py-4 sm:py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+    <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+      <a routerLink="/shop" class="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+        <i class="fa fa-arrow-left"></i>
+      </a>
+      <div class="min-w-0">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <span>❤️</span> Wishlist
+        </h1>
+        <p class="text-gray-500 text-xs sm:text-sm">Items you've saved for later</p>
+      </div>
+    </div>
+    <a routerLink="/shop" class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all flex-shrink-0">
+      <span class="text-base sm:text-lg">🏪</span>
+      <span class="font-semibold text-gray-700 text-sm hidden sm:inline">Back to Shop</span>
+    </a>
+  </div>
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div class="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 sm:gap-3">
+      <span class="text-lg sm:text-xl">❌</span>
+      <span class="text-red-700 text-sm sm:text-base flex-1">{{ error() }}</span>
+      <button (click)="error.set(null)" class="text-red-400 hover:text-red-600">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <div class="flex items-center gap-3 text-gray-500">
+        <i class="fa fa-spinner animate-spin text-lg"></i>
+        <span class="text-sm sm:text-base">Loading wishlist...</span>
+      </div>
+    </div>
+  } @else {
+    @if (wishlistItems().length === 0) {
+      <!-- Empty State -->
+      <div class="text-center py-8 sm:py-12 bg-white border border-gray-200 rounded-xl">
+        <span class="text-4xl sm:text-6xl mb-3 sm:mb-4 block">💔</span>
+        <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">Your wishlist is empty</h3>
+        <p class="text-sm text-gray-500 mb-4 px-4">Save items you like by clicking the heart icon.</p>
+        <a routerLink="/shop/browse"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+          <span>🏪</span>
+          <span>Browse Shop</span>
+        </a>
+      </div>
+    } @else {
+      <!-- Wishlist Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        @for (item of wishlistItems(); track item.id) {
+          <div class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
+               [ngClass]="getRarityGlow(item.rarity)">
+
+            <!-- Remove Button -->
+            <button (click)="removeFromWishlist(item)"
+                    [disabled]="removing() === item.id"
+                    class="absolute top-2 right-2 sm:top-3 sm:right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white border border-gray-200 flex items-center justify-center text-red-500 hover:border-red-200 transition-all opacity-100 sm:opacity-0 group-hover:opacity-100 z-20 shadow-lg hover:scale-110"
+                    title="Remove from wishlist">
+              @if (removing() === item.id) {
+                <i class="fa fa-spinner animate-spin text-xs sm:text-sm"></i>
+              } @else {
+                <span class="text-base sm:text-xl">💔</span>
+              }
+            </button>
+
+            <!-- Click to View Item -->
+            <a [routerLink]="['/shop/items', item.slug]" class="block">
+              <!-- Item Preview -->
+              <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br"
+                   [ngClass]="getRarityGradient(item.rarity)">
+
+                <!-- Animated background for legendary -->
+                @if (item.rarity === 'legendary') {
+                  <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+                }
+
+                @if (item.previewUrl) {
+                  <img [src]="item.previewUrl" [alt]="item.name"
+                       class="w-16 h-16 sm:w-24 sm:h-24 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300">
+                } @else {
+                  <span class="text-4xl sm:text-6xl relative z-10 group-hover:scale-110 transition-transform duration-300">
+                    {{ getItemTypeEmoji(item.itemType) }}
+                  </span>
+                }
+
+                <!-- Sparkle effect for epic/legendary -->
+                @if (item.rarity === 'epic' || item.rarity === 'legendary') {
+                  <div class="absolute top-2 left-2 sm:top-3 sm:left-3 text-base sm:text-lg animate-bounce">✨</div>
+                }
+
+                <!-- Owned Badge -->
+                @if (item.isOwned) {
+                  <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-1 z-20 shadow-lg">
+                    <span>✓</span> <span class="hidden sm:inline">Owned</span>
+                  </div>
+                }
+
+                <!-- Limited Badge -->
+                @if (item.isLimited) {
+                  <div class="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full animate-pulse z-20 flex items-center gap-1 shadow-lg">
+                    <span>🔥</span> <span class="hidden sm:inline">Limited</span>
+                  </div>
+                }
+
+                <!-- Rarity Badge -->
+                <div class="absolute bottom-2 left-2 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-10"
+                     [ngClass]="{
+                       'bg-gray-500/80 text-white': item.rarity === 'common',
+                       'bg-green-500/80 text-white': item.rarity === 'uncommon',
+                       'bg-blue-500/80 text-white': item.rarity === 'rare',
+                       'bg-purple-500/80 text-white': item.rarity === 'epic',
+                       'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': item.rarity === 'legendary'
+                     }">
+                  <span>{{ getRarityEmoji(item.rarity) }}</span>
+                  <span class="hidden sm:inline">{{ item.rarity }}</span>
+                </div>
+              </div>
+
+              <!-- Item Info -->
+              <div class="p-3 sm:p-4">
+                <h3 class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700">{{ item.name }}</h3>
+                <p class="text-xs sm:text-sm text-gray-500 truncate flex items-center gap-1">
+                  <span>{{ getItemTypeEmoji(item.itemType) }}</span>
+                  {{ item.categoryName }}
+                </p>
+
+                <!-- Price -->
+                <div class="flex items-center justify-between mt-2 sm:mt-3">
+                  <div class="flex items-center gap-1 sm:gap-1.5 bg-yellow-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                    <span class="text-base sm:text-lg">🪙</span>
+                    <span class="font-bold text-gray-900 text-sm">{{ formatPrice(item.priceCoins) }}</span>
+                  </div>
+                  @if (item.priceGems && item.priceGems > 0) {
+                    <div class="flex items-center gap-1 bg-purple-50 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                      <span class="text-base sm:text-lg">💎</span>
+                      <span class="font-bold text-purple-600 text-sm">{{ item.priceGems }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- View Item CTA -->
+                <div class="mt-2 sm:mt-3 flex items-center justify-center gap-1 text-xs text-gray-500 group-hover:text-gray-900 transition-colors">
+                  <span>🏪</span> <span class="hidden sm:inline">View in Shop</span><span class="sm:hidden">View</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        }
+      </div>
+
+      <!-- Summary -->
+      <div class="mt-4 sm:mt-6 p-3 sm:p-4 bg-white border border-gray-200 rounded-xl">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+          <span class="text-gray-600 flex items-center gap-2 text-sm">
+            <span>❤️</span> {{ wishlistItems().length }} items in wishlist
+          </span>
+          <a routerLink="/shop/browse" class="text-gray-700 hover:text-gray-900 flex items-center gap-2 font-medium text-sm">
+            <span>🏪</span> Browse more <i class="fa fa-arrow-right text-xs sm:text-sm"></i>
+          </a>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -2,6 +2,22 @@
   <!-- Game Name -->
   <div class="game-title">
     <h2 class="text-lg font-bold text-gray-900">{{ gameName }}</h2>
+    <!-- Active Boosters Indicator -->
+    @if (hasActiveBoosters) {
+      <div class="boosters-indicator flex items-center gap-1 ml-2">
+        @for (booster of activeBoosters; track booster.itemId) {
+          <span
+            class="booster-badge inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100"
+            [title]="booster.name + ' (' + booster.remainingMinutes + 'm left)'"
+          >
+            <span [class]="getBoosterColor(booster.effectType)">
+              {{ getBoosterIcon(booster.effectType) }}
+            </span>
+            <span class="ml-1 text-gray-700">x{{ booster.multiplier }}</span>
+          </span>
+        }
+      </div>
+    }
   </div>
 
   <!-- Stats Section -->
@@ -11,6 +27,22 @@
       <span class="stat-label">Score</span>
       <span class="stat-value text-gray-900 font-bold">{{ score | number }}</span>
     </div>
+
+    <!-- Multiplier Indicators -->
+    @if (xpMultiplier > 1 || coinMultiplier > 1) {
+      <div class="stat-item multipliers">
+        @if (xpMultiplier > 1) {
+          <span class="multiplier-badge text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded text-xs font-semibold">
+            ⚡ XP x{{ xpMultiplier }}
+          </span>
+        }
+        @if (coinMultiplier > 1) {
+          <span class="multiplier-badge text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs font-semibold ml-1">
+            🪙 x{{ coinMultiplier }}
+          </span>
+        }
+      </div>
+    }
 
     <!-- Timer -->
     @if (showTimer) {

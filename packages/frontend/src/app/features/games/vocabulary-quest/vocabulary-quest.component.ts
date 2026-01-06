@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,6 +7,8 @@ import { AudioService } from '../../../core/services/audio.service';
 import { GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
 import { GameOverDialogComponent } from '../shared/game-over-dialog/game-over-dialog.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface QuestMap {
   id: number;
@@ -62,11 +64,13 @@ interface BattleState {
 @Component({
   selector: 'app-vocabulary-quest',
   standalone: true,
-  imports: [CommonModule, FormsModule, CountdownComponent, GameOverDialogComponent],
+  imports: [CommonModule, FormsModule, CountdownComponent, GameOverDialogComponent, ActiveBoostersWidgetComponent],
   templateUrl: './vocabulary-quest.component.html',
   styleUrls: ['./vocabulary-quest.component.scss']
 })
 export class VocabularyQuestComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
   // Game phases
   phase = signal<'loading' | 'map' | 'stage-select' | 'countdown' | 'battle' | 'victory' | 'defeat' | 'rewards'>('loading');
 
@@ -337,6 +341,8 @@ export class VocabularyQuestComponent implements OnInit, OnDestroy {
     this.apiService.startGame('vocabulary_quest').subscribe({
       next: (session) => {
         this.sessionId = session.sessionId;
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(session.activeBoosters || []);
       },
       error: (err) => console.error('Failed to start session:', err)
     });

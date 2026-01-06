@@ -7,6 +7,7 @@ import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
 import { GameStateService } from '../services/game-state.service';
 
 interface WordOption {
@@ -22,7 +23,8 @@ interface WordOption {
     CommonModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './word-rush.component.html',
   styleUrls: ['./word-rush.component.scss']

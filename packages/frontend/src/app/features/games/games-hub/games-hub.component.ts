@@ -1,21 +1,28 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faShoppingBag } from '../../../shared/icons';
 import { ApiService, GameWithStats, UserCurrency, GameSessionInfo, GamesHubData } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
 import { AudioControlComponent } from '../shared/audio-control/audio-control.component';
+import { ShopService, ActiveBooster } from '../../shop/shop.service';
 
 @Component({
   selector: 'app-games-hub',
   standalone: true,
-  imports: [CommonModule, AudioControlComponent],
+  imports: [CommonModule, RouterModule, FontAwesomeModule, AudioControlComponent],
   templateUrl: './games-hub.component.html',
   styleUrls: ['./games-hub.component.scss']
 })
 export class GamesHubComponent implements OnInit, OnDestroy {
+  // Icons
+  faShoppingBag = faShoppingBag;
+
   games = signal<GameWithStats[]>([]);
   currency = signal<UserCurrency | null>(null);
   recentSessions = signal<GameSessionInfo[]>([]);
+  activeBoosters = signal<ActiveBooster[]>([]);
   isLoading = signal(true);
   error = signal<string | null>(null);
 
@@ -67,11 +74,13 @@ export class GamesHubComponent implements OnInit, OnDestroy {
   constructor(
     private apiService: ApiService,
     private router: Router,
-    private audioService: AudioService
+    private audioService: AudioService,
+    private shopService: ShopService
   ) {}
 
   ngOnInit(): void {
     this.loadHubData();
+    this.loadActiveBoosters();
     // Start background music when entering Game Hub
     this.audioService.playMusic();
   }
@@ -147,5 +156,49 @@ export class GamesHubComponent implements OnInit, OnDestroy {
   getGameIcon(icon: string | null | undefined): string {
     if (!icon) return '🎮';
     return this.iconMap[icon] || icon || '🎮';
+  }
+
+  loadActiveBoosters(): void {
+    this.shopService.getActiveBoosters().subscribe({
+      next: (boosters) => {
+        this.activeBoosters.set(boosters);
+      },
+      error: (err) => {
+        console.error('Error loading active boosters:', err);
+      }
+    });
+  }
+
+  getBoosterIcon(effectType: string): string {
+    const icons: Record<string, string> = {
+      'xp_multiplier': '⚡',
+      'coin_multiplier': '🪙',
+      'streak_protection': '🛡️',
+      'hint_reveal': '💡',
+      'time_freeze': '❄️',
+      'double_score': '✨',
+    };
+    return icons[effectType] || '🎯';
+  }
+
+  getBoosterColor(effectType: string): string {
+    const colors: Record<string, string> = {
+      'xp_multiplier': 'bg-yellow-100 text-yellow-700',
+      'coin_multiplier': 'bg-amber-100 text-amber-700',
+      'streak_protection': 'bg-blue-100 text-blue-700',
+      'hint_reveal': 'bg-purple-100 text-purple-700',
+      'time_freeze': 'bg-cyan-100 text-cyan-700',
+      'double_score': 'bg-green-100 text-green-700',
+    };
+    return colors[effectType] || 'bg-gray-100 text-gray-700';
+  }
+
+  formatBoosterTime(minutes: number): string {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    }
+    return `${minutes}m`;
   }
 }

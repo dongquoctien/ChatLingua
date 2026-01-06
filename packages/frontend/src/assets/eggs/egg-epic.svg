@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80">
+  <defs>
+    <linearGradient id="egg-epic-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e9d5ff"/>
+      <stop offset="50%" style="stop-color:#a855f7"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="egg-epic-shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.85"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="egg-epic-glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <pattern id="egg-epic-runes" patternUnits="userSpaceOnUse" width="20" height="20">
+      <circle cx="10" cy="10" r="1" fill="#c084fc" opacity="0.5"/>
+    </pattern>
+  </defs>
+  <!-- Outer glow -->
+  <ellipse cx="32" cy="42" rx="30" ry="36" fill="#a855f7" opacity="0.25" filter="url(#egg-epic-glow)"/>
+  <!-- Egg shadow -->
+  <ellipse cx="32" cy="75" rx="20" ry="4" fill="rgba(168,85,247,0.3)"/>
+  <!-- Egg body -->
+  <ellipse cx="32" cy="42" rx="26" ry="32" fill="url(#egg-epic-gradient)" stroke="#7c3aed" stroke-width="2"/>
+  <!-- Mystical runes overlay -->
+  <ellipse cx="32" cy="42" rx="24" ry="30" fill="url(#egg-epic-runes)" opacity="0.3"/>
+  <!-- Egg shine -->
+  <ellipse cx="22" cy="30" rx="8" ry="12" fill="url(#egg-epic-shine)"/>
+  <!-- Magic symbols -->
+  <path d="M38 26 L42 32 L38 38 L34 32 Z" fill="none" stroke="#e9d5ff" stroke-width="1.5" opacity="0.9"/>
+  <circle cx="38" cy="32" r="2" fill="#e9d5ff"/>
+  <path d="M25 46 L28 50 L25 54 L22 50 Z" fill="none" stroke="#e9d5ff" stroke-width="1" opacity="0.7"/>
+  <circle cx="25" cy="50" r="1.5" fill="#e9d5ff"/>
+  <!-- Floating sparkles -->
+  <circle cx="44" cy="45" r="1" fill="#ffffff">
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="20" cy="38" r="0.8" fill="#ffffff">
+    <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>

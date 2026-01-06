@@ -1,5 +1,8 @@
-<!-- Floating Chat Button -->
+<!-- Floating Chat Button - Draggable -->
 <button
+  appDraggable
+  [storageKey]="'chat-button'"
+  [enabled]="!isOpen() || isMinimized()"
   class="fixed bottom-6 right-6 w-14 h-14 bg-gray-900 hover:bg-gray-800 text-white rounded-full shadow-lg flex items-center justify-center transition-all z-50"
   [class.hidden]="isOpen() && !isMinimized()"
   (click)="toggleWidget()"
@@ -22,11 +25,11 @@
   ></span>
 </button>
 
-<!-- Chat Widget Panel -->
+<!-- Chat Widget Panel - NOT Draggable, follows button position -->
 @if (isOpen() && !isMinimized()) {
-  <div class="fixed bottom-6 right-6 w-96 h-[32rem] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden z-50">
+  <div class="chat-widget-panel fixed bottom-6 right-6 w-[calc(100vw-1rem)] sm:w-96 h-[calc(100vh-6rem)] sm:h-[32rem] bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden z-50">
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 bg-gray-900 text-white">
+    <div class="chat-widget-header flex items-center justify-between px-4 py-3 bg-gray-900 text-white">
       <div class="flex items-center gap-2">
         @if (showChatWindow()) {
           <button
@@ -60,9 +63,9 @@
         }
       </div>
       <div class="flex items-center gap-1">
-        <!-- Open in new tab button -->
+        <!-- Open in new tab button - hidden on mobile -->
         <button
-          class="p-1.5 hover:bg-gray-700 rounded transition-colors"
+          class="hidden sm:block p-1.5 hover:bg-gray-700 rounded transition-colors"
           (click)="openInNewTab()"
           title="Open chat in new tab"
         >

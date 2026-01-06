@@ -1,0 +1,18 @@
+{
+  "name": "XP Boost 2x",
+  "slug": "xp-boost-2x",
+  "rarity": "uncommon",
+  "effectType": "xp_multiplier",
+  "multiplier": 2.0,
+  "durationMinutes": 60,
+  "icon": "fa-bolt",
+  "colors": {
+    "primary": "#eab308",
+    "secondary": "#ca8a04",
+    "glow": "#fef08a"
+  },
+  "animation": {
+    "type": "pulse",
+    "speed": "normal"
+  }
+}

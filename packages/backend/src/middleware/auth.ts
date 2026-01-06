@@ -64,3 +64,37 @@ export const optionalAuth = (
   }
   next();
 };
+
+/**
+ * Helper function to get validated userId from request.
+ * Throws error if userId is not set (should be used after authMiddleware).
+ */
+export function getValidatedUserId(req: AuthRequest): number {
+  if (typeof req.userId !== 'number' || req.userId <= 0) {
+    throw new Error('INVALID_USER_ID');
+  }
+  return req.userId;
+}
+
+/**
+ * Type guard to check if request has a valid userId
+ */
+export function hasValidUserId(req: AuthRequest): req is AuthRequest & { userId: number } {
+  return typeof req.userId === 'number' && req.userId > 0;
+}
+
+/**
+ * Middleware that ensures userId is present and valid.
+ * Use after authMiddleware for routes that require userId.
+ */
+export const requireValidUserId = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!hasValidUserId(req)) {
+    res.status(401).json({ error: 'Invalid or missing user ID' });
+    return;
+  }
+  next();
+};

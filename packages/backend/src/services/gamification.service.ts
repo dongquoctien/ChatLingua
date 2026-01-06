@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { petService } from './pet.service.js';
 
 // ============================================================
 // Types
@@ -347,6 +348,14 @@ export class GamificationService {
 
       // Update leaderboard
       await this.updateLeaderboard(userId, { xp: amount });
+    }
+
+    // Also add XP to user's active egg for hatching progress
+    try {
+      await petService.addHatchXpToActiveEgg(userId, amount, source);
+    } catch (error) {
+      // Don't fail XP award if egg XP fails
+      console.error('Failed to add hatch XP to egg:', error);
     }
 
     return { newTotal: currentXP.total_xp, levelUp };
@@ -736,7 +745,7 @@ export class GamificationService {
   async checkAchievements(
     userId: number,
     action: 'exercise_complete' | 'review_complete' | 'quiz_complete' | 'streak_update' | 'vocabulary_learned',
-    context?: { isCorrect?: boolean; isPerfect?: boolean; streakDays?: number; vocabularyCount?: number }
+    context?: { isCorrect?: boolean; isPerfect?: boolean; streakDays?: number; vocabularyCount?: number; exerciseCount?: number; correctCount?: number }
   ): Promise<AchievementUnlock[]> {
     const unlocks: AchievementUnlock[] = [];
 

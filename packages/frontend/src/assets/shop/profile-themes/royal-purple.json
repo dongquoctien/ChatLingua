@@ -1,0 +1,29 @@
+{
+  "name": "Royal Purple",
+  "slug": "royal-purple",
+  "rarity": "epic",
+  "colors": {
+    "primary": "#9333ea",
+    "secondary": "#7c3aed",
+    "background": "#faf5ff",
+    "surface": "#ffffff",
+    "text": "#581c87",
+    "textSecondary": "#7e22ce",
+    "accent": "#a855f7",
+    "border": "#e9d5ff"
+  },
+  "gradients": {
+    "header": "linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #6366f1 100%)",
+    "card": "linear-gradient(180deg, #ffffff 0%, #faf5ff 100%)"
+  },
+  "effects": {
+    "shadow": "0 4px 15px -1px rgba(147, 51, 234, 0.3)",
+    "glow": "0 0 30px rgba(168, 85, 247, 0.4)"
+  },
+  "particles": {
+    "enabled": true,
+    "type": "sparkle",
+    "color": "#a855f7",
+    "count": 20
+  }
+}

@@ -7,6 +7,8 @@ import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface MemoryCard {
   id: number;
@@ -24,12 +26,15 @@ interface MemoryCard {
     CommonModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './memory-match.component.html',
   styleUrls: ['./memory-match.component.scss']
 })
 export class MemoryMatchComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
   // Game settings
   gridSize = signal(4); // 4x4 = 16 cards = 8 pairs
 
@@ -90,6 +95,8 @@ export class MemoryMatchComponent implements OnInit, OnDestroy {
     this.apiService.startGame('memory_match', { gridSize: this.gridSize() }).subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         this.initializeCards(response.vocabulary.slice(0, pairsNeeded));
         this.isLoading.set(false);
         this.showCountdown.set(true);

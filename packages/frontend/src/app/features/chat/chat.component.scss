@@ -1,4 +1,41 @@
 :host {
   display: block;
   height: calc(100vh - 64px); // Subtract header height
+  overflow: hidden;
+}
+
+// Mobile responsive - sidebar as overlay
+@media (max-width: 767px) {
+  :host {
+    height: calc(100vh - 56px);
+  }
+
+  .chat-sidebar {
+    position: fixed !important;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: white;
+  }
+
+  .chat-main {
+    width: 100%;
+    height: 100%;
+  }
+
+  // When chat window is open, hide sidebar unless menu is open
+  .chat-sidebar.sidebar-hidden {
+    display: none !important;
+  }
+}
+
+// Tablet and up - side by side layout
+@media (min-width: 768px) {
+  .chat-sidebar {
+    flex-shrink: 0;
+  }
 }

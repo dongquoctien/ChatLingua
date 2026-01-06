@@ -1,0 +1,386 @@
+.avatar-container {
+  --frame-color: transparent;
+  --frame-tier: none;
+}
+
+.avatar-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  &.has-frame {
+    padding: 2px;
+    background: var(--frame-color);
+
+    &.frame-animated {
+      animation: frame-pulse 2s ease-in-out infinite;
+    }
+  }
+
+  // Pixel frame tiers using SVG backgrounds
+  &.frame-tier-common {
+    padding: 3px;
+    background: url('/assets/frames/frame-common.svg') center/contain no-repeat;
+  }
+
+  &.frame-tier-rare {
+    padding: 3px;
+    background: url('/assets/frames/frame-rare.svg') center/contain no-repeat;
+    filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.5));
+    animation: rare-glow 2s ease-in-out infinite;
+  }
+
+  &.frame-tier-epic {
+    padding: 3px;
+    background: url('/assets/frames/frame-epic.svg') center/contain no-repeat;
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
+    animation: epic-pulse 2s ease-in-out infinite;
+  }
+
+  &.frame-tier-legendary {
+    padding: 4px;
+    background: url('/assets/frames/frame-legendary.svg') center/contain no-repeat;
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.7));
+    animation: legendary-shine 3s ease-in-out infinite;
+  }
+
+  &.frame-tier-mythic {
+    padding: 4px;
+    background: url('/assets/frames/frame-mythic.svg') center/contain no-repeat;
+    filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.6));
+    animation: mythic-rainbow 4s linear infinite;
+  }
+}
+
+.avatar-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.effect-overlay {
+  z-index: 2;
+
+  &[data-effect="sparkle"] {
+    background: radial-gradient(circle, transparent 40%, rgba(255, 215, 0, 0.15) 100%);
+    animation: sparkle 2s ease-in-out infinite;
+  }
+
+  &[data-effect="fire"] {
+    box-shadow: 0 0 8px rgba(255, 100, 0, 0.6);
+    animation: fire-glow 1s ease-in-out infinite alternate;
+  }
+
+  &[data-effect="ice"] {
+    box-shadow: 0 0 8px rgba(100, 200, 255, 0.6);
+    animation: ice-shimmer 2s ease-in-out infinite;
+  }
+
+  &[data-effect="rainbow"] {
+    background: conic-gradient(
+      from 0deg,
+      rgba(255, 0, 0, 0.15),
+      rgba(255, 127, 0, 0.15),
+      rgba(255, 255, 0, 0.15),
+      rgba(0, 255, 0, 0.15),
+      rgba(0, 0, 255, 0.15),
+      rgba(139, 0, 255, 0.15),
+      rgba(255, 0, 0, 0.15)
+    );
+    animation: rainbow-rotate 4s linear infinite;
+  }
+
+  &[data-effect="galaxy"] {
+    background: radial-gradient(ellipse at center, rgba(100, 0, 200, 0.25) 0%, transparent 70%);
+    animation: galaxy-pulse 3s ease-in-out infinite;
+  }
+
+  &[data-effect="lightning"] {
+    box-shadow: 0 0 10px rgba(255, 255, 100, 0.7);
+    animation: lightning-flash 0.5s ease-in-out infinite;
+  }
+
+  &[data-effect="hearts"] {
+    &::before {
+      content: '\2764\FE0F';
+      position: absolute;
+      font-size: 0.5em;
+      animation: float-heart 2s ease-in-out infinite;
+    }
+  }
+
+  // New VIP effects
+  &[data-effect="golden"] {
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+    box-shadow:
+      inset 0 0 10px rgba(255, 215, 0, 0.3),
+      0 0 15px rgba(255, 215, 0, 0.4);
+    animation: golden-glow 2s ease-in-out infinite;
+  }
+
+  &[data-effect="cosmic"] {
+    background:
+      radial-gradient(circle at 20% 30%, rgba(236, 72, 153, 0.3) 0%, transparent 30%),
+      radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.3) 0%, transparent 30%),
+      radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+    animation: cosmic-drift 6s ease-in-out infinite;
+  }
+
+  &[data-effect="aurora"] {
+    background: linear-gradient(
+      45deg,
+      rgba(16, 185, 129, 0.2),
+      rgba(59, 130, 246, 0.2),
+      rgba(139, 92, 246, 0.2),
+      rgba(236, 72, 153, 0.2)
+    );
+    background-size: 300% 300%;
+    animation: aurora-flow 4s ease-in-out infinite;
+  }
+
+  &[data-effect="divine"] {
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
+    box-shadow:
+      0 0 20px rgba(255, 255, 255, 0.5),
+      0 0 40px rgba(255, 215, 0, 0.3);
+    animation: divine-radiance 3s ease-in-out infinite;
+  }
+
+  &[data-effect="shadow"] {
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.3) 0%, transparent 70%);
+    box-shadow:
+      inset 0 0 15px rgba(0, 0, 0, 0.5),
+      0 0 10px rgba(75, 0, 130, 0.4);
+    animation: shadow-pulse 2s ease-in-out infinite;
+  }
+
+  &[data-effect="neon"] {
+    box-shadow:
+      0 0 5px #fff,
+      0 0 10px #fff,
+      0 0 15px #0ff,
+      0 0 20px #0ff,
+      0 0 25px #0ff;
+    animation: neon-flicker 1.5s ease-in-out infinite;
+  }
+}
+
+// Existing keyframes
+@keyframes frame-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--frame-color);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px var(--frame-color);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes fire-glow {
+  0% {
+    box-shadow: 0 0 6px rgba(255, 100, 0, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(255, 150, 50, 0.8);
+  }
+}
+
+@keyframes rainbow-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes galaxy-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes lightning-flash {
+  0%, 90%, 100% {
+    opacity: 0.3;
+  }
+  95% {
+    opacity: 1;
+  }
+}
+
+@keyframes float-heart {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+// New tier frame keyframes
+@keyframes rare-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+  }
+}
+
+@keyframes epic-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.9));
+    transform: scale(1.02);
+  }
+}
+
+@keyframes legendary-shine {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.7));
+  }
+  33% {
+    filter: drop-shadow(0 0 12px rgba(245, 158, 11, 1)) drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+  }
+  66% {
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.8));
+  }
+}
+
+@keyframes mythic-rainbow {
+  0% {
+    filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.6));
+  }
+  25% {
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.6));
+  }
+  75% {
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
+  }
+  100% {
+    filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.6));
+  }
+}
+
+// New VIP effect keyframes
+@keyframes ice-shimmer {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(100, 200, 255, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(150, 220, 255, 0.9);
+  }
+}
+
+@keyframes golden-glow {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 10px rgba(255, 215, 0, 0.3),
+      0 0 15px rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 15px rgba(255, 215, 0, 0.5),
+      0 0 25px rgba(255, 215, 0, 0.6);
+  }
+}
+
+@keyframes cosmic-drift {
+  0%, 100% {
+    background-position: 0% 0%, 100% 100%, 50% 50%;
+  }
+  50% {
+    background-position: 100% 100%, 0% 0%, 50% 50%;
+  }
+}
+
+@keyframes aurora-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes divine-radiance {
+  0%, 100% {
+    opacity: 0.7;
+    box-shadow:
+      0 0 20px rgba(255, 255, 255, 0.5),
+      0 0 40px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 30px rgba(255, 255, 255, 0.8),
+      0 0 60px rgba(255, 215, 0, 0.5);
+  }
+}
+
+@keyframes shadow-pulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 15px rgba(0, 0, 0, 0.5),
+      0 0 10px rgba(75, 0, 130, 0.4);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 20px rgba(0, 0, 0, 0.7),
+      0 0 20px rgba(75, 0, 130, 0.6);
+  }
+}
+
+@keyframes neon-flicker {
+  0%, 100% {
+    box-shadow:
+      0 0 5px #fff,
+      0 0 10px #fff,
+      0 0 15px #0ff,
+      0 0 20px #0ff,
+      0 0 25px #0ff;
+  }
+  50% {
+    box-shadow:
+      0 0 2px #fff,
+      0 0 5px #fff,
+      0 0 8px #0ff,
+      0 0 12px #0ff,
+      0 0 15px #0ff;
+  }
+}
+
+// Badge positioning for different sizes
+.avatar-badge {
+  z-index: 3;
+}
+
+.status-indicator {
+  z-index: 3;
+}

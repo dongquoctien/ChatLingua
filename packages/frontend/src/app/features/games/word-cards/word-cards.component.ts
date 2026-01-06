@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
 
@@ -86,7 +87,7 @@ const CATEGORY_SKILLS: Record<string, CardSkill> = {
 @Component({
   selector: 'app-word-cards',
   standalone: true,
-  imports: [CommonModule, CountdownComponent, GameOverDialogComponent],
+  imports: [CommonModule, CountdownComponent, GameOverDialogComponent, ActiveBoostersWidgetComponent],
   templateUrl: './word-cards.component.html',
   styleUrls: ['./word-cards.component.scss']
 })

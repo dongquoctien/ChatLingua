@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse, GameAchievementInfo } from '../../../core/services/api.service';
@@ -6,6 +6,8 @@ import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface GridCell {
   letter: string;
@@ -32,11 +34,18 @@ type Direction = 'horizontal' | 'vertical' | 'diagonal' | 'diagonal-up';
 @Component({
   selector: 'app-word-search',
   standalone: true,
-  imports: [CommonModule, GameHeaderComponent, GameOverDialogComponent, CountdownComponent],
+  imports: [CommonModule, GameHeaderComponent, GameOverDialogComponent, CountdownComponent, ActiveBoostersWidgetComponent],
   templateUrl: './word-search.component.html',
   styleUrls: ['./word-search.component.scss']
 })
 export class WordSearchComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
+  // Booster signals from GameStateService
+  readonly activeBoosters = this.gameStateService.activeBoosters;
+  readonly xpMultiplier = this.gameStateService.xpMultiplier;
+  readonly coinMultiplier = this.gameStateService.coinMultiplier;
+
   // Game state
   isLoading = signal(true);
   error = signal<string | null>(null);
@@ -116,6 +125,8 @@ export class WordSearchComponent implements OnInit, OnDestroy {
     this.apiService.startGame('word_search').subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         // Filter vocabulary for word search suitability
         this.vocabulary = response.vocabulary.filter(v =>
           v.englishWord.length >= 3 &&

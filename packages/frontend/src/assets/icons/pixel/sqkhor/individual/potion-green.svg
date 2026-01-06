@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9" class="pixelicon-potion-green">
+	<!-- Cork/stopper -->
+	<rect fill="#D38100" x="3" y="0" width="3" height="1"/>
+	<!-- Bottle neck -->
+	<rect fill="#EBEAF7" x="3" y="1" width="3" height="1"/>
+	<rect fill="#C5C4D4" x="5" y="1" width="1" height="1"/>
+	<!-- Bottle body - green potion -->
+	<polygon fill="#00B336" points="2,3 2,7 3,7 3,8 6,8 6,7 7,7 7,3 6,3 6,2 3,2 3,3"/>
+	<!-- Highlight on potion -->
+	<rect fill="#50E070" x="3" y="3" width="1" height="2"/>
+	<!-- Bubbles inside potion -->
+	<rect fill="#90FFB0" x="4" y="4" width="1" height="1"/>
+	<rect fill="#90FFB0" x="5" y="6" width="1" height="1"/>
+	<rect fill="#90FFB0" x="3" y="6" width="1" height="1"/>
+	<!-- Sparkle effect - powerful elixir -->
+	<rect fill="#FFE800" x="1" y="2" width="1" height="1"/>
+	<rect fill="#FFE800" x="7" y="4" width="1" height="1"/>
+</svg>
