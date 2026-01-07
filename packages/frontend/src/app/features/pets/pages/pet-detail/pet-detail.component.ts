@@ -141,6 +141,12 @@ export class PetDetailComponent implements OnInit {
   heartItems = computed(() => this.inventory().filter(i => i.itemCategory === 'heart' && i.quantity > 0));
   medicineItems = computed(() => this.inventory().filter(i => i.itemCategory === 'medicine' && i.quantity > 0));
 
+  // Total quantity for each category (sum of all item quantities)
+  totalFoodQuantity = computed(() => this.foodItems().reduce((sum, i) => sum + i.quantity, 0));
+  totalToyQuantity = computed(() => this.toyItems().reduce((sum, i) => sum + i.quantity, 0));
+  totalHeartQuantity = computed(() => this.heartItems().reduce((sum, i) => sum + i.quantity, 0));
+  totalMedicineQuantity = computed(() => this.medicineItems().reduce((sum, i) => sum + i.quantity, 0));
+
   // Get items for current action
   itemsForCurrentAction = computed(() => {
     const action = this.itemSelectorAction();

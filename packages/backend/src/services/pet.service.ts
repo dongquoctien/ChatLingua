@@ -8,7 +8,7 @@ export interface PetType {
   name: string;
   slug: string;
   description: string | null;
-  baseRarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  rarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
   evolutionChainId: number | null;
   evolutionStage: number;
   evolvesFromId: number | null;
@@ -91,6 +91,7 @@ export interface PetState {
   nextFeedTime: string | null;
   nextPlayTime: string | null;
   nextPetTime: string | null;
+  nextHealTime: string | null;
   bonuses: PetBonuses;
 }
 
@@ -280,7 +281,7 @@ class PetService {
     const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         evolution_chain_id as evolutionChainId,
         evolution_stage as evolutionStage,
         evolves_from_id as evolvesFromId,
@@ -301,7 +302,7 @@ class PetService {
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         evolution_chain_id as evolutionChainId,
         evolution_stage as evolutionStage,
         evolves_from_id as evolvesFromId,
@@ -321,7 +322,7 @@ class PetService {
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         evolution_chain_id as evolutionChainId,
         evolution_stage as evolutionStage,
         evolves_from_id as evolvesFromId,
@@ -369,7 +370,7 @@ class PetService {
         pt.coin_multiplier as coinMultiplier,
         pt.special_ability as specialAbility,
         pt.ability_description as abilityDescription,
-        pt.base_rarity as baseRarity,
+        pt.rarity as rarity,
         pt.is_egg as isEgg,
         pt.hatch_xp_required as hatchXpRequired,
         pt.hatch_hours_min as hatchHoursMin,
@@ -416,7 +417,7 @@ class PetService {
         pt.coin_multiplier as coinMultiplier,
         pt.special_ability as specialAbility,
         pt.ability_description as abilityDescription,
-        pt.base_rarity as baseRarity,
+        pt.rarity as rarity,
         pt.is_egg as isEgg,
         pt.hatch_xp_required as hatchXpRequired,
         pt.hatch_hours_min as hatchHoursMin,
@@ -462,7 +463,7 @@ class PetService {
         pt.coin_multiplier as coinMultiplier,
         pt.special_ability as specialAbility,
         pt.ability_description as abilityDescription,
-        pt.base_rarity as baseRarity,
+        pt.rarity as rarity,
         pt.is_egg as isEgg,
         pt.hatch_xp_required as hatchXpRequired,
         pt.hatch_hours_min as hatchHoursMin,
@@ -1654,7 +1655,7 @@ class PetService {
         slug: row.equipmentSlug,
         description: row.equipmentDescription,
         equipmentSlot: row.equipmentSlotType,
-        rarity: row.rarity,
+        rarity: rowrarity,
         happinessBonus: row.happinessBonus,
         energyBonus: row.energyBonus,
         xpBonusPercent: row.xpBonusPercent,
@@ -1711,7 +1712,7 @@ class PetService {
         slug: row.equipmentSlug,
         description: row.equipmentDescription,
         equipmentSlot: row.equipmentSlotType,
-        rarity: row.rarity,
+        rarity: rowrarity,
         happinessBonus: row.happinessBonus,
         energyBonus: row.energyBonus,
         xpBonusPercent: row.xpBonusPercent,
@@ -1831,7 +1832,7 @@ class PetService {
         slug: row.equipmentSlug,
         description: row.equipmentDescription,
         equipmentSlot: row.equipmentSlotType,
-        rarity: row.rarity,
+        rarity: rowrarity,
         happinessBonus: row.happinessBonus,
         energyBonus: row.energyBonus,
         xpBonusPercent: row.xpBonusPercent,
@@ -2003,7 +2004,7 @@ class PetService {
     const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         evolution_chain_id as evolutionChainId,
         evolution_stage as evolutionStage,
         evolves_from_id as evolvesFromId,
@@ -2030,11 +2031,12 @@ class PetService {
     const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         evolution_chain_id as evolutionChainId,
         evolution_stage as evolutionStage,
         evolves_from_id as evolvesFromId,
         sprite_sheet_url as spriteSheetUrl,
+        image_url as imageUrl,
         xp_multiplier as xpMultiplier,
         coin_multiplier as coinMultiplier,
         special_ability as specialAbility,
@@ -2046,7 +2048,9 @@ class PetService {
         is_starter as isStarter
       FROM pet_types
       WHERE is_available = TRUE
+        AND is_egg = FALSE
         AND (acquisition_type = 'shop' OR acquisition_type = 'starter_free')
+        AND (shop_price_coins > 0 OR shop_price_gems > 0 OR acquisition_type = 'starter_free')
         AND evolves_from_id IS NULL
       ORDER BY shop_price_coins
     `);
@@ -2057,7 +2061,7 @@ class PetService {
     const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         evolution_chain_id as evolutionChainId,
         evolution_stage as evolutionStage,
         evolves_from_id as evolvesFromId,
@@ -2165,11 +2169,21 @@ class PetService {
         [userId]
       );
 
+      // Map acquisition_type to acquisition_source enum
+      let acquisitionSource: string;
+      if (petType.acquisition_type === 'starter_free') {
+        acquisitionSource = 'free_starter';
+      } else if (petType.shop_price_gems > 0) {
+        acquisitionSource = 'shop_gems';
+      } else {
+        acquisitionSource = 'shop_coins';
+      }
+
       // Create new pet with HP initialized
       const [result] = await connection.query<ResultSetHeader>(`
         INSERT INTO user_pets (user_id, pet_type_id, nickname, is_active, is_hatched, acquisition_source, acquisition_price, hp)
         VALUES (?, ?, ?, TRUE, TRUE, ?, ?, 100)
-      `, [userId, petTypeId, nickname || null, petType.acquisition_type, petType.shop_price_coins || 0]);
+      `, [userId, petTypeId, nickname || null, acquisitionSource, petType.shop_price_coins || 0]);
 
       // Record transaction if coins were spent
       if (petType.shop_price_coins > 0) {
@@ -2351,13 +2365,14 @@ class PetService {
   // ==================== Egg System ====================
 
   /**
-   * Get all available egg types for purchase
+   * Get all available egg types for purchase in shop
+   * Only returns eggs with acquisition_type = 'shop' and price > 0
    */
   async getEggTypes(): Promise<ExtendedPetType[]> {
     const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         is_egg as isEgg,
         hatch_xp_required as hatchXpRequired,
         hatch_hours_min as hatchHoursMin,
@@ -2366,7 +2381,10 @@ class PetService {
         shop_price_coins as shopPriceCoins,
         shop_price_gems as shopPriceGems
       FROM pet_types
-      WHERE is_available = TRUE AND is_egg = TRUE
+      WHERE is_available = TRUE
+        AND is_egg = TRUE
+        AND acquisition_type = 'shop'
+        AND (shop_price_coins > 0 OR shop_price_gems > 0)
       ORDER BY shop_price_coins
     `);
     return rows as ExtendedPetType[];
@@ -2386,7 +2404,7 @@ class PetService {
     const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         is_egg as isEgg,
         hatch_xp_required as hatchXpRequired,
         hatch_hours_min as hatchHoursMin,
@@ -2402,12 +2420,13 @@ class PetService {
 
   /**
    * Get all available pets for direct purchase (non-eggs)
+   * Only returns pets with acquisition_type = 'shop' or 'starter_free' and price > 0
    */
   async getAvailablePets(): Promise<ExtendedPetType[]> {
     const [rows] = await pool.query<RowDataPacket[]>(`
       SELECT
         id, name, slug, description,
-        base_rarity as baseRarity,
+        rarity as rarity,
         is_egg as isEgg,
         xp_multiplier as xpMultiplier,
         coin_multiplier as coinMultiplier,
@@ -2418,9 +2437,11 @@ class PetService {
         shop_price_coins as shopPriceCoins,
         shop_price_gems as shopPriceGems
       FROM pet_types
-      WHERE is_available = TRUE AND is_egg = FALSE
-        AND (shop_price_coins > 0 OR shop_price_gems > 0)
-      ORDER BY base_rarity, shop_price_coins
+      WHERE is_available = TRUE
+        AND is_egg = FALSE
+        AND (acquisition_type = 'shop' OR acquisition_type = 'starter_free')
+        AND (shop_price_coins > 0 OR shop_price_gems > 0 OR acquisition_type = 'starter_free')
+      ORDER BY rarity, shop_price_coins
     `);
     return rows as ExtendedPetType[];
   }
@@ -2672,7 +2693,7 @@ class PetService {
     const [pool_entries] = await pool.query<RowDataPacket[]>(`
       SELECT ehp.pet_type_id, ehp.weight,
         pt.id, pt.name, pt.slug, pt.description,
-        pt.base_rarity as baseRarity,
+        pt.rarity as rarity,
         pt.image_url as imageUrl,
         pt.xp_multiplier as xpMultiplier,
         pt.coin_multiplier as coinMultiplier,
@@ -2700,7 +2721,7 @@ class PetService {
           name: entry.name,
           slug: entry.slug,
           description: entry.description,
-          baseRarity: entry.baseRarity,
+          rarity: entryrarity,
           evolutionChainId: null,
           evolutionStage: 1,
           evolvesFromId: null,
@@ -2721,7 +2742,7 @@ class PetService {
       name: first.name,
       slug: first.slug,
       description: first.description,
-      baseRarity: first.baseRarity,
+      rarity: firstrarity,
       evolutionChainId: null,
       evolutionStage: 1,
       evolvesFromId: null,
@@ -2738,7 +2759,7 @@ class PetService {
     const [pool_entries] = await pool.query<RowDataPacket[]>(`
       SELECT ehp.weight,
         pt.id, pt.name, pt.slug, pt.description,
-        pt.base_rarity as baseRarity,
+        pt.rarity as rarity,
         pt.image_url as imageUrl
       FROM egg_hatch_pool ehp
       JOIN pet_types pt ON ehp.pet_type_id = pt.id
@@ -2754,7 +2775,7 @@ class PetService {
         name: entry.name,
         slug: entry.slug,
         description: entry.description,
-        baseRarity: entry.baseRarity,
+        rarity: entryrarity,
         evolutionChainId: null,
         evolutionStage: 1,
         evolvesFromId: null,
@@ -2782,7 +2803,7 @@ class PetService {
         pt.name as petTypeName,
         pt.slug as petTypeSlug,
         pt.image_url as imageUrl,
-        pt.base_rarity as baseRarity,
+        pt.rarity as rarity,
         pt.is_egg as isEgg,
         pt.hatch_xp_required as hatchXpRequired,
         pt.hatch_hours_min as hatchHoursMin
@@ -2816,7 +2837,7 @@ class PetService {
         pt.coin_multiplier as coinMultiplier,
         pt.special_ability as specialAbility,
         pt.ability_description as abilityDescription,
-        pt.base_rarity as baseRarity
+        pt.rarity as rarity
       FROM user_pets up
       JOIN pet_types pt ON up.pet_type_id = pt.id
       WHERE up.user_id = ? AND (pt.is_egg = FALSE OR up.is_hatched = TRUE)
@@ -3115,7 +3136,7 @@ class PetService {
         pt.name as petTypeName,
         pt.slug as petTypeSlug,
         pt.image_url as imageUrl,
-        pt.base_rarity as baseRarity
+        pt.rarity as rarity
       FROM user_pets up
       JOIN pet_types pt ON up.pet_type_id = pt.id
       WHERE up.user_id = ? AND up.is_dead = TRUE

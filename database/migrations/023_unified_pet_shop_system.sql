@@ -234,7 +234,7 @@ SELECT
     up.*,
     pt.name AS pet_type_name,
     pt.slug AS pet_type_slug,
-    pt.base_rarity,
+    pt..rarity,
     pt.image_url AS pet_image,
     pt.xp_multiplier,
     pt.coin_multiplier,

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS pet_types (
     name VARCHAR(50) NOT NULL,
     slug VARCHAR(50) NOT NULL UNIQUE,
     description TEXT,
-    base_rarity ENUM('common', 'uncommon', 'rare', 'epic', 'legendary') NOT NULL DEFAULT 'common',
+    .rarity ENUM('common', 'uncommon', 'rare', 'epic', 'legendary') NOT NULL DEFAULT 'common',
     evolution_chain_id INT,
     evolution_stage INT NOT NULL DEFAULT 1,
     evolves_from_id INT,
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS pet_activities (
 -- ========================================
 
 -- Insert all pet types first (without evolves_from_id)
-INSERT INTO pet_types (name, slug, description, base_rarity, evolution_chain_id, evolution_stage, sprite_sheet_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_starter, evolution_requirement) VALUES
+INSERT INTO pet_types (name, slug, description, .rarity, evolution_chain_id, evolution_stage, sprite_sheet_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_starter, evolution_requirement) VALUES
 -- Evolution Chain 1: Cat
 ('Kitten', 'kitten', 'A playful little kitten that loves to learn new words!', 'common', 1, 1, '/assets/pets/kitten.png', 1.05, 1.05, 'word_hunter', 'Slightly increases vocabulary quiz accuracy', TRUE, NULL),
 ('Cat', 'cat', 'A clever cat that helps you remember words better.', 'uncommon', 1, 2, '/assets/pets/cat.png', 1.10, 1.10, 'memory_boost', 'Increases spaced repetition effectiveness', FALSE, '{"level": 5, "days_active": 7}'),

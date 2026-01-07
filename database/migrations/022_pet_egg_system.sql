@@ -102,7 +102,7 @@ UPDATE pet_types SET is_available = FALSE WHERE slug IN (
 -- ========================================
 
 -- Common Pets (shop_price_coins = 0 because they're only from eggs)
-INSERT INTO pet_types (name, slug, description, base_rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
+INSERT INTO pet_types (name, slug, description, .rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
 VALUES
   ('Chick', 'chick', 'A fluffy little chick that cheers you on!', 'common', 1, '/assets/pets/chick.png', 1.05, 1.05, 'early_bird', 'Slightly more XP from morning sessions', TRUE, FALSE, FALSE, 'egg', 0),
   ('Duck', 'duck', 'A friendly duck that waddles along your learning journey.', 'common', 1, '/assets/pets/duck.png', 1.05, 1.05, 'water_wisdom', 'Slightly faster vocabulary review', TRUE, FALSE, FALSE, 'egg', 0),
@@ -114,7 +114,7 @@ ON DUPLICATE KEY UPDATE
   image_url = VALUES(image_url);
 
 -- Uncommon Pets
-INSERT INTO pet_types (name, slug, description, base_rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
+INSERT INTO pet_types (name, slug, description, .rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
 VALUES
   ('Dog', 'dog', 'A loyal dog that stays by your side through every lesson.', 'uncommon', 1, '/assets/pets/dog.png', 1.10, 1.08, 'loyal_companion', 'Reduces streak break penalties', TRUE, FALSE, FALSE, 'egg', 0),
   ('Cow', 'cow', 'A patient cow that helps you take your time and learn well.', 'uncommon', 1, '/assets/pets/cow.png', 1.08, 1.10, 'steady_pace', 'Bonus XP from thorough reviews', TRUE, FALSE, FALSE, 'egg', 0),
@@ -126,7 +126,7 @@ ON DUPLICATE KEY UPDATE
   image_url = VALUES(image_url);
 
 -- Rare Pets
-INSERT INTO pet_types (name, slug, description, base_rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
+INSERT INTO pet_types (name, slug, description, .rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
 VALUES
   ('Panda', 'panda', 'A wise panda that brings peace and focus to learning.', 'rare', 1, '/assets/pets/panda.png', 1.15, 1.10, 'zen_focus', 'Increased accuracy bonus', TRUE, FALSE, FALSE, 'egg', 0),
   ('Owl', 'owl', 'A wise owl that helps you remember everything.', 'rare', 1, '/assets/pets/owl.png', 1.18, 1.08, 'perfect_memory', 'Better spaced repetition results', TRUE, FALSE, FALSE, 'egg', 0),
@@ -138,7 +138,7 @@ ON DUPLICATE KEY UPDATE
   image_url = VALUES(image_url);
 
 -- Epic Pets
-INSERT INTO pet_types (name, slug, description, base_rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
+INSERT INTO pet_types (name, slug, description, .rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
 VALUES
   ('Bear', 'bear', 'A powerful bear that gives strength to your learning.', 'epic', 1, '/assets/pets/bear.png', 1.20, 1.15, 'power_focus', 'Major XP boost from challenges', TRUE, FALSE, FALSE, 'egg', 0),
   ('Elephant', 'elephant', 'A gentle elephant that never forgets a lesson.', 'epic', 1, '/assets/pets/elephant.png', 1.22, 1.12, 'never_forget', 'Enhanced memory retention', TRUE, FALSE, FALSE, 'egg', 0),
@@ -150,7 +150,7 @@ ON DUPLICATE KEY UPDATE
   image_url = VALUES(image_url);
 
 -- Legendary Pets
-INSERT INTO pet_types (name, slug, description, base_rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
+INSERT INTO pet_types (name, slug, description, .rarity, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_available, is_egg, is_starter, acquisition_type, shop_price_coins)
 VALUES
   ('Narwhal', 'narwhal', 'A magical narwhal with a horn of knowledge!', 'legendary', 1, '/assets/pets/narwhal.png', 1.30, 1.25, 'magic_horn', 'Massive XP and coin bonuses', TRUE, FALSE, FALSE, 'egg', 0),
   ('Whale', 'whale', 'A majestic whale that dives deep into wisdom.', 'legendary', 1, '/assets/pets/whale.png', 1.28, 1.28, 'deep_wisdom', 'Enhanced learning across all areas', TRUE, FALSE, FALSE, 'egg', 0),
@@ -163,7 +163,7 @@ ON DUPLICATE KEY UPDATE
 -- Insert Egg Types (purchasable from shop)
 -- ========================================
 
-INSERT INTO pet_types (name, slug, description, base_rarity, is_egg, hatch_xp_required, hatch_hours_min, image_url, is_available, is_starter, acquisition_type, shop_price_coins, shop_price_gems)
+INSERT INTO pet_types (name, slug, description, .rarity, is_egg, hatch_xp_required, hatch_hours_min, image_url, is_available, is_starter, acquisition_type, shop_price_coins, shop_price_gems)
 VALUES
   ('Common Egg', 'egg-common', 'A simple egg that hatches into a common pet. Perfect for beginners!', 'common', TRUE, 100, 6, '/assets/eggs/egg-common.svg', TRUE, FALSE, 'shop', 500, 0),
   ('Uncommon Egg', 'egg-uncommon', 'A spotted egg with hints of nature. Contains uncommon pets!', 'uncommon', TRUE, 250, 12, '/assets/eggs/egg-uncommon.svg', TRUE, FALSE, 'shop', 1500, 0),
@@ -189,7 +189,7 @@ SELECT
   id,
   100
 FROM pet_types
-WHERE base_rarity = 'common' AND is_egg = FALSE AND is_available = TRUE
+WHERE .rarity = 'common' AND is_egg = FALSE AND is_available = TRUE
 ON DUPLICATE KEY UPDATE weight = 100;
 
 -- Uncommon Egg -> Common (30 weight) + Uncommon (100 weight)
@@ -197,9 +197,9 @@ INSERT INTO egg_hatch_pool (egg_type_id, pet_type_id, weight)
 SELECT
   (SELECT id FROM pet_types WHERE slug = 'egg-uncommon'),
   id,
-  CASE WHEN base_rarity = 'common' THEN 30 ELSE 100 END
+  CASE WHEN .rarity = 'common' THEN 30 ELSE 100 END
 FROM pet_types
-WHERE base_rarity IN ('common', 'uncommon') AND is_egg = FALSE AND is_available = TRUE
+WHERE .rarity IN ('common', 'uncommon') AND is_egg = FALSE AND is_available = TRUE
 ON DUPLICATE KEY UPDATE weight = VALUES(weight);
 
 -- Rare Egg -> Uncommon (20 weight) + Rare (100 weight)
@@ -207,9 +207,9 @@ INSERT INTO egg_hatch_pool (egg_type_id, pet_type_id, weight)
 SELECT
   (SELECT id FROM pet_types WHERE slug = 'egg-rare'),
   id,
-  CASE WHEN base_rarity = 'uncommon' THEN 20 ELSE 100 END
+  CASE WHEN .rarity = 'uncommon' THEN 20 ELSE 100 END
 FROM pet_types
-WHERE base_rarity IN ('uncommon', 'rare') AND is_egg = FALSE AND is_available = TRUE
+WHERE .rarity IN ('uncommon', 'rare') AND is_egg = FALSE AND is_available = TRUE
 ON DUPLICATE KEY UPDATE weight = VALUES(weight);
 
 -- Epic Egg -> Rare (30 weight) + Epic (100 weight)
@@ -217,9 +217,9 @@ INSERT INTO egg_hatch_pool (egg_type_id, pet_type_id, weight)
 SELECT
   (SELECT id FROM pet_types WHERE slug = 'egg-epic'),
   id,
-  CASE WHEN base_rarity = 'rare' THEN 30 ELSE 100 END
+  CASE WHEN .rarity = 'rare' THEN 30 ELSE 100 END
 FROM pet_types
-WHERE base_rarity IN ('rare', 'epic') AND is_egg = FALSE AND is_available = TRUE
+WHERE .rarity IN ('rare', 'epic') AND is_egg = FALSE AND is_available = TRUE
 ON DUPLICATE KEY UPDATE weight = VALUES(weight);
 
 -- Legendary Egg -> Epic (20 weight) + Legendary (100 weight)
@@ -227,9 +227,9 @@ INSERT INTO egg_hatch_pool (egg_type_id, pet_type_id, weight)
 SELECT
   (SELECT id FROM pet_types WHERE slug = 'egg-legendary'),
   id,
-  CASE WHEN base_rarity = 'epic' THEN 20 ELSE 100 END
+  CASE WHEN .rarity = 'epic' THEN 20 ELSE 100 END
 FROM pet_types
-WHERE base_rarity IN ('epic', 'legendary') AND is_egg = FALSE AND is_available = TRUE
+WHERE .rarity IN ('epic', 'legendary') AND is_egg = FALSE AND is_available = TRUE
 ON DUPLICATE KEY UPDATE weight = VALUES(weight);
 
 -- ========================================
@@ -246,7 +246,7 @@ BEGIN
   DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; -- Duplicate key name, ignore
 
   CREATE INDEX idx_pet_types_is_egg ON pet_types(is_egg);
-  CREATE INDEX idx_pet_types_rarity ON pet_types(base_rarity);
+  CREATE INDEX idx_pet_types_rarity ON pet_types(.rarity);
   CREATE INDEX idx_user_pets_is_hatched ON user_pets(is_hatched);
   CREATE INDEX idx_egg_hatch_pool_egg ON egg_hatch_pool(egg_type_id);
 END//
@@ -263,7 +263,7 @@ DROP PROCEDURE IF EXISTS create_egg_indexes;
 -- Insert eggs into shop_items if that table exists
 INSERT INTO shop_items (name, slug, description, category, rarity, price_coins, price_gems, image_url, is_available, item_type, metadata, sort_order)
 SELECT
-  name, slug, description, 'pets', base_rarity, shop_price_coins, COALESCE(shop_price_gems, 0),
+  name, slug, description, 'pets', .rarity, shop_price_coins, COALESCE(shop_price_gems, 0),
   image_url, TRUE, 'pet_egg', JSON_OBJECT('pet_type_id', id, 'hatch_xp_required', hatch_xp_required, 'hatch_hours_min', hatch_hours_min), 100
 FROM pet_types
 WHERE is_egg = TRUE AND is_available = TRUE

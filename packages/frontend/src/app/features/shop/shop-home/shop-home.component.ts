@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ShopService, ShopItem, ShopCategory, DailyDeal, UserCurrency } from '../shop.service';
-import { PetService, EggType, UserPet } from '../../pets/services/pet.service';
+import { PetService, EggType, UserPet, ExtendedPetType } from '../../pets/services/pet.service';
 
 @Component({
   selector: 'app-shop-home',
@@ -20,6 +20,8 @@ export class ShopHomeComponent implements OnInit {
   featuredItems = signal<ShopItem[]>([]);
   dailyDeals = signal<DailyDeal[]>([]);
   eggTypes = signal<EggType[]>([]);
+  shopPets = signal<ExtendedPetType[]>([]);
+  canClaimFreePet = signal(false);
   currency = signal<UserCurrency | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
@@ -31,6 +33,10 @@ export class ShopHomeComponent implements OnInit {
   // Egg purchase state
   purchasingEggId = signal<number | null>(null);
   purchaseSuccess = signal<{ eggName: string; egg: UserPet } | null>(null);
+
+  // Pet purchase state
+  purchasingPetId = signal<number | null>(null);
+  petPurchaseSuccess = signal<{ petName: string; pet: UserPet } | null>(null);
 
   // Daily deal purchase state
   purchasingDealId = signal<number | null>(null);
@@ -83,6 +89,15 @@ export class ShopHomeComponent implements OnInit {
     this.petService.getEggTypes().subscribe({
       next: (eggs) => this.eggTypes.set(eggs),
       error: (err) => console.error('Failed to load egg types', err)
+    });
+
+    // Load shop pets (direct purchase pets)
+    this.petService.getShopPets().subscribe({
+      next: (response) => {
+        this.shopPets.set(response.pets);
+        this.canClaimFreePet.set(response.canClaimFree);
+      },
+      error: (err) => console.error('Failed to load shop pets', err)
     });
 
     // Load pending gift count for badge
@@ -261,6 +276,81 @@ export class ShopHomeComponent implements OnInit {
   goToMyEggs(): void {
     this.purchaseSuccess.set(null);
     this.router.navigate(['/pets']);
+  }
+
+  // === Pet Methods ===
+
+  purchasePet(petTypeId: number): void {
+    const currency = this.currency();
+    const pet = this.shopPets().find((p) => p.id === petTypeId);
+    if (!currency || !pet) return;
+
+    const petPrice = pet.shopPriceCoins ?? 0;
+    const isFreeStarter = pet.acquisitionType === 'starter_free' && this.canClaimFreePet();
+
+    if (!isFreeStarter && currency.coins < petPrice) {
+      this.error.set('Not enough coins!');
+      return;
+    }
+
+    this.purchasingPetId.set(petTypeId);
+    this.petService.purchasePet(petTypeId).subscribe({
+      next: (result) => {
+        this.purchasingPetId.set(null);
+        // Refresh currency after purchase
+        this.shopService.getCurrency().subscribe({
+          next: (curr) => this.currency.set(curr),
+          error: () => {}
+        });
+        // Update canClaimFree if it was a free starter
+        if (isFreeStarter) {
+          this.canClaimFreePet.set(false);
+        }
+        // Show success modal
+        this.petPurchaseSuccess.set({ petName: pet.name, pet: result.pet });
+      },
+      error: (err) => {
+        this.purchasingPetId.set(null);
+        this.error.set(err.error?.error ?? 'Failed to purchase pet');
+      }
+    });
+  }
+
+  closePetPurchaseSuccess(): void {
+    this.petPurchaseSuccess.set(null);
+  }
+
+  goToMyPets(): void {
+    this.petPurchaseSuccess.set(null);
+    this.router.navigate(['/pets']);
+  }
+
+  getPetEmoji(slug?: string): string {
+    if (!slug) return '🐾';
+    const petEmojis: Record<string, string> = {
+      fox_kit: '🦊',
+      fox_young: '🦊',
+      fox_adult: '🦊',
+      fox_mystic: '🦊',
+      owlet: '🦉',
+      owl_young: '🦉',
+      owl_wise: '🦉',
+      owl_sage: '🦉',
+      dragon_hatchling: '🐉',
+      dragon_young: '🐉',
+      dragon_ancient: '🐲',
+      cat: '🐱',
+      kitten: '🐱',
+      dog: '🐶',
+      puppy: '🐶',
+      bunny: '🐰',
+      hamster: '🐹',
+      panda: '🐼',
+      penguin: '🐧',
+      unicorn: '🦄',
+      phoenix: '🔥',
+    };
+    return petEmojis[slug] ?? '🐾';
   }
 
   getEggImageUrl(rarity: string): string {

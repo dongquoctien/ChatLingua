@@ -54,7 +54,7 @@ UPDATE pet_types SET image_url = '/assets/icons/pixel/sqkhor/individual/penguin.
 -- ============================================================
 
 -- Insert new pet types with SQKhor images (if they don't exist)
-INSERT IGNORE INTO pet_types (name, slug, description, base_rarity, evolution_chain_id, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_starter, acquisition_type, shop_price_coins, shop_price_gems)
+INSERT IGNORE INTO pet_types (name, slug, description, .rarity, evolution_chain_id, evolution_stage, image_url, xp_multiplier, coin_multiplier, special_ability, ability_description, is_starter, acquisition_type, shop_price_coins, shop_price_gems)
 VALUES
 -- Pokemon-inspired pets
 ('Pikachu', 'pikachu', 'An electric mouse that sparks joy in learning!', 'epic', 10, 1, '/assets/icons/pixel/sqkhor/individual/pikachu.svg', 1.20, 1.15, 'electric_boost', 'Increases quiz speed bonus by 15%', FALSE, 'shop', 2000, 100),

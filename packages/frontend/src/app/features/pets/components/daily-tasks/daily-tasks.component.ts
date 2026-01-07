@@ -19,7 +19,7 @@ import { ToastService } from '../../../../shared/services/toast.service';
 })
 export class DailyTasksComponent implements OnInit {
   private petService = inject(PetService);
-  private toastService = inject(ToastService);
+ // private toastService = inject(ToastService);
 
   // Output event when reward is claimed (parent can reload inventory)
   rewardClaimed = output<TaskClaimResult>();
@@ -94,17 +94,17 @@ export class DailyTasksComponent implements OnInit {
           } else if (result.xpRewarded > 0) {
             rewardText = `+${result.xpRewarded} XP`;
           }
-          this.toastService.success('Task Complete!', rewardText);
+         // this.toastService.success('Task Complete!', rewardText);
         } else {
           this.error.set(result.message);
-          this.toastService.error('Claim Failed', result.message);
+          // this.toastService.error('Claim Failed', result.message);
         }
       },
       error: (err) => {
         console.error('Failed to claim reward:', err);
         this.claimingTaskId.set(null);
         this.error.set('Failed to claim reward');
-        this.toastService.error('Error', 'Failed to claim reward');
+        // this.toastService.error('Error', 'Failed to claim reward');
       }
     });
   }

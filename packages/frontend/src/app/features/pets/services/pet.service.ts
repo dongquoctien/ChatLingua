@@ -45,6 +45,7 @@ export interface UserPet {
   userId: number;
   petTypeId: number;
   petType?: PetType & EggTypeExtras;
+  imageUrl?: string | null;
   nickname: string | null;
   level: number;
   experience: number;
@@ -73,7 +74,6 @@ export interface EggTypeExtras {
 
 export interface EggType extends PetType, EggTypeExtras {
   // Backend returns these for shop eggs
-  baseRarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
   shopPriceCoins?: number;
   shopPriceGems?: number;
   acquisitionType?: 'shop' | 'achievement' | 'event' | 'starter_free';
@@ -430,7 +430,7 @@ export class PetService {
         slug: pet.petTypeSlug,
         name: pet.petTypeName,
         imageUrl: pet.imageUrl,
-        rarity: pet.baseRarity,
+        rarity: pet.rarity,
         xpMultiplier: pet.xpMultiplier,
         coinMultiplier: pet.coinMultiplier,
         specialAbility: pet.specialAbility,

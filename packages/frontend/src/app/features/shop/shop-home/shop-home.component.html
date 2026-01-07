@@ -151,40 +151,40 @@
         @for (egg of eggTypes(); track egg.id) {
           <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                [ngClass]="{
-                 'ring-2 ring-gray-300': egg.baseRarity === 'common',
-                 'ring-2 ring-green-300': egg.baseRarity === 'uncommon',
-                 'ring-2 ring-blue-300': egg.baseRarity === 'rare',
-                 'ring-2 ring-purple-300': egg.baseRarity === 'epic',
-                 'ring-2 ring-yellow-400 shadow-yellow-200': egg.baseRarity === 'legendary'
+                 'ring-2 ring-gray-300': egg.rarity === 'common',
+                 'ring-2 ring-green-300': egg.rarity === 'uncommon',
+                 'ring-2 ring-blue-300': egg.rarity === 'rare',
+                 'ring-2 ring-purple-300': egg.rarity === 'epic',
+                 'ring-2 ring-yellow-400 shadow-yellow-200': egg.rarity === 'legendary'
                }">
             <!-- Egg Preview -->
             <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
-                 [ngClass]="getRarityGradient(egg.baseRarity ?? 'common')">
+                 [ngClass]="getRarityGradient(egg.rarity ?? 'common')">
 
               <!-- Animated background for legendary -->
-              @if (egg.baseRarity === 'legendary') {
+              @if (egg.rarity === 'legendary') {
                 <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
               }
 
               <!-- Sparkle effect for epic/legendary -->
-              @if (egg.baseRarity === 'epic' || egg.baseRarity === 'legendary') {
+              @if (egg.rarity === 'epic' || egg.rarity === 'legendary') {
                 <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
               }
 
               <!-- Egg Image -->
-              <img [src]="getEggImageUrl(egg.baseRarity ?? 'common')" [alt]="egg.name"
+              <img [src]="getEggImageUrl(egg.rarity ?? 'common')" [alt]="egg.name"
                    class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
 
               <!-- Rarity Badge -->
               <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-20"
                    [ngClass]="{
-                     'bg-gray-500/80 text-white': egg.baseRarity === 'common',
-                     'bg-green-500/80 text-white': egg.baseRarity === 'uncommon',
-                     'bg-blue-500/80 text-white': egg.baseRarity === 'rare',
-                     'bg-purple-500/80 text-white': egg.baseRarity === 'epic',
-                     'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': egg.baseRarity === 'legendary'
+                     'bg-gray-500/80 text-white': egg.rarity === 'common',
+                     'bg-green-500/80 text-white': egg.rarity === 'uncommon',
+                     'bg-blue-500/80 text-white': egg.rarity === 'rare',
+                     'bg-purple-500/80 text-white': egg.rarity === 'epic',
+                     'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': egg.rarity === 'legendary'
                    }">
-                {{ getEggRarityEmoji(egg.baseRarity ?? 'common') }} {{ egg.baseRarity }}
+                {{ getEggRarityEmoji(egg.rarity ?? 'common') }} {{ egg.rarity }}
               </div>
             </div>
 
@@ -222,6 +222,141 @@
                     <i class="fa fa-spinner animate-spin"></i>
                   } @else {
                     Buy
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Shop Pets Section (Direct Purchase) -->
+  @if (shopPets().length > 0) {
+    <section class="mb-8 sm:mb-10">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="text-xl sm:text-2xl">🐾</span>
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900">Adopt a Pet</h2>
+          @if (canClaimFreePet()) {
+            <span class="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">FREE STARTER!</span>
+          }
+        </div>
+        <a routerLink="/pets" class="text-gray-600 hover:text-gray-900 text-xs sm:text-sm flex items-center gap-1">
+          <span class="hidden sm:inline">My Pets</span> <i class="fa fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        @for (pet of shopPets(); track pet.id) {
+          <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+               [ngClass]="{
+                 'ring-2 ring-gray-300': pet.rarity === 'common',
+                 'ring-2 ring-green-300': pet.rarity === 'uncommon',
+                 'ring-2 ring-blue-300': pet.rarity === 'rare',
+                 'ring-2 ring-purple-300': pet.rarity === 'epic',
+                 'ring-2 ring-yellow-400 shadow-yellow-200': pet.rarity === 'legendary'
+               }">
+            <!-- Pet Preview -->
+            <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
+                 [ngClass]="getRarityGradient(pet.rarity ?? 'common')">
+
+              <!-- Animated background for legendary -->
+              @if (pet.rarity === 'legendary') {
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+              }
+
+              <!-- Sparkle effect for epic/legendary -->
+              @if (pet.rarity === 'epic' || pet.rarity === 'legendary') {
+                <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
+              }
+
+              <!-- Free Starter Badge -->
+              @if (pet.acquisitionType === 'starter_free' && canClaimFreePet()) {
+                <div class="absolute top-2 left-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+                  FREE! 🎁
+                </div>
+              }
+
+              <!-- Pet Image or Emoji -->
+              @if (pet.imageUrl) {
+                <img [src]="pet.imageUrl" [alt]="pet.name"
+                     class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
+              } @else {
+                <span class="text-6xl relative z-10 group-hover:scale-110 transition-transform duration-300">
+                  {{ getPetEmoji(pet.slug) }}
+                </span>
+              }
+
+              <!-- Rarity Badge -->
+              <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-20"
+                   [ngClass]="{
+                     'bg-gray-500/80 text-white': pet.rarity === 'common',
+                     'bg-green-500/80 text-white': pet.rarity === 'uncommon',
+                     'bg-blue-500/80 text-white': pet.rarity === 'rare',
+                     'bg-purple-500/80 text-white': pet.rarity === 'epic',
+                     'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': pet.rarity === 'legendary'
+                   }">
+                {{ getEggRarityEmoji(pet.rarity ?? 'common') }} {{ pet.rarity }}
+              </div>
+            </div>
+
+            <!-- Pet Info -->
+            <div class="p-3">
+              <h3 class="font-semibold text-gray-900 text-sm truncate">
+                {{ pet.name }}
+              </h3>
+
+              <!-- Pet Bonuses -->
+              <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                @if (pet.xpMultiplier && pet.xpMultiplier > 1) {
+                  <span class="flex items-center gap-0.5">
+                    <span>⚡</span> +{{ ((pet.xpMultiplier - 1) * 100) | number:'1.0-0' }}% XP
+                  </span>
+                }
+                @if (pet.coinMultiplier && pet.coinMultiplier > 1) {
+                  <span class="flex items-center gap-0.5">
+                    <span>🪙</span> +{{ ((pet.coinMultiplier - 1) * 100) | number:'1.0-0' }}%
+                  </span>
+                }
+              </div>
+
+              <!-- Special Ability -->
+              @if (pet.specialAbility) {
+                <div class="text-xs text-purple-600 mt-1 truncate" [title]="pet.specialAbility">
+                  ✨ {{ pet.specialAbility }}
+                </div>
+              }
+
+              <!-- Price & Buy Button -->
+              <div class="flex items-center justify-between mt-3">
+                @if (pet.acquisitionType === 'starter_free' && canClaimFreePet()) {
+                  <div class="flex items-center gap-1 bg-green-100 px-2 py-0.5 rounded-full">
+                    <span class="text-sm">🎁</span>
+                    <span class="font-bold text-green-700">Free</span>
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                    <span class="text-sm">🪙</span>
+                    <span class="font-bold text-gray-900">{{ formatPrice(pet.shopPriceCoins ?? 0) }}</span>
+                  </div>
+                }
+
+                <button (click)="purchasePet(pet.id)"
+                        [disabled]="purchasingPetId() === pet.id || (!(pet.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins < (pet.shopPriceCoins ?? 0))"
+                        class="px-3 py-1 text-xs font-semibold rounded-full transition-all"
+                        [ngClass]="{
+                          'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600': pet.acquisitionType === 'starter_free' && canClaimFreePet(),
+                          'bg-gray-900 text-white hover:bg-gray-800': !(pet.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins >= (pet.shopPriceCoins ?? 0),
+                          'bg-gray-200 text-gray-400 cursor-not-allowed': !(pet.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins < (pet.shopPriceCoins ?? 0)
+                        }">
+                  @if (purchasingPetId() === pet.id) {
+                    <i class="fa fa-spinner animate-spin"></i>
+                  } @else if (pet.acquisitionType === 'starter_free' && canClaimFreePet()) {
+                    Claim
+                  } @else {
+                    Adopt
                   }
                 </button>
               </div>
@@ -437,6 +572,55 @@
         <button (click)="goToMyEggs()"
                 class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
           <span>🥚</span> View My Eggs
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Pet Purchase Success Modal -->
+@if (petPurchaseSuccess()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center animate-bounce-in">
+      <!-- Celebration Header -->
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">New Pet Adopted!</h2>
+      <p class="text-gray-600 mb-6">
+        Welcome <span class="font-semibold">{{ petPurchaseSuccess()!.petName }}</span> to your family!
+      </p>
+
+      <!-- Pet Preview -->
+      <div class="relative inline-block mb-6">
+        <div class="w-32 h-32 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+          <span class="text-7xl">
+            <!-- Pet Image or Emoji -->
+              @if (petPurchaseSuccess()!.pet.imageUrl) {
+                <img [src]="petPurchaseSuccess()!.pet.imageUrl" [alt]="petPurchaseSuccess()!.pet.nickname"
+                      class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
+              } @else {
+                <span class="text-6xl relative z-10 group-hover:scale-110 transition-transform duration-300">
+                  {{ getPetEmoji(petPurchaseSuccess()!.pet.petType?.slug) }}
+                </span>
+              }
+          </span>
+        </div>
+        <div class="absolute -top-2 -right-2 text-2xl animate-bounce">🐾</div>
+        <div class="absolute -bottom-2 -left-2 text-2xl animate-bounce delay-100">💕</div>
+      </div>
+
+      <p class="text-sm text-gray-500 mb-6">
+        Your new companion is now active and ready to help you on your learning journey!
+      </p>
+
+      <!-- Actions -->
+      <div class="flex gap-3">
+        <button (click)="closePetPurchaseSuccess()"
+                class="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+          Continue Shopping
+        </button>
+        <button (click)="goToMyPets()"
+                class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
+          <span>🐾</span> View My Pets
         </button>
       </div>
     </div>

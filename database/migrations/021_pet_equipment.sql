@@ -90,7 +90,7 @@ UPDATE pet_types SET shop_price_coins = 500 WHERE slug = 'owlet';
 -- ========================================
 -- 4. ADD EXCLUSIVE/ACHIEVEMENT PETS
 -- ========================================
-INSERT INTO pet_types (name, slug, description, base_rarity, evolution_chain_id, evolution_stage, xp_multiplier, coin_multiplier, special_ability, ability_description, is_starter, acquisition_type, shop_price_coins, shop_price_gems, required_achievement, equipment_slots) VALUES
+INSERT INTO pet_types (name, slug, description, .rarity, evolution_chain_id, evolution_stage, xp_multiplier, coin_multiplier, special_ability, ability_description, is_starter, acquisition_type, shop_price_coins, shop_price_gems, required_achievement, equipment_slots) VALUES
 -- Achievement-locked exclusive pets
 ('Phoenix Chick', 'phoenix-chick', 'A legendary phoenix born from the flames of dedication! Only for true masters.', 'legendary', 5, 1, 1.30, 1.25, 'rebirth_flame', 'Protects your streak from breaking once per week', FALSE, 'achievement', 0, 0, 'STREAK_100', 'head,body,accessory,back'),
 ('Dragon Hatchling', 'dragon-hatchling', 'A mystical dragon hatched from an ancient egg. For vocabulary masters only!', 'legendary', 6, 1, 1.35, 1.30, 'dragon_wisdom', 'Double XP from vocabulary exercises', FALSE, 'achievement', 0, 0, 'VOCAB_500', 'head,body,accessory,weapon,back'),

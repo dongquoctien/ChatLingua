@@ -341,7 +341,7 @@ export interface EggShopItem {
   name: string;
   slug: string;
   description: string | null;
-  baseRarity: Rarity;
+  rarity: Rarity;
   isEgg: boolean;
   hatchXpRequired: number;
   hatchHoursMin: number;

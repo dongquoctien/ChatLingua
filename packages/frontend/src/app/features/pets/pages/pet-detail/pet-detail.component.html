@@ -493,9 +493,9 @@
                         {{ getActionTimeRemaining('feed') }}
                       }
                     </span>
-                    @if (foodItems().length > 0) {
+                    @if (totalFoodQuantity() > 0) {
                       <span class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-gray-700 text-white text-[8px] sm:text-[9px] font-bold min-w-[14px] sm:min-w-[16px] h-3.5 sm:h-4 flex items-center justify-center rounded-full px-0.5 sm:px-1">
-                        {{ foodItems().length }}
+                        {{ totalFoodQuantity() }}
                       </span>
                     }
                   </button>
