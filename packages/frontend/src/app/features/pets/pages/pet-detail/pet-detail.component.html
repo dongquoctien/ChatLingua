@@ -919,7 +919,7 @@
 
         <!-- Daily Tasks Tab -->
         @if (activeTab() === 'tasks') {
-          <app-daily-tasks></app-daily-tasks>
+          <app-daily-tasks (rewardClaimed)="onTaskRewardClaimed($event)"></app-daily-tasks>
         }
       }
     }

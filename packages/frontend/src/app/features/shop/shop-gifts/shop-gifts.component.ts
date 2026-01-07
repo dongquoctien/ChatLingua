@@ -1,6 +1,6 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, AfterViewInit, ElementRef, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ShopService, Gift } from '../shop.service';
 
 type GiftTab = 'received' | 'sent';
@@ -12,8 +12,9 @@ type GiftTab = 'received' | 'sent';
   templateUrl: './shop-gifts.component.html',
   styleUrl: './shop-gifts.component.scss'
 })
-export class ShopGiftsComponent implements OnInit {
+export class ShopGiftsComponent implements OnInit, AfterViewInit {
   private shopService = inject(ShopService);
+  private route = inject(ActivatedRoute);
 
   // State
   loading = signal(true);
@@ -25,8 +26,39 @@ export class ShopGiftsComponent implements OnInit {
   receivedGifts = signal<Gift[]>([]);
   sentGifts = signal<Gift[]>([]);
 
+  // Highlighted gift from URL query param
+  highlightedGiftId = signal<number | null>(null);
+
+  @ViewChildren('giftCard') giftCards!: QueryList<ElementRef>;
+
   ngOnInit(): void {
+    // Check for giftId query param
+    this.route.queryParams.subscribe(params => {
+      if (params['giftId']) {
+        this.highlightedGiftId.set(Number(params['giftId']));
+      }
+    });
     this.loadGifts();
+  }
+
+  ngAfterViewInit(): void {
+    // Watch for gift cards to scroll to highlighted one
+    this.giftCards.changes.subscribe(() => {
+      this.scrollToHighlightedGift();
+    });
+  }
+
+  private scrollToHighlightedGift(): void {
+    const giftId = this.highlightedGiftId();
+    if (!giftId) return;
+
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      const element = document.getElementById(`gift-${giftId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   }
 
   loadGifts(): void {
@@ -45,6 +77,8 @@ export class ShopGiftsComponent implements OnInit {
       this.receivedGifts.set(received);
       this.sentGifts.set(sent);
       this.loading.set(false);
+      // Scroll to highlighted gift after loading
+      this.scrollToHighlightedGift();
     }).catch(err => {
       console.error('Error loading gifts:', err);
       this.error.set('Failed to load gifts');
@@ -120,8 +154,7 @@ export class ShopGiftsComponent implements OnInit {
       'card_back': '🃏',
       'sound_pack': '🔊',
       'booster': '⚡',
-      'title': '👑',
-      'pet': '🐾'
+      'title': '👑'
     };
     return emojis[type || ''] || '🎁';
   }
@@ -183,5 +216,13 @@ export class ShopGiftsComponent implements OnInit {
 
   get pendingCount(): number {
     return this.receivedGifts().filter(g => g.status === 'pending').length;
+  }
+
+  isHighlighted(giftId: number): boolean {
+    return this.highlightedGiftId() === giftId;
+  }
+
+  clearHighlight(): void {
+    this.highlightedGiftId.set(null);
   }
 }

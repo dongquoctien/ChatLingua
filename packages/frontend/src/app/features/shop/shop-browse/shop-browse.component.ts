@@ -71,7 +71,6 @@ export class ShopBrowseComponent implements OnInit {
     { value: 'sound_pack', label: 'Sound Pack' },
     { value: 'booster', label: 'Booster' },
     { value: 'title', label: 'Title' },
-    { value: 'pet', label: 'Pet' },
     { value: 'egg', label: 'Egg' }
   ];
 
@@ -370,7 +369,6 @@ export class ShopBrowseComponent implements OnInit {
       'sound_pack': '🔊',
       'booster': '⚡',
       'title': '👑',
-      'pet': '🐾',
       'egg': '🥚'
     };
     return emojis[type] || '📦';

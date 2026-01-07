@@ -2,6 +2,8 @@ import { Router, Response } from 'express';
 import { shopService, ItemType, Rarity, ShopBundle } from '../services/shop.service.js';
 import { petService } from '../services/pet.service.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { chatService } from '../services/chat.service.js';
+import { emitToUser } from '../socket/index.js';
 
 const router = Router();
 
@@ -317,6 +319,41 @@ router.get('/daily-deals', async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * POST /api/shop/daily-deals/:dealId/purchase
+ * Purchase a daily deal at the discounted price
+ */
+router.post('/daily-deals/:dealId/purchase', async (req: AuthRequest, res: Response) => {
+  if (!validateUserId(req, res)) return;
+
+  try {
+    const dealId = parseInt(req.params.dealId);
+    if (isNaN(dealId)) {
+      res.status(400).json({ error: 'Invalid deal ID' });
+      return;
+    }
+
+    const result = await shopService.purchaseDailyDeal(req.userId, dealId);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to purchase deal';
+
+    const errorMap: Record<string, { status: number; message: string }> = {
+      'USER_CURRENCY_NOT_FOUND': { status: 400, message: 'Currency not initialized' },
+      'DEAL_NOT_FOUND': { status: 404, message: 'Deal not found or expired' },
+      'DEAL_ALREADY_PURCHASED': { status: 400, message: 'You have already purchased this deal today' },
+      'DEAL_SOLD_OUT': { status: 400, message: 'This deal is sold out' },
+      'INSUFFICIENT_COINS': { status: 400, message: 'Insufficient coins' },
+      'ALREADY_OWNED': { status: 400, message: 'You already own this item' },
+      'LEVEL_REQUIREMENT_NOT_MET': { status: 400, message: 'You do not meet the level requirement' },
+      'ACHIEVEMENT_REQUIREMENT_NOT_MET': { status: 400, message: 'You do not have the required achievement' }
+    };
+
+    const errorInfo = errorMap[message] || { status: 500, message };
+    res.status(errorInfo.status).json({ error: errorInfo.message });
+  }
+});
+
 // ============================================================
 // Booster Endpoints
 // ============================================================
@@ -342,6 +379,7 @@ router.post('/boosters/:itemId/activate', async (req: AuthRequest, res: Response
 
     const errorMap: Record<string, { status: number; message: string }> = {
       'BOOSTER_NOT_OWNED': { status: 400, message: 'You do not own this booster' },
+      'BOOSTER_ALREADY_USED': { status: 400, message: 'This booster has already been used' },
       'NOT_A_BOOSTER': { status: 400, message: 'This item is not a booster' }
     };
 
@@ -453,6 +491,36 @@ router.post('/gift', async (req: AuthRequest, res: Response) => {
     }
 
     const gift = await shopService.sendGift(req.userId, recipientId, itemId, message);
+
+    // Send chat notification to recipient
+    try {
+      // Get or create conversation between sender and recipient
+      const conversation = await chatService.getOrCreateConversation(req.userId, recipientId);
+
+      // Create gift notification message
+      const chatMessage = await chatService.createMessage({
+        conversationId: conversation.id,
+        senderId: req.userId,
+        messageType: 'gift',
+        content: message || `🎁 sent you a gift: ${gift.itemName}`,
+        metadata: {
+          giftId: gift.id,
+          itemId: gift.itemId,
+          itemName: gift.itemName,
+          senderName: gift.senderName,
+          recipientName: gift.recipientName,
+          giftMessage: message || null,
+          expiresAt: gift.expiresAt,
+        },
+      });
+
+      // Emit real-time notification to recipient
+      emitToUser(recipientId, 'message:new', chatMessage);
+    } catch (chatError) {
+      // Don't fail the gift if chat notification fails
+      console.error('Failed to send gift chat notification:', chatError);
+    }
+
     res.json(gift);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to send gift';

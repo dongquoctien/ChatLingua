@@ -8,7 +8,7 @@ import { petService } from './pet.service.js';
 
 export type AchievementCategory = 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone' | 'game';
 export type XPSource = 'exercise' | 'quiz' | 'review' | 'streak' | 'achievement' | 'challenge' | 'bonus' | 'game';
-export type NotificationType = 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard';
+export type NotificationType = 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard' | 'sync_completed' | 'sync_started' | 'new_sync_request' | 'forum_rank_up' | 'forum_badge_earned' | 'forum_post_shared' | 'forum_post_imported' | 'forum_comment' | 'forum_vote' | 'gift';
 
 export interface Achievement {
   id: number;

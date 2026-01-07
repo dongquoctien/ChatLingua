@@ -4,7 +4,7 @@ import type { RowDataPacket } from 'mysql2';
 // Enums & Constants
 // ============================================================
 
-export type MessageType = 'text' | 'achievement' | 'exercise' | 'game' | 'vocabulary' | 'image' | 'link';
+export type MessageType = 'text' | 'achievement' | 'exercise' | 'game' | 'vocabulary' | 'image' | 'link' | 'gift';
 export type StatusType = 'online' | 'offline' | 'away' | 'busy' | 'playing_game' | 'studying' | 'do_not_disturb' | 'invisible';
 export type ActivityType = 'none' | 'playing_word_scramble' | 'playing_memory_match' | 'playing_speed_challenge' | 'playing_hangman' | 'doing_exercises' | 'reviewing_vocabulary' | 'learning_grammar' | 'taking_quiz';
 export type AllowMessagesFrom = 'everyone' | 'friends_only' | 'nobody';

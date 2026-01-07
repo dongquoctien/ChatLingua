@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { PetService, UserPet, PetState, UserPetItem } from '../../services/pet.service';
 import { PetSpriteComponent, PetAnimation } from '../pet-sprite/pet-sprite.component';
-import { DraggableDirective } from '../../../../shared/directives/draggable.directive';
+import { DraggableDirective, DraggablePosition } from '../../../../shared/directives/draggable.directive';
 
 @Component({
   selector: 'app-pet-widget',
@@ -23,6 +23,9 @@ export class PetWidgetComponent implements OnInit, OnDestroy {
   tooltipMessage = signal('');
   currentAnimation = signal<PetAnimation>('idle');
 
+  // Track widget position (persists across expand/collapse)
+  widgetPosition = signal<DraggablePosition | null>(null);
+
   // From service (reactive - auto-updates when service changes)
   pet = this.petService.activePet;
   petState = this.petService.petState;
@@ -34,6 +37,7 @@ export class PetWidgetComponent implements OnInit, OnDestroy {
   petName = computed(() => this.pet()?.nickname ?? this.pet()?.petType?.name ?? 'Pet');
   petLevel = computed(() => this.pet()?.level ?? 1);
   petSlug = computed(() => this.pet()?.petType?.slug ?? 'kitten');
+  petImageUrl = computed(() => this.pet()?.petType?.imageUrl ?? '');
   petEmoji = computed(() => this.getPetEmoji());
   moodEmoji = computed(() => this.petService.getMoodEmoji(this.petState()?.mood ?? 'neutral'));
   needsAttention = computed(() => this.petState()?.needsAttention ?? false);
@@ -93,6 +97,10 @@ export class PetWidgetComponent implements OnInit, OnDestroy {
 
   toggleExpand(): void {
     this.isExpanded.update((v) => !v);
+  }
+
+  onPositionChange(position: DraggablePosition): void {
+    this.widgetPosition.set(position);
   }
 
   async feedPet(): Promise<void> {

@@ -1,14 +1,15 @@
 import { Component, input, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { SharedContentComponent } from '../shared-content/shared-content.component';
 import { SharedConversationCardComponent } from '../shared-conversation-card/shared-conversation-card.component';
 import { SharedGameCardComponent, SharedGamePayload } from '../shared-game-card/shared-game-card.component';
-import type { Message, SharedConversationPayload } from '../../chat.types';
+import type { Message, SharedConversationPayload, GiftPayload } from '../../chat.types';
 
 @Component({
   selector: 'app-message-item',
   standalone: true,
-  imports: [CommonModule, SharedContentComponent, SharedConversationCardComponent, SharedGameCardComponent],
+  imports: [CommonModule, RouterLink, SharedContentComponent, SharedConversationCardComponent, SharedGameCardComponent],
   templateUrl: './message-item.component.html',
   styleUrls: ['./message-item.component.scss'],
 })
@@ -54,6 +55,15 @@ export class MessageItemComponent {
     return type === 'image' || type === 'link';
   });
 
+  readonly isGiftMessage = computed(() => {
+    return this.message().messageType === 'gift';
+  });
+
+  readonly giftPayload = computed(() => {
+    if (!this.isGiftMessage()) return null;
+    return this.message().metadata as GiftPayload | null;
+  });
+
   readonly messageTypeIcon = computed(() => {
     switch (this.message().messageType) {
       case 'achievement': return '🏆';
@@ -62,6 +72,7 @@ export class MessageItemComponent {
       case 'vocabulary': return '📚';
       case 'image': return '🖼️';
       case 'link': return '🔗';
+      case 'gift': return '🎁';
       default: return '';
     }
   });

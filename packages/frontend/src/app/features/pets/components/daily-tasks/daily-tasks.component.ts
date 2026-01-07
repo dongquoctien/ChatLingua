@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   PetService,
@@ -8,6 +8,7 @@ import {
   RewardItemCategory,
   TaskClaimResult
 } from '../../services/pet.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 
 @Component({
   selector: 'app-daily-tasks',
@@ -18,6 +19,10 @@ import {
 })
 export class DailyTasksComponent implements OnInit {
   private petService = inject(PetService);
+  private toastService = inject(ToastService);
+
+  // Output event when reward is claimed (parent can reload inventory)
+  rewardClaimed = output<TaskClaimResult>();
 
   tasks = signal<DailyPetTask[]>([]);
   summary = signal<DailyTasksSummary | null>(null);
@@ -77,14 +82,29 @@ export class DailyTasksComponent implements OnInit {
           this.showClaimResult.set(true);
           // Refresh tasks to update state
           this.loadTasks();
+          // Emit event so parent can reload inventory/actions
+          this.rewardClaimed.emit(result);
+          // Show toast notification
+          let rewardText = 'Reward claimed!';
+          if (result.itemsRewarded && result.itemsRewarded.length > 0) {
+            const items = result.itemsRewarded.map(i => `+${i.quantity} ${i.itemName}`).join(', ');
+            rewardText = items;
+          } else if (result.coinsRewarded > 0) {
+            rewardText = `+${result.coinsRewarded} coins`;
+          } else if (result.xpRewarded > 0) {
+            rewardText = `+${result.xpRewarded} XP`;
+          }
+          this.toastService.success('Task Complete!', rewardText);
         } else {
           this.error.set(result.message);
+          this.toastService.error('Claim Failed', result.message);
         }
       },
       error: (err) => {
         console.error('Failed to claim reward:', err);
         this.claimingTaskId.set(null);
         this.error.set('Failed to claim reward');
+        this.toastService.error('Error', 'Failed to claim reward');
       }
     });
   }

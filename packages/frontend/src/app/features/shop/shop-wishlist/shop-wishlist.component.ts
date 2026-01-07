@@ -91,8 +91,7 @@ export class ShopWishlistComponent implements OnInit {
       'card_back': '🃏',
       'sound_pack': '🔊',
       'booster': '⚡',
-      'title': '👑',
-      'pet': '🐾'
+      'title': '👑'
     };
     return emojis[type] || '📦';
   }

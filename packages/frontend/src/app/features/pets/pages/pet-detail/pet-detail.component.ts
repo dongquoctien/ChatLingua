@@ -16,6 +16,7 @@ import {
   PetEvolutionStage,
   EggHatchResult,
   EggHatchPoolItem,
+  TaskClaimResult,
 } from '../../services/pet.service';
 import { PetSpriteComponent, PetAnimation } from '../../components/pet-sprite/pet-sprite.component';
 import { DailyTasksComponent } from '../../components/daily-tasks/daily-tasks.component';
@@ -663,5 +664,19 @@ export class PetDetailComponent implements OnInit {
       item_used: 'Used Item',
     };
     return labels[type] ?? type;
+  }
+
+  // Handler for when daily task reward is claimed - reload inventory
+  onTaskRewardClaimed(result: TaskClaimResult): void {
+    // Reload inventory to reflect new items
+    this.petService.getInventory().subscribe({
+      next: (items) => this.inventory.set(items),
+    });
+    // Also reload pet state if active (actions might have changed)
+    if (this.isActive()) {
+      this.petService.getActivePet().subscribe({
+        next: (data) => this.petState.set(data.state),
+      });
+    }
   }
 }

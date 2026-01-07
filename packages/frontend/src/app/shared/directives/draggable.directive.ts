@@ -27,15 +27,13 @@ export class DraggableDirective implements OnInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
 
   // Inputs
-  /** Unique key for saving position to localStorage */
-  storageKey = input<string>('');
   /** Whether dragging is enabled */
   enabled = input<boolean>(true);
   /** Selector for the drag handle (if not provided, entire element is draggable) */
   dragHandle = input<string>('');
   /** Boundary constraints: 'viewport' | 'none' */
   boundary = input<'viewport' | 'none'>('viewport');
-  /** Initial position */
+  /** Initial position (use to restore position after element recreation) */
   initialPosition = input<DraggablePosition | null>(null);
 
   // Outputs
@@ -63,8 +61,17 @@ export class DraggableDirective implements OnInit, OnDestroy {
 
     const element = this.el.nativeElement as HTMLElement;
 
-    // Load saved position
-    this.loadPosition();
+    // Apply initial position if provided (restore after element recreation)
+    const initPos = this.initialPosition();
+    if (initPos) {
+      requestAnimationFrame(() => {
+        this.renderer.setStyle(element, 'position', 'fixed');
+        this.renderer.setStyle(element, 'left', `${initPos.x}px`);
+        this.renderer.setStyle(element, 'top', `${initPos.y}px`);
+        this.renderer.setStyle(element, 'right', 'auto');
+        this.renderer.setStyle(element, 'bottom', 'auto');
+      });
+    }
 
     // Find drag handle or use element itself
     const handleSelector = this.dragHandle();
@@ -213,11 +220,10 @@ export class DraggableDirective implements OnInit, OnDestroy {
       this.renderer.setStyle(dragTarget, 'cursor', 'grab');
     }
 
-    // If actually moved, save position and prevent click
+    // If actually moved, emit position and prevent click
     if (wasMoved) {
       const rect = element.getBoundingClientRect();
       const position: DraggablePosition = { x: rect.left, y: rect.top };
-      this.savePosition(position);
       this.positionChange.emit(position);
 
       // Prevent the click event that would fire after mouseup
@@ -272,54 +278,4 @@ export class DraggableDirective implements OnInit, OnDestroy {
     });
   }
 
-  private savePosition(position: DraggablePosition): void {
-    const key = this.storageKey();
-    if (!key) return;
-    try {
-      localStorage.setItem(`draggable_${key}`, JSON.stringify(position));
-    } catch {
-      // localStorage not available
-    }
-  }
-
-  private loadPosition(): void {
-    const key = this.storageKey();
-    if (!key) return;
-
-    try {
-      const saved = localStorage.getItem(`draggable_${key}`);
-      if (saved) {
-        const position: DraggablePosition = JSON.parse(saved);
-        const element = this.el.nativeElement as HTMLElement;
-
-        // Validate position is within viewport
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        if (position.x >= 0 && position.x < viewportWidth &&
-            position.y >= 0 && position.y < viewportHeight) {
-          this.renderer.setStyle(element, 'position', 'fixed');
-          this.renderer.setStyle(element, 'left', `${position.x}px`);
-          this.renderer.setStyle(element, 'top', `${position.y}px`);
-          this.renderer.setStyle(element, 'right', 'auto');
-          this.renderer.setStyle(element, 'bottom', 'auto');
-        }
-      }
-    } catch {
-      // Invalid saved position
-    }
-  }
-
-  /** Reset position to default (clear saved position) */
-  resetPosition(): void {
-    const key = this.storageKey();
-    if (key) {
-      try {
-        localStorage.removeItem(`draggable_${key}`);
-      } catch {
-        // localStorage not available
-      }
-    }
-    // Position will reset on next page load
-  }
 }

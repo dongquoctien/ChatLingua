@@ -22,7 +22,6 @@ export type ItemType =
   | 'sound_pack'
   | 'booster'
   | 'title'
-  | 'pet'
   | 'pet_egg'
   | 'pet_item'
   | 'pet_equipment'
@@ -55,6 +54,13 @@ export interface ShopCategory {
   itemCount?: number;
 }
 
+export interface ShopItemDeal {
+  dealId: number;
+  discountPercent: number;
+  dealPrice: number;
+  originalPrice: number;
+}
+
 export interface ShopItem {
   id: number;
   name: string;
@@ -85,6 +91,7 @@ export interface ShopItem {
   isOwned?: boolean;
   isEquipped?: boolean;
   ownedQuantity?: number;
+  deal?: ShopItemDeal;
 }
 
 export interface UserCurrency {
@@ -463,6 +470,10 @@ export class ShopService {
     return this.http.get<DailyDeal[]>(`${this.apiUrl}/shop/daily-deals`);
   }
 
+  purchaseDailyDeal(dealId: number): Observable<PurchaseResult> {
+    return this.http.post<PurchaseResult>(`${this.apiUrl}/shop/daily-deals/${dealId}/purchase`, {});
+  }
+
   // ==================== Bundles ====================
 
   getBundles(): Observable<ShopBundle[]> {
@@ -622,7 +633,6 @@ export class ShopService {
       sound_pack: 'fa-volume-high',
       booster: 'fa-bolt',
       title: 'fa-crown',
-      pet: 'fa-paw',
       pet_egg: 'fa-egg',
       pet_item: 'fa-bone',
       pet_equipment: 'fa-shield',
@@ -647,7 +657,6 @@ export class ShopService {
       sound_pack: 'Sound Pack',
       booster: 'Booster',
       title: 'Title',
-      pet: 'Pet',
       pet_egg: 'Pet Egg',
       pet_item: 'Pet Item',
       pet_equipment: 'Pet Equipment',

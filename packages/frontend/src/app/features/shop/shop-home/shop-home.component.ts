@@ -25,9 +25,16 @@ export class ShopHomeComponent implements OnInit {
   error = signal<string | null>(null);
   dealCountdown = signal<string>('');
 
+  // Pending gifts count for badge
+  pendingGiftCount = signal(0);
+
   // Egg purchase state
   purchasingEggId = signal<number | null>(null);
   purchaseSuccess = signal<{ eggName: string; egg: UserPet } | null>(null);
+
+  // Daily deal purchase state
+  purchasingDealId = signal<number | null>(null);
+  dealPurchaseSuccess = signal<{ itemName: string; item: ShopItem } | null>(null);
 
   private countdownInterval: any;
 
@@ -76,6 +83,12 @@ export class ShopHomeComponent implements OnInit {
     this.petService.getEggTypes().subscribe({
       next: (eggs) => this.eggTypes.set(eggs),
       error: (err) => console.error('Failed to load egg types', err)
+    });
+
+    // Load pending gift count for badge
+    this.shopService.getPendingGiftCount().subscribe({
+      next: (result) => this.pendingGiftCount.set(result.count),
+      error: (err) => console.error('Failed to load pending gift count', err)
     });
   }
 
@@ -142,8 +155,7 @@ export class ShopHomeComponent implements OnInit {
       'card_back': '🃏',
       'sound_pack': '🔊',
       'booster': '⚡',
-      'title': '👑',
-      'pet': '🐾'
+      'title': '👑'
     };
     return emojis[type] || '📦';
   }
@@ -159,6 +171,52 @@ export class ShopHomeComponent implements OnInit {
       'eggs': '🥚'
     };
     return emojis[slug] || '📦';
+  }
+
+  // === Daily Deal Methods ===
+
+  purchaseDeal(dealId: number): void {
+    const currency = this.currency();
+    const deal = this.dailyDeals().find((d) => d.id === dealId);
+    if (!currency || !deal) return;
+
+    if (currency.coins < deal.dealPrice) {
+      this.error.set('Not enough coins!');
+      return;
+    }
+
+    if (deal.purchased) {
+      this.error.set('You have already purchased this deal today');
+      return;
+    }
+
+    this.purchasingDealId.set(dealId);
+    this.shopService.purchaseDailyDeal(dealId).subscribe({
+      next: (result) => {
+        this.purchasingDealId.set(null);
+        if (result.success) {
+          // Refresh currency after purchase
+          this.shopService.getCurrency().subscribe({
+            next: (curr) => this.currency.set(curr),
+            error: () => {} // Ignore refresh errors
+          });
+          // Update the deal as purchased locally
+          this.dailyDeals.update((deals) =>
+            deals.map((d) => (d.id === dealId ? { ...d, purchased: true } : d))
+          );
+          // Show success modal
+          this.dealPurchaseSuccess.set({ itemName: deal.item.name, item: result.item });
+        }
+      },
+      error: (err) => {
+        this.purchasingDealId.set(null);
+        this.error.set(err.error?.error ?? 'Failed to purchase deal');
+      }
+    });
+  }
+
+  closeDealPurchaseSuccess(): void {
+    this.dealPurchaseSuccess.set(null);
   }
 
   // === Egg Methods ===

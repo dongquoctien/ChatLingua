@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ShopService, InventoryItem, EquippedItems, ItemType, ActiveBooster } from '../shop.service';
@@ -10,8 +10,9 @@ import { ShopService, InventoryItem, EquippedItems, ItemType, ActiveBooster } fr
   templateUrl: './shop-inventory.component.html',
   styleUrls: ['./shop-inventory.component.scss']
 })
-export class ShopInventoryComponent implements OnInit {
+export class ShopInventoryComponent implements OnInit, OnDestroy {
   private shopService = inject(ShopService);
+  private boosterRefreshInterval: any;
 
   inventory = signal<InventoryItem[]>([]);
   equippedItems = signal<EquippedItems | null>(null);
@@ -34,8 +35,7 @@ export class ShopInventoryComponent implements OnInit {
     { value: 'game_theme', label: 'Game Themes' },
     { value: 'card_back', label: 'Card Backs' },
     { value: 'booster', label: 'Boosters' },
-    { value: 'title', label: 'Titles' },
-    { value: 'pet', label: 'Pets' }
+    { value: 'title', label: 'Titles' }
   ];
 
   filteredInventory = computed(() => {
@@ -47,6 +47,42 @@ export class ShopInventoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+    this.startBoosterRefresh();
+  }
+
+  ngOnDestroy(): void {
+    if (this.boosterRefreshInterval) {
+      clearInterval(this.boosterRefreshInterval);
+    }
+  }
+
+  private startBoosterRefresh(): void {
+    // Refresh boosters every 30 seconds to update remaining time and hide expired ones
+    this.boosterRefreshInterval = setInterval(() => {
+      const boosters = this.activeBoosters();
+      if (boosters.length > 0) {
+        // Update remaining minutes for each booster locally
+        const now = new Date();
+        const updated = boosters
+          .map(b => {
+            const expiresAt = new Date(b.expiresAt);
+            const remainingMs = expiresAt.getTime() - now.getTime();
+            const remainingMinutes = Math.max(0, Math.ceil(remainingMs / (60 * 1000)));
+            return { ...b, remainingMinutes };
+          })
+          .filter(b => b.remainingMinutes > 0); // Remove expired boosters
+
+        this.activeBoosters.set(updated);
+
+        // If any boosters expired, refresh the full list from server
+        if (updated.length < boosters.length) {
+          this.shopService.getActiveBoosters().subscribe({
+            next: (serverBoosters) => this.activeBoosters.set(serverBoosters),
+            error: () => {} // Ignore refresh errors
+          });
+        }
+      }
+    }, 30000); // Every 30 seconds
   }
 
   private loadData(): void {
@@ -111,6 +147,7 @@ export class ShopInventoryComponent implements OnInit {
   }
 
   activateBooster(item: InventoryItem): void {
+    console.log('Activating booster', item);
     this.shopService.activateBooster(item.itemId).subscribe({
       next: (booster) => {
         this.success.set(`${item.item.name} activated! Effect lasts for ${booster.remainingMinutes} minutes.`);
@@ -154,8 +191,7 @@ export class ShopInventoryComponent implements OnInit {
       'card_back': '🃏',
       'sound_pack': '🔊',
       'booster': '⚡',
-      'title': '👑',
-      'pet': '🐾'
+      'title': '👑'
     };
     return emojis[type] || '📦';
   }
@@ -191,5 +227,27 @@ export class ShopInventoryComponent implements OnInit {
       'legendary': '👑'
     };
     return emojis[rarity] || '⚪';
+  }
+
+  formatRemainingTime(minutes: number): string {
+    if (minutes <= 0) return 'Expired';
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours < 24) {
+      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+  }
+
+  getBoosterEffectEmoji(effectType: string): string {
+    const emojis: Record<string, string> = {
+      'xp': '⭐',
+      'coins': '🪙',
+      'streak_freeze': '❄️'
+    };
+    return emojis[effectType] || '⚡';
   }
 }

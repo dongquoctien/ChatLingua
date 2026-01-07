@@ -43,18 +43,18 @@
 
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         @for (deal of dailyDeals(); track deal.id) {
-          <a [routerLink]="['items', deal.item.slug]"
-             class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
-             [class.opacity-60]="deal.purchased"
-             [ngClass]="getRarityGlow(deal.item.rarity)">
+          <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
+               [class.opacity-60]="deal.purchased"
+               [ngClass]="getRarityGlow(deal.item.rarity)">
             <!-- Discount Badge - Animated -->
             <div class="absolute top-2 right-2 z-20 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
               -{{ deal.discountPercent }}% 🏷️
             </div>
 
-            <!-- Item Preview -->
-            <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br"
-                 [ngClass]="getRarityGradient(deal.item.rarity)">
+            <!-- Item Preview - Click to view details -->
+            <a [routerLink]="['items', deal.item.slug]"
+               class="block aspect-square flex items-center justify-center relative bg-gradient-to-br cursor-pointer"
+               [ngClass]="getRarityGradient(deal.item.rarity)">
 
               <!-- Sparkle for epic/legendary -->
               @if (deal.item.rarity === 'epic' || deal.item.rarity === 'legendary') {
@@ -88,13 +88,15 @@
                 }
                 {{ deal.item.rarity }}
               </div>
-            </div>
+            </a>
 
             <!-- Item Info -->
             <div class="p-3">
-              <h3 class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700">
-                {{ deal.item.name }}
-              </h3>
+              <a [routerLink]="['items', deal.item.slug]" class="block">
+                <h3 class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700">
+                  {{ deal.item.name }}
+                </h3>
+              </a>
 
               <!-- Price with savings -->
               <div class="flex items-center gap-2 mt-2">
@@ -110,12 +112,22 @@
                   <span>✅</span> Purchased
                 </div>
               } @else {
-                <div class="mt-2 flex items-center justify-center gap-1 text-xs text-gray-500 group-hover:text-orange-500 transition-colors">
-                  <span>🏪</span> Grab this deal!
-                </div>
+                <button (click)="purchaseDeal(deal.id)"
+                        [disabled]="purchasingDealId() === deal.id || (currency() && currency()!.coins < deal.dealPrice)"
+                        class="w-full mt-2 px-3 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1"
+                        [ngClass]="{
+                          'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-sm': currency() && currency()!.coins >= deal.dealPrice,
+                          'bg-gray-200 text-gray-400 cursor-not-allowed': currency() && currency()!.coins < deal.dealPrice
+                        }">
+                  @if (purchasingDealId() === deal.id) {
+                    <i class="fa fa-spinner animate-spin"></i>
+                  } @else {
+                    <span>🏪</span> Grab Deal!
+                  }
+                </button>
               }
             </div>
-          </a>
+          </div>
         }
       </div>
     </section>
@@ -350,9 +362,14 @@
     </a>
 
     <a routerLink="gifts"
-       class="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-pink-300 hover:-translate-y-1 transition-all duration-300">
-      <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+       class="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-pink-300 hover:-translate-y-1 transition-all duration-300 relative">
+      <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0 relative">
         <span class="text-xl sm:text-2xl">🎁</span>
+        @if (pendingGiftCount() > 0) {
+          <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
+            {{ pendingGiftCount() > 99 ? '99+' : pendingGiftCount() }}
+          </span>
+        }
       </div>
       <div class="min-w-0 flex-1">
         <h3 class="font-semibold text-gray-900 group-hover:text-pink-600 transition-colors text-sm sm:text-base">Gifts</h3>
@@ -421,6 +438,50 @@
                 class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
           <span>🥚</span> View My Eggs
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Daily Deal Purchase Success Modal -->
+@if (dealPurchaseSuccess()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center animate-bounce-in">
+      <!-- Celebration Header -->
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Deal Grabbed!</h2>
+      <p class="text-gray-600 mb-6">
+        You've successfully purchased <span class="font-semibold">{{ dealPurchaseSuccess()!.itemName }}</span> at a discounted price!
+      </p>
+
+      <!-- Item Preview -->
+      <div class="relative inline-block mb-6">
+        <div class="w-32 h-32 mx-auto bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center">
+          @if (dealPurchaseSuccess()!.item.previewUrl) {
+            <img [src]="dealPurchaseSuccess()!.item.previewUrl" [alt]="dealPurchaseSuccess()!.item.name"
+                 class="w-20 h-20 object-contain">
+          } @else {
+            <span class="text-5xl">{{ getItemTypeEmoji(dealPurchaseSuccess()!.item.itemType) }}</span>
+          }
+        </div>
+        <div class="absolute -top-2 -right-2 text-2xl animate-bounce">🏷️</div>
+        <div class="absolute -bottom-2 -left-2 text-2xl animate-bounce delay-100">✨</div>
+      </div>
+
+      <p class="text-sm text-gray-500 mb-6">
+        Your new item has been added to your inventory!
+      </p>
+
+      <!-- Actions -->
+      <div class="flex gap-3">
+        <button (click)="closeDealPurchaseSuccess()"
+                class="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+          Continue Shopping
+        </button>
+        <a routerLink="inventory" (click)="closeDealPurchaseSuccess()"
+           class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
+          <span>📦</span> View Inventory
+        </a>
       </div>
     </div>
   </div>

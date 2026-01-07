@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/promise';
+import { gamificationService } from './gamification.service.js';
 
 // ============================================================
 // Types
@@ -20,7 +21,6 @@ export type ItemType =
   | 'sound_pack'
   | 'booster'
   | 'title'
-  | 'pet'
   | 'pet_egg'
   | 'pet_item'
   | 'pet_equipment';
@@ -513,7 +513,8 @@ class ShopService {
         si.asset_url as assetUrl, si.preview_url as previewUrl,
         si.asset_data as assetData, si.is_consumable as isConsumable,
         si.effect_duration_minutes as effectDurationMinutes,
-        si.purchase_count as purchaseCount, si.favorite_count as favoriteCount
+        si.purchase_count as purchaseCount, si.favorite_count as favoriteCount,
+        dd.id as dealId, dd.discount_percent as dealDiscountPercent, dd.deal_price as dealPrice
     `;
 
     const params: any[] = [];
@@ -525,6 +526,7 @@ class ShopService {
     query += `
       FROM shop_items si
       JOIN shop_categories c ON si.category_id = c.id
+      LEFT JOIN shop_daily_deals dd ON si.id = dd.item_id AND dd.deal_date = CURDATE()
     `;
 
     if (userId) {
@@ -540,12 +542,26 @@ class ShopService {
     if (rows.length === 0) return null;
 
     const row = rows[0];
-    return {
-      ...this.mapItemRow(row),
+    const item = this.mapItemRow(row);
+
+    // Add deal info if item has an active deal today
+    const result: any = {
+      ...item,
       isOwned: userId ? (row.ownedQuantity || 0) > 0 : undefined,
       isEquipped: userId ? !!row.isEquipped : undefined,
       ownedQuantity: userId ? row.ownedQuantity || 0 : undefined
     };
+
+    if (row.dealId) {
+      result.deal = {
+        dealId: row.dealId,
+        discountPercent: row.dealDiscountPercent,
+        dealPrice: row.dealPrice,
+        originalPrice: item.priceCoins
+      };
+    }
+
+    return result;
   }
 
   async getItemById(id: number): Promise<ShopItem | null> {
@@ -1182,6 +1198,151 @@ class ShopService {
     }));
   }
 
+  async purchaseDailyDeal(userId: number, dealId: number): Promise<PurchaseResult> {
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      // 1. Lock user's currency row
+      const [currencyRows] = await connection.query<RowDataPacket[]>(`
+        SELECT coins, gems FROM user_currency
+        WHERE user_id = ? FOR UPDATE
+      `, [userId]);
+
+      if (currencyRows.length === 0) {
+        throw new Error('USER_CURRENCY_NOT_FOUND');
+      }
+
+      const currency = currencyRows[0];
+
+      // 2. Lock and get the daily deal
+      const [dealRows] = await connection.query<RowDataPacket[]>(`
+        SELECT dd.*, si.name, si.is_consumable, si.required_level, si.required_achievement
+        FROM shop_daily_deals dd
+        JOIN shop_items si ON dd.item_id = si.id
+        WHERE dd.id = ? AND dd.deal_date = CURDATE()
+        FOR UPDATE
+      `, [dealId]);
+
+      if (dealRows.length === 0) {
+        throw new Error('DEAL_NOT_FOUND');
+      }
+
+      const deal = dealRows[0];
+      const price = deal.deal_price; // Use the deal price, not original price!
+
+      // 3. Check if already purchased today
+      const [purchasedRows] = await connection.query<RowDataPacket[]>(`
+        SELECT COUNT(*) as count FROM shop_purchases
+        WHERE user_id = ? AND item_id = ? AND DATE(created_at) = CURDATE()
+      `, [userId, deal.item_id]);
+
+      if (purchasedRows[0].count > 0) {
+        throw new Error('DEAL_ALREADY_PURCHASED');
+      }
+
+      // 4. Check max purchases for this deal
+      if (deal.max_purchases && deal.purchases_count >= deal.max_purchases) {
+        throw new Error('DEAL_SOLD_OUT');
+      }
+
+      // 5. Check balance
+      if (currency.coins < price) {
+        throw new Error('INSUFFICIENT_COINS');
+      }
+
+      // 6. Check required level
+      if (deal.required_level > 0) {
+        const [userRows] = await connection.query<RowDataPacket[]>(`
+          SELECT level FROM user_xp WHERE user_id = ?
+        `, [userId]);
+        const userLevel = userRows.length > 0 ? userRows[0].level : 1;
+        if (userLevel < deal.required_level) {
+          throw new Error('LEVEL_REQUIREMENT_NOT_MET');
+        }
+      }
+
+      // 7. Check required achievement
+      if (deal.required_achievement) {
+        const [achievementRows] = await connection.query<RowDataPacket[]>(`
+          SELECT id FROM user_achievements
+          WHERE user_id = ? AND achievement_id = (
+            SELECT id FROM achievements WHERE achievement_code = ?
+          )
+        `, [userId, deal.required_achievement]);
+        if (achievementRows.length === 0) {
+          throw new Error('ACHIEVEMENT_REQUIREMENT_NOT_MET');
+        }
+      }
+
+      // 8. Check if already owned (non-consumable)
+      if (!deal.is_consumable) {
+        const [existingRows] = await connection.query<RowDataPacket[]>(`
+          SELECT id FROM user_inventory
+          WHERE user_id = ? AND item_id = ?
+        `, [userId, deal.item_id]);
+
+        if (existingRows.length > 0) {
+          throw new Error('ALREADY_OWNED');
+        }
+      }
+
+      // 9. Deduct coins (deal price!)
+      await connection.query(`
+        UPDATE user_currency
+        SET coins = coins - ?,
+            total_coins_spent = total_coins_spent + ?,
+            updated_at = NOW()
+        WHERE user_id = ?
+      `, [price, price, userId]);
+
+      // 10. Add to inventory
+      await connection.query(`
+        INSERT INTO user_inventory (user_id, item_id, quantity, purchase_price, purchased_at)
+        VALUES (?, ?, 1, ?, NOW())
+        ON DUPLICATE KEY UPDATE quantity = quantity + 1
+      `, [userId, deal.item_id, price]);
+
+      // 11. Record transaction
+      await connection.query(`
+        INSERT INTO currency_transactions
+        (user_id, currency_type, amount, balance_after, transaction_type, reference_type, reference_id, description)
+        VALUES (?, 'coins', ?, ?, 'purchase', 'daily_deal', ?, ?)
+      `, [userId, -price, currency.coins - price, dealId, `Daily Deal: ${deal.name}`]);
+
+      // 12. Record purchase
+      await connection.query(`
+        INSERT INTO shop_purchases
+        (user_id, item_id, quantity, unit_price, total_price, status)
+        VALUES (?, ?, 1, ?, ?, 'completed')
+      `, [userId, deal.item_id, price, price]);
+
+      // 13. Increment deal purchases count
+      await connection.query(`
+        UPDATE shop_daily_deals
+        SET purchases_count = purchases_count + 1
+        WHERE id = ?
+      `, [dealId]);
+
+      await connection.commit();
+
+      const purchasedItem = await this.getItemById(deal.item_id);
+
+      return {
+        success: true,
+        item: purchasedItem!,
+        newBalance: currency.coins - price
+      };
+
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
   async generateDailyDeals(): Promise<void> {
     // Check if deals already exist for today
     const [existing] = await pool.query<RowDataPacket[]>(`
@@ -1220,12 +1381,12 @@ class ShopService {
     try {
       await connection.beginTransaction();
 
-      // Lock inventory row
+      // Lock inventory row - first check if item exists in inventory at all
       const [inventoryRows] = await connection.query<RowDataPacket[]>(`
         SELECT ui.*, si.name, si.asset_data, si.effect_duration_minutes
         FROM user_inventory ui
         JOIN shop_items si ON ui.item_id = si.id
-        WHERE ui.user_id = ? AND ui.item_id = ? AND ui.quantity > 0
+        WHERE ui.user_id = ? AND ui.item_id = ?
         FOR UPDATE
       `, [userId, itemId]);
 
@@ -1234,6 +1395,11 @@ class ShopService {
       }
 
       const inventory = inventoryRows[0];
+
+      // Check if quantity is 0 (already used)
+      if (inventory.quantity <= 0) {
+        throw new Error('BOOSTER_ALREADY_USED');
+      }
 
       if (!inventory.effect_duration_minutes) {
         throw new Error('NOT_A_BOOSTER');
@@ -1415,6 +1581,12 @@ class ShopService {
         throw new Error('Recipient not found');
       }
 
+      // Get sender info for return value
+      const [senderRows] = await connection.query<RowDataPacket[]>(`
+        SELECT username, nickname FROM users WHERE id = ?
+      `, [senderId]);
+      const sender = senderRows[0];
+
       // Deduct coins from sender
       await connection.query(`
         UPDATE user_currency
@@ -1448,9 +1620,32 @@ class ShopService {
       await connection.commit();
 
       const recipient = recipientRows[0];
+
+      // Create gift notification for recipient
+      try {
+        await gamificationService.createNotification(recipientId, {
+          notificationType: 'gift',
+          title: 'You received a gift!',
+          message: `${sender?.nickname || sender?.username || 'Someone'} sent you ${item.name}`,
+          icon: '🎁',
+          actionUrl: `/shop/gifts?giftId=${result.insertId}`,
+          metadata: {
+            giftId: result.insertId,
+            itemId,
+            itemName: item.name,
+            senderId,
+            senderName: sender?.nickname || sender?.username || 'Unknown'
+          }
+        });
+      } catch (notifError) {
+        // Log but don't fail the gift transaction
+        console.error('Failed to create gift notification:', notifError);
+      }
+
       return {
         id: result.insertId,
         senderId,
+        senderName: sender?.nickname || sender?.username || 'Unknown',
         recipientId,
         recipientName: recipient.nickname || recipient.username,
         itemId,
@@ -1576,15 +1771,15 @@ class ShopService {
         if (existing.length > 0) {
           await connection.query(`
             UPDATE user_inventory
-            SET quantity = quantity + 1, updated_at = NOW()
+            SET quantity = quantity + 1
             WHERE user_id = ? AND item_id = ?
           `, [userId, gift.item_id]);
           inventoryId = existing[0].id;
         } else {
           const [result] = await connection.query<ResultSetHeader>(`
-            INSERT INTO user_inventory (user_id, item_id, quantity)
-            VALUES (?, ?, 1)
-          `, [userId, gift.item_id]);
+            INSERT INTO user_inventory (user_id, item_id, quantity, purchase_price, gifted_by)
+            VALUES (?, ?, 1, 0, ?)
+          `, [userId, gift.item_id, gift.sender_id]);
           inventoryId = result.insertId;
         }
       } else {
@@ -1602,9 +1797,9 @@ class ShopService {
         }
 
         const [result] = await connection.query<ResultSetHeader>(`
-          INSERT INTO user_inventory (user_id, item_id, quantity)
-          VALUES (?, ?, 1)
-        `, [userId, gift.item_id]);
+          INSERT INTO user_inventory (user_id, item_id, quantity, purchase_price, gifted_by)
+          VALUES (?, ?, 1, 0, ?)
+        `, [userId, gift.item_id, gift.sender_id]);
         inventoryId = result.insertId;
       }
 
