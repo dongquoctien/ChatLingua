@@ -92,11 +92,19 @@ Each component needs three files:
 - `review/` - Spaced repetition flashcards (SM2 algorithm)
 - `grammar/` - Grammar points, review, exercises
 - `gamification/` - XP, achievements, leaderboard, challenges
+- `games/` - 15 vocabulary games (word rush, memory match, hangman, spelling bee, falling words, crossword, word search, anagram, word duel, pop quiz blitz, translation race, vocabulary quest, word cards, language island)
+- `shop/` - Virtual shop with coins/gems currency, items, inventory, wishlist, gifts
+- `pets/` - Virtual pet system with care mechanics and daily tasks
+- `chat/` - Real-time messaging with Socket.io
+- `sync-requests/` - Collaborative learning requests
 - `reports/` - Learning analytics
 - `mcp-auth/` - OAuth2 device flow for MCP
 
 **Exercise Types** (`features/exercises/exercise-types/`):
 Multiple choice, fill blank, translation, sentence building, matching, spelling, listening, error correction, verb conjugation, cloze
+
+**Games Shared Components** (`features/games/shared/`):
+Common game UI components: `game-header`, `game-over-dialog`, `countdown`, `power-ups-panel`, `active-boosters-widget`, `audio-control`
 
 ### Backend (`packages/backend/`)
 
@@ -105,8 +113,16 @@ Express.js REST API with:
 - MySQL via mysql2
 - Text-to-Speech via msedge-tts
 - Zod validation
+- Socket.io for real-time features (chat, status, typing indicators, pet updates)
+- Scheduled jobs via node-cron (pet scheduler)
 
 API base URL: `http://localhost:3000/api`
+
+**Socket.io Architecture** (`socket/`):
+- `index.ts` - Server initialization, JWT auth middleware, connection handling
+- `handlers/` - Event handlers for chat, status, typing, pets
+- Uses typed events via `ClientToServerEvents`/`ServerToClientEvents` in `types/chat.types.ts`
+- Helper functions: `emitToUser()`, `broadcastExcept()`, `getActiveConnectionCount()`
 
 ### API Response Types
 
@@ -116,6 +132,21 @@ All API types are defined in `core/services/api.service.ts`. Key types:
 - `QueueItem` - Spaced repetition queue items
 - `UserXPStatus`, `UserAchievementInfo`, `DailyChallengeInfo` - Gamification
 - `GrammarPointInfo`, `GrammarReviewResult` - Grammar system
+
+**Feature-Specific Services** (`features/*/`):
+- `features/shop/shop.service.ts` - Shop items, purchases, inventory, wishlist, gifts
+- `features/pets/services/pet.service.ts` - Pet care, feeding, training, daily tasks
+
+### Database
+
+MySQL 8.0 via Docker. Migrations in `database/migrations/` run automatically on container init.
+
+```bash
+docker-compose up -d          # Start MySQL container
+docker-compose down -v        # Reset database (deletes all data)
+```
+
+Connection: `localhost:3306`, user: `chatlingua`, password: `chatlingua_pass`, database: `chatlingua`
 
 ### Environment
 
@@ -160,6 +191,60 @@ get totalPages(): number {
   - Error: `red-500`, `red-50` (background)
   - Warning: `orange-500`, `orange-50` (background)
 - Consistent spacing: `p-4`/`p-6` for containers, `gap-4` for flex/grid
+
+### FontAwesome Icons
+
+The project uses FontAwesome icons in two ways:
+
+**1. CSS Classes (Recommended for most cases)**
+```html
+<i class="fa-solid fa-spinner fa-spin"></i>
+<i class="fa-solid fa-check-circle text-green-500"></i>
+```
+This works because `@fortawesome/fontawesome-free` CSS is loaded in `angular.json`.
+
+**2. Angular FontAwesome Component**
+```typescript
+// In component .ts file
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faShoppingBag } from '../../../shared/icons';
+
+@Component({
+  imports: [FontAwesomeModule],
+})
+export class MyComponent {
+  faShoppingBag = faShoppingBag;
+}
+```
+```html
+<!-- In template -->
+<fa-icon [icon]="faShoppingBag"></fa-icon>
+```
+Icons must be registered in `shared/icons.ts` first.
+
+**3. Emoji Symbols (For buttons and UI elements)**
+For consistency in header buttons, use emoji symbols:
+```html
+<!-- Currency displays -->
+<span class="text-lg">🪙</span>  <!-- Coins -->
+<span class="text-lg">💎</span>  <!-- Gems -->
+
+<!-- Navigation buttons -->
+<span class="text-lg">🛒</span>  <!-- Shop -->
+<span class="text-lg">📦</span>  <!-- Inventory -->
+
+<!-- Wishlist hearts -->
+{{ inWishlist() ? '🖤' : '🤍' }}  <!-- Filled/Empty heart -->
+```
+
+**Button Style Convention:**
+```html
+<!-- Standard header button with emoji -->
+<a routerLink="/shop" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all">
+  <span class="text-lg">🛒</span>
+  <span class="font-semibold text-gray-700">Shop</span>
+</a>
+```
 
 ### Language
 
