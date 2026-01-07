@@ -1,0 +1,19 @@
+{
+  "name": "Gradient Sunset",
+  "slug": "gradient-sunset",
+  "rarity": "rare",
+  "styles": {
+    "sent": {
+      "background": "linear-gradient(135deg, #f97316 0%, #ec4899 100%)",
+      "color": "#ffffff",
+      "borderRadius": "20px 20px 4px 20px",
+      "shadow": "0 2px 10px rgba(249, 115, 22, 0.3)"
+    },
+    "received": {
+      "background": "linear-gradient(135deg, #fff7ed 0%, #fce7f3 100%)",
+      "color": "#1f2937",
+      "borderRadius": "20px 20px 20px 4px",
+      "border": "1px solid #fdba74"
+    }
+  }
+}

@@ -8,6 +8,7 @@ import { ConversationListComponent } from '../conversation-list/conversation-lis
 import { ChatWindowComponent } from '../chat-window/chat-window.component';
 import { StatusSelectorComponent } from '../status-selector/status-selector.component';
 import { ImportConversationDialogComponent, ImportConversationDialogData } from '../import-conversation-dialog/import-conversation-dialog.component';
+import { DraggableDirective } from '../../../../shared/directives/draggable.directive';
 import type { UserStatusInfo } from '../../chat.types';
 
 @Component({
@@ -19,6 +20,7 @@ import type { UserStatusInfo } from '../../chat.types';
     ConversationListComponent,
     ChatWindowComponent,
     StatusSelectorComponent,
+    DraggableDirective,
   ],
   templateUrl: './chat-widget.component.html',
   styleUrls: ['./chat-widget.component.scss'],

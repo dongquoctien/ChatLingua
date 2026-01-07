@@ -1,9 +1,10 @@
-<div class="h-full flex bg-gray-50">
+<div class="h-full flex bg-gray-50 overflow-hidden">
   <!-- Sidebar -->
   <div
-    class="w-80 bg-white border-r border-gray-200 flex flex-col"
+    class="chat-sidebar w-full md:w-80 bg-white border-r border-gray-200 flex flex-col overflow-hidden"
     [class.hidden]="showChatWindow() && !isMobileMenuOpen()"
     [class.md:flex]="true"
+    [class.sidebar-hidden]="showChatWindow() && !isMobileMenuOpen()"
   >
     <!-- Header -->
     <div class="p-4 border-b border-gray-200">
@@ -94,7 +95,7 @@
   </div>
 
   <!-- Chat Window -->
-  <div class="flex-1 flex flex-col">
+  <div class="chat-main flex-1 flex flex-col min-w-0">
     @if (showChatWindow()) {
       <app-chat-window
         [conversation]="activeConversation()"
@@ -130,7 +131,7 @@
   </div>
 
   <!-- Mobile menu button -->
-  <button
+  <!-- <button
     class="md:hidden fixed bottom-4 left-4 w-12 h-12 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center z-50"
     (click)="toggleMobileMenu()"
     [class.hidden]="!showChatWindow()"
@@ -138,7 +139,7 @@
     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
     </svg>
-  </button>
+  </button> -->
 
   <!-- Blocked Users Modal -->
   @if (showBlockedUsers()) {

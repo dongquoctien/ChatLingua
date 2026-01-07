@@ -47,6 +47,30 @@
         <p class="text-sm text-gray-600 mt-2 px-1">{{ message().content }}</p>
       }
     }
+    <!-- Gift Notification -->
+    @else if (isGiftMessage() && giftPayload()) {
+      <div class="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 min-w-[240px]">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="text-3xl">🎁</span>
+          <div>
+            <p class="font-semibold text-gray-900">Gift Received!</p>
+            <p class="text-sm text-gray-600">From {{ giftPayload()!.senderName }}</p>
+          </div>
+        </div>
+        <div class="bg-white/70 rounded-lg p-3 mb-3">
+          <p class="font-medium text-gray-900">{{ giftPayload()!.itemName }}</p>
+          @if (giftPayload()!.giftMessage) {
+            <p class="text-sm text-gray-600 mt-1 italic">"{{ giftPayload()!.giftMessage }}"</p>
+          }
+        </div>
+        <a
+          routerLink="/shop/gifts"
+          class="block w-full text-center py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors"
+        >
+          View & Claim Gift
+        </a>
+      </div>
+    }
     <!-- Shared content (achievement, exercise, vocabulary) -->
     @else if (isSpecialMessage()) {
       <app-shared-content

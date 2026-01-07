@@ -20,6 +20,9 @@
 
   <!-- Game Content -->
   <div *ngIf="gameStarted() && !showCountdown() && !isLoading() && !error()" class="game-content">
+    <!-- Active Boosters Widget (floating) -->
+    <app-active-boosters-widget></app-active-boosters-widget>
+
     <!-- Game Header -->
     <app-game-header
       gameName="Falling Words"

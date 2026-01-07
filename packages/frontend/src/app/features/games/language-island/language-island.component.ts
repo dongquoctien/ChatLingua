@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
 
@@ -206,7 +207,7 @@ const GRID_SIZE = 8;
 @Component({
   selector: 'app-language-island',
   standalone: true,
-  imports: [CommonModule, GameOverDialogComponent],
+  imports: [CommonModule, GameOverDialogComponent, ActiveBoostersWidgetComponent],
   templateUrl: './language-island.component.html',
   styleUrls: ['./language-island.component.scss']
 })

@@ -92,6 +92,9 @@ import {
   faExclamationCircle,
   faShare,
   faShareAlt,
+  faStore,
+  faShoppingCart,
+  faShoppingBag,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -196,4 +199,7 @@ export {
   faCalendarAlt as faCalendar,
   faShare,
   faShareAlt,
+  faStore,
+  faShoppingCart,
+  faShoppingBag,
 };

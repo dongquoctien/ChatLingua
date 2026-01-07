@@ -1,0 +1,683 @@
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <!-- Header with Currency -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Shop</h1>
+      <p class="text-gray-500 text-sm sm:text-base mt-1">Customize your profile and enhance your learning experience</p>
+    </div>
+
+    @if (currency()) {
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div class="flex items-center gap-1.5 sm:gap-2 bg-white border border-gray-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full">
+          <span class="text-base sm:text-lg">🪙</span>
+          <span class="font-semibold text-gray-900 text-sm sm:text-base">{{ currency()!.coins | number }}</span>
+        </div>
+        @if (currency()!.gems > 0) {
+          <div class="flex items-center gap-1.5 sm:gap-2 bg-white border border-gray-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full">
+            <span class="text-base sm:text-lg">💎</span>
+            <span class="font-semibold text-gray-900 text-sm sm:text-base">{{ currency()!.gems | number }}</span>
+          </div>
+        }
+        <a routerLink="inventory" class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all">
+          <span class="text-base sm:text-lg">📦</span>
+          <span class="font-semibold text-gray-700 text-sm sm:text-base hidden sm:inline">Inventory</span>
+        </a>
+      </div>
+    }
+  </div>
+
+  <!-- Daily Deals Section -->
+  @if (dailyDeals().length > 0) {
+    <section class="mb-8 sm:mb-10">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="text-xl sm:text-2xl animate-bounce">🔥</span>
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900">Daily Deals</h2>
+          <span class="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">HOT</span>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-900 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full self-start sm:self-auto">
+          <span class="text-base sm:text-lg">⏰</span>
+          <span class="font-mono font-bold text-sm sm:text-base">{{ dealCountdown() }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        @for (deal of dailyDeals(); track deal.id) {
+          <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
+               [class.opacity-60]="deal.purchased"
+               [ngClass]="getRarityGlow(deal.item.rarity)">
+            <!-- Discount Badge - Animated -->
+            <div class="absolute top-2 right-2 z-20 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
+              -{{ deal.discountPercent }}% 🏷️
+            </div>
+
+            <!-- Item Preview - Click to view details -->
+            <a [routerLink]="['items', deal.item.slug]"
+               class="block aspect-square flex items-center justify-center relative bg-gradient-to-br cursor-pointer"
+               [ngClass]="getRarityGradient(deal.item.rarity)">
+
+              <!-- Sparkle for epic/legendary -->
+              @if (deal.item.rarity === 'epic' || deal.item.rarity === 'legendary') {
+                <div class="absolute top-2 left-2 text-lg animate-bounce">✨</div>
+              }
+
+              @if (deal.item.previewUrl) {
+                <img [src]="deal.item.previewUrl" [alt]="deal.item.name"
+                     class="w-16 h-16 object-contain group-hover:scale-110 transition-transform duration-300">
+              } @else {
+                <span class="text-4xl group-hover:scale-110 transition-transform duration-300">
+                  {{ getItemTypeEmoji(deal.item.itemType) }}
+                </span>
+              }
+
+              <!-- Rarity Badge -->
+              <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-10"
+                   [ngClass]="{
+                     'bg-gray-500/80 text-white': deal.item.rarity === 'common',
+                     'bg-green-500/80 text-white': deal.item.rarity === 'uncommon',
+                     'bg-blue-500/80 text-white': deal.item.rarity === 'rare',
+                     'bg-purple-500/80 text-white': deal.item.rarity === 'epic',
+                     'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': deal.item.rarity === 'legendary'
+                   }">
+                @switch (deal.item.rarity) {
+                  @case ('legendary') { <span>👑</span> }
+                  @case ('epic') { <span>💎</span> }
+                  @case ('rare') { <span>💠</span> }
+                  @case ('uncommon') { <span>🌿</span> }
+                  @default { <span>⚪</span> }
+                }
+                {{ deal.item.rarity }}
+              </div>
+            </a>
+
+            <!-- Item Info -->
+            <div class="p-3">
+              <a [routerLink]="['items', deal.item.slug]" class="block">
+                <h3 class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700">
+                  {{ deal.item.name }}
+                </h3>
+              </a>
+
+              <!-- Price with savings -->
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-gray-400 line-through text-xs">{{ deal.originalPrice }}</span>
+                <div class="flex items-center gap-1 bg-orange-100 px-2 py-0.5 rounded-full">
+                  <span class="text-sm">🪙</span>
+                  <span class="font-bold text-orange-600">{{ deal.dealPrice }}</span>
+                </div>
+              </div>
+
+              @if (deal.purchased) {
+                <div class="mt-2 flex items-center justify-center gap-1 text-xs font-medium text-green-600 bg-green-50 rounded-full py-1">
+                  <span>✅</span> Purchased
+                </div>
+              } @else {
+                <button (click)="purchaseDeal(deal.id)"
+                        [disabled]="purchasingDealId() === deal.id || (currency() && currency()!.coins < deal.dealPrice)"
+                        class="w-full mt-2 px-3 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1"
+                        [ngClass]="{
+                          'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600 shadow-sm': currency() && currency()!.coins >= deal.dealPrice,
+                          'bg-gray-200 text-gray-400 cursor-not-allowed': currency() && currency()!.coins < deal.dealPrice
+                        }">
+                  @if (purchasingDealId() === deal.id) {
+                    <i class="fa fa-spinner animate-spin"></i>
+                  } @else {
+                    <span>🏪</span> Grab Deal!
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Pet Eggs Section -->
+  @if (eggTypes().length > 0) {
+    <section class="mb-8 sm:mb-10">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="text-xl sm:text-2xl">🥚</span>
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900">Pet Eggs</h2>
+          <span class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full">NEW</span>
+        </div>
+        <a routerLink="/pets" class="text-gray-600 hover:text-gray-900 text-xs sm:text-sm flex items-center gap-1">
+          <span class="hidden sm:inline">My Pets</span> <i class="fa fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        @for (egg of eggTypes(); track egg.id) {
+          <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+               [ngClass]="{
+                 'ring-2 ring-gray-300': egg.rarity === 'common',
+                 'ring-2 ring-green-300': egg.rarity === 'uncommon',
+                 'ring-2 ring-blue-300': egg.rarity === 'rare',
+                 'ring-2 ring-purple-300': egg.rarity === 'epic',
+                 'ring-2 ring-yellow-400 shadow-yellow-200': egg.rarity === 'legendary'
+               }">
+            <!-- Egg Preview -->
+            <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
+                 [ngClass]="getRarityGradient(egg.rarity ?? 'common')">
+
+              <!-- Animated background for legendary -->
+              @if (egg.rarity === 'legendary') {
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+              }
+
+              <!-- Sparkle effect for epic/legendary -->
+              @if (egg.rarity === 'epic' || egg.rarity === 'legendary') {
+                <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
+              }
+
+              <!-- Egg Image -->
+              <img [src]="getEggImageUrl(egg.rarity ?? 'common')" [alt]="egg.name"
+                   class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
+
+              <!-- Rarity Badge -->
+              <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-20"
+                   [ngClass]="{
+                     'bg-gray-500/80 text-white': egg.rarity === 'common',
+                     'bg-green-500/80 text-white': egg.rarity === 'uncommon',
+                     'bg-blue-500/80 text-white': egg.rarity === 'rare',
+                     'bg-purple-500/80 text-white': egg.rarity === 'epic',
+                     'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': egg.rarity === 'legendary'
+                   }">
+                {{ getEggRarityEmoji(egg.rarity ?? 'common') }} {{ egg.rarity }}
+              </div>
+            </div>
+
+            <!-- Egg Info -->
+            <div class="p-3">
+              <h3 class="font-semibold text-gray-900 text-sm truncate">
+                {{ egg.name }}
+              </h3>
+
+              <!-- Hatch Requirements -->
+              <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                <span class="flex items-center gap-1">
+                  <span>⚡</span> {{ egg.hatchXpRequired }} XP
+                </span>
+                <span class="flex items-center gap-1">
+                  <span>⏱️</span> {{ egg.hatchHoursMin }}h
+                </span>
+              </div>
+
+              <!-- Price & Buy Button -->
+              <div class="flex items-center justify-between mt-3">
+                <div class="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                  <span class="text-sm">🪙</span>
+                  <span class="font-bold text-gray-900">{{ formatPrice(egg.shopPriceCoins ?? 0) }}</span>
+                </div>
+
+                <button (click)="purchaseEgg(egg.id)"
+                        [disabled]="purchasingEggId() === egg.id || (currency() && currency()!.coins < (egg.shopPriceCoins ?? 0))"
+                        class="px-3 py-1 text-xs font-semibold rounded-full transition-all"
+                        [ngClass]="{
+                          'bg-gray-900 text-white hover:bg-gray-800': currency() && currency()!.coins >= (egg.shopPriceCoins ?? 0),
+                          'bg-gray-200 text-gray-400 cursor-not-allowed': currency() && currency()!.coins < (egg.shopPriceCoins ?? 0)
+                        }">
+                  @if (purchasingEggId() === egg.id) {
+                    <i class="fa fa-spinner animate-spin"></i>
+                  } @else {
+                    Buy
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Shop Pets Section (Direct Purchase) -->
+  @if (shopPets().length > 0) {
+    <section class="mb-8 sm:mb-10">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="text-xl sm:text-2xl">🐾</span>
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900">Adopt a Pet</h2>
+          @if (canClaimFreePet()) {
+            <span class="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">FREE STARTER!</span>
+          }
+        </div>
+        <a routerLink="/pets" class="text-gray-600 hover:text-gray-900 text-xs sm:text-sm flex items-center gap-1">
+          <span class="hidden sm:inline">My Pets</span> <i class="fa fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        @for (pet of shopPets(); track pet.id) {
+          <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+               [ngClass]="{
+                 'ring-2 ring-gray-300': pet.rarity === 'common',
+                 'ring-2 ring-green-300': pet.rarity === 'uncommon',
+                 'ring-2 ring-blue-300': pet.rarity === 'rare',
+                 'ring-2 ring-purple-300': pet.rarity === 'epic',
+                 'ring-2 ring-yellow-400 shadow-yellow-200': pet.rarity === 'legendary'
+               }">
+            <!-- Pet Preview -->
+            <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
+                 [ngClass]="getRarityGradient(pet.rarity ?? 'common')">
+
+              <!-- Animated background for legendary -->
+              @if (pet.rarity === 'legendary') {
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+              }
+
+              <!-- Sparkle effect for epic/legendary -->
+              @if (pet.rarity === 'epic' || pet.rarity === 'legendary') {
+                <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
+              }
+
+              <!-- Free Starter Badge -->
+              @if (pet.acquisitionType === 'starter_free' && canClaimFreePet()) {
+                <div class="absolute top-2 left-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-full z-20">
+                  FREE! 🎁
+                </div>
+              }
+
+              <!-- Pet Image or Emoji -->
+              @if (pet.imageUrl) {
+                <img [src]="pet.imageUrl" [alt]="pet.name"
+                     class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
+              } @else {
+                <span class="text-6xl relative z-10 group-hover:scale-110 transition-transform duration-300">
+                  {{ getPetEmoji(pet.slug) }}
+                </span>
+              }
+
+              <!-- Rarity Badge -->
+              <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-20"
+                   [ngClass]="{
+                     'bg-gray-500/80 text-white': pet.rarity === 'common',
+                     'bg-green-500/80 text-white': pet.rarity === 'uncommon',
+                     'bg-blue-500/80 text-white': pet.rarity === 'rare',
+                     'bg-purple-500/80 text-white': pet.rarity === 'epic',
+                     'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': pet.rarity === 'legendary'
+                   }">
+                {{ getEggRarityEmoji(pet.rarity ?? 'common') }} {{ pet.rarity }}
+              </div>
+            </div>
+
+            <!-- Pet Info -->
+            <div class="p-3">
+              <h3 class="font-semibold text-gray-900 text-sm truncate">
+                {{ pet.name }}
+              </h3>
+
+              <!-- Pet Bonuses -->
+              <div class="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                @if (pet.xpMultiplier && pet.xpMultiplier > 1) {
+                  <span class="flex items-center gap-0.5">
+                    <span>⚡</span> +{{ ((pet.xpMultiplier - 1) * 100) | number:'1.0-0' }}% XP
+                  </span>
+                }
+                @if (pet.coinMultiplier && pet.coinMultiplier > 1) {
+                  <span class="flex items-center gap-0.5">
+                    <span>🪙</span> +{{ ((pet.coinMultiplier - 1) * 100) | number:'1.0-0' }}%
+                  </span>
+                }
+              </div>
+
+              <!-- Special Ability -->
+              @if (pet.specialAbility) {
+                <div class="text-xs text-purple-600 mt-1 truncate" [title]="pet.specialAbility">
+                  ✨ {{ pet.specialAbility }}
+                </div>
+              }
+
+              <!-- Price & Buy Button -->
+              <div class="flex items-center justify-between mt-3">
+                @if (pet.acquisitionType === 'starter_free' && canClaimFreePet()) {
+                  <div class="flex items-center gap-1 bg-green-100 px-2 py-0.5 rounded-full">
+                    <span class="text-sm">🎁</span>
+                    <span class="font-bold text-green-700">Free</span>
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                    <span class="text-sm">🪙</span>
+                    <span class="font-bold text-gray-900">{{ formatPrice(pet.shopPriceCoins ?? 0) }}</span>
+                  </div>
+                }
+
+                <button (click)="purchasePet(pet.id)"
+                        [disabled]="purchasingPetId() === pet.id || (!(pet.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins < (pet.shopPriceCoins ?? 0))"
+                        class="px-3 py-1 text-xs font-semibold rounded-full transition-all"
+                        [ngClass]="{
+                          'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600': pet.acquisitionType === 'starter_free' && canClaimFreePet(),
+                          'bg-gray-900 text-white hover:bg-gray-800': !(pet.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins >= (pet.shopPriceCoins ?? 0),
+                          'bg-gray-200 text-gray-400 cursor-not-allowed': !(pet.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins < (pet.shopPriceCoins ?? 0)
+                        }">
+                  @if (purchasingPetId() === pet.id) {
+                    <i class="fa fa-spinner animate-spin"></i>
+                  } @else if (pet.acquisitionType === 'starter_free' && canClaimFreePet()) {
+                    Claim
+                  } @else {
+                    Adopt
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Categories -->
+  <section class="mb-8 sm:mb-10">
+    <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4">Categories</h2>
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4">
+      @for (category of categories(); track category.id) {
+        <a [routerLink]="['browse']" [queryParams]="{category: category.slug}"
+           class="group flex flex-col items-center p-2 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all hover:-translate-y-1">
+          <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-gray-100 group-hover:to-gray-200 flex items-center justify-center mb-2 sm:mb-3 transition-all text-xl sm:text-3xl">
+            {{ getCategoryEmoji(category.slug) }}
+          </div>
+          <span class="font-medium text-gray-900 text-xs sm:text-sm text-center line-clamp-1">{{ category.name }}</span>
+          <span class="text-xs text-gray-500 hidden sm:block">{{ getTotalItemCount(category) }} items</span>
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- Featured Items -->
+  <section class="mb-8 sm:mb-10">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+        <span>🔥</span> Popular Items
+      </h2>
+      <a routerLink="browse" class="text-gray-600 hover:text-gray-900 text-xs sm:text-sm flex items-center gap-1">
+        View All <i class="fa fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      @for (item of featuredItems(); track item.id) {
+        <a [routerLink]="['items', item.slug]"
+           class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+           [ngClass]="getRarityGlow(item.rarity)">
+          <!-- Item Preview -->
+          <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
+               [ngClass]="getRarityGradient(item.rarity)">
+
+            <!-- Animated background for legendary -->
+            @if (item.rarity === 'legendary') {
+              <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+            }
+
+            @if (item.previewUrl) {
+              <img [src]="item.previewUrl" [alt]="item.name"
+                   class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
+            } @else {
+              <span class="text-5xl relative z-10 group-hover:scale-110 transition-transform duration-300">
+                {{ getItemTypeEmoji(item.itemType) }}
+              </span>
+            }
+
+            <!-- Sparkle effect for epic/legendary -->
+            @if (item.rarity === 'epic' || item.rarity === 'legendary') {
+              <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
+            }
+
+            <!-- Owned Badge -->
+            @if (item.isOwned) {
+              <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 z-20">
+                <span>✓</span>
+              </div>
+            }
+
+            <!-- Limited Badge -->
+            @if (item.isLimited) {
+              <div class="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full animate-pulse z-20">
+                🔥
+              </div>
+            }
+
+            <!-- Rarity Badge -->
+            <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-20"
+                 [ngClass]="{
+                   'bg-gray-500/80 text-white': item.rarity === 'common',
+                   'bg-green-500/80 text-white': item.rarity === 'uncommon',
+                   'bg-blue-500/80 text-white': item.rarity === 'rare',
+                   'bg-purple-500/80 text-white': item.rarity === 'epic',
+                   'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': item.rarity === 'legendary'
+                 }">
+              @switch (item.rarity) {
+                @case ('legendary') { <span>👑</span> }
+                @case ('epic') { <span>💎</span> }
+                @case ('rare') { <span>💠</span> }
+                @case ('uncommon') { <span>🌿</span> }
+                @default { <span>⚪</span> }
+              }
+              {{ item.rarity }}
+            </div>
+          </div>
+
+          <!-- Item Info -->
+          <div class="p-3">
+            <h3 class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700">
+              {{ item.name }}
+            </h3>
+            <p class="text-xs text-gray-500 truncate mt-0.5">{{ item.categoryName }}</p>
+
+            <!-- Price -->
+            <div class="flex items-center justify-between mt-2">
+              <div class="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                <span class="text-sm">🪙</span>
+                <span class="font-bold text-gray-900 text-sm">{{ formatPrice(item.priceCoins) }}</span>
+              </div>
+              @if (item.purchaseCount > 0) {
+                <span class="text-xs text-gray-400 flex items-center gap-1">
+                  {{ item.purchaseCount }}
+                </span>
+              }
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- Quick Links -->
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <a routerLink="customize"
+       class="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-purple-300 hover:-translate-y-1 transition-all duration-300">
+      <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-100 to-fuchsia-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+        <span class="text-xl sm:text-2xl">🎨</span>
+      </div>
+      <div class="min-w-0 flex-1">
+        <h3 class="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors text-sm sm:text-base">Customize</h3>
+        <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">Personalize your look</p>
+      </div>
+      <i class="fa fa-chevron-right text-gray-400 hidden sm:block"></i>
+    </a>
+
+    <a routerLink="gifts"
+       class="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-pink-300 hover:-translate-y-1 transition-all duration-300 relative">
+      <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0 relative">
+        <span class="text-xl sm:text-2xl">🎁</span>
+        @if (pendingGiftCount() > 0) {
+          <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
+            {{ pendingGiftCount() > 99 ? '99+' : pendingGiftCount() }}
+          </span>
+        }
+      </div>
+      <div class="min-w-0 flex-1">
+        <h3 class="font-semibold text-gray-900 group-hover:text-pink-600 transition-colors text-sm sm:text-base">Gifts</h3>
+        <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">Send & receive gifts</p>
+      </div>
+      <i class="fa fa-chevron-right text-gray-400 hidden sm:block"></i>
+    </a>
+
+    <a routerLink="inventory"
+       class="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-blue-300 hover:-translate-y-1 transition-all duration-300">
+      <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+        <span class="text-xl sm:text-2xl">📦</span>
+      </div>
+      <div class="min-w-0 flex-1">
+        <h3 class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-sm sm:text-base">Inventory</h3>
+        <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">Manage your items</p>
+      </div>
+      <i class="fa fa-chevron-right text-gray-400 hidden sm:block"></i>
+    </a>
+
+    <a routerLink="wishlist"
+       class="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-lg hover:border-red-300 hover:-translate-y-1 transition-all duration-300">
+      <div class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-100 to-rose-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+        <span class="text-xl sm:text-2xl">❤️</span>
+      </div>
+      <div class="min-w-0 flex-1">
+        <h3 class="font-semibold text-gray-900 group-hover:text-red-600 transition-colors text-sm sm:text-base">Wishlist</h3>
+        <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">Saved items</p>
+      </div>
+      <i class="fa fa-chevron-right text-gray-400 hidden sm:block"></i>
+    </a>
+  </section>
+</div>
+
+<!-- Egg Purchase Success Modal -->
+@if (purchaseSuccess()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center animate-bounce-in">
+      <!-- Celebration Header -->
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Egg Acquired!</h2>
+      <p class="text-gray-600 mb-6">
+        You've successfully purchased a <span class="font-semibold">{{ purchaseSuccess()!.eggName }}</span>!
+      </p>
+
+      <!-- Egg Preview -->
+      <div class="relative inline-block mb-6">
+        <div class="w-32 h-32 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+          <span class="text-7xl">🥚</span>
+        </div>
+        <div class="absolute -top-2 -right-2 text-2xl animate-bounce">✨</div>
+        <div class="absolute -bottom-2 -left-2 text-2xl animate-bounce delay-100">✨</div>
+      </div>
+
+      <p class="text-sm text-gray-500 mb-6">
+        Start earning XP through learning and games to hatch your egg and discover your new pet!
+      </p>
+
+      <!-- Actions -->
+      <div class="flex gap-3">
+        <button (click)="closePurchaseSuccess()"
+                class="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+          Continue Shopping
+        </button>
+        <button (click)="goToMyEggs()"
+                class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
+          <span>🥚</span> View My Eggs
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Pet Purchase Success Modal -->
+@if (petPurchaseSuccess()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center animate-bounce-in">
+      <!-- Celebration Header -->
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">New Pet Adopted!</h2>
+      <p class="text-gray-600 mb-6">
+        Welcome <span class="font-semibold">{{ petPurchaseSuccess()!.petName }}</span> to your family!
+      </p>
+
+      <!-- Pet Preview -->
+      <div class="relative inline-block mb-6">
+        <div class="w-32 h-32 mx-auto bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+          <span class="text-7xl">
+            <!-- Pet Image or Emoji -->
+              @if (petPurchaseSuccess()!.pet.imageUrl) {
+                <img [src]="petPurchaseSuccess()!.pet.imageUrl" [alt]="petPurchaseSuccess()!.pet.nickname"
+                      class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
+              } @else {
+                <span class="text-6xl relative z-10 group-hover:scale-110 transition-transform duration-300">
+                  {{ getPetEmoji(petPurchaseSuccess()!.pet.petType?.slug) }}
+                </span>
+              }
+          </span>
+        </div>
+        <div class="absolute -top-2 -right-2 text-2xl animate-bounce">🐾</div>
+        <div class="absolute -bottom-2 -left-2 text-2xl animate-bounce delay-100">💕</div>
+      </div>
+
+      <p class="text-sm text-gray-500 mb-6">
+        Your new companion is now active and ready to help you on your learning journey!
+      </p>
+
+      <!-- Actions -->
+      <div class="flex gap-3">
+        <button (click)="closePetPurchaseSuccess()"
+                class="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+          Continue Shopping
+        </button>
+        <button (click)="goToMyPets()"
+                class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
+          <span>🐾</span> View My Pets
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Daily Deal Purchase Success Modal -->
+@if (dealPurchaseSuccess()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center animate-bounce-in">
+      <!-- Celebration Header -->
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Deal Grabbed!</h2>
+      <p class="text-gray-600 mb-6">
+        You've successfully purchased <span class="font-semibold">{{ dealPurchaseSuccess()!.itemName }}</span> at a discounted price!
+      </p>
+
+      <!-- Item Preview -->
+      <div class="relative inline-block mb-6">
+        <div class="w-32 h-32 mx-auto bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center">
+          @if (dealPurchaseSuccess()!.item.previewUrl) {
+            <img [src]="dealPurchaseSuccess()!.item.previewUrl" [alt]="dealPurchaseSuccess()!.item.name"
+                 class="w-20 h-20 object-contain">
+          } @else {
+            <span class="text-5xl">{{ getItemTypeEmoji(dealPurchaseSuccess()!.item.itemType) }}</span>
+          }
+        </div>
+        <div class="absolute -top-2 -right-2 text-2xl animate-bounce">🏷️</div>
+        <div class="absolute -bottom-2 -left-2 text-2xl animate-bounce delay-100">✨</div>
+      </div>
+
+      <p class="text-sm text-gray-500 mb-6">
+        Your new item has been added to your inventory!
+      </p>
+
+      <!-- Actions -->
+      <div class="flex gap-3">
+        <button (click)="closeDealPurchaseSuccess()"
+                class="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+          Continue Shopping
+        </button>
+        <a routerLink="inventory" (click)="closeDealPurchaseSuccess()"
+           class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
+          <span>📦</span> View Inventory
+        </a>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Error Toast -->
+@if (error()) {
+  <div class="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50">
+    <span>❌</span>
+    <span>{{ error() }}</span>
+    <button (click)="error.set(null)" class="ml-2 hover:text-red-200">
+      <i class="fa fa-times"></i>
+    </button>
+  </div>
+}

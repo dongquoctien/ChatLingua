@@ -1,0 +1,39 @@
+<div class="fixed top-4 right-4 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <div class="pointer-events-auto transform transition-all duration-300 ease-out animate-slide-in">
+      <div class="flex items-start gap-3 p-4 bg-white border rounded-xl shadow-lg"
+           [ngClass]="getTypeClasses(toast.type)">
+
+        <!-- Icon -->
+        <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+             [ngClass]="getIconBgClasses(toast.type)">
+          <span class="text-base">{{ toast.icon }}</span>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 min-w-0">
+          <h4 class="font-semibold text-sm">{{ toast.title }}</h4>
+          @if (toast.message) {
+            <p class="text-xs mt-0.5 opacity-80">{{ toast.message }}</p>
+          }
+        </div>
+
+        <!-- Dismiss Button -->
+        <button (click)="dismiss(toast)"
+                class="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors opacity-60 hover:opacity-100">
+          <i class="fa fa-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      @if (toast.duration > 0) {
+        <div class="h-1 mt-0.5 rounded-full overflow-hidden bg-gray-200">
+          <div class="h-full rounded-full animate-progress"
+               [ngClass]="getProgressClasses(toast.type)"
+               [style.animation-duration.ms]="toast.duration">
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

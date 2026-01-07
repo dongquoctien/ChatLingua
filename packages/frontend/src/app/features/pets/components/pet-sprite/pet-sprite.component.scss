@@ -1,0 +1,340 @@
+.pet-sprite-container {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.pet-body {
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease;
+
+  svg {
+    display: block;
+  }
+
+  .pet-image {
+    display: block;
+    object-fit: contain;
+    image-rendering: auto;
+  }
+}
+
+.pet-shadow {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+// === IDLE ANIMATION ===
+.pet-animation-idle {
+  .pet-body {
+    animation: idle-bounce 2s ease-in-out infinite;
+  }
+
+  .pet-shadow {
+    animation: shadow-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes idle-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes shadow-pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0.15;
+  }
+}
+
+// === HAPPY ANIMATION ===
+.pet-animation-happy {
+  .pet-body {
+    animation: happy-jump 0.5s ease-in-out infinite;
+  }
+
+  .pet-shadow {
+    animation: shadow-jump 0.5s ease-in-out infinite;
+  }
+}
+
+@keyframes happy-jump {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-12px) scale(1.05);
+  }
+}
+
+@keyframes shadow-jump {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateX(-50%) scale(0.6);
+    opacity: 0.1;
+  }
+}
+
+// === EATING ANIMATION ===
+.pet-animation-eating {
+  .pet-body {
+    animation: eating-nom 0.3s ease-in-out infinite;
+  }
+}
+
+@keyframes eating-nom {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.05) rotate(-3deg);
+  }
+  75% {
+    transform: scale(1.05) rotate(3deg);
+  }
+}
+
+// === PLAYING ANIMATION ===
+.pet-animation-playing {
+  .pet-body {
+    animation: playing-wiggle 0.4s ease-in-out infinite;
+  }
+
+  .pet-shadow {
+    animation: shadow-wiggle 0.4s ease-in-out infinite;
+  }
+}
+
+@keyframes playing-wiggle {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+@keyframes shadow-wiggle {
+  0%, 100% {
+    transform: translateX(-50%);
+  }
+  25% {
+    transform: translateX(calc(-50% - 3px));
+  }
+  75% {
+    transform: translateX(calc(-50% + 3px));
+  }
+}
+
+// === SLEEPING ANIMATION ===
+.pet-animation-sleeping {
+  .pet-body {
+    animation: sleeping-breathe 3s ease-in-out infinite;
+    filter: brightness(0.8);
+  }
+
+  .pet-shadow {
+    animation: shadow-breathe 3s ease-in-out infinite;
+  }
+
+  &::after {
+    content: '💤';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 14px;
+    animation: zzz-float 2s ease-in-out infinite;
+  }
+}
+
+@keyframes sleeping-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes shadow-breathe {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+@keyframes zzz-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-8px) scale(1.1);
+    opacity: 1;
+  }
+}
+
+// === SAD ANIMATION ===
+.pet-animation-sad {
+  .pet-body {
+    animation: sad-droop 2s ease-in-out infinite;
+    filter: saturate(0.7);
+  }
+
+  &::after {
+    content: '💧';
+    position: absolute;
+    top: 30%;
+    right: 10%;
+    font-size: 10px;
+    animation: tear-drop 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes sad-droop {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(2deg);
+  }
+}
+
+@keyframes tear-drop {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(15px);
+    opacity: 0;
+  }
+}
+
+// === HOVER EFFECT ===
+.pet-sprite-container:hover {
+  .pet-body {
+    transform: scale(1.1);
+  }
+
+  .pet-shadow {
+    transform: translateX(-50%) scale(1.1);
+  }
+}
+
+// === EQUIPMENT OVERLAYS ===
+.equipment-overlays {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.equipment-slot {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.3));
+}
+
+.equipment-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+// Equipment positions
+.equipment-head {
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.equipment-body {
+  top: 35%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.9;
+}
+
+.equipment-accessory {
+  top: 25%;
+  left: -5%;
+  transform: rotate(-15deg);
+}
+
+.equipment-weapon {
+  top: 30%;
+  right: -10%;
+  transform: rotate(15deg);
+}
+
+.equipment-back {
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: -1;
+  opacity: 0.8;
+}
+
+.equipment-feet {
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+// Equipment animations follow pet animations
+.pet-animation-idle .equipment-overlays {
+  animation: idle-bounce 2s ease-in-out infinite;
+}
+
+.pet-animation-happy .equipment-overlays {
+  animation: happy-jump 0.5s ease-in-out infinite;
+}
+
+.pet-animation-playing .equipment-overlays {
+  animation: playing-wiggle 0.4s ease-in-out infinite;
+}
+
+.pet-animation-sleeping .equipment-overlays {
+  animation: sleeping-breathe 3s ease-in-out infinite;
+  filter: brightness(0.8);
+}
+
+.pet-animation-eating .equipment-overlays {
+  animation: eating-nom 0.3s ease-in-out infinite;
+}
+
+.pet-animation-sad .equipment-overlays {
+  animation: sad-droop 2s ease-in-out infinite;
+  filter: saturate(0.7);
+}

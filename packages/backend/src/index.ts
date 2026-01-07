@@ -5,6 +5,7 @@ import path from 'path';
 import { createServer } from 'http';
 import routes from './routes/index.js';
 import { initializeSocket } from './socket/index.js';
+import { initPetScheduler } from './jobs/pet-scheduler.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -54,6 +55,9 @@ httpServer.listen(PORT, () => {
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`API base: http://localhost:${PORT}/api`);
   console.log(`Socket.IO: ws://localhost:${PORT}`);
+
+  // Initialize pet scheduler after server starts
+  initPetScheduler();
 });
 
 export default app;

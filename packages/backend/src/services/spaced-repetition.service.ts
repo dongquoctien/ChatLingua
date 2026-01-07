@@ -2,6 +2,7 @@ import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { challengeService } from './challenge.service.js';
 import { gamificationService } from './gamification.service.js';
+import { petService } from './pet.service.js';
 
 // ============================================================
 // Types
@@ -440,6 +441,50 @@ export class SpacedRepetitionService {
 
     // Update daily challenge progress
     await challengeService.checkProgress(userId, 'review_complete');
+
+    // ============================================================
+    // Pet Care Integration - Award care points based on review quality
+    // Higher quality ratings = higher care points for active pet
+    // ============================================================
+    try {
+      // Convert quality (0-5) to a 0-100 score for pet care
+      // Quality 5 (Easy) = 100, Quality 3 (Good) = 60, Quality 1 (Again) = 20
+      const careScore = Math.round((quality / 5) * 100);
+      await petService.processCareFromActivity(
+        userId,
+        'heart', // Review activities = heart care type (showing love through learning)
+        'review',
+        careScore,
+        vocabularyId
+      );
+    } catch (error) {
+      // Don't fail review if pet care fails
+      console.error('Failed to process pet care from review:', error);
+    }
+
+    // ============================================================
+    // Pet Daily Tasks Integration - Update task progress for reviews
+    // ============================================================
+    try {
+      await petService.recordActivityForTasks(userId, 'review', {
+        count: 1
+      });
+      console.log(`[Pet Tasks] Updated review task progress: userId=${userId}`);
+    } catch (error) {
+      console.error('Failed to update pet daily tasks from review:', error);
+    }
+
+    // ============================================================
+    // Pet XP Integration - Pet gains XP when user reviews vocabulary
+    // ============================================================
+    try {
+      // XP based on quality: Easy(5)=15xp, Good(3)=10xp, Hard(2)=5xp, Again(1)=2xp
+      const xpEarned = quality >= 3 ? quality * 3 : quality * 2;
+      await petService.onLearningActivity(userId, 'review', xpEarned);
+      console.log(`[Pet XP] Pet gained XP from review: userId=${userId}, xp=${xpEarned}`);
+    } catch (error) {
+      console.error('Failed to process pet XP from review:', error);
+    }
 
     return result;
   }

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80">
+  <defs>
+    <linearGradient id="egg-legendary-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef3c7"/>
+      <stop offset="30%" style="stop-color:#fcd34d"/>
+      <stop offset="60%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="egg-legendary-shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="egg-legendary-glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <radialGradient id="egg-legendary-aura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fcd34d;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  <!-- Aura -->
+  <ellipse cx="32" cy="42" rx="35" ry="42" fill="url(#egg-legendary-aura)">
+    <animate attributeName="rx" values="35;38;35" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="ry" values="42;45;42" dur="3s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Outer glow -->
+  <ellipse cx="32" cy="42" rx="30" ry="36" fill="#fcd34d" opacity="0.35" filter="url(#egg-legendary-glow)"/>
+  <!-- Egg shadow -->
+  <ellipse cx="32" cy="75" rx="20" ry="4" fill="rgba(251,191,36,0.4)"/>
+  <!-- Egg body -->
+  <ellipse cx="32" cy="42" rx="26" ry="32" fill="url(#egg-legendary-gradient)" stroke="#b45309" stroke-width="2"/>
+  <!-- Ornate pattern -->
+  <path d="M20 42 Q32 30 44 42 Q32 54 20 42" fill="none" stroke="#fef3c7" stroke-width="1.5" opacity="0.6"/>
+  <path d="M26 42 Q32 36 38 42 Q32 48 26 42" fill="none" stroke="#fef3c7" stroke-width="1" opacity="0.8"/>
+  <!-- Crown marks -->
+  <path d="M28 24 L32 18 L36 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="32" cy="18" r="2" fill="#fef3c7"/>
+  <!-- Egg shine -->
+  <ellipse cx="22" cy="30" rx="8" ry="12" fill="url(#egg-legendary-shine)"/>
+  <!-- Sparkles -->
+  <polygon points="42,30 43,33 46,33 43.5,35 44.5,38 42,36 39.5,38 40.5,35 38,33 41,33" fill="#ffffff">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="1.5s" repeatCount="indefinite"/>
+  </polygon>
+  <polygon points="24,52 25,54 27,54 25.5,55.5 26,57 24,55.5 22,57 22.5,55.5 21,54 23,54" fill="#ffffff">
+    <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+  </polygon>
+  <circle cx="40" cy="50" r="1.5" fill="#ffffff">
+    <animate attributeName="r" values="1.5;2;1.5" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>

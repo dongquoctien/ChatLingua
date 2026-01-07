@@ -1,0 +1,43 @@
+<div class="avatar-container relative inline-flex items-center justify-center"
+     [ngClass]="sizeClasses"
+     [ngStyle]="frameStyle">
+
+  <!-- Frame wrapper -->
+  <div class="avatar-frame rounded-full flex items-center justify-center"
+       [ngClass]="{
+         'has-frame': equipment?.frameColor,
+         'frame-animated': equipment?.frameStyle === 'animated'
+       }">
+
+    <!-- Inner avatar -->
+    <div class="avatar-inner rounded-full overflow-hidden bg-gray-200 flex items-center justify-center"
+         [ngClass]="innerSizeClasses">
+      @if (src) {
+        <img [src]="avatarSrc" [alt]="name" class="w-full h-full object-cover">
+      } @else {
+        <span class="font-medium text-gray-600" [ngClass]="textSizeClass">{{ initials }}</span>
+      }
+    </div>
+
+    <!-- Effect overlay -->
+    @if (equipment?.effectType) {
+      <div class="effect-overlay absolute inset-0 rounded-full pointer-events-none"
+           [attr.data-effect]="equipment?.effectType"></div>
+    }
+  </div>
+
+  <!-- Badge -->
+  @if (equipment?.badgeEmoji) {
+    <div class="avatar-badge absolute -bottom-0.5 -right-0.5 rounded-full bg-white border border-gray-200 flex items-center justify-center"
+         [ngClass]="badgeSizeClass">
+      {{ equipment?.badgeEmoji }}
+    </div>
+  }
+
+  <!-- Online status indicator -->
+  @if (showOnlineStatus) {
+    <div class="status-indicator absolute bottom-0 right-0 rounded-full border-2 border-white"
+         [ngClass]="[statusSizeClass, isOnline ? 'bg-green-500' : 'bg-gray-400']">
+    </div>
+  }
+</div>

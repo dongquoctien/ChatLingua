@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
@@ -6,6 +6,8 @@ import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 interface Bubble {
   id: number;
@@ -38,12 +40,15 @@ const BUBBLE_COLORS = [
     CommonModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './pop-quiz-blitz.component.html',
   styleUrls: ['./pop-quiz-blitz.component.scss']
 })
 export class PopQuizBlitzComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
   // Game configuration
   readonly TOTAL_QUESTIONS = 15;
   readonly INITIAL_LIVES = 3;
@@ -120,6 +125,8 @@ export class PopQuizBlitzComponent implements OnInit, OnDestroy {
     this.apiService.startGame('pop_quiz_blitz').subscribe({
       next: (response: StartGameResponse) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         this.vocabulary.set(this.shuffleArray([...response.vocabulary]));
         this.isLoading.set(false);
         this.showCountdown.set(true);

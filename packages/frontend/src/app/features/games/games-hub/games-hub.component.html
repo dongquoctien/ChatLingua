@@ -7,6 +7,22 @@
     </div>
 
     <div class="header-actions">
+      <!-- Active Boosters -->
+      @if (activeBoosters().length > 0) {
+        <div class="active-boosters-bar flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-gray-100 to-gray-50 rounded-lg border border-gray-200">
+          <span class="text-sm font-medium text-gray-700">🚀</span>
+          @for (booster of activeBoosters(); track booster.itemId) {
+            <div class="booster-badge flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium"
+                 [ngClass]="getBoosterColor(booster.effectType)"
+                 [title]="booster.name + ' - ' + formatBoosterTime(booster.remainingMinutes) + ' left'">
+              <span>{{ getBoosterIcon(booster.effectType) }}</span>
+              <span>x{{ booster.multiplier }}</span>
+              <span class="text-[10px] opacity-75">{{ formatBoosterTime(booster.remainingMinutes) }}</span>
+            </div>
+          }
+        </div>
+      }
+
       <!-- Audio Control -->
       <app-audio-control [showLabels]="false"></app-audio-control>
 
@@ -23,6 +39,12 @@
           </div>
         </div>
       }
+
+      <!-- Shop Button -->
+      <button class="shop-btn" routerLink="/shop" title="Shop">
+        <span class="shop-icon">🏪</span>
+        <span class="shop-label">Shop</span>
+      </button>
     </div>
   </div>
 

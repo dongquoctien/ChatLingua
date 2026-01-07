@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9" class="pixelicon-potion-red">
+	<!-- Cork/stopper -->
+	<rect fill="#D38100" x="3" y="0" width="3" height="1"/>
+	<!-- Bottle neck -->
+	<rect fill="#EBEAF7" x="3" y="1" width="3" height="1"/>
+	<rect fill="#C5C4D4" x="5" y="1" width="1" height="1"/>
+	<!-- Bottle body -->
+	<polygon fill="#F92F3C" points="2,3 2,7 3,7 3,8 6,8 6,7 7,7 7,3 6,3 6,2 3,2 3,3"/>
+	<!-- Highlight on potion -->
+	<rect fill="#FF6B7A" x="3" y="3" width="1" height="2"/>
+	<!-- Heart inside potion -->
+	<polygon fill="#FFAEB0" points="3,5 4,5 4,4 5,4 5,5 6,5 6,6 5,6 5,7 4,7 4,6 3,6"/>
+</svg>

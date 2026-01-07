@@ -1,0 +1,15 @@
+// Shop Wishlist Component Styles
+
+// Card hover animation
+.bg-white {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+// Remove button reveal animation
+.group:hover button {
+  opacity: 1 !important;
+}

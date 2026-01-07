@@ -1,0 +1,29 @@
+// Shop Gifts Component Styles
+
+// Gift card hover animation
+.bg-white {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+// Claim button pulse animation for pending gifts
+@keyframes pulse-claim {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(17, 24, 39, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(17, 24, 39, 0);
+  }
+}
+
+button:not(:disabled):hover {
+  animation: pulse-claim 1.5s infinite;
+}
+
+// Tab indicator animation
+.border-b-2 {
+  transition: border-color 0.2s ease, color 0.2s ease;
+}

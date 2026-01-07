@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+// Pixel Icons
+@import 'styles/sqkhor-icons';
+
 /* Reset */
 *, *::before, *::after {
   margin: 0;

@@ -8,6 +8,7 @@ import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
 import { GameStateService } from '../services/game-state.service';
 
 interface FallingWord {
@@ -40,7 +41,8 @@ interface Particle {
     FormsModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './falling-words.component.html',
   styleUrls: ['./falling-words.component.scss']

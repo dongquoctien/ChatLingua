@@ -1,0 +1,400 @@
+<div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between gap-3 mb-4 sm:mb-6">
+    <div class="min-w-0">
+      <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-1">
+        <a routerLink="/shop" class="hover:text-gray-700">Shop</a>
+        <i class="fa fa-chevron-right text-xs"></i>
+        <span>Browse</span>
+      </div>
+      <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Browse Items</h1>
+    </div>
+
+    @if (currency()) {
+      <div class="flex items-center gap-1.5 sm:gap-2 bg-white border border-gray-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex-shrink-0">
+        <span class="text-base sm:text-lg">🪙</span>
+        <span class="font-semibold text-gray-900 text-sm sm:text-base">{{ currency()!.coins | number }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="flex border-b border-gray-200 mb-4 sm:mb-6 overflow-x-auto">
+    <button (click)="setActiveTab('items')"
+            class="px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"
+            [class.border-gray-900]="activeTab() === 'items'"
+            [class.text-gray-900]="activeTab() === 'items'"
+            [class.border-transparent]="activeTab() !== 'items'"
+            [class.text-gray-500]="activeTab() !== 'items'">
+      <span>🛒</span>
+      Shop Items
+    </button>
+    <button (click)="setActiveTab('pet-care')"
+            class="px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 sm:gap-2 whitespace-nowrap"
+            [class.border-gray-900]="activeTab() === 'pet-care'"
+            [class.text-gray-900]="activeTab() === 'pet-care'"
+            [class.border-transparent]="activeTab() !== 'pet-care'"
+            [class.text-gray-500]="activeTab() !== 'pet-care'">
+      <span>🐾</span>
+      Pet Care
+    </button>
+  </div>
+
+  <!-- Shop Items Tab -->
+  @if (activeTab() === 'items') {
+  <!-- Filters -->
+  <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
+      <!-- Search -->
+      <div class="col-span-2 lg:col-span-2">
+        <div class="relative">
+          <input type="text"
+                 [(ngModel)]="searchQuery"
+                 (keyup.enter)="onSearch()"
+                 placeholder="Search items..."
+                 class="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200">
+          <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+        </div>
+      </div>
+
+      <!-- Category -->
+      <select [(ngModel)]="selectedCategory" (ngModelChange)="onFilterChange()"
+              class="px-2 sm:px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200">
+        <option value="">All Categories</option>
+        @for (cat of categories(); track cat.id) {
+          <option [value]="cat.slug">{{ cat.name }}</option>
+        }
+      </select>
+
+      <!-- Type -->
+      <select [(ngModel)]="selectedType" (ngModelChange)="onFilterChange()"
+              class="px-2 sm:px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200">
+        @for (type of itemTypes; track type.value) {
+          <option [value]="type.value">{{ type.label }}</option>
+        }
+      </select>
+
+      <!-- Rarity -->
+      <select [(ngModel)]="selectedRarity" (ngModelChange)="onFilterChange()"
+              class="col-span-2 sm:col-span-1 px-2 sm:px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200">
+        @for (rarity of rarities; track rarity.value) {
+          <option [value]="rarity.value">{{ rarity.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
+      <!-- Sort -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs sm:text-sm text-gray-500">Sort:</span>
+        <select [(ngModel)]="sortBy" (ngModelChange)="onFilterChange()"
+                class="px-2 sm:px-3 py-1 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-gray-200">
+          @for (option of sortOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Clear Filters -->
+      <button (click)="clearFilters()"
+              class="text-xs sm:text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 self-end sm:self-auto">
+        <i class="fa fa-times"></i>
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Results Count -->
+  <div class="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+    Showing {{ items().length }} of {{ total() }} items
+  </div>
+
+  <!-- Items Grid -->
+  @if (loading()) {
+    <div class="flex items-center justify-center py-12">
+      <i class="fa fa-spinner animate-spin text-xl text-gray-400"></i>
+    </div>
+  } @else if (items().length === 0) {
+    <div class="text-center py-8 sm:py-12 bg-white border border-gray-200 rounded-xl">
+      <span class="text-4xl sm:text-5xl text-gray-400 mb-3 sm:mb-4 block">📦</span>
+      <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">No items found</h3>
+      <p class="text-sm text-gray-500">Try adjusting your filters or search query</p>
+    </div>
+  } @else {
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+      @for (item of items(); track item.id) {
+        <a [routerLink]="['/shop/items', item.slug]"
+           class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+           [ngClass]="getRarityGlow(item.rarity)">
+          <!-- Item Preview -->
+          <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br"
+               [ngClass]="getRarityGradient(item.rarity)">
+
+            <!-- Animated background for legendary -->
+            @if (item.rarity === 'legendary') {
+              <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+            }
+
+            <!-- Sparkle effect for epic/legendary -->
+            @if (item.rarity === 'epic' || item.rarity === 'legendary') {
+              <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
+            }
+
+            @if (item.previewUrl) {
+              <img [src]="item.previewUrl" [alt]="item.name"
+                   class="w-16 h-16 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300">
+            } @else {
+              <span class="text-4xl relative z-10 group-hover:scale-110 transition-transform duration-300">
+                {{ getItemTypeEmoji(item.itemType) }}
+              </span>
+            }
+
+            <!-- Badges -->
+            @if (item.isOwned) {
+              <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-20">
+                <span>✓</span> Owned
+              </div>
+            }
+            @if (item.isLimited) {
+              <div class="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse z-20">
+                🔥 Limited
+              </div>
+            }
+
+            <!-- Rarity Badge -->
+            <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-20"
+                 [ngClass]="{
+                   'bg-gray-500/80 text-white': item.rarity === 'common',
+                   'bg-green-500/80 text-white': item.rarity === 'uncommon',
+                   'bg-blue-500/80 text-white': item.rarity === 'rare',
+                   'bg-purple-500/80 text-white': item.rarity === 'epic',
+                   'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': item.rarity === 'legendary'
+                 }">
+              @switch (item.rarity) {
+                @case ('legendary') { <span>👑</span> }
+                @case ('epic') { <span>💎</span> }
+                @case ('rare') { <span>💠</span> }
+                @case ('uncommon') { <span>🌿</span> }
+                @default { <span>⚪</span> }
+              }
+              {{ item.rarity }}
+            </div>
+          </div>
+
+          <!-- Item Info -->
+          <div class="p-3">
+            <h3 class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700">
+              {{ item.name }}
+            </h3>
+            <p class="text-xs text-gray-500 truncate mb-2">{{ item.categoryName }}</p>
+
+            <!-- Price -->
+            <div class="flex items-center gap-2">
+              @if (item.originalPrice && item.originalPrice > item.priceCoins) {
+                <span class="text-gray-400 line-through text-xs">{{ item.originalPrice }}</span>
+              }
+              <div class="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                <span class="text-sm">🪙</span>
+                <span class="font-bold text-gray-900">{{ formatPrice(item.priceCoins) }}</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="flex items-center justify-center gap-1.5 sm:gap-2 mt-6 sm:mt-8">
+        <button (click)="goToPage(page() - 1)"
+                [disabled]="page() === 1"
+                class="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          <i class="fa fa-chevron-left text-sm"></i>
+        </button>
+
+        @for (p of [].constructor(totalPages()); track $index) {
+          @if ($index + 1 === 1 || $index + 1 === totalPages() || ($index + 1 >= page() - 1 && $index + 1 <= page() + 1)) {
+            <button (click)="goToPage($index + 1)"
+                    [class.bg-gray-900]="page() === $index + 1"
+                    [class.text-white]="page() === $index + 1"
+                    class="w-8 h-8 sm:w-10 sm:h-10 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
+              {{ $index + 1 }}
+            </button>
+          } @else if ($index + 1 === page() - 2 || $index + 1 === page() + 2) {
+            <span class="px-1 sm:px-2 text-sm">...</span>
+          }
+        }
+
+        <button (click)="goToPage(page() + 1)"
+                [disabled]="page() === totalPages()"
+                class="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          <i class="fa fa-chevron-right text-sm"></i>
+        </button>
+      </div>
+    }
+  }
+  } <!-- End items tab -->
+
+  <!-- Pet Care Tab -->
+  @if (activeTab() === 'pet-care') {
+    <!-- Category Filter Pills -->
+    <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+      @for (cat of petCategories; track cat) {
+        <button (click)="selectedPetCategory.set(cat)"
+                class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 sm:gap-2"
+                [ngClass]="{
+                  'bg-gray-900 text-white': selectedPetCategory() === cat,
+                  'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50': selectedPetCategory() !== cat
+                }">
+          <span>{{ getPetCategoryIcon(cat) }}</span>
+          {{ getPetCategoryName(cat) }}
+        </button>
+      }
+    </div>
+
+    <!-- Loading State -->
+    @if (petCareLoading()) {
+      <div class="flex items-center justify-center py-12">
+        <i class="fa fa-spinner animate-spin text-xl text-gray-400"></i>
+      </div>
+    } @else if (filteredPetCareItems().length === 0) {
+      <div class="text-center py-8 sm:py-12 bg-white border border-gray-200 rounded-xl">
+        <span class="text-4xl sm:text-5xl text-gray-400 mb-3 sm:mb-4 block">🐾</span>
+        <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">No items found</h3>
+        <p class="text-sm text-gray-500">Check back later for more pet care items</p>
+      </div>
+    } @else {
+      <!-- Pet Care Items Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+        @for (item of filteredPetCareItems(); track item.id) {
+          <div class="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
+               [ngClass]="[getRarityGlow(item.rarity), isOutOfStock(item) ? 'opacity-60' : '']">
+
+            <!-- +1 Animation Overlay -->
+            @if (isAnimating(item.id)) {
+              <div class="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+                <span class="text-3xl font-bold text-green-500 animate-float-up">+1</span>
+              </div>
+            }
+
+            <!-- Item Preview -->
+            <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br"
+                 [ngClass]="getRarityGradient(item.rarity)">
+
+              <!-- Animated background for legendary -->
+              @if (item.rarity === 'legendary') {
+                <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+              }
+
+              <!-- Sparkle effect for epic/legendary -->
+              @if (item.rarity === 'epic' || item.rarity === 'legendary') {
+                <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
+              }
+
+              @if (item.iconUrl) {
+                <img [src]="item.iconUrl" [alt]="item.name"
+                     class="w-16 h-16 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300"
+                     [class.grayscale]="isOutOfStock(item)">
+              } @else {
+                <span class="text-5xl relative z-10 group-hover:scale-110 transition-transform duration-300" [class.grayscale]="isOutOfStock(item)">{{ getPetCategoryIcon(item.itemCategory) }}</span>
+              }
+
+              <!-- Out of Stock Overlay -->
+              @if (isOutOfStock(item)) {
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                  <span class="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">SOLD OUT</span>
+                </div>
+              }
+
+              <!-- Owned Badge -->
+              @if (item.ownedQuantity && item.ownedQuantity > 0) {
+                <div class="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full z-20">
+                  Owned: {{ item.ownedQuantity }}
+                </div>
+              }
+
+              <!-- Stock Badge (for limited items) - show on left if no owned badge, otherwise bottom-right -->
+              @if (item.weeklyStock !== null && item.weeklyStock !== undefined && !isOutOfStock(item)) {
+                @if (item.ownedQuantity && item.ownedQuantity > 0) {
+                  <div class="absolute bottom-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full z-20">
+                    {{ item.currentStock }}/{{ item.weeklyStock }}
+                  </div>
+                } @else {
+                  <div class="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full z-20">
+                    {{ item.currentStock }}/{{ item.weeklyStock }}
+                  </div>
+                }
+              }
+
+              <!-- Rarity Badge -->
+              <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold capitalize flex items-center gap-1 z-20"
+                   [ngClass]="{
+                     'bg-gray-500/80 text-white': item.rarity === 'common',
+                     'bg-green-500/80 text-white': item.rarity === 'uncommon',
+                     'bg-blue-500/80 text-white': item.rarity === 'rare',
+                     'bg-purple-500/80 text-white': item.rarity === 'epic',
+                     'bg-gradient-to-r from-yellow-500 to-orange-500 text-white': item.rarity === 'legendary'
+                   }">
+                @switch (item.rarity) {
+                  @case ('legendary') { <span>👑</span> }
+                  @case ('epic') { <span>💎</span> }
+                  @case ('rare') { <span>💠</span> }
+                  @case ('uncommon') { <span>🌿</span> }
+                  @default { <span>⚪</span> }
+                }
+                {{ item.rarity }}
+              </div>
+            </div>
+
+            <!-- Item Info -->
+            <div class="p-3">
+              <h3 class="font-semibold text-gray-900 text-sm truncate">{{ item.name }}</h3>
+              <p class="text-xs text-gray-500 truncate mb-2">{{ item.description || getPetCategoryName(item.itemCategory) }}</p>
+
+              <!-- Stats -->
+              <div class="flex flex-wrap gap-1 mb-2">
+                @if (item.hungerReduction > 0) {
+                  <span class="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">-{{ item.hungerReduction }} 🍖</span>
+                }
+                @if (item.happinessBonus > 0) {
+                  <span class="text-xs bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded">+{{ item.happinessBonus }} 😊</span>
+                }
+                @if (item.energyBonus > 0) {
+                  <span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">+{{ item.energyBonus }} ⚡</span>
+                }
+                @if (item.hpBonus && item.hpBonus > 0) {
+                  <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">+{{ item.hpBonus }} ❤️</span>
+                }
+              </div>
+
+              <!-- Price & Buy Button -->
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full">
+                  <span class="text-sm">🪙</span>
+                  <span class="font-bold text-gray-900">{{ formatPrice(item.priceCoins) }}</span>
+                </div>
+                <button (click)="purchasePetCareItem(item.id)"
+                        [disabled]="purchasingItemId() === item.id || isInCooldown(item.id) || isOutOfStock(item) || (currency()?.coins ?? 0) < item.priceCoins"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all disabled:cursor-not-allowed relative overflow-hidden bg-gray-900 text-white hover:bg-gray-800 active:scale-95"
+                        [ngClass]="{
+                          'bg-gray-200 !text-gray-500': isOutOfStock(item) || (currency()?.coins ?? 0) < item.priceCoins,
+                          'bg-gray-700': isInCooldown(item.id) && !isOutOfStock(item)
+                        }">
+                  @if (purchasingItemId() === item.id) {
+                    <i class="fa fa-spinner animate-spin"></i>
+                  } @else if (isOutOfStock(item)) {
+                    Sold Out
+                  } @else if (isInCooldown(item.id)) {
+                    <i class="fa fa-check"></i>
+                  } @else {
+                    Buy
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

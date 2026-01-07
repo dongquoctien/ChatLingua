@@ -1366,11 +1366,20 @@ export interface GameVocabulary {
   hint?: string;
 }
 
+export interface GameActiveBooster {
+  itemId: number;
+  name: string;
+  effectType: string;
+  multiplier: number;
+  remainingMinutes: number;
+}
+
 export interface StartGameResponse {
   sessionId: number;
   game: GameInfo;
   vocabulary: GameVocabulary[];
   config: GameConfig;
+  activeBoosters?: GameActiveBooster[];
 }
 
 export interface EndGameRequest {
@@ -1381,6 +1390,17 @@ export interface EndGameRequest {
   wordsWrong: number;
   durationSeconds: number;
   gameData?: Record<string, unknown>;
+}
+
+export interface BoostersAppliedInfo {
+  xpMultiplier: number;
+  coinMultiplier: number;
+  activeBoosters: {
+    name: string;
+    effectType: string;
+    multiplier: number;
+    remainingMinutes: number;
+  }[];
 }
 
 export interface EndGameResponse {
@@ -1397,6 +1417,7 @@ export interface EndGameResponse {
   };
   xpEarned: number;
   coinsEarned: number;
+  boostersApplied?: BoostersAppliedInfo;
   newAchievements: GameAchievementInfo[];
   leaderboardPosition?: number;
   isNewBestScore: boolean;
@@ -1486,6 +1507,7 @@ export interface GamesHubData {
   games: GameWithStats[];
   userCurrency: UserCurrency;
   recentSessions: GameSessionInfo[];
+  activeBoosters?: GameActiveBooster[];
   dailyBonusClaimed: boolean;
 }
 

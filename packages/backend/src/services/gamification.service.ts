@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { petService } from './pet.service.js';
 
 // ============================================================
 // Types
@@ -7,7 +8,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export type AchievementCategory = 'learning' | 'streak' | 'quiz' | 'speed' | 'milestone' | 'game';
 export type XPSource = 'exercise' | 'quiz' | 'review' | 'streak' | 'achievement' | 'challenge' | 'bonus' | 'game';
-export type NotificationType = 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard';
+export type NotificationType = 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard' | 'sync_completed' | 'sync_started' | 'new_sync_request' | 'forum_rank_up' | 'forum_badge_earned' | 'forum_post_shared' | 'forum_post_imported' | 'forum_comment' | 'forum_vote' | 'gift';
 
 export interface Achievement {
   id: number;
@@ -347,6 +348,14 @@ export class GamificationService {
 
       // Update leaderboard
       await this.updateLeaderboard(userId, { xp: amount });
+    }
+
+    // Also add XP to user's active egg for hatching progress
+    try {
+      await petService.addHatchXpToActiveEgg(userId, amount, source);
+    } catch (error) {
+      // Don't fail XP award if egg XP fails
+      console.error('Failed to add hatch XP to egg:', error);
     }
 
     return { newTotal: currentXP.total_xp, levelUp };
@@ -736,7 +745,7 @@ export class GamificationService {
   async checkAchievements(
     userId: number,
     action: 'exercise_complete' | 'review_complete' | 'quiz_complete' | 'streak_update' | 'vocabulary_learned',
-    context?: { isCorrect?: boolean; isPerfect?: boolean; streakDays?: number; vocabularyCount?: number }
+    context?: { isCorrect?: boolean; isPerfect?: boolean; streakDays?: number; vocabularyCount?: number; exerciseCount?: number; correctCount?: number }
   ): Promise<AchievementUnlock[]> {
     const unlocks: AchievementUnlock[] = [];
 

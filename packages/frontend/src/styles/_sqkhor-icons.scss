@@ -1,0 +1,527 @@
+// =============================================================================
+// SQKhor Pixel Icons - 9x9 grid minimalist pixel art icons
+// Source: https://sqkhor.com/pixel-icons/
+// GitHub: https://github.com/shuqikhor/pixel-icons
+// =============================================================================
+// Usage: <i class="sq sq-heart"></i>
+//        <i class="sq sq-star sq-lg"></i>
+//        <i class="sq sq-dollar sq-gold"></i>
+// =============================================================================
+
+$sq-base-path: '/assets/icons/pixel/sqkhor/individual';
+$sq-default-size: 18px; // 9px * 2 for better visibility
+
+// Base icon class
+.sq {
+  display: inline-block;
+  width: $sq-default-size;
+  height: $sq-default-size;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  vertical-align: middle;
+  // Crisp pixel rendering
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+// =============================================================================
+// Size Variants
+// =============================================================================
+.sq-xs  { width: 12px; height: 12px; }
+.sq-sm  { width: 16px; height: 16px; }
+.sq-md  { width: 18px; height: 18px; }
+.sq-lg  { width: 24px; height: 24px; }
+.sq-xl  { width: 32px; height: 32px; }
+.sq-2xl { width: 40px; height: 40px; }
+.sq-3xl { width: 48px; height: 48px; }
+.sq-4xl { width: 64px; height: 64px; }
+
+// =============================================================================
+// Animations
+// =============================================================================
+.sq-spin {
+  animation: sq-spin 1s linear infinite;
+}
+
+.sq-pulse {
+  animation: sq-pulse 1.5s ease-in-out infinite;
+}
+
+.sq-bounce {
+  animation: sq-bounce 1s ease infinite;
+}
+
+.sq-shake {
+  animation: sq-shake 0.5s ease-in-out infinite;
+}
+
+@keyframes sq-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sq-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.95); }
+}
+
+@keyframes sq-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes sq-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+// =============================================================================
+// Color Filters (for black SVGs)
+// =============================================================================
+// Note: These filters convert black to the target color
+.sq-red     { filter: invert(27%) sepia(94%) saturate(4839%) hue-rotate(352deg) brightness(91%) contrast(117%); }
+.sq-orange  { filter: invert(56%) sepia(93%) saturate(1817%) hue-rotate(360deg) brightness(101%) contrast(107%); }
+.sq-yellow  { filter: invert(83%) sepia(55%) saturate(1029%) hue-rotate(359deg) brightness(103%) contrast(106%); }
+.sq-gold    { filter: invert(76%) sepia(58%) saturate(497%) hue-rotate(359deg) brightness(95%) contrast(95%); }
+.sq-green   { filter: invert(52%) sepia(87%) saturate(394%) hue-rotate(93deg) brightness(95%) contrast(92%); }
+.sq-teal    { filter: invert(60%) sepia(45%) saturate(500%) hue-rotate(130deg) brightness(95%) contrast(90%); }
+.sq-blue    { filter: invert(37%) sepia(93%) saturate(1352%) hue-rotate(196deg) brightness(97%) contrast(101%); }
+.sq-purple  { filter: invert(35%) sepia(60%) saturate(2000%) hue-rotate(260deg) brightness(90%) contrast(95%); }
+.sq-pink    { filter: invert(60%) sepia(50%) saturate(1000%) hue-rotate(300deg) brightness(95%) contrast(95%); }
+.sq-gray    { filter: invert(50%) sepia(0%) saturate(0%) brightness(90%) contrast(90%); }
+.sq-white   { filter: invert(100%) brightness(200%); }
+
+// =============================================================================
+// Icon Mappings - Organized by Category
+// =============================================================================
+
+// --- Navigation & Arrows ---
+.sq-arrow-up      { background-image: url('#{$sq-base-path}/arrow-up.svg'); }
+.sq-arrow-down    { background-image: url('#{$sq-base-path}/arrow-down.svg'); }
+.sq-arrow-left    { background-image: url('#{$sq-base-path}/arrow-left.svg'); }
+.sq-arrow-right   { background-image: url('#{$sq-base-path}/arrow-right.svg'); }
+.sq-caret-up      { background-image: url('#{$sq-base-path}/caret-up.svg'); }
+.sq-caret-down    { background-image: url('#{$sq-base-path}/caret-down.svg'); }
+.sq-caret-left    { background-image: url('#{$sq-base-path}/caret-left.svg'); }
+.sq-caret-right   { background-image: url('#{$sq-base-path}/caret-right.svg'); }
+.sq-chevron-up    { background-image: url('#{$sq-base-path}/chevron-up.svg'); }
+.sq-chevron-down  { background-image: url('#{$sq-base-path}/chevron-down.svg'); }
+.sq-chevron-left  { background-image: url('#{$sq-base-path}/chevron-left.svg'); }
+.sq-chevron-right { background-image: url('#{$sq-base-path}/chevron-right.svg'); }
+
+// --- Actions & UI ---
+.sq-magnifier     { background-image: url('#{$sq-base-path}/magnifier.svg'); }
+.sq-search        { background-image: url('#{$sq-base-path}/magnifier.svg'); } // alias
+.sq-zoom-in       { background-image: url('#{$sq-base-path}/zoom-in.svg'); }
+.sq-zoom-out      { background-image: url('#{$sq-base-path}/zoom-out.svg'); }
+.sq-edit          { background-image: url('#{$sq-base-path}/edit.svg'); }
+.sq-pencil        { background-image: url('#{$sq-base-path}/pencil.svg'); }
+.sq-pen           { background-image: url('#{$sq-base-path}/pencil.svg'); } // alias for fa-pen
+.sq-copy          { background-image: url('#{$sq-base-path}/copy.svg'); }
+.sq-paste         { background-image: url('#{$sq-base-path}/paste.svg'); }
+.sq-save          { background-image: url('#{$sq-base-path}/save.svg'); }
+.sq-export        { background-image: url('#{$sq-base-path}/export.svg'); }
+.sq-bin           { background-image: url('#{$sq-base-path}/bin.svg'); }
+.sq-trash         { background-image: url('#{$sq-base-path}/bin.svg'); } // alias
+.sq-scissors      { background-image: url('#{$sq-base-path}/scissors.svg'); }
+.sq-wrench        { background-image: url('#{$sq-base-path}/wrench.svg'); }
+.sq-gear          { background-image: url('#{$sq-base-path}/gear.svg'); }
+.sq-settings      { background-image: url('#{$sq-base-path}/gear.svg'); } // alias
+.sq-check         { background-image: url('#{$sq-base-path}/check.svg'); }
+.sq-spinner       { background-image: url('#{$sq-base-path}/spinner.svg'); }
+.sq-loader        { background-image: url('#{$sq-base-path}/spinner.svg'); } // alias
+.sq-xmark         { background-image: url('#{$sq-base-path}/x.svg'); }
+.sq-times         { background-image: url('#{$sq-base-path}/x.svg'); } // alias
+.sq-box-open      { background-image: url('#{$sq-base-path}/box-open.svg'); }
+.sq-paw           { background-image: url('#{$sq-base-path}/paw.svg'); }
+
+// --- Status & Alerts ---
+.sq-alert-circle   { background-image: url('#{$sq-base-path}/alert-circle.svg'); }
+.sq-alert-triangle { background-image: url('#{$sq-base-path}/alert-triangle.svg'); }
+.sq-bell           { background-image: url('#{$sq-base-path}/bell.svg'); }
+.sq-lock           { background-image: url('#{$sq-base-path}/lock.svg'); }
+.sq-unlock         { background-image: url('#{$sq-base-path}/unlock.svg'); }
+.sq-key            { background-image: url('#{$sq-base-path}/key.svg'); }
+
+// --- Game Elements (Primary for ChatLingua) ---
+.sq-heart         { background-image: url('#{$sq-base-path}/heart.svg'); }
+.sq-star          { background-image: url('#{$sq-base-path}/star.svg'); }
+.sq-star-empty    { background-image: url('#{$sq-base-path}/star-empty.svg'); }
+.sq-star-half     { background-image: url('#{$sq-base-path}/star-half.svg'); }
+.sq-fire          { background-image: url('#{$sq-base-path}/fire.svg'); }
+.sq-lightning     { background-image: url('#{$sq-base-path}/lightning-bolt-1.svg'); }
+.sq-lightning-2   { background-image: url('#{$sq-base-path}/lightning-bolt-2.svg'); }
+.sq-bolt          { background-image: url('#{$sq-base-path}/lightning-bolt-1.svg'); } // alias for energy
+.sq-energy        { background-image: url('#{$sq-base-path}/lightning-bolt-1.svg'); } // alias
+.sq-sparkles      { background-image: url('#{$sq-base-path}/sparkles.svg'); }
+.sq-gem           { background-image: url('#{$sq-base-path}/sparkles.svg'); } // use sparkles as gem
+.sq-dollar        { background-image: url('#{$sq-base-path}/dollar.svg'); }
+.sq-coin          { background-image: url('#{$sq-base-path}/dollar.svg'); } // alias
+.sq-gift          { background-image: url('#{$sq-base-path}/gift.svg'); }
+.sq-trophy        { background-image: url('#{$sq-base-path}/ribbon.svg'); } // use ribbon for trophy
+.sq-ribbon        { background-image: url('#{$sq-base-path}/ribbon.svg'); }
+.sq-rocket        { background-image: url('#{$sq-base-path}/rocket.svg'); }
+.sq-game-controller { background-image: url('#{$sq-base-path}/game-controller.svg'); }
+
+// --- Animals (Pets) ---
+.sq-cat           { background-image: url('#{$sq-base-path}/cat.svg'); }
+.sq-cat-black     { background-image: url('#{$sq-base-path}/cat-black.svg'); }
+.sq-cat-calico    { background-image: url('#{$sq-base-path}/cat-calico.svg'); }
+.sq-cat-grey      { background-image: url('#{$sq-base-path}/cat-grey.svg'); }
+.sq-cat-orange    { background-image: url('#{$sq-base-path}/cat-orange.svg'); }
+.sq-cat-tabby     { background-image: url('#{$sq-base-path}/cat-tabby.svg'); }
+.sq-cat-white     { background-image: url('#{$sq-base-path}/cat-white.svg'); }
+.sq-cat-sit       { background-image: url('#{$sq-base-path}/cat-sit.svg'); }
+.sq-dog           { background-image: url('#{$sq-base-path}/dog.svg'); }
+.sq-dog-beagle    { background-image: url('#{$sq-base-path}/dog-beagle.svg'); }
+.sq-dog-shiba     { background-image: url('#{$sq-base-path}/dog-shiba.svg'); }
+.sq-bear          { background-image: url('#{$sq-base-path}/bear.svg'); }
+.sq-panda         { background-image: url('#{$sq-base-path}/panda.svg'); }
+.sq-rabbit-grey   { background-image: url('#{$sq-base-path}/rabbit-grey.svg'); }
+.sq-rabbit-white  { background-image: url('#{$sq-base-path}/rabbit-white.svg'); }
+.sq-rabbit        { background-image: url('#{$sq-base-path}/rabbit-white.svg'); } // alias
+.sq-penguin       { background-image: url('#{$sq-base-path}/penguin.svg'); }
+.sq-fox           { background-image: url('#{$sq-base-path}/fox.svg'); }
+.sq-owl-1         { background-image: url('#{$sq-base-path}/owl-1.svg'); }
+.sq-owl-2         { background-image: url('#{$sq-base-path}/owl-2.svg'); }
+.sq-owl           { background-image: url('#{$sq-base-path}/owl-1.svg'); } // alias
+.sq-duck          { background-image: url('#{$sq-base-path}/duck.svg'); }
+.sq-rubber-duck   { background-image: url('#{$sq-base-path}/rubber-duck.svg'); }
+.sq-frog          { background-image: url('#{$sq-base-path}/frog.svg'); }
+.sq-pig           { background-image: url('#{$sq-base-path}/pig.svg'); }
+.sq-cow           { background-image: url('#{$sq-base-path}/cow.svg'); }
+.sq-sheep         { background-image: url('#{$sq-base-path}/sheep.svg'); }
+.sq-horse         { background-image: url('#{$sq-base-path}/horse.svg'); }
+.sq-elephant      { background-image: url('#{$sq-base-path}/elephant.svg'); }
+.sq-lion          { background-image: url('#{$sq-base-path}/lion.svg'); }
+.sq-tiger         { background-image: url('#{$sq-base-path}/tiger.svg'); }
+.sq-tiger-walk    { background-image: url('#{$sq-base-path}/tiger-walk.svg'); }
+.sq-monkey        { background-image: url('#{$sq-base-path}/monkey.svg'); }
+.sq-monkey-love   { background-image: url('#{$sq-base-path}/monkey-love.svg'); }
+.sq-monkey-walk   { background-image: url('#{$sq-base-path}/monkey-walk.svg'); }
+.sq-koala         { background-image: url('#{$sq-base-path}/koala.svg'); }
+.sq-koala-hug     { background-image: url('#{$sq-base-path}/koala-hug.svg'); }
+.sq-sloth         { background-image: url('#{$sq-base-path}/sloth.svg'); }
+.sq-whale         { background-image: url('#{$sq-base-path}/whale.svg'); }
+.sq-dolphin       { background-image: url('#{$sq-base-path}/dolphin.svg'); }
+.sq-fish          { background-image: url('#{$sq-base-path}/fish.svg'); }
+.sq-clownfish     { background-image: url('#{$sq-base-path}/clownfish.svg'); }
+.sq-crab          { background-image: url('#{$sq-base-path}/crab.svg'); }
+.sq-bee           { background-image: url('#{$sq-base-path}/bee.svg'); }
+.sq-bee-side      { background-image: url('#{$sq-base-path}/bee-side.svg'); }
+.sq-bug           { background-image: url('#{$sq-base-path}/bug.svg'); }
+.sq-squirrel      { background-image: url('#{$sq-base-path}/squirrel.svg'); }
+.sq-raccoon       { background-image: url('#{$sq-base-path}/raccoon.svg'); }
+.sq-alpaca        { background-image: url('#{$sq-base-path}/alpaca.svg'); }
+.sq-capybara      { background-image: url('#{$sq-base-path}/capybara.svg'); }
+.sq-unicorn       { background-image: url('#{$sq-base-path}/unicorn.svg'); }
+.sq-wombat        { background-image: url('#{$sq-base-path}/wombat.svg'); }
+.sq-tapir         { background-image: url('#{$sq-base-path}/tapir.svg'); }
+.sq-tapir-baby    { background-image: url('#{$sq-base-path}/tapir-baby.svg'); }
+.sq-tortoise      { background-image: url('#{$sq-base-path}/tortoise.svg'); }
+.sq-mallard       { background-image: url('#{$sq-base-path}/mallard.svg'); }
+
+// --- Dinosaurs ---
+.sq-sauropod      { background-image: url('#{$sq-base-path}/sauropod.svg'); }
+.sq-stegosaurus   { background-image: url('#{$sq-base-path}/stegosaurus.svg'); }
+.sq-triceratops   { background-image: url('#{$sq-base-path}/triceratops.svg'); }
+.sq-t-rex         { background-image: url('#{$sq-base-path}/t-rex.svg'); }
+
+// --- Pokemon/Game Characters ---
+.sq-pikachu       { background-image: url('#{$sq-base-path}/pikachu.svg'); }
+.sq-pichu         { background-image: url('#{$sq-base-path}/pichu.svg'); }
+.sq-eevee         { background-image: url('#{$sq-base-path}/eevee.svg'); }
+.sq-bulbasaur     { background-image: url('#{$sq-base-path}/bulbasaur.svg'); }
+.sq-charmander    { background-image: url('#{$sq-base-path}/charmander.svg'); }
+.sq-squirtle      { background-image: url('#{$sq-base-path}/squirtle.svg'); }
+.sq-jigglypuff    { background-image: url('#{$sq-base-path}/jigglypuff.svg'); }
+.sq-meowth        { background-image: url('#{$sq-base-path}/meowth.svg'); }
+.sq-psyduck       { background-image: url('#{$sq-base-path}/psyduck.svg'); }
+.sq-slowpoke      { background-image: url('#{$sq-base-path}/slowpoke.svg'); }
+.sq-magikarp      { background-image: url('#{$sq-base-path}/magikarp.svg'); }
+.sq-lapras        { background-image: url('#{$sq-base-path}/lapras.svg'); }
+.sq-chansey       { background-image: url('#{$sq-base-path}/chansey.svg'); }
+.sq-diglett       { background-image: url('#{$sq-base-path}/diglett.svg'); }
+.sq-chikorita     { background-image: url('#{$sq-base-path}/chikorita.svg'); }
+.sq-cyndaquil     { background-image: url('#{$sq-base-path}/cyndaquil.svg'); }
+.sq-totodile      { background-image: url('#{$sq-base-path}/totodile.svg'); }
+.sq-piplup        { background-image: url('#{$sq-base-path}/piplup.svg'); }
+.sq-mario         { background-image: url('#{$sq-base-path}/mario.svg'); }
+.sq-mario-jump    { background-image: url('#{$sq-base-path}/mario-jump.svg'); }
+.sq-pacman        { background-image: url('#{$sq-base-path}/pacman.svg'); }
+.sq-ghost         { background-image: url('#{$sq-base-path}/ghost.svg'); }
+.sq-ghost-blue    { background-image: url('#{$sq-base-path}/ghost-blue.svg'); }
+.sq-ghost-orange  { background-image: url('#{$sq-base-path}/ghost-orange.svg'); }
+.sq-ghost-pink    { background-image: url('#{$sq-base-path}/ghost-pink.svg'); }
+.sq-ghost-red     { background-image: url('#{$sq-base-path}/ghost-red.svg'); }
+.sq-nyan-cat      { background-image: url('#{$sq-base-path}/nyan-cat.svg'); }
+
+// --- Food (Pet food, rewards) ---
+.sq-apple         { background-image: url('#{$sq-base-path}/apple.svg'); }
+.sq-banana        { background-image: url('#{$sq-base-path}/banana.svg'); }
+.sq-carrot        { background-image: url('#{$sq-base-path}/carrot.svg'); }
+.sq-cherry        { background-image: url('#{$sq-base-path}/cherry.svg'); }
+.sq-grapes        { background-image: url('#{$sq-base-path}/grapes.svg'); }
+.sq-lemon         { background-image: url('#{$sq-base-path}/lemon.svg'); }
+.sq-mango         { background-image: url('#{$sq-base-path}/mango.svg'); }
+.sq-pear          { background-image: url('#{$sq-base-path}/pear.svg'); }
+.sq-pineapple     { background-image: url('#{$sq-base-path}/pineapple.svg'); }
+.sq-strawberry    { background-image: url('#{$sq-base-path}/strawberry.svg'); }
+.sq-watermelon    { background-image: url('#{$sq-base-path}/watermelon.svg'); }
+.sq-avocado       { background-image: url('#{$sq-base-path}/avocado.svg'); }
+.sq-broccoli      { background-image: url('#{$sq-base-path}/broccoli.svg'); }
+.sq-tomato        { background-image: url('#{$sq-base-path}/tomato.svg'); }
+.sq-egg           { background-image: url('#{$sq-base-path}/egg.svg'); }
+.sq-bread         { background-image: url('#{$sq-base-path}/bread.svg'); }
+.sq-rice          { background-image: url('#{$sq-base-path}/rice.svg'); }
+.sq-cookie        { background-image: url('#{$sq-base-path}/cookie.svg'); }
+.sq-cake          { background-image: url('#{$sq-base-path}/birthday-cake.svg'); }
+.sq-shortcake     { background-image: url('#{$sq-base-path}/shortcake.svg'); }
+.sq-doughnut      { background-image: url('#{$sq-base-path}/doughnut.svg'); }
+.sq-candy         { background-image: url('#{$sq-base-path}/candy.svg'); }
+.sq-candycane     { background-image: url('#{$sq-base-path}/candycane.svg'); }
+.sq-lollipop      { background-image: url('#{$sq-base-path}/lollipop.svg'); }
+.sq-ice-cream     { background-image: url('#{$sq-base-path}/ice-cream.svg'); }
+.sq-ice-cream-bowl { background-image: url('#{$sq-base-path}/ice-cream-bowl.svg'); }
+.sq-pizza         { background-image: url('#{$sq-base-path}/pizza-slice.svg'); }
+.sq-burger        { background-image: url('#{$sq-base-path}/burger.svg'); }
+.sq-fries         { background-image: url('#{$sq-base-path}/fries.svg'); }
+.sq-sandwich      { background-image: url('#{$sq-base-path}/sandwich.svg'); }
+.sq-croissant     { background-image: url('#{$sq-base-path}/croissant.svg'); }
+.sq-pancakes      { background-image: url('#{$sq-base-path}/pancakes.svg'); }
+.sq-waffle        { background-image: url('#{$sq-base-path}/waffle.svg'); }
+.sq-pretzel       { background-image: url('#{$sq-base-path}/pretzel.svg'); }
+.sq-popcorn       { background-image: url('#{$sq-base-path}/popcorn.svg'); }
+.sq-noodles       { background-image: url('#{$sq-base-path}/noodles.svg'); }
+.sq-onigiri       { background-image: url('#{$sq-base-path}/onigiri.svg'); }
+.sq-coffee        { background-image: url('#{$sq-base-path}/coffee.svg'); }
+.sq-beer          { background-image: url('#{$sq-base-path}/beer.svg'); }
+.sq-wine          { background-image: url('#{$sq-base-path}/wine.svg'); }
+.sq-bubble-tea    { background-image: url('#{$sq-base-path}/bubble-tea.svg'); }
+.sq-mushroom      { background-image: url('#{$sq-base-path}/mushroom.svg'); }
+.sq-brown-mushroom { background-image: url('#{$sq-base-path}/brown-mushroom.svg'); }
+
+// --- Nature & Weather ---
+.sq-sun           { background-image: url('#{$sq-base-path}/sun.svg'); }
+.sq-moon          { background-image: url('#{$sq-base-path}/moon.svg'); }
+.sq-cloud         { background-image: url('#{$sq-base-path}/cloud.svg'); }
+.sq-rain          { background-image: url('#{$sq-base-path}/rain.svg'); }
+.sq-snow          { background-image: url('#{$sq-base-path}/snow.svg'); }
+.sq-wind          { background-image: url('#{$sq-base-path}/wind.svg'); }
+.sq-rainbow       { background-image: url('#{$sq-base-path}/rainbow.svg'); }
+.sq-umbrella      { background-image: url('#{$sq-base-path}/umbrella.svg'); }
+.sq-earth         { background-image: url('#{$sq-base-path}/earth.svg'); }
+.sq-rose          { background-image: url('#{$sq-base-path}/rose.svg'); }
+.sq-sakura        { background-image: url('#{$sq-base-path}/sakura.svg'); }
+.sq-sakura-tree   { background-image: url('#{$sq-base-path}/sakura-tree.svg'); }
+.sq-apple-tree    { background-image: url('#{$sq-base-path}/apple-tree.svg'); }
+.sq-christmas-tree { background-image: url('#{$sq-base-path}/christmas-tree.svg'); }
+.sq-mount-fuji    { background-image: url('#{$sq-base-path}/mount-fuji.svg'); }
+.sq-pumpkin       { background-image: url('#{$sq-base-path}/pumpkin.svg'); }
+
+// --- User & Communication ---
+.sq-user          { background-image: url('#{$sq-base-path}/user.svg'); }
+.sq-users         { background-image: url('#{$sq-base-path}/users.svg'); }
+.sq-message       { background-image: url('#{$sq-base-path}/message.svg'); }
+.sq-messages      { background-image: url('#{$sq-base-path}/messages.svg'); }
+.sq-message-typing { background-image: url('#{$sq-base-path}/message-typing.svg'); }
+.sq-mail          { background-image: url('#{$sq-base-path}/mail.svg'); }
+.sq-mail-open     { background-image: url('#{$sq-base-path}/mail-open.svg'); }
+.sq-mailbox       { background-image: url('#{$sq-base-path}/mailbox.svg'); }
+.sq-inbox         { background-image: url('#{$sq-base-path}/inbox.svg'); }
+.sq-outbox        { background-image: url('#{$sq-base-path}/outbox.svg'); }
+.sq-phone         { background-image: url('#{$sq-base-path}/phone.svg'); }
+.sq-microphone    { background-image: url('#{$sq-base-path}/microphone.svg'); }
+.sq-headphones    { background-image: url('#{$sq-base-path}/headphones.svg'); }
+
+// --- Files & Documents ---
+.sq-file          { background-image: url('#{$sq-base-path}/file.svg'); }
+.sq-file-text     { background-image: url('#{$sq-base-path}/file-text.svg'); }
+.sq-file-picture  { background-image: url('#{$sq-base-path}/file-picture.svg'); }
+.sq-folder        { background-image: url('#{$sq-base-path}/folder.svg'); }
+.sq-clipboard     { background-image: url('#{$sq-base-path}/clipboard.svg'); }
+.sq-book          { background-image: url('#{$sq-base-path}/book.svg'); }
+.sq-bookmark      { background-image: url('#{$sq-base-path}/bookmark.svg'); }
+.sq-photo         { background-image: url('#{$sq-base-path}/photo.svg'); }
+.sq-picture       { background-image: url('#{$sq-base-path}/picture.svg'); }
+.sq-camera        { background-image: url('#{$sq-base-path}/camera.svg'); }
+.sq-camera-polaroid { background-image: url('#{$sq-base-path}/camera-polaroid.svg'); }
+
+// --- Time & Calendar ---
+.sq-clock         { background-image: url('#{$sq-base-path}/clock.svg'); }
+.sq-calendar      { background-image: url('#{$sq-base-path}/calendar.svg'); }
+
+// --- Shopping & Commerce ---
+.sq-cart          { background-image: url('#{$sq-base-path}/cart.svg'); }
+.sq-basket        { background-image: url('#{$sq-base-path}/basket.svg'); }
+.sq-shop          { background-image: url('#{$sq-base-path}/shop.svg'); }
+.sq-credit-card   { background-image: url('#{$sq-base-path}/credit-card.svg'); }
+.sq-box           { background-image: url('#{$sq-base-path}/box.svg'); }
+.sq-paper-bag     { background-image: url('#{$sq-base-path}/paper-bag.svg'); }
+.sq-briefcase     { background-image: url('#{$sq-base-path}/briefcase.svg'); }
+.sq-luggage       { background-image: url('#{$sq-base-path}/luggage.svg'); }
+
+// --- Transport ---
+.sq-car           { background-image: url('#{$sq-base-path}/car.svg'); }
+.sq-bus           { background-image: url('#{$sq-base-path}/bus.svg'); }
+.sq-truck         { background-image: url('#{$sq-base-path}/truck.svg'); }
+.sq-truck-fast    { background-image: url('#{$sq-base-path}/truck-fast.svg'); }
+.sq-delivery      { background-image: url('#{$sq-base-path}/delivery.svg'); }
+.sq-scooter       { background-image: url('#{$sq-base-path}/scooter.svg'); }
+.sq-plane         { background-image: url('#{$sq-base-path}/plane.svg'); }
+.sq-helicopter    { background-image: url('#{$sq-base-path}/helicopter.svg'); }
+.sq-ship          { background-image: url('#{$sq-base-path}/ship.svg'); }
+.sq-yacht         { background-image: url('#{$sq-base-path}/yacht.svg'); }
+.sq-submarine     { background-image: url('#{$sq-base-path}/submarine.svg'); }
+.sq-locomotive    { background-image: url('#{$sq-base-path}/locomotive.svg'); }
+.sq-fire-engine   { background-image: url('#{$sq-base-path}/fire-engine.svg'); }
+.sq-convertible   { background-image: url('#{$sq-base-path}/convertible.svg'); }
+
+// --- Devices ---
+.sq-computer      { background-image: url('#{$sq-base-path}/device-computer.svg'); }
+.sq-laptop        { background-image: url('#{$sq-base-path}/device-laptop.svg'); }
+.sq-smartphone    { background-image: url('#{$sq-base-path}/device-smartphone.svg'); }
+.sq-tablet        { background-image: url('#{$sq-base-path}/device-tablet.svg'); }
+.sq-printer       { background-image: url('#{$sq-base-path}/printer.svg'); }
+.sq-calculator    { background-image: url('#{$sq-base-path}/calculator.svg'); }
+.sq-control-panel { background-image: url('#{$sq-base-path}/control-panel.svg'); }
+.sq-window-ui     { background-image: url('#{$sq-base-path}/window-ui.svg'); }
+
+// --- Audio & Music ---
+.sq-music         { background-image: url('#{$sq-base-path}/music.svg'); }
+.sq-guitar        { background-image: url('#{$sq-base-path}/guitar.svg'); }
+.sq-electric-guitar { background-image: url('#{$sq-base-path}/electric-guitar.svg'); }
+.sq-sound-high    { background-image: url('#{$sq-base-path}/sound-high.svg'); }
+.sq-sound-low     { background-image: url('#{$sq-base-path}/sound-low.svg'); }
+.sq-sound-mute    { background-image: url('#{$sq-base-path}/sound-mute.svg'); }
+
+// --- Power & Battery ---
+.sq-battery-1     { background-image: url('#{$sq-base-path}/battery-1-6.svg'); }
+.sq-battery-2     { background-image: url('#{$sq-base-path}/battery-2-6.svg'); }
+.sq-battery-3     { background-image: url('#{$sq-base-path}/battery-3-6.svg'); }
+.sq-battery-4     { background-image: url('#{$sq-base-path}/battery-4-6.svg'); }
+.sq-battery-5     { background-image: url('#{$sq-base-path}/battery-5-6.svg'); }
+.sq-battery-6     { background-image: url('#{$sq-base-path}/battery-6-6.svg'); }
+.sq-battery-full  { background-image: url('#{$sq-base-path}/battery-6-6.svg'); } // alias
+.sq-battery-empty { background-image: url('#{$sq-base-path}/battery-1-6.svg'); } // alias
+.sq-light-bulb    { background-image: url('#{$sq-base-path}/light-bulb.svg'); }
+.sq-light-bulb-on { background-image: url('#{$sq-base-path}/light-bulb-on.svg'); }
+.sq-light-bulb-off { background-image: url('#{$sq-base-path}/light-bulb-off.svg'); }
+
+// --- Connectivity ---
+.sq-wifi          { background-image: url('#{$sq-base-path}/wifi.svg'); }
+.sq-bluetooth     { background-image: url('#{$sq-base-path}/bluetooth.svg'); }
+.sq-pin           { background-image: url('#{$sq-base-path}/pin.svg'); }
+.sq-map           { background-image: url('#{$sq-base-path}/map.svg'); }
+
+// --- Miscellaneous ---
+.sq-house         { background-image: url('#{$sq-base-path}/house.svg'); }
+.sq-home          { background-image: url('#{$sq-base-path}/house.svg'); } // alias
+.sq-chart         { background-image: url('#{$sq-base-path}/chart.svg'); }
+.sq-robot         { background-image: url('#{$sq-base-path}/robot.svg'); }
+.sq-mirror-ball   { background-image: url('#{$sq-base-path}/mirror-ball.svg'); }
+.sq-pinata        { background-image: url('#{$sq-base-path}/pinata.svg'); }
+.sq-maneki-neko   { background-image: url('#{$sq-base-path}/maneki-neko.svg'); }
+.sq-sunglasses    { background-image: url('#{$sq-base-path}/sunglasses.svg'); }
+.sq-dancing-man   { background-image: url('#{$sq-base-path}/dancing-man.svg'); }
+.sq-dancing-woman { background-image: url('#{$sq-base-path}/dancing-woman.svg'); }
+.sq-stonks        { background-image: url('#{$sq-base-path}/stonks.svg'); }
+.sq-thumb-up      { background-image: url('#{$sq-base-path}/thumb-up.svg'); }
+.sq-thumb-down    { background-image: url('#{$sq-base-path}/thumb-down.svg'); }
+
+// --- Gestures (interactive) ---
+.sq-x             { background-image: url('#{$sq-base-path}/x.svg'); }
+.sq-close         { background-image: url('#{$sq-base-path}/x.svg'); } // alias
+
+// --- Text Alignment ---
+.sq-align-left    { background-image: url('#{$sq-base-path}/align-left.svg'); }
+.sq-align-center  { background-image: url('#{$sq-base-path}/align-center.svg'); }
+.sq-align-right   { background-image: url('#{$sq-base-path}/align-right.svg'); }
+.sq-align-justify { background-image: url('#{$sq-base-path}/align-justify.svg'); }
+.sq-burger-menu   { background-image: url('#{$sq-base-path}/burger-menu.svg'); }
+.sq-menu          { background-image: url('#{$sq-base-path}/burger-menu.svg'); } // alias
+
+// --- Christmas & Holidays ---
+.sq-santa         { background-image: url('#{$sq-base-path}/santa.svg'); }
+.sq-santa-face    { background-image: url('#{$sq-base-path}/santa-face.svg'); }
+.sq-snowman       { background-image: url('#{$sq-base-path}/snowman.svg'); }
+.sq-gingerbread-man { background-image: url('#{$sq-base-path}/gingerbread-man.svg'); }
+.sq-rudolph       { background-image: url('#{$sq-base-path}/rudolph.svg'); }
+.sq-wreath        { background-image: url('#{$sq-base-path}/wreath.svg'); }
+.sq-xmas-bell     { background-image: url('#{$sq-base-path}/xmas-bell.svg'); }
+.sq-xmas-stocking { background-image: url('#{$sq-base-path}/xmas-stocking.svg'); }
+.sq-mistletoe     { background-image: url('#{$sq-base-path}/mistletoe.svg'); }
+
+// --- Memes & Fun ---
+.sq-surprised-pikachu { background-image: url('#{$sq-base-path}/surprised-pikachu.svg'); }
+.sq-this-is-fine  { background-image: url('#{$sq-base-path}/this-is-fine.svg'); }
+.sq-sad-pepe      { background-image: url('#{$sq-base-path}/sad-pepe.svg'); }
+.sq-take-my-money { background-image: url('#{$sq-base-path}/take-my-money.svg'); }
+.sq-rickroll      { background-image: url('#{$sq-base-path}/rickroll.svg'); }
+.sq-spooderman    { background-image: url('#{$sq-base-path}/spooderman.svg'); }
+
+// --- Social Media & Brands ---
+.sq-github        { background-image: url('#{$sq-base-path}/github.svg'); }
+.sq-twitter       { background-image: url('#{$sq-base-path}/twitter.svg'); }
+.sq-facebook      { background-image: url('#{$sq-base-path}/facebook.svg'); }
+.sq-instagram     { background-image: url('#{$sq-base-path}/instagram.svg'); }
+.sq-youtube       { background-image: url('#{$sq-base-path}/youtube.svg'); }
+.sq-tiktok        { background-image: url('#{$sq-base-path}/tiktok.svg'); }
+.sq-linkedin      { background-image: url('#{$sq-base-path}/linkedin.svg'); }
+.sq-reddit        { background-image: url('#{$sq-base-path}/reddit.svg'); }
+.sq-spotify       { background-image: url('#{$sq-base-path}/spotify.svg'); }
+.sq-google        { background-image: url('#{$sq-base-path}/google.svg'); }
+.sq-chrome        { background-image: url('#{$sq-base-path}/chrome.svg'); }
+.sq-firefox       { background-image: url('#{$sq-base-path}/firefox.svg'); }
+.sq-safari        { background-image: url('#{$sq-base-path}/safari.svg'); }
+.sq-edge          { background-image: url('#{$sq-base-path}/microsoft-edge.svg'); }
+.sq-docker        { background-image: url('#{$sq-base-path}/docker.svg'); }
+.sq-figma         { background-image: url('#{$sq-base-path}/figma.svg'); }
+.sq-notion        { background-image: url('#{$sq-base-path}/notion.svg'); }
+.sq-photoshop     { background-image: url('#{$sq-base-path}/photoshop.svg'); }
+.sq-illustrator   { background-image: url('#{$sq-base-path}/illustrator.svg'); }
+.sq-chatgpt       { background-image: url('#{$sq-base-path}/chatgpt.svg'); }
+.sq-claude        { background-image: url('#{$sq-base-path}/claude.svg'); }
+.sq-gemini        { background-image: url('#{$sq-base-path}/gemini.svg'); }
+.sq-paypal        { background-image: url('#{$sq-base-path}/paypal.svg'); }
+.sq-threads       { background-image: url('#{$sq-base-path}/threads.svg'); }
+.sq-waze          { background-image: url('#{$sq-base-path}/waze.svg'); }
+.sq-windows       { background-image: url('#{$sq-base-path}/windows-11.svg'); }
+.sq-apple-logo    { background-image: url('#{$sq-base-path}/apple-logo.svg'); }
+.sq-google-maps   { background-image: url('#{$sq-base-path}/google-maps.svg'); }
+.sq-procreate     { background-image: url('#{$sq-base-path}/procreate.svg'); }
+.sq-after-effects { background-image: url('#{$sq-base-path}/after-effects.svg'); }
+.sq-indesign      { background-image: url('#{$sq-base-path}/indesign.svg'); }
+.sq-lightroom     { background-image: url('#{$sq-base-path}/lightroom.svg'); }
+.sq-internet-explorer { background-image: url('#{$sq-base-path}/internet-explorer.svg'); }
+
+// =============================================================================
+// Utility Classes
+// =============================================================================
+
+// Flip horizontally
+.sq-flip-h {
+  transform: scaleX(-1);
+}
+
+// Flip vertically
+.sq-flip-v {
+  transform: scaleY(-1);
+}
+
+// Rotate variants
+.sq-rotate-90  { transform: rotate(90deg); }
+.sq-rotate-180 { transform: rotate(180deg); }
+.sq-rotate-270 { transform: rotate(270deg); }
+
+// Hover effects
+.sq-hover-grow:hover {
+  transform: scale(1.2);
+  transition: transform 0.2s ease;
+}
+
+.sq-hover-bounce:hover {
+  animation: sq-bounce 0.5s ease;
+}

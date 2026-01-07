@@ -1,0 +1,519 @@
+<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4" (click)="onBackdropClick($event)">
+  <div class="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white flex-shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <span class="text-xl sm:text-2xl">📖</span>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900">Pet Care Guide</h2>
+          <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">Learn how to keep your pet happy and healthy!</p>
+        </div>
+      </div>
+      <button (click)="onClose()" class="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <span class="text-gray-500 text-lg sm:text-xl">×</span>
+      </button>
+    </div>
+
+    <!-- Mobile Tab Navigation (visible on small screens) -->
+    <div class="sm:hidden border-b border-gray-200 bg-gray-50 flex-shrink-0">
+      <div class="flex overflow-x-auto scrollbar-hide px-2 py-2 gap-1">
+        @for (section of sections; track section.id) {
+          <button
+            (click)="setSection(section.id)"
+            class="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1"
+            [ngClass]="activeSection() === section.id
+              ? 'bg-gray-900 text-white'
+              : 'bg-white text-gray-700 border border-gray-200'"
+          >
+            <span>{{ section.icon }}</span>
+            <span>{{ section.label }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex flex-1 overflow-hidden min-h-0">
+      <!-- Sidebar Navigation (hidden on mobile) -->
+      <div class="hidden sm:block w-48 border-r border-gray-200 bg-gray-50 p-2 overflow-y-auto flex-shrink-0">
+        @for (section of sections; track section.id) {
+          <button
+            (click)="setSection(section.id)"
+            class="w-full text-left px-3 py-2.5 rounded-lg mb-1 transition-all flex items-center gap-2"
+            [ngClass]="activeSection() === section.id
+              ? 'bg-gray-900 text-white'
+              : 'text-gray-700 hover:bg-gray-200'"
+          >
+            <span>{{ section.icon }}</span>
+            <span class="text-sm font-medium">{{ section.label }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-1 p-4 sm:p-6 overflow-y-auto">
+        <!-- Overview -->
+        @if (activeSection() === 'overview') {
+          <div class="space-y-3 sm:space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>📋</span> Pet Care Overview
+            </h3>
+            <p class="text-gray-600 text-sm sm:text-base">
+              Your pet has 4 main stats that you need to manage. Keep them balanced to maximize your learning bonuses!
+            </p>
+
+            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+              <div class="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <div class="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                  <span class="text-lg sm:text-xl">😊</span>
+                  <span class="font-semibold text-green-800 text-sm sm:text-base">Happiness</span>
+                </div>
+                <p class="text-xs sm:text-sm text-green-700">Affects your XP and coin bonuses</p>
+              </div>
+
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <div class="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                  <span class="text-lg sm:text-xl">⚡</span>
+                  <span class="font-semibold text-yellow-800 text-sm sm:text-base">Energy</span>
+                </div>
+                <p class="text-xs sm:text-sm text-yellow-700">Required to play with your pet</p>
+              </div>
+
+              <div class="bg-orange-50 border border-orange-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <div class="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                  <span class="text-lg sm:text-xl">🍖</span>
+                  <span class="font-semibold text-orange-800 text-sm sm:text-base">Fullness</span>
+                </div>
+                <p class="text-xs sm:text-sm text-orange-700">Keep your pet well-fed!</p>
+              </div>
+
+              <div class="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <div class="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                  <span class="text-lg sm:text-xl">❤️</span>
+                  <span class="font-semibold text-red-800 text-sm sm:text-base">Health (HP)</span>
+                </div>
+                <p class="text-xs sm:text-sm text-red-700">Critical! HP=0 for 24h = death</p>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4 mt-3 sm:mt-4">
+              <div class="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                <span class="text-lg sm:text-xl">⏰</span>
+                <span class="font-semibold text-blue-800 text-sm sm:text-base">Time Decay</span>
+              </div>
+              <p class="text-xs sm:text-sm text-blue-700">
+                Stats change over time even when you're not playing. Check on your pet regularly!
+              </p>
+            </div>
+          </div>
+        }
+
+        <!-- Happiness Section -->
+        @if (activeSection() === 'happiness') {
+          <div class="space-y-3 sm:space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>😊</span> Happiness
+            </h3>
+            <p class="text-gray-600 text-sm sm:text-base">
+              Happiness directly affects your XP and coin bonuses. A happy pet gives you more rewards!
+            </p>
+
+            <!-- Decrease -->
+            <div class="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-red-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📉</span> What Decreases Happiness
+              </h4>
+              <ul class="text-xs sm:text-sm text-red-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Time:</strong> -1.5 happiness per hour passively</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Hunger:</strong> Extra penalty when hunger > 50%</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>No interaction:</strong> -10 happiness if no interaction for 12+ hours</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Increase -->
+            <div class="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-green-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📈</span> How to Increase Happiness
+              </h4>
+              <ul class="text-xs sm:text-sm text-green-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>🍖 Feed:</strong> Use food items with happiness bonus</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>🎾 Play:</strong> Use toys (+15 happiness by default)</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>❤️ Give Gifts:</strong> Use heart items (+15 happiness by default)</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>📚 Learn Together:</strong> Do reviews to gain small happiness boosts</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Mood Levels -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-gray-800 mb-2 text-sm sm:text-base">Mood Levels</h4>
+              <div class="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                <div class="flex items-center gap-1.5 sm:gap-2"><span>🤩</span> 90%+ = Ecstatic</div>
+                <div class="flex items-center gap-1.5 sm:gap-2"><span>😊</span> 70-89% = Happy</div>
+                <div class="flex items-center gap-1.5 sm:gap-2"><span>😌</span> 50-69% = Content</div>
+                <div class="flex items-center gap-1.5 sm:gap-2"><span>😐</span> 30-49% = Neutral</div>
+                <div class="flex items-center gap-1.5 sm:gap-2"><span>😢</span> 10-29% = Sad</div>
+                <div class="flex items-center gap-1.5 sm:gap-2"><span>😭</span> 0-9% = Miserable</div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Energy Section -->
+        @if (activeSection() === 'energy') {
+          <div class="space-y-3 sm:space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>⚡</span> Energy
+            </h3>
+            <p class="text-gray-600 text-sm sm:text-base">
+              Energy is required to play with your pet. It regenerates naturally over time.
+            </p>
+
+            <!-- Decrease -->
+            <div class="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-red-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📉</span> What Uses Energy
+              </h4>
+              <ul class="text-xs sm:text-sm text-red-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>🎾 Playing with Toys:</strong> -15 energy per play session (default)</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>🎮 Playing Games:</strong> -10 to -20 energy per game (based on score tier)</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Minimum required:</strong> 10 energy to play</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Increase -->
+            <div class="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-green-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📈</span> How Energy Regenerates
+              </h4>
+              <ul class="text-xs sm:text-sm text-green-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>⏰ Time:</strong> +2 energy per hour automatically (max 100)</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>💊 Medicine:</strong> Some items restore energy</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>❤️ Heart Items:</strong> Some heart items give energy bonus</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-blue-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>💡</span> Tip
+              </h4>
+              <p class="text-xs sm:text-sm text-blue-700">
+                Energy regenerates slowly (+2/hour). From 0 to 100% takes about 50 hours. Plan your games wisely!
+              </p>
+            </div>
+          </div>
+        }
+
+        <!-- Fullness Section -->
+        @if (activeSection() === 'fullness') {
+          <div class="space-y-3 sm:space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>🍖</span> Fullness (Hunger)
+            </h3>
+            <p class="text-gray-600 text-sm sm:text-base">
+              Fullness shows how well-fed your pet is. Low fullness (high hunger) can damage your pet's health!
+            </p>
+
+            <!-- Decrease -->
+            <div class="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-red-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📉</span> What Decreases Fullness
+              </h4>
+              <ul class="text-xs sm:text-sm text-red-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>⏰ Time:</strong> Hunger increases +2 per hour (fullness decreases)</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Increase -->
+            <div class="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-green-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📈</span> How to Feed Your Pet
+              </h4>
+              <ul class="text-xs sm:text-sm text-green-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>🍖 Feed:</strong> Use food items from the shop</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>⏱️ Cooldown:</strong> 1 hour between feedings</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Danger Levels -->
+            <div class="bg-orange-50 border border-orange-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-orange-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>⚠️</span> Danger Levels (Hunger)
+              </h4>
+              <ul class="text-xs sm:text-sm text-orange-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-center gap-2">
+                  <span class="w-16 sm:w-20">0-49%</span>
+                  <span class="text-green-600">✅ Healthy</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-16 sm:w-20">50-69%</span>
+                  <span class="text-yellow-600">⚠️ Getting hungry</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-16 sm:w-20">70-79%</span>
+                  <span class="text-orange-600">🔶 -1 HP/30 min</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-16 sm:w-20">80-89%</span>
+                  <span class="text-red-600">🔴 -3 HP/30 min</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="w-16 sm:w-20">90-100%</span>
+                  <span class="text-red-700">💀 -5 HP/30 min</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        }
+
+        <!-- HP Section -->
+        @if (activeSection() === 'hp') {
+          <div class="space-y-3 sm:space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>❤️</span> Health (HP)
+            </h3>
+            <p class="text-gray-600 text-sm sm:text-base">
+              <strong class="text-red-600">CRITICAL!</strong> If HP reaches 0 and stays there for 24 hours, your pet will die permanently!
+            </p>
+
+            <!-- Decrease -->
+            <div class="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-red-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📉</span> What Damages HP
+              </h4>
+              <ul class="text-xs sm:text-sm text-red-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Hunger 70-79%:</strong> -1 HP every 30 min</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Hunger 80-89%:</strong> -3 HP every 30 min</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Hunger 90-100%:</strong> -5 HP every 30 min</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Happiness ≤ 20%:</strong> -1 HP every 30 min</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-red-400">•</span>
+                  <span><strong>Happiness ≤ 10%:</strong> -3 HP every 30 min</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Increase -->
+            <div class="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-green-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>📈</span> How to Heal HP
+              </h4>
+              <ul class="text-xs sm:text-sm text-green-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>💊 Medicine:</strong> Use healing items from the shop</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>🍖 Food:</strong> Some food items have HP bonus</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>⏰ Natural:</strong> +2 HP every 30 min when healthy</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Death Warning -->
+            <div class="bg-gray-900 text-white rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>💀</span> Death Mechanic
+              </h4>
+              <ul class="text-xs sm:text-sm space-y-1.5 sm:space-y-2 text-gray-300">
+                <li>• When HP reaches 0, a 24-hour timer starts</li>
+                <li>• You'll receive urgent notifications</li>
+                <li>• Use revival items or heal quickly!</li>
+                <li>• After 24 hours at HP=0, pet dies <strong class="text-red-400">PERMANENTLY</strong></li>
+              </ul>
+            </div>
+          </div>
+        }
+
+        <!-- Bonuses Section -->
+        @if (activeSection() === 'bonuses') {
+          <div class="space-y-3 sm:space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>✨</span> Pet Bonuses
+            </h3>
+            <p class="text-gray-600 text-sm sm:text-base">
+              Keep your pet happy to maximize your learning bonuses!
+            </p>
+
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-purple-800 mb-2 sm:mb-3 text-sm sm:text-base">Happiness Multiplier</h4>
+              <p class="text-xs sm:text-sm text-purple-700 mb-2 sm:mb-3">
+                Your XP and coin bonuses scale with happiness (50% - 100% of base value)
+              </p>
+              <div class="bg-white rounded-lg p-2 sm:p-3 text-xs sm:text-sm">
+                <code class="text-purple-600">multiplier = 0.5 + (happiness / 200)</code>
+              </div>
+              <ul class="text-xs sm:text-sm text-purple-700 mt-2 sm:mt-3 space-y-1">
+                <li>• 0% happiness = 50% bonus</li>
+                <li>• 50% happiness = 75% bonus</li>
+                <li>• 100% happiness = 100% bonus</li>
+              </ul>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-green-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>🎁</span> Active Bonuses
+              </h4>
+              <ul class="text-xs sm:text-sm text-green-700 space-y-1.5 sm:space-y-2">
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>XP Multiplier:</strong> More XP from reviews and exercises</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>Coin Multiplier:</strong> More coins from activities</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <span class="text-green-400">•</span>
+                  <span><strong>Special Ability:</strong> Unique bonus from pet type</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="bg-red-50 border border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+              <h4 class="font-semibold text-red-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <span>⚠️</span> No Bonuses When
+              </h4>
+              <ul class="text-xs sm:text-sm text-red-700 space-y-1">
+                <li>• Pet is dead</li>
+                <li>• Pet HP is 0 (dying)</li>
+              </ul>
+            </div>
+          </div>
+        }
+
+        <!-- Tips Section -->
+        @if (activeSection() === 'tips') {
+          <div class="space-y-3 sm:space-y-4">
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>💡</span> Pro Tips
+            </h3>
+
+            <div class="space-y-2 sm:space-y-3">
+              <div class="bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <h4 class="font-semibold text-blue-800 mb-2 text-sm sm:text-base">🎯 Daily Routine</h4>
+                <ul class="text-xs sm:text-sm text-blue-700 space-y-1">
+                  <li>1. Feed your pet first thing (reduces hunger)</li>
+                  <li>2. Play with toys if energy &gt; 20</li>
+                  <li>3. Give a gift for extra happiness</li>
+                  <li>4. Do your reviews to earn pet XP</li>
+                </ul>
+              </div>
+
+              <div class="bg-green-50 border border-green-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <h4 class="font-semibold text-green-800 mb-2 text-sm sm:text-base">⏰ Time Management</h4>
+                <ul class="text-xs sm:text-sm text-green-700 space-y-1">
+                  <li>• Feed every 1 hour (cooldown)</li>
+                  <li>• Play every 1 hour (cooldown)</li>
+                  <li>• Pet every 30 minutes (cooldown)</li>
+                  <li>• Energy regenerates +2/hour</li>
+                </ul>
+              </div>
+
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <h4 class="font-semibold text-yellow-800 mb-2 text-sm sm:text-base">🛒 Shopping Tips</h4>
+                <ul class="text-xs sm:text-sm text-yellow-700 space-y-1">
+                  <li>• Stock up on food (you'll need it!)</li>
+                  <li>• Keep medicine for emergencies</li>
+                  <li>• Toys give happiness + XP</li>
+                  <li>• Heart items are great for happiness</li>
+                </ul>
+              </div>
+
+              <div class="bg-purple-50 border border-purple-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <h4 class="font-semibold text-purple-800 mb-2 text-sm sm:text-base">🚨 Emergency Recovery</h4>
+                <ul class="text-xs sm:text-sm text-purple-700 space-y-1">
+                  <li>• Low HP? Use medicine immediately!</li>
+                  <li>• HP at 0? Use revival item ASAP</li>
+                  <li>• Very hungry? Feed multiple times</li>
+                  <li>• Sad pet? Play and give gifts</li>
+                </ul>
+              </div>
+
+              <div class="bg-gray-900 text-white rounded-lg sm:rounded-xl p-3 sm:p-4">
+                <h4 class="font-semibold mb-2 text-sm sm:text-base">🏆 Maximize Bonuses</h4>
+                <ul class="text-xs sm:text-sm text-gray-300 space-y-1">
+                  <li>• Keep happiness &gt; 80% for best bonuses</li>
+                  <li>• Do reviews when pet is happy for extra XP</li>
+                  <li>• Complete daily pet tasks for rewards</li>
+                  <li>• Higher rarity pets have better base bonuses</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-3 sm:p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+      <button (click)="onClose()"
+              class="w-full py-2 sm:py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors text-sm sm:text-base">
+        Got it!
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" class="avatar-frame-epic">
+	<!-- Purple pixel border -->
+	<path fill="#8B5CF6" d="M4,0h28v4h4v28h-4v4H4v-4H0V4h4V0z"/>
+	<!-- Darker purple inner -->
+	<path fill="#6D28D9" d="M8,4h20v4h4v16h-4v4H8v-4H4V8h4V4z"/>
+	<!-- Corner crystals -->
+	<polygon fill="#A78BFA" points="0,0 6,0 6,2 4,2 4,4 2,4 2,6 0,6"/>
+	<polygon fill="#A78BFA" points="36,0 30,0 30,2 32,2 32,4 34,4 34,6 36,6"/>
+	<polygon fill="#A78BFA" points="0,36 6,36 6,34 4,34 4,32 2,32 2,30 0,30"/>
+	<polygon fill="#A78BFA" points="36,36 30,36 30,34 32,34 32,32 34,32 34,30 36,30"/>
+	<!-- Crystal highlights -->
+	<rect fill="#DDD6FE" x="0" y="0" width="2" height="2"/>
+	<rect fill="#DDD6FE" x="34" y="0" width="2" height="2"/>
+	<rect fill="#DDD6FE" x="0" y="34" width="2" height="2"/>
+	<rect fill="#DDD6FE" x="34" y="34" width="2" height="2"/>
+	<!-- Side accents -->
+	<rect fill="#C4B5FD" x="16" y="0" width="4" height="2"/>
+	<rect fill="#C4B5FD" x="16" y="34" width="4" height="2"/>
+	<rect fill="#C4B5FD" x="0" y="16" width="2" height="4"/>
+	<rect fill="#C4B5FD" x="34" y="16" width="2" height="4"/>
+</svg>

@@ -7,6 +7,8 @@ import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
+import { ActiveBoostersWidgetComponent } from '../shared/active-boosters-widget/active-boosters-widget.component';
+import { GameStateService } from '../services/game-state.service';
 
 @Component({
   selector: 'app-hangman',
@@ -15,12 +17,15 @@ import { CountdownComponent } from '../shared/countdown/countdown.component';
     CommonModule,
     GameHeaderComponent,
     GameOverDialogComponent,
-    CountdownComponent
+    CountdownComponent,
+    ActiveBoostersWidgetComponent
   ],
   templateUrl: './hangman.component.html',
   styleUrls: ['./hangman.component.scss']
 })
 export class HangmanComponent implements OnInit, OnDestroy {
+  private gameStateService = inject(GameStateService);
+
   // Game state
   sessionId = signal<number | null>(null);
   isLoading = signal(true);
@@ -116,6 +121,8 @@ export class HangmanComponent implements OnInit, OnDestroy {
     this.apiService.startGame('hangman').subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
+        // Set active boosters in GameStateService for the widget
+        this.gameStateService.setActiveBoosters(response.activeBoosters || []);
         this.vocabulary.set(response.vocabulary);
         this.isLoading.set(false);
         this.showCountdown.set(true);

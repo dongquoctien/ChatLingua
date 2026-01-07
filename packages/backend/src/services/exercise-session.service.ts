@@ -3,6 +3,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { isAnswerCorrect } from '../utils/answer-matching.js';
 import { challengeService } from './challenge.service.js';
 import { gamificationService } from './gamification.service.js';
+import { petService } from './pet.service.js';
 
 // ============= Types =============
 
@@ -423,6 +424,49 @@ export class ExerciseSessionService {
     } catch (error) {
       console.error('[Challenge] Failed to update challenge/achievement progress:', error);
       // Don't fail the submission if challenge update fails
+    }
+
+    // ============================================================
+    // Pet Care Integration - Award care points based on exercise score
+    // Higher scores = higher care points for active pet
+    // ============================================================
+    try {
+      // Use percentage as score (0-100) for pet care
+      await petService.processCareFromActivity(
+        userId,
+        'feed', // Exercise activities = feed care type
+        'exercise',
+        percentage,
+        sessionId
+      );
+    } catch (error) {
+      // Don't fail exercise submission if pet care fails
+      console.error('Failed to process pet care from exercise:', error);
+    }
+
+    // ============================================================
+    // Pet Daily Tasks Integration - Update task progress for exercises
+    // ============================================================
+    try {
+      await petService.recordActivityForTasks(userId, 'exercise', {
+        scorePercent: percentage,
+        count: 1
+      });
+      console.log(`[Pet Tasks] Updated exercise task progress: userId=${userId}, score=${percentage}%`);
+    } catch (error) {
+      console.error('Failed to update pet daily tasks from exercise:', error);
+    }
+
+    // ============================================================
+    // Pet XP Integration - Pet gains XP when user learns
+    // ============================================================
+    try {
+      // Calculate XP earned (roughly based on correct answers)
+      const xpEarned = correctCount * 10;
+      await petService.onLearningActivity(userId, 'exercise', xpEarned);
+      console.log(`[Pet XP] Pet gained XP from exercise: userId=${userId}, xp=${xpEarned}`);
+    } catch (error) {
+      console.error('Failed to process pet XP from exercise:', error);
     }
 
     return {

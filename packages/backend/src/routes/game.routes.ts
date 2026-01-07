@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { gameService } from '../services/game.service.js';
+import { shopService } from '../services/shop.service.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -34,16 +35,24 @@ router.get('/hub', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId!;
 
-    const [games, currency, recentSessions] = await Promise.all([
+    const [games, currency, recentSessions, activeBoosters] = await Promise.all([
       gameService.getGamesWithUserStats(userId),
       gameService.getUserCurrency(userId),
       gameService.getUserRecentSessions(userId, 5),
+      shopService.getActiveBoosters(userId),
     ]);
 
     res.json({
       games,
       userCurrency: currency,
       recentSessions,
+      activeBoosters: activeBoosters.map(b => ({
+        itemId: b.itemId,
+        name: b.name,
+        effectType: b.effectType,
+        multiplier: b.multiplier,
+        remainingMinutes: b.remainingMinutes,
+      })),
       dailyBonusClaimed: false, // TODO: Track daily bonus
     });
   } catch (error) {
@@ -129,6 +138,9 @@ router.post('/:gameCode/start', async (req: AuthRequest, res: Response) => {
     // Start session
     const sessionId = await gameService.startSession(userId, game.id);
 
+    // Get active boosters
+    const activeBoosters = await shopService.getActiveBoosters(userId);
+
     res.json({
       sessionId,
       game: {
@@ -146,6 +158,13 @@ router.post('/:gameCode/start', async (req: AuthRequest, res: Response) => {
         hint: v.vietnamese_word,
       })),
       config: game.config ? (typeof game.config === 'string' ? JSON.parse(game.config) : game.config) : {},
+      activeBoosters: activeBoosters.map(b => ({
+        itemId: b.itemId,
+        name: b.name,
+        effectType: b.effectType,
+        multiplier: b.multiplier,
+        remainingMinutes: b.remainingMinutes,
+      })),
     });
   } catch (error) {
     console.error('Error starting game:', error);
@@ -182,14 +201,31 @@ router.post('/sessions/:sessionId/end', async (req: AuthRequest, res: Response) 
       return res.status(400).json({ error: 'Session already ended' });
     }
 
-    // Calculate rewards
+    // Calculate base rewards
     const baseXp = Math.floor(score / 10) + (wordsCorrect * 5);
     const comboBonus = maxCombo * 2;
     const accuracyBonus = accuracy >= 90 ? 25 : accuracy >= 70 ? 10 : 0;
     const perfectBonus = accuracy === 100 ? 50 : 0;
-    const xpEarned = baseXp + comboBonus + accuracyBonus + perfectBonus;
+    let xpEarned = baseXp + comboBonus + accuracyBonus + perfectBonus;
 
-    const coinsEarned = 10 + (accuracy === 100 ? 25 : 0) + Math.floor(score / 50);
+    let coinsEarned = 10 + (accuracy === 100 ? 25 : 0) + Math.floor(score / 50);
+
+    // Apply active boosters from shop
+    const activeBoosters = await shopService.getActiveBoosters(userId);
+    let xpMultiplier = 1;
+    let coinMultiplier = 1;
+
+    for (const booster of activeBoosters) {
+      if (booster.effectType === 'xp_multiplier') {
+        xpMultiplier = Math.max(xpMultiplier, booster.multiplier);
+      } else if (booster.effectType === 'coin_multiplier') {
+        coinMultiplier = Math.max(coinMultiplier, booster.multiplier);
+      }
+    }
+
+    // Apply multipliers
+    xpEarned = Math.floor(xpEarned * xpMultiplier);
+    coinsEarned = Math.floor(coinsEarned * coinMultiplier);
 
     // End session
     const completedSession = await gameService.endSession(
@@ -256,6 +292,16 @@ router.post('/sessions/:sessionId/end', async (req: AuthRequest, res: Response) 
       },
       xpEarned,
       coinsEarned,
+      boostersApplied: {
+        xpMultiplier,
+        coinMultiplier,
+        activeBoosters: activeBoosters.map(b => ({
+          name: b.name,
+          effectType: b.effectType,
+          multiplier: b.multiplier,
+          remainingMinutes: b.remainingMinutes,
+        })),
+      },
       newAchievements: newAchievements.map(a => ({
         id: a.id,
         achievementCode: a.achievement_code,

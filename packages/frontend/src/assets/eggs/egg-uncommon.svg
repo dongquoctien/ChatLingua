@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80">
+  <defs>
+    <linearGradient id="egg-uncommon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#bbf7d0"/>
+      <stop offset="50%" style="stop-color:#86efac"/>
+      <stop offset="100%" style="stop-color:#4ade80"/>
+    </linearGradient>
+    <linearGradient id="egg-uncommon-shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.7"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <!-- Egg shadow -->
+  <ellipse cx="32" cy="75" rx="20" ry="4" fill="rgba(0,0,0,0.15)"/>
+  <!-- Egg body -->
+  <ellipse cx="32" cy="42" rx="26" ry="32" fill="url(#egg-uncommon-gradient)" stroke="#22c55e" stroke-width="1"/>
+  <!-- Egg shine -->
+  <ellipse cx="22" cy="30" rx="8" ry="12" fill="url(#egg-uncommon-shine)"/>
+  <!-- Leaf pattern spots -->
+  <ellipse cx="40" cy="32" rx="4" ry="2.5" fill="#16a34a" transform="rotate(-30 40 32)"/>
+  <ellipse cx="24" cy="48" rx="3.5" ry="2" fill="#16a34a" transform="rotate(20 24 48)"/>
+  <ellipse cx="38" cy="56" rx="3" ry="1.5" fill="#16a34a" transform="rotate(-15 38 56)"/>
+  <ellipse cx="28" cy="36" rx="2.5" ry="1.5" fill="#16a34a" transform="rotate(35 28 36)"/>
+</svg>

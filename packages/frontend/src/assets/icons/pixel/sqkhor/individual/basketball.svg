@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9" class="pixelicon-basketball">
+	<!-- Ball base - orange -->
+	<path fill="#FF6B00" d="M3,1h3v1h1v1h1v3H7v1H6v1H3V7H2V6H1V3h1V2h1V1z"/>
+	<!-- Lighter orange highlight -->
+	<polygon fill="#FF9B40" points="3,2 5,2 5,3 4,3 4,4 3,4"/>
+	<!-- Ball lines - dark orange/brown -->
+	<rect fill="#CC5500" x="4" y="1" width="1" height="7"/>
+	<rect fill="#CC5500" x="1" y="4" width="7" height="1"/>
+	<!-- Curved lines -->
+	<rect fill="#CC5500" x="2" y="2" width="1" height="1"/>
+	<rect fill="#CC5500" x="6" y="2" width="1" height="1"/>
+	<rect fill="#CC5500" x="2" y="6" width="1" height="1"/>
+	<rect fill="#CC5500" x="6" y="6" width="1" height="1"/>
+</svg>

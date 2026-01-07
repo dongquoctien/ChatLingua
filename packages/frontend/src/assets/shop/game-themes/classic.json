@@ -1,0 +1,24 @@
+{
+  "name": "Classic",
+  "slug": "classic",
+  "rarity": "common",
+  "colors": {
+    "background": "#f3f4f6",
+    "card": "#ffffff",
+    "cardBack": "#1f2937",
+    "accent": "#3b82f6",
+    "success": "#22c55e",
+    "error": "#ef4444",
+    "text": "#111827",
+    "border": "#e5e7eb"
+  },
+  "cardDesign": {
+    "borderRadius": "8px",
+    "shadow": "0 2px 4px rgba(0,0,0,0.1)"
+  },
+  "animations": {
+    "flipDuration": 300,
+    "matchEffect": "pulse",
+    "wrongEffect": "shake"
+  }
+}
