@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="diamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#B9F2FF"/>
+      <stop offset="25%" style="stop-color:#87CEEB"/>
+      <stop offset="50%" style="stop-color:#E0FFFF"/>
+      <stop offset="75%" style="stop-color:#87CEEB"/>
+      <stop offset="100%" style="stop-color:#B9F2FF"/>
+    </linearGradient>
+    <linearGradient id="diamondShine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#FFFFFF;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="diamondGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feFlood flood-color="#87CEEB" flood-opacity="0.4"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Main frame -->
+  <rect x="4" y="4" width="112" height="112" rx="8" ry="8" fill="none" stroke="url(#diamondGradient)" stroke-width="6" filter="url(#diamondGlow)"/>
+  <!-- Crystal facets on corners -->
+  <polygon points="8,20 20,8 32,20 20,32" fill="url(#diamondGradient)" stroke="#87CEEB" stroke-width="1"/>
+  <polygon points="88,8 100,20 112,8 100,8" fill="url(#diamondGradient)" stroke="#87CEEB" stroke-width="1"/>
+  <polygon points="8,100 20,88 32,100 20,112" fill="url(#diamondGradient)" stroke="#87CEEB" stroke-width="1"/>
+  <polygon points="88,112 100,100 112,112 100,112" fill="url(#diamondGradient)" stroke="#87CEEB" stroke-width="1"/>
+  <!-- Diamond gems on sides -->
+  <polygon points="60,4 68,12 60,20 52,12" fill="#E0FFFF" stroke="#87CEEB" stroke-width="1"/>
+  <polygon points="60,100 68,108 60,116 52,108" fill="#E0FFFF" stroke="#87CEEB" stroke-width="1"/>
+  <polygon points="4,60 12,52 20,60 12,68" fill="#E0FFFF" stroke="#87CEEB" stroke-width="1"/>
+  <polygon points="100,60 108,52 116,60 108,68" fill="#E0FFFF" stroke="#87CEEB" stroke-width="1"/>
+  <!-- Shine line -->
+  <rect x="20" y="8" width="80" height="4" fill="url(#diamondShine)" rx="2"/>
+  <!-- Center preview area -->
+  <rect x="24" y="24" width="72" height="72" rx="4" fill="#E0FFFF" opacity="0.15"/>
+</svg>

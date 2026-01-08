@@ -287,6 +287,8 @@ export class ShopItemDetailComponent implements OnInit, OnDestroy {
       'common': 'from-gray-100 to-gray-200',
       'uncommon': 'from-green-100 to-emerald-200',
       'rare': 'from-blue-100 to-cyan-200',
+      'heroic': 'from-red-100 to-rose-200',
+      'mythic': 'from-orange-100 to-amber-200',
       'epic': 'from-purple-100 to-fuchsia-200',
       'legendary': 'from-amber-100 via-yellow-200 to-orange-200'
     };
@@ -298,6 +300,8 @@ export class ShopItemDetailComponent implements OnInit, OnDestroy {
       'common': '',
       'uncommon': 'shadow-green-300 shadow-lg',
       'rare': 'shadow-blue-400 shadow-xl',
+      'heroic': 'shadow-red-400 shadow-xl',
+      'mythic': 'shadow-orange-400 shadow-xl',
       'epic': 'shadow-purple-400 shadow-xl',
       'legendary': 'shadow-yellow-500 shadow-2xl'
     };
@@ -309,6 +313,8 @@ export class ShopItemDetailComponent implements OnInit, OnDestroy {
       'common': '⚪',
       'uncommon': '🌿',
       'rare': '💠',
+      'heroic': '🔴',
+      'mythic': '🟠',
       'epic': '💎',
       'legendary': '👑'
     };

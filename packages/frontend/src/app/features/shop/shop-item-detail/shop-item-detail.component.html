@@ -251,19 +251,28 @@
 
             <!-- Action Buttons -->
             @if (item()!.isOwned && !item()!.isConsumable) {
-              @if (item()!.isEquipped) {
-                <button (click)="unequip()"
-                        class="w-full py-3 sm:py-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 text-sm sm:text-base">
-                  <span class="text-lg sm:text-xl">🔄</span>
-                  Unequip
+              <div class="flex gap-3">
+                @if (item()!.isEquipped) {
+                  <button (click)="unequip()"
+                          class="flex-1 py-3 sm:py-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 text-sm sm:text-base">
+                    <span class="text-lg sm:text-xl">🔄</span>
+                    Unequip
+                  </button>
+                } @else {
+                  <button (click)="equip()"
+                          class="flex-1 py-3 sm:py-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white font-semibold rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-sm sm:text-base">
+                    <span class="text-lg sm:text-xl">✨</span>
+                    Equip Now
+                  </button>
+                }
+                <!-- Gift Button for owned items -->
+                <button (click)="openGiftModal()"
+                        class="px-4 sm:px-6 py-3 sm:py-4 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-400 hover:to-orange-400 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                        title="Buy & Gift to Friend">
+                  <span class="text-lg sm:text-xl">🎁</span>
+                  <span class="hidden sm:inline">Gift</span>
                 </button>
-              } @else {
-                <button (click)="equip()"
-                        class="w-full py-3 sm:py-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white font-semibold rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-sm sm:text-base">
-                  <span class="text-lg sm:text-xl">✨</span>
-                  Equip Now
-                </button>
-              }
+              </div>
             } @else {
               <div class="flex gap-3">
                 <button (click)="purchase()"

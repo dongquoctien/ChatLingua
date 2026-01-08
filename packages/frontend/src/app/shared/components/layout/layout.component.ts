@@ -26,6 +26,15 @@ import {
   faPaperPlane,
   faEnvelope,
   faStore,
+  faGift,
+  faArrowUp,
+  faCheck,
+  faCheckCircle,
+  faFire,
+  faFlag,
+  faRefresh,
+  faSpinner,
+  faTrash,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService, GamificationNotification } from '../../../core/services/api.service';
@@ -91,6 +100,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faPaperPlane = faPaperPlane;
   faEnvelope = faEnvelope;
   faStore = faStore;
+  faGift = faGift;
+  faArrowUp = faArrowUp;
+  faFlag = faFlag;
+  faFire = faFire;
+  faCheck = faCheck;
+  faTrash = faTrash;
+  faSpinner = faSpinner;
+  faSync = faRefresh;
+  faCheckCircle = faCheckCircle;
 
   // Navigation items
   // Note: Chat menu removed - accessible via chat widget expand button
@@ -264,4 +282,52 @@ export class LayoutComponent implements OnInit, OnDestroy {
     if (!user) return 'User';
     return user.nickname || user.username;
   }
+
+  
+  getNotificationIcon(type: string) {
+    switch (type) {
+      case 'achievement':
+        return this.faTrophy;
+      case 'level_up':
+        return this.faArrowUp;
+      case 'challenge':
+        return this.faFlag;
+      case 'streak':
+        return this.faFire;
+      case 'leaderboard':
+        return this.faChartLine;
+      case 'sync_started':
+        return this.faSync;
+      case 'sync_completed':
+        return this.faCheckCircle;
+      case 'gift':
+        return this.faGift;
+      default:
+        return this.faBell;
+    }
+  }
+
+  getNotificationIconClass(type: string): string {
+    switch (type) {
+      case 'achievement':
+        return 'bg-yellow-100 text-yellow-600';
+      case 'level_up':
+        return 'bg-purple-100 text-purple-600';
+      case 'challenge':
+        return 'bg-blue-100 text-blue-600';
+      case 'streak':
+        return 'bg-orange-100 text-orange-600';
+      case 'leaderboard':
+        return 'bg-green-100 text-green-600';
+      case 'sync_started':
+        return 'bg-blue-100 text-blue-600';
+      case 'sync_completed':
+        return 'bg-green-100 text-green-600';
+      case 'gift':
+        return 'bg-pink-100 text-pink-600';
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
+  }
+
 }

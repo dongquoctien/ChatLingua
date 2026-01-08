@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import pool from '../config/database';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { petEvents } from '../services/pet.service';
+import { gamificationService } from '../services/gamification.service.js';
 
 /**
  * Pet Status Scheduler
@@ -212,19 +213,58 @@ async function updateSinglePet(connection: any, pet: PetForUpdate): Promise<void
           message: `${petName} has passed away. They will be remembered fondly.`
         });
 
+        // Create persistent notification in database
+        try {
+          await gamificationService.createNotification(pet.userId, {
+            notificationType: 'pet_death',
+            title: '💔 Your pet has passed away',
+            message: `${petName} has passed away after being neglected for too long. You can use a Resurrection Scroll to bring them back within 12 hours.`,
+            icon: '😢',
+            actionUrl: '/pets',
+            metadata: {
+              petId: pet.id,
+              petName,
+              diedAt: new Date().toISOString()
+            }
+          });
+        } catch (notifError) {
+          console.error('[PetScheduler] Failed to create death notification:', notifError);
+        }
+
         // Emit death event
         petEvents.emit('pet:died', { userId: pet.userId, petId: pet.id, petName });
 
         console.log(`[PetScheduler] Pet ${pet.id} (${petName}) has died.`);
       } else if (hoursSinceZero >= 18) {
+        const hoursLeft = Math.floor(24 - hoursSinceZero);
         pendingNotifications.push({
           userId: pet.userId,
           petId: pet.id,
           petName,
           type: 'dying',
           urgency: 'critical',
-          message: `URGENT: ${petName} only has ${Math.floor(24 - hoursSinceZero)} hours left!`
+          message: `URGENT: ${petName} only has ${hoursLeft} hours left!`
         });
+
+        // Create critical notification in database (only once at 18h mark)
+        if (hoursSinceZero < 19) {
+          try {
+            await gamificationService.createNotification(pet.userId, {
+              notificationType: 'pet_dying',
+              title: '⚠️ URGENT: Your pet is dying!',
+              message: `${petName} only has ${hoursLeft} hours left to live! Feed them or use a healing item immediately!`,
+              icon: '💀',
+              actionUrl: '/pets',
+              metadata: {
+                petId: pet.id,
+                petName,
+                hoursLeft
+              }
+            });
+          } catch (notifError) {
+            console.error('[PetScheduler] Failed to create dying notification:', notifError);
+          }
+        }
       } else if (hoursSinceZero >= 12) {
         pendingNotifications.push({
           userId: pet.userId,

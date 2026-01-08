@@ -93,6 +93,9 @@ export class SocketService implements OnDestroy {
   private petDiedCallbacks: ((data: { petId: number; petName: string }) => void)[] = [];
   private petNeedsAttentionCallbacks: ((data: { message: string }) => void)[] = [];
 
+  // Gift event callbacks
+  private giftStatusChangedCallbacks: ((data: { giftId: number; status: string; claimedAt?: string }) => void)[] = [];
+
   connect(): void {
     // Increment reference count
     this.connectionRefCount++;
@@ -250,6 +253,11 @@ export class SocketService implements OnDestroy {
 
     (this.socket as any).on('pet:needs_attention', (data: { message: string }) => {
       this.petNeedsAttentionCallbacks.forEach(cb => cb(data));
+    });
+
+    // Gift events
+    (this.socket as any).on('gift:status_changed', (data: { giftId: number; status: string; claimedAt?: string }) => {
+      this.giftStatusChangedCallbacks.forEach(cb => cb(data));
     });
   }
 
@@ -449,6 +457,17 @@ export class SocketService implements OnDestroy {
     this.petNeedsAttentionCallbacks.push(callback);
     return () => {
       this.petNeedsAttentionCallbacks = this.petNeedsAttentionCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
+  // ============================================================
+  // Gift Event Subscriptions
+  // ============================================================
+
+  onGiftStatusChanged(callback: (data: { giftId: number; status: string; claimedAt?: string }) => void): () => void {
+    this.giftStatusChangedCallbacks.push(callback);
+    return () => {
+      this.giftStatusChangedCallbacks = this.giftStatusChangedCallbacks.filter(cb => cb !== callback);
     };
   }
 

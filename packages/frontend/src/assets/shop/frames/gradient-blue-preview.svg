@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4FF"/>
+      <stop offset="50%" style="stop-color:#0099FF"/>
+      <stop offset="100%" style="stop-color:#0066CC"/>
+    </linearGradient>
+    <linearGradient id="blueHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#66E0FF"/>
+      <stop offset="100%" style="stop-color:#00AAFF"/>
+    </linearGradient>
+    <filter id="blueGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#00AAFF" flood-opacity="0.5"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Main frame with gradient -->
+  <rect x="4" y="4" width="112" height="112" rx="14" ry="14" fill="none" stroke="url(#blueGradient)" stroke-width="6" filter="url(#blueGlow)"/>
+  <!-- Inner frame -->
+  <rect x="10" y="10" width="100" height="100" rx="10" ry="10" fill="none" stroke="url(#blueHighlight)" stroke-width="2"/>
+  <!-- Wave decoration top -->
+  <path d="M20,12 Q40,8 60,12 Q80,16 100,12" fill="none" stroke="#66E0FF" stroke-width="2" opacity="0.7"/>
+  <!-- Wave decoration bottom -->
+  <path d="M20,108 Q40,112 60,108 Q80,104 100,108" fill="none" stroke="#66E0FF" stroke-width="2" opacity="0.7"/>
+  <!-- Corner bubbles -->
+  <circle cx="18" cy="18" r="6" fill="#00D4FF" opacity="0.6"/>
+  <circle cx="102" cy="18" r="6" fill="#00D4FF" opacity="0.6"/>
+  <circle cx="18" cy="102" r="6" fill="#00D4FF" opacity="0.6"/>
+  <circle cx="102" cy="102" r="6" fill="#00D4FF" opacity="0.6"/>
+  <!-- Center preview area -->
+  <rect x="24" y="24" width="72" height="72" rx="6" fill="#E0F7FF" opacity="0.2"/>
+</svg>

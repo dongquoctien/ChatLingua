@@ -15,7 +15,7 @@ export interface PetType {
   slug: string;
   name: string;
   description: string;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  rarity: 'common' | 'uncommon' | 'rare' | 'heroic' | 'mythic' | 'epic' | 'legendary';
   evolutionStage: PetEvolutionStage | number; // Backend returns number (1,2,3)
   evolvesFromId: number | null;
   evolvesToId: number | null;
@@ -139,7 +139,7 @@ export interface PetItem {
   name: string;
   description: string;
   itemCategory: PetItemCategory;
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  rarity: 'common' | 'uncommon' | 'rare' | 'heroic' | 'mythic' | 'epic' | 'legendary';
   priceCoins: number;
   priceGems: number;
   happinessBonus: number;
@@ -207,7 +207,7 @@ export interface PetEquipmentType {
   description: string | null;
   equipmentSlot: EquipmentSlot;
   slot: EquipmentSlot; // Alias for equipmentSlot (backend sends both)
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  rarity: 'common' | 'uncommon' | 'rare' | 'heroic' | 'mythic' | 'epic' | 'legendary';
   happinessBonus: number;
   energyBonus: number;
   xpBonusPercent: number;
@@ -833,6 +833,8 @@ export class PetService {
       common: 'text-gray-500',
       uncommon: 'text-green-500',
       rare: 'text-blue-500',
+      heroic: 'text-red-500',
+      mythic: 'text-orange-500',
       epic: 'text-purple-500',
       legendary: 'text-yellow-500',
     };
@@ -844,6 +846,8 @@ export class PetService {
       common: 'bg-gray-100',
       uncommon: 'bg-green-50',
       rare: 'bg-blue-50',
+      heroic: 'bg-red-50',
+      mythic: 'bg-orange-50',
       epic: 'bg-purple-50',
       legendary: 'bg-gradient-to-r from-yellow-50 to-orange-50',
     };

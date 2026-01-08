@@ -1,6 +1,8 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader, PoolConnection } from 'mysql2/promise';
 import { gamificationService } from './gamification.service.js';
+import { chatService } from './chat.service.js';
+import { emitToUser } from '../socket/index.js';
 
 // ============================================================
 // Types
@@ -121,7 +123,6 @@ export interface EquippedItems {
   nameEffect: ShopItem | null;
   chatBubble: ShopItem | null;
   title: ShopItem | null;
-  pet: ShopItem | null;
   gameTheme: ShopItem | null;
   cardBack: ShopItem | null;
   soundPack: ShopItem | null;
@@ -588,12 +589,33 @@ class ShopService {
   }
 
   async getFeaturedItems(userId?: number, limit: number = 8): Promise<ShopItem[]> {
-    const { items } = await this.getItems({
-      sortBy: 'popularity',
-      limit,
-      userId
-    });
-    return items;
+    // Get popular items
+    let whereClause = `WHERE si.is_available = TRUE
+      AND (si.available_from IS NULL OR si.available_from <= NOW())
+      AND (si.available_until IS NULL OR si.available_until > NOW())`;
+
+    const [rows] = await pool.query<RowDataPacket[]>(`
+      SELECT
+        si.id, si.name, si.slug, si.description,
+        si.category_id as categoryId, c.name as categoryName,
+        si.item_type as itemType, si.price_coins as priceCoins,
+        si.price_gems as priceGems, si.original_price as originalPrice,
+        si.rarity, si.is_available as isAvailable, si.is_limited as isLimited,
+        si.limited_quantity as limitedQuantity, si.sold_count as soldCount,
+        si.available_from as availableFrom, si.available_until as availableUntil,
+        si.required_level as requiredLevel, si.required_achievement as requiredAchievement,
+        si.asset_url as assetUrl, si.preview_url as previewUrl,
+        si.asset_data as assetData, si.is_consumable as isConsumable,
+        si.effect_duration_minutes as effectDurationMinutes,
+        si.purchase_count as purchaseCount, si.favorite_count as favoriteCount
+      FROM shop_items si
+      JOIN shop_categories c ON si.category_id = c.id
+      ${whereClause}
+      ORDER BY RAND()
+      LIMIT ?
+    `, [limit]);
+
+    return rows.map(row => this.mapItemRow(row));
   }
 
   // ==================== PURCHASE ====================
@@ -832,7 +854,6 @@ class ShopService {
       name_effect: 'name_effect_id',
       chat_bubble: 'chat_bubble_id',
       title: 'title_id',
-      pet: 'pet_id',
       game_theme: 'game_theme_id',
       card_back: 'card_back_id',
       sound_pack: 'sound_pack_id',
@@ -887,7 +908,6 @@ class ShopService {
       name_effect: 'name_effect_id',
       chat_bubble: 'chat_bubble_id',
       title: 'title_id',
-      pet: 'pet_id',
       game_theme: 'game_theme_id',
       card_back: 'card_back_id',
       sound_pack: 'sound_pack_id',
@@ -958,7 +978,6 @@ class ShopService {
         nameEffect: null,
         chatBubble: null,
         title: null,
-        pet: null,
         gameTheme: null,
         cardBack: null,
         soundPack: null
@@ -1011,7 +1030,6 @@ class ShopService {
       nameEffect: mapEquippedItem('ne', 'name_effect'),
       chatBubble: mapEquippedItem('cb', 'chat_bubble'),
       title: mapEquippedItem('ti', 'title'),
-      pet: mapEquippedItem('pe', 'pet'),
       gameTheme: mapEquippedItem('gt', 'game_theme'),
       cardBack: mapEquippedItem('cback', 'card_back'),
       soundPack: mapEquippedItem('sp', 'sound_pack')
@@ -1550,7 +1568,7 @@ class ShopService {
 
       // Verify sender has enough coins and item exists
       const [itemRows] = await connection.query<RowDataPacket[]>(`
-        SELECT id, name, price_coins, is_available
+        SELECT id, name, price_coins, is_available, rarity, preview_url, item_type
         FROM shop_items
         WHERE id = ? AND is_available = TRUE
       `, [itemId]);
@@ -1642,6 +1660,33 @@ class ShopService {
         console.error('Failed to create gift notification:', notifError);
       }
 
+      // Send chat message to recipient about the gift
+      try {
+        const conversation = await chatService.getOrCreateConversation(senderId, recipientId);
+        const chatMessage = await chatService.createMessage({
+          conversationId: conversation.id,
+          senderId,
+          messageType: 'gift',
+          content: message || `🎁 I sent you a gift!`,
+          metadata: {
+            giftId: result.insertId,
+            itemId,
+            itemName: item.name,
+            itemRarity: item.rarity,
+            itemPreviewUrl: item.preview_url,
+            itemType: item.item_type,
+            giftMessage: message || null,
+            status: 'pending',
+            expiresAt: expiresAt.toISOString()
+          }
+        });
+        // Emit real-time notification to recipient
+        emitToUser(recipientId, 'message:new', chatMessage);
+      } catch (chatError) {
+        // Log but don't fail the gift transaction
+        console.error('Failed to send gift chat message:', chatError);
+      }
+
       return {
         id: result.insertId,
         senderId,
@@ -1671,7 +1716,8 @@ class ShopService {
         g.item_id as itemId, g.message, g.status,
         g.sent_at as sentAt, g.claimed_at as claimedAt, g.expires_at as expiresAt,
         u.username as senderUsername, u.nickname as senderNickname,
-        si.name as itemName, si.slug as itemSlug, si.rarity, si.preview_url as previewUrl
+        si.name as itemName, si.slug as itemSlug, si.rarity, si.preview_url as previewUrl,
+        si.item_type as itemType
       FROM shop_gifts g
       JOIN users u ON g.sender_id = u.id
       JOIN shop_items si ON g.item_id = si.id
@@ -1689,6 +1735,7 @@ class ShopService {
       itemSlug: row.itemSlug,
       itemRarity: row.rarity,
       itemPreviewUrl: row.previewUrl,
+      itemType: row.itemType,
       message: row.message,
       status: row.status,
       sentAt: row.sentAt,
@@ -1704,7 +1751,8 @@ class ShopService {
         g.item_id as itemId, g.message, g.status,
         g.sent_at as sentAt, g.claimed_at as claimedAt, g.expires_at as expiresAt,
         u.username as recipientUsername, u.nickname as recipientNickname,
-        si.name as itemName, si.slug as itemSlug, si.rarity, si.preview_url as previewUrl
+        si.name as itemName, si.slug as itemSlug, si.rarity, si.preview_url as previewUrl,
+        si.item_type as itemType
       FROM shop_gifts g
       JOIN users u ON g.recipient_id = u.id
       JOIN shop_items si ON g.item_id = si.id
@@ -1722,6 +1770,7 @@ class ShopService {
       itemSlug: row.itemSlug,
       itemRarity: row.rarity,
       itemPreviewUrl: row.previewUrl,
+      itemType: row.itemType,
       message: row.message,
       status: row.status,
       sentAt: row.sentAt,
@@ -1811,6 +1860,15 @@ class ShopService {
       `, [giftId]);
 
       await connection.commit();
+
+      // Emit realtime event to both sender and recipient about gift status change
+      const giftStatusUpdate = {
+        giftId,
+        status: 'claimed',
+        claimedAt: new Date().toISOString()
+      };
+      emitToUser(userId, 'gift:status_changed', giftStatusUpdate);
+      emitToUser(gift.sender_id, 'gift:status_changed', giftStatusUpdate);
 
       return { success: true, inventoryId };
 

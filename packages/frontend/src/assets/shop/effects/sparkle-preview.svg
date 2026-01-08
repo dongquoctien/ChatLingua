@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <filter id="sparkleGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feFlood flood-color="#FFD700" flood-opacity="0.6"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="sparkleGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="50%" style="stop-color:#FFD700"/>
+      <stop offset="100%" style="stop-color:#FFA500"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="50" fill="#FFF8E7" opacity="0.3"/>
+  <!-- Main sparkle star -->
+  <path d="M60,20 L64,48 L92,52 L64,56 L60,84 L56,56 L28,52 L56,48 Z" fill="url(#sparkleGold)" filter="url(#sparkleGlow)"/>
+  <!-- Small sparkles -->
+  <path d="M30,30 L32,38 L40,40 L32,42 L30,50 L28,42 L20,40 L28,38 Z" fill="#FFD700" filter="url(#sparkleGlow)"/>
+  <path d="M90,30 L92,36 L98,38 L92,40 L90,46 L88,40 L82,38 L88,36 Z" fill="#FFD700" filter="url(#sparkleGlow)"/>
+  <path d="M25,80 L27,86 L33,88 L27,90 L25,96 L23,90 L17,88 L23,86 Z" fill="#FFD700" filter="url(#sparkleGlow)"/>
+  <path d="M95,75 L97,81 L103,83 L97,85 L95,91 L93,85 L87,83 L93,81 Z" fill="#FFD700" filter="url(#sparkleGlow)"/>
+  <!-- Tiny dots -->
+  <circle cx="45" cy="25" r="3" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="78" cy="70" r="2" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="40" cy="95" r="2" fill="#FFD700" opacity="0.7"/>
+  <circle cx="85" cy="95" r="3" fill="#FFFFFF" opacity="0.8"/>
+</svg>

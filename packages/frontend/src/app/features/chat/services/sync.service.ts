@@ -127,6 +127,10 @@ export class ChatSyncService implements OnDestroy {
   }): Promise<PendingMessage> {
     const pendingMessage = await this.offlineStorage.queueMessage(message);
 
+    if (!pendingMessage) {
+      throw new Error('Failed to queue message for sending');
+    }
+
     // Update sync status
     this._syncStatus.update(s => ({
       ...s,

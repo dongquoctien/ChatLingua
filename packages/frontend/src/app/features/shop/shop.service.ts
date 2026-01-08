@@ -27,7 +27,7 @@ export type ItemType =
   | 'pet_equipment'
   | 'egg'; // Legacy alias for pet_egg
 
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'heroic' | 'mythic' | 'epic' | 'legendary';
 export type EquipmentSlot = 'head' | 'body' | 'accessory' | 'weapon' | 'back' | 'feet';
 export type CurrencyType = 'coins' | 'gems';
 export type TransactionType =
@@ -186,6 +186,7 @@ export interface Gift {
   itemSlug?: string;
   itemRarity?: Rarity;
   itemPreviewUrl?: string | null;
+  itemType?: ItemType;
   item?: ShopItem;
   message: string | null;
   status: 'pending' | 'claimed' | 'expired' | 'returned';
@@ -600,6 +601,8 @@ export class ShopService {
       common: 'text-gray-500',
       uncommon: 'text-green-500',
       rare: 'text-blue-500',
+      heroic: 'text-red-500',
+      mythic: 'text-orange-500',
       epic: 'text-purple-500',
       legendary: 'text-yellow-500'
     };
@@ -611,6 +614,8 @@ export class ShopService {
       common: 'bg-gray-100',
       uncommon: 'bg-green-50',
       rare: 'bg-blue-50',
+      heroic: 'bg-red-50',
+      mythic: 'bg-orange-50',
       epic: 'bg-purple-50',
       legendary: 'bg-yellow-50'
     };

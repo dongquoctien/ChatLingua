@@ -656,6 +656,29 @@ export class ChatService {
   }
 
   // ============================================================
+  // Gift Status Update
+  // ============================================================
+
+  updateGiftStatusInMessages(giftId: number, status: string, claimedAt?: string): void {
+    this._messages.update(msgs =>
+      msgs.map(m => {
+        // Check if this is a gift message with matching giftId
+        if (m.messageType === 'gift' && m.metadata?.['giftId'] === giftId) {
+          return {
+            ...m,
+            metadata: {
+              ...m.metadata,
+              status,
+              claimedAt: claimedAt ?? m.metadata['claimedAt'],
+            },
+          };
+        }
+        return m;
+      })
+    );
+  }
+
+  // ============================================================
   // Offline Support
   // ============================================================
 

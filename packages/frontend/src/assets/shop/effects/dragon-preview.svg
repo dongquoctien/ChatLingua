@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="dragonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#228B22"/>
+      <stop offset="50%" style="stop-color:#006400"/>
+      <stop offset="100%" style="stop-color:#013220"/>
+    </linearGradient>
+    <linearGradient id="dragonScales" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#32CD32"/>
+      <stop offset="100%" style="stop-color:#228B22"/>
+    </linearGradient>
+    <filter id="dragonGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feFlood flood-color="#32CD32" flood-opacity="0.4"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Dragon body/neck curve -->
+  <path d="M20,90 Q25,60 45,50 Q60,42 75,50 Q100,65 105,45"
+        fill="none" stroke="url(#dragonGradient)" stroke-width="14" stroke-linecap="round" filter="url(#dragonGlow)"/>
+  <!-- Dragon head -->
+  <ellipse cx="105" cy="40" rx="12" ry="10" fill="url(#dragonGradient)" filter="url(#dragonGlow)"/>
+  <!-- Snout -->
+  <ellipse cx="115" cy="42" rx="8" ry="5" fill="#228B22"/>
+  <!-- Eye -->
+  <ellipse cx="102" cy="37" rx="4" ry="3" fill="#FFD700"/>
+  <circle cx="103" cy="37" r="2" fill="#000000"/>
+  <!-- Horns -->
+  <path d="M98,30 Q95,20 92,15" fill="none" stroke="#013220" stroke-width="3" stroke-linecap="round"/>
+  <path d="M105,28 Q108,18 115,12" fill="none" stroke="#013220" stroke-width="3" stroke-linecap="round"/>
+  <!-- Dragon spines -->
+  <path d="M30,82 L28,72 L35,80Z" fill="url(#dragonScales)"/>
+  <path d="M45,68 L42,58 L50,66Z" fill="url(#dragonScales)"/>
+  <path d="M60,60 L56,50 L65,58Z" fill="url(#dragonScales)"/>
+  <path d="M75,58 L72,48 L80,56Z" fill="url(#dragonScales)"/>
+  <path d="M90,54 L88,44 L95,52Z" fill="url(#dragonScales)"/>
+  <!-- Wings -->
+  <path d="M55,55 Q40,30 25,25 Q35,35 38,50"
+        fill="none" stroke="#32CD32" stroke-width="3" opacity="0.7"/>
+  <path d="M55,55 Q50,25 60,15 Q55,30 55,50"
+        fill="none" stroke="#32CD32" stroke-width="3" opacity="0.7"/>
+  <path d="M55,55 Q65,30 80,20 Q70,35 62,50"
+        fill="none" stroke="#32CD32" stroke-width="3" opacity="0.7"/>
+  <!-- Fire breath -->
+  <path d="M115,45 Q125,48 118,55" fill="none" stroke="#FF4500" stroke-width="4" opacity="0.8"/>
+  <path d="M117,42 Q130,45 120,52" fill="none" stroke="#FFD700" stroke-width="3" opacity="0.7"/>
+  <!-- Tail -->
+  <path d="M20,90 Q10,95 5,105 Q10,100 15,102 Q8,108 5,115"
+        fill="none" stroke="url(#dragonGradient)" stroke-width="6" stroke-linecap="round"/>
+</svg>

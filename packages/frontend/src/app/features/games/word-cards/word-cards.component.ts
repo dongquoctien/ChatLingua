@@ -8,7 +8,7 @@ import { ApiService, Vocabulary } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
 
 // Card rarity types
-type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+type Rarity = 'common' | 'uncommon' | 'rare' | 'heroic' | 'mythic' | 'epic' | 'legendary';
 
 // Word Card interface
 interface WordCard {
@@ -59,9 +59,11 @@ interface CardQuestion {
 
 // Gacha rates
 const GACHA_RATES: Record<Rarity, number> = {
-  common: 0.50,
-  uncommon: 0.30,
+  common: 0.40,
+  uncommon: 0.25,
   rare: 0.15,
+  heroic: 0.10,
+  mythic: 0.05,
   epic: 0.04,
   legendary: 0.01
 };
@@ -71,8 +73,10 @@ const RARITY_CONFIG: Record<Rarity, { color: string; powerRange: [number, number
   common: { color: '#9CA3AF', powerRange: [10, 20], emoji: '⚪' },
   uncommon: { color: '#22C55E', powerRange: [20, 35], emoji: '🟢' },
   rare: { color: '#3B82F6', powerRange: [35, 50], emoji: '🔵' },
-  epic: { color: '#A855F7', powerRange: [50, 70], emoji: '🟣' },
-  legendary: { color: '#F59E0B', powerRange: [70, 100], emoji: '🟡' }
+  heroic: { color: '#EF4444', powerRange: [50, 60], emoji: '🔴' },
+  mythic: { color: '#F97316', powerRange: [60, 70], emoji: '🟠' },
+  epic: { color: '#A855F7', powerRange: [70, 85], emoji: '🟣' },
+  legendary: { color: '#F59E0B', powerRange: [85, 100], emoji: '🟡' }
 };
 
 // Card categories with skills
@@ -525,9 +529,11 @@ export class WordCardsComponent implements OnInit {
 
   private getRandomRarity(): Rarity {
     const rand = Math.random();
-    if (rand < 0.5) return 'common';
-    if (rand < 0.8) return 'uncommon';
-    if (rand < 0.95) return 'rare';
+    if (rand < 0.40) return 'common';
+    if (rand < 0.65) return 'uncommon';
+    if (rand < 0.80) return 'rare';
+    if (rand < 0.90) return 'heroic';
+    if (rand < 0.95) return 'mythic';
     if (rand < 0.99) return 'epic';
     return 'legendary';
   }

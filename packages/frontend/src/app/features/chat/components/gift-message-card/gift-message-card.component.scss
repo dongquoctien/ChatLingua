@@ -1,0 +1,102 @@
+// Gift Message Card Styles
+
+// Subtle bounce animation for gift icon
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+// Claim button pulse animation
+@keyframes pulse-claim {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(17, 24, 39, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(17, 24, 39, 0);
+  }
+}
+
+.claim-btn:not(:disabled):hover {
+  animation: pulse-claim 1.5s infinite;
+}
+
+// Claimed Gift Popup Animations
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(50px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-10px);
+  }
+  70% {
+    transform: scale(0.95) translateY(5px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.animate-float {
+  animation: float 2s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+// Popup overlay fade in
+.fixed.inset-0 {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Rarity glow effects
+.ring-yellow-400 {
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+}
+
+.ring-purple-400 {
+  box-shadow: 0 0 15px rgba(192, 132, 252, 0.3);
+}

@@ -4,12 +4,13 @@ import { RouterLink } from '@angular/router';
 import { SharedContentComponent } from '../shared-content/shared-content.component';
 import { SharedConversationCardComponent } from '../shared-conversation-card/shared-conversation-card.component';
 import { SharedGameCardComponent, SharedGamePayload } from '../shared-game-card/shared-game-card.component';
+import { GiftMessageCardComponent } from '../gift-message-card/gift-message-card.component';
 import type { Message, SharedConversationPayload, GiftPayload } from '../../chat.types';
 
 @Component({
   selector: 'app-message-item',
   standalone: true,
-  imports: [CommonModule, RouterLink, SharedContentComponent, SharedConversationCardComponent, SharedGameCardComponent],
+  imports: [CommonModule, RouterLink, SharedContentComponent, SharedConversationCardComponent, SharedGameCardComponent, GiftMessageCardComponent],
   templateUrl: './message-item.component.html',
   styleUrls: ['./message-item.component.scss'],
 })
@@ -20,6 +21,13 @@ export class MessageItemComponent {
   readonly refreshTrigger = input(0); // Pass to shared-conversation-card
 
   readonly importClick = output<number>();
+  readonly giftClaimed = output<number>();
+
+  // Computed sender name for gift messages
+  readonly giftSenderName = computed(() => {
+    const msg = this.message();
+    return msg.sender.displayName || msg.sender.username;
+  });
 
   readonly formattedTime = computed(() => {
     const date = new Date(this.message().createdAt);
@@ -87,5 +95,9 @@ export class MessageItemComponent {
 
   onImportClick(messageId: number) {
     this.importClick.emit(messageId);
+  }
+
+  onGiftClaimed(giftId: number) {
+    this.giftClaimed.emit(giftId);
   }
 }

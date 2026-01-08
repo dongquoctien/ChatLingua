@@ -4,6 +4,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ShopService, ShopItem, ShopCategory, UserCurrency, ItemType, Rarity, PetCareItem, PetItemCategory } from '../shop.service';
 import { PetService } from '../../pets/services/pet.service';
+import { ChatService } from '../../chat/services/chat.service';
 
 type BrowseTab = 'items' | 'pet-care';
 
@@ -17,6 +18,7 @@ type BrowseTab = 'items' | 'pet-care';
 export class ShopBrowseComponent implements OnInit {
   private shopService = inject(ShopService);
   private petService = inject(PetService);
+  private chatService = inject(ChatService);
   private route = inject(ActivatedRoute);
 
   // Tab management
@@ -45,6 +47,24 @@ export class ShopBrowseComponent implements OnInit {
   purchaseAnimations = signal<Map<number, boolean>>(new Map());
   // Cooldown state for spam prevention (1s delay)
   purchaseCooldowns = signal<Set<number>>(new Set());
+
+  // Item detail modal state
+  selectedItem = signal<ShopItem | null>(null);
+  purchasingShopItemId = signal<number | null>(null);
+  itemPurchaseSuccess = signal<{ itemName: string; item: ShopItem } | null>(null);
+
+  // Gift modal state
+  showGiftModal = signal(false);
+  giftItem = signal<ShopItem | null>(null);
+  selectedRecipient = signal<{ id: number; username: string; displayName: string | null; avatar: string | null } | null>(null);
+  userSearchQuery = signal('');
+  userSearchResults = signal<{ id: number; username: string; displayName: string | null; avatar: string | null }[]>([]);
+  searchingUsers = signal(false);
+  giftMessage = signal('');
+  sendingGift = signal(false);
+  giftError = signal<string | null>(null);
+  giftSuccess = signal<string | null>(null);
+  private searchTimeout: any;
 
   // Filters
   selectedCategory = signal<string>('');
@@ -79,6 +99,8 @@ export class ShopBrowseComponent implements OnInit {
     { value: 'common', label: 'Common' },
     { value: 'uncommon', label: 'Uncommon' },
     { value: 'rare', label: 'Rare' },
+    { value: 'heroic', label: 'Heroic' },
+    { value: 'mythic', label: 'Mythic' },
     { value: 'epic', label: 'Epic' },
     { value: 'legendary', label: 'Legendary' }
   ];
@@ -379,6 +401,8 @@ export class ShopBrowseComponent implements OnInit {
       'common': 'from-gray-100 to-gray-200',
       'uncommon': 'from-green-100 to-emerald-200',
       'rare': 'from-blue-100 to-cyan-200',
+      'heroic': 'from-red-100 to-rose-200',
+      'mythic': 'from-orange-100 to-amber-200',
       'epic': 'from-purple-100 to-fuchsia-200',
       'legendary': 'from-amber-100 via-yellow-200 to-orange-200'
     };
@@ -390,9 +414,193 @@ export class ShopBrowseComponent implements OnInit {
       'common': '',
       'uncommon': 'shadow-green-200',
       'rare': 'shadow-blue-300',
+      'heroic': 'shadow-red-300',
+      'mythic': 'shadow-orange-300',
       'epic': 'shadow-purple-300',
       'legendary': 'shadow-yellow-400 shadow-lg'
     };
     return glows[rarity] || '';
+  }
+
+  // === Item Detail Modal Methods ===
+
+  openItemDetail(item: ShopItem): void {
+    this.selectedItem.set(item);
+  }
+
+  closeItemDetail(): void {
+    this.selectedItem.set(null);
+  }
+
+  purchaseItemFromModal(): void {
+    const item = this.selectedItem();
+    if (!item) return;
+
+    const currency = this.currency();
+    if (!currency || currency.coins < item.priceCoins) {
+      return;
+    }
+
+    this.purchasingShopItemId.set(item.id);
+    this.shopService.purchaseItem(item.id).subscribe({
+      next: (result) => {
+        this.purchasingShopItemId.set(null);
+        this.closeItemDetail();
+        if (result.success) {
+          // Refresh currency after purchase
+          this.shopService.getCurrency().subscribe({
+            next: (curr) => this.currency.set(curr),
+            error: () => {}
+          });
+          // Update items list to mark as owned
+          this.items.update((items) =>
+            items.map((i) => (i.id === item.id ? { ...i, isOwned: true } : i))
+          );
+          // Show success modal
+          this.itemPurchaseSuccess.set({ itemName: item.name, item: result.item });
+        }
+      },
+      error: () => {
+        this.purchasingShopItemId.set(null);
+      }
+    });
+  }
+
+  closeItemPurchaseSuccess(): void {
+    this.itemPurchaseSuccess.set(null);
+  }
+
+  getItemTypeName(type: string): string {
+    const names: Record<string, string> = {
+      'avatar_frame': 'Avatar Frame',
+      'avatar_effect': 'Avatar Effect',
+      'avatar_badge': 'Badge',
+      'profile_theme': 'Profile Theme',
+      'profile_banner': 'Profile Banner',
+      'name_effect': 'Name Effect',
+      'chat_bubble': 'Chat Bubble',
+      'emoji_pack': 'Emoji Pack',
+      'sticker_pack': 'Sticker Pack',
+      'game_theme': 'Game Theme',
+      'card_back': 'Card Back',
+      'sound_pack': 'Sound Pack',
+      'booster': 'Booster',
+      'title': 'Title'
+    };
+    return names[type] || type;
+  }
+
+  getRarityEmoji(rarity: string): string {
+    const emojis: Record<string, string> = {
+      'common': '⚪',
+      'uncommon': '🌿',
+      'rare': '💠',
+      'heroic': '🔴',
+      'mythic': '🟠',
+      'epic': '💎',
+      'legendary': '👑'
+    };
+    return emojis[rarity] || '⚪';
+  }
+
+  // === Gift Modal Methods ===
+
+  openGiftModal(item: ShopItem): void {
+    this.giftItem.set(item);
+    this.showGiftModal.set(true);
+    this.giftError.set(null);
+    this.giftSuccess.set(null);
+    this.selectedRecipient.set(null);
+    this.userSearchQuery.set('');
+    this.userSearchResults.set([]);
+    this.giftMessage.set('');
+  }
+
+  closeGiftModal(): void {
+    this.showGiftModal.set(false);
+    this.giftItem.set(null);
+    this.selectedRecipient.set(null);
+    this.userSearchQuery.set('');
+    this.userSearchResults.set([]);
+    this.giftMessage.set('');
+    this.giftError.set(null);
+  }
+
+  onUserSearch(query: string): void {
+    this.userSearchQuery.set(query);
+
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+
+    if (!query || query.length < 2) {
+      this.userSearchResults.set([]);
+      return;
+    }
+
+    this.searchTimeout = setTimeout(() => {
+      this.searchingUsers.set(true);
+      this.chatService.searchUsers(query).subscribe({
+        next: (response) => {
+          this.userSearchResults.set(response.items.map((u: any) => ({
+            id: u.id || u.userId,
+            username: u.username,
+            displayName: u.displayName,
+            avatar: u.avatar
+          })));
+          this.searchingUsers.set(false);
+        },
+        error: () => {
+          this.userSearchResults.set([]);
+          this.searchingUsers.set(false);
+        }
+      });
+    }, 300);
+  }
+
+  selectRecipient(user: { id: number; username: string; displayName: string | null; avatar: string | null }): void {
+    this.selectedRecipient.set(user);
+    this.userSearchResults.set([]);
+    this.userSearchQuery.set('');
+  }
+
+  clearRecipient(): void {
+    this.selectedRecipient.set(null);
+  }
+
+  canGift(): boolean {
+    const item = this.giftItem();
+    const recipient = this.selectedRecipient();
+    const currency = this.currency();
+
+    if (!item || !recipient || !currency) return false;
+    return currency.coins >= item.priceCoins;
+  }
+
+  sendGift(): void {
+    const item = this.giftItem();
+    const recipient = this.selectedRecipient();
+
+    if (!item || !recipient || !this.canGift()) return;
+
+    this.sendingGift.set(true);
+    this.giftError.set(null);
+
+    this.shopService.sendGift(recipient.id, item.id, this.giftMessage() || undefined).subscribe({
+      next: () => {
+        this.sendingGift.set(false);
+        this.giftSuccess.set(`Gift sent to ${recipient.displayName || recipient.username}!`);
+        this.closeGiftModal();
+        this.closeItemDetail();
+        // Refresh currency
+        this.shopService.getCurrency().subscribe({
+          next: (curr) => this.currency.set(curr)
+        });
+      },
+      error: (err) => {
+        this.sendingGift.set(false);
+        this.giftError.set(err.error?.error || 'Failed to send gift');
+      }
+    });
   }
 }

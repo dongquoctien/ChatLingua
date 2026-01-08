@@ -119,13 +119,8 @@
                       [class.bg-gray-50]="!notification.isRead">
                       <!-- Icon -->
                       <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                           [ngClass]="{
-                             'bg-yellow-100 text-yellow-600': notification.notificationType === 'achievement',
-                             'bg-gray-100 text-gray-600': notification.notificationType === 'level_up',
-                             'bg-red-100 text-red-600': notification.notificationType === 'streak',
-                             'bg-blue-100 text-blue-600': notification.notificationType === 'challenge'
-                           }">
-                        <fa-icon [icon]="notification.notificationType === 'achievement' ? faTrophy : faBell" class="text-sm"></fa-icon>
+                           [ngClass]="getNotificationIconClass(notification.notificationType)">
+                        <fa-icon [icon]="getNotificationIcon(notification.notificationType)" class="text-sm"></fa-icon>
                       </div>
                       <!-- Content -->
                       <div class="flex-1 min-w-0">

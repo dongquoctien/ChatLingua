@@ -70,6 +70,7 @@ export class ChatComponent implements OnInit, OnDestroy {
   private unsubscribeOffline: (() => void) | null = null;
   private unsubscribeOnlineUsersList: (() => void) | null = null;
   private unsubscribeStatusChanged: (() => void) | null = null;
+  private unsubscribeGiftStatusChanged: (() => void) | null = null;
 
   ngOnInit(): void {
     // Check if mobile - redirect to dashboard (chat page only for PC/tablet)
@@ -103,6 +104,7 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.unsubscribeOffline?.();
     this.unsubscribeOnlineUsersList?.();
     this.unsubscribeStatusChanged?.();
+    this.unsubscribeGiftStatusChanged?.();
     this.socketService.disconnect();
   }
 
@@ -134,6 +136,11 @@ export class ChatComponent implements OnInit, OnDestroy {
     // Listen for status type changes (busy, away, etc.)
     this.unsubscribeStatusChanged = this.socketService.onStatusChanged(data => {
       this.chatService.updateConversationOnlineStatus(data.userId, true, data.status);
+    });
+
+    // Listen for gift status changes (realtime update when gift is claimed)
+    this.unsubscribeGiftStatusChanged = this.socketService.onGiftStatusChanged(data => {
+      this.chatService.updateGiftStatusInMessages(data.giftId, data.status, data.claimedAt);
     });
   }
 

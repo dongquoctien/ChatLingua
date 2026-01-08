@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF00FF"/>
+      <stop offset="33%" style="stop-color:#00FFFF"/>
+      <stop offset="66%" style="stop-color:#FF00FF"/>
+      <stop offset="100%" style="stop-color:#00FFFF"/>
+    </linearGradient>
+    <filter id="neonGlow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#FF00FF" flood-opacity="0.6"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neonGlowCyan">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#00FFFF" flood-opacity="0.5"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Dark background for neon effect -->
+  <rect x="0" y="0" width="120" height="120" rx="16" fill="#1a1a2e"/>
+  <!-- Outer neon frame -->
+  <rect x="6" y="6" width="108" height="108" rx="12" ry="12" fill="none" stroke="url(#neonGradient)" stroke-width="4" filter="url(#neonGlow)"/>
+  <!-- Inner neon frame -->
+  <rect x="14" y="14" width="92" height="92" rx="8" ry="8" fill="none" stroke="#00FFFF" stroke-width="2" filter="url(#neonGlowCyan)"/>
+  <!-- Corner neon dots -->
+  <circle cx="20" cy="20" r="4" fill="#FF00FF" filter="url(#neonGlow)"/>
+  <circle cx="100" cy="20" r="4" fill="#00FFFF" filter="url(#neonGlowCyan)"/>
+  <circle cx="20" cy="100" r="4" fill="#00FFFF" filter="url(#neonGlowCyan)"/>
+  <circle cx="100" cy="100" r="4" fill="#FF00FF" filter="url(#neonGlow)"/>
+  <!-- Neon lines -->
+  <line x1="30" y1="8" x2="90" y2="8" stroke="#FF00FF" stroke-width="2" filter="url(#neonGlow)"/>
+  <line x1="30" y1="112" x2="90" y2="112" stroke="#00FFFF" stroke-width="2" filter="url(#neonGlowCyan)"/>
+  <!-- Center preview area -->
+  <rect x="26" y="26" width="68" height="68" rx="4" fill="#2a2a4e" opacity="0.5"/>
+</svg>

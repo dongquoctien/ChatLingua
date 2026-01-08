@@ -229,6 +229,9 @@ export interface ServerToClientEvents {
 
   // Sharing
   'share:error': (data: { error: string }) => void;
+
+  // Gift
+  'gift:status_changed': (data: { giftId: number; status: string; claimedAt?: string }) => void;
 }
 
 // ============================================================
