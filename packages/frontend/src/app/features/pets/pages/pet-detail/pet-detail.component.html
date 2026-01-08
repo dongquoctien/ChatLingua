@@ -7,7 +7,7 @@
     <div class="flex-1 min-w-0">
       <h1 class="text-lg sm:text-2xl font-bold text-gray-900 flex items-center gap-2 flex-wrap">
         @if (isEgg()) {
-          <img [src]="getEggImageUrl(pet()?.petType?.rarity ?? 'common')"
+          <img [src]="pet()?.petType?.imageUrl || getEggImageUrl(pet()?.petType?.rarity ?? 'common')"
                [alt]="pet()?.petType?.name ?? 'Egg'"
                class="w-6 h-6 sm:w-8 sm:h-8 object-contain">
           <span class="truncate">{{ pet()?.petType?.name ?? 'Mystery Egg' }}</span>
@@ -85,7 +85,7 @@
             <div class="flex flex-col items-center gap-4 sm:gap-8">
               <!-- Egg Image - Centered on all screens -->
               <div class="w-28 h-28 sm:w-40 sm:h-40 bg-white/10 rounded-xl sm:rounded-2xl flex items-center justify-center relative">
-                <img [src]="getEggImageUrl(currentPet.petType?.rarity ?? 'common')"
+                <img [src]="currentPet.petType?.imageUrl || getEggImageUrl(currentPet.petType?.rarity ?? 'common')"
                      [alt]="currentPet.petType?.name ?? 'Egg'"
                      class="w-20 h-20 sm:w-32 sm:h-32 object-contain"
                      [class.animate-pulse]="canHatch()">

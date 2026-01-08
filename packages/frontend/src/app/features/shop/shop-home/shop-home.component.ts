@@ -27,12 +27,19 @@ export class ShopHomeComponent implements OnInit {
   error = signal<string | null>(null);
   dealCountdown = signal<string>('');
 
+
   // Pending gifts count for badge
   pendingGiftCount = signal(0);
 
   // Egg purchase state
   purchasingEggId = signal<number | null>(null);
   purchaseSuccess = signal<{ eggName: string; egg: UserPet } | null>(null);
+
+  // Egg detail modal state
+  selectedEgg = signal<EggType | null>(null);
+
+  // Pet detail modal state
+  selectedPet = signal<ExtendedPetType | null>(null);
 
   // Pet purchase state
   purchasingPetId = signal<number | null>(null);
@@ -41,6 +48,11 @@ export class ShopHomeComponent implements OnInit {
   // Daily deal purchase state
   purchasingDealId = signal<number | null>(null);
   dealPurchaseSuccess = signal<{ itemName: string; item: ShopItem } | null>(null);
+
+  // Item detail modal state
+  selectedItem = signal<ShopItem | null>(null);
+  purchasingItemId = signal<number | null>(null);
+  itemPurchaseSuccess = signal<{ itemName: string; item: ShopItem } | null>(null);
 
   private countdownInterval: any;
 
@@ -278,6 +290,24 @@ export class ShopHomeComponent implements OnInit {
     this.router.navigate(['/pets']);
   }
 
+  // === Egg Detail Modal Methods ===
+
+  openEggDetail(egg: EggType): void {
+    this.selectedEgg.set(egg);
+  }
+
+  closeEggDetail(): void {
+    this.selectedEgg.set(null);
+  }
+
+  purchaseEggFromModal(): void {
+    const egg = this.selectedEgg();
+    if (egg) {
+      this.purchaseEgg(egg.id);
+      this.closeEggDetail();
+    }
+  }
+
   // === Pet Methods ===
 
   purchasePet(petTypeId: number): void {
@@ -325,6 +355,24 @@ export class ShopHomeComponent implements OnInit {
     this.router.navigate(['/pets']);
   }
 
+  // === Pet Detail Modal Methods ===
+
+  openPetDetail(pet: ExtendedPetType): void {
+    this.selectedPet.set(pet);
+  }
+
+  closePetDetail(): void {
+    this.selectedPet.set(null);
+  }
+
+  purchasePetFromModal(): void {
+    const pet = this.selectedPet();
+    if (pet) {
+      this.purchasePet(pet.id);
+      this.closePetDetail();
+    }
+  }
+
   getPetEmoji(slug?: string): string {
     if (!slug) return '🐾';
     const petEmojis: Record<string, string> = {
@@ -362,6 +410,8 @@ export class ShopHomeComponent implements OnInit {
       common: '⚪',
       uncommon: '🌿',
       rare: '💠',
+      heroic: '🔴',
+      mythic: '🟠',
       epic: '💎',
       legendary: '👑'
     };
@@ -384,6 +434,8 @@ export class ShopHomeComponent implements OnInit {
       'common': 'from-gray-100 to-gray-200',
       'uncommon': 'from-green-100 to-emerald-200',
       'rare': 'from-blue-100 to-cyan-200',
+      'heroic': 'from-red-100 to-rose-200',
+      'mythic': 'from-orange-100 to-amber-200',
       'epic': 'from-purple-100 to-fuchsia-200',
       'legendary': 'from-amber-100 via-yellow-200 to-orange-200'
     };
@@ -395,9 +447,81 @@ export class ShopHomeComponent implements OnInit {
       'common': '',
       'uncommon': 'shadow-green-200',
       'rare': 'shadow-blue-300',
+      'heroic': 'shadow-red-300',
+      'mythic': 'shadow-orange-300',
       'epic': 'shadow-purple-300',
       'legendary': 'shadow-yellow-400 shadow-lg'
     };
     return glows[rarity] || '';
+  }
+
+  // === Item Detail Modal Methods ===
+
+  openItemDetail(item: ShopItem): void {
+    this.selectedItem.set(item);
+  }
+
+  closeItemDetail(): void {
+    this.selectedItem.set(null);
+  }
+
+  purchaseItemFromModal(): void {
+    const item = this.selectedItem();
+    if (!item) return;
+
+    const currency = this.currency();
+    if (!currency || currency.coins < item.priceCoins) {
+      this.error.set('Not enough coins!');
+      return;
+    }
+
+    this.purchasingItemId.set(item.id);
+    this.shopService.purchaseItem(item.id).subscribe({
+      next: (result) => {
+        this.purchasingItemId.set(null);
+        this.closeItemDetail();
+        if (result.success) {
+          // Refresh currency after purchase
+          this.shopService.getCurrency().subscribe({
+            next: (curr) => this.currency.set(curr),
+            error: () => {}
+          });
+          // Update featured items to mark as owned
+          this.featuredItems.update((items) =>
+            items.map((i) => (i.id === item.id ? { ...i, isOwned: true } : i))
+          );
+          // Show success modal
+          this.itemPurchaseSuccess.set({ itemName: item.name, item: result.item });
+        }
+      },
+      error: (err) => {
+        this.purchasingItemId.set(null);
+        this.error.set(err.error?.error ?? 'Failed to purchase item');
+      }
+    });
+  }
+
+  closeItemPurchaseSuccess(): void {
+    this.itemPurchaseSuccess.set(null);
+  }
+
+  getItemTypeName(type: string): string {
+    const names: Record<string, string> = {
+      'avatar_frame': 'Avatar Frame',
+      'avatar_effect': 'Avatar Effect',
+      'avatar_badge': 'Badge',
+      'profile_theme': 'Profile Theme',
+      'profile_banner': 'Profile Banner',
+      'name_effect': 'Name Effect',
+      'chat_bubble': 'Chat Bubble',
+      'emoji_pack': 'Emoji Pack',
+      'sticker_pack': 'Sticker Pack',
+      'game_theme': 'Game Theme',
+      'card_back': 'Card Back',
+      'sound_pack': 'Sound Pack',
+      'booster': 'Booster',
+      'title': 'Title'
+    };
+    return names[type] || type;
   }
 }

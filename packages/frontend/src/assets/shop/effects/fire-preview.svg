@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <filter id="fireGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#FF4500" flood-opacity="0.6"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="fireGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF0000"/>
+      <stop offset="30%" style="stop-color:#FF4500"/>
+      <stop offset="60%" style="stop-color:#FF8C00"/>
+      <stop offset="100%" style="stop-color:#FFD700"/>
+    </linearGradient>
+    <linearGradient id="fireCore" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF8C00"/>
+      <stop offset="50%" style="stop-color:#FFD700"/>
+      <stop offset="100%" style="stop-color:#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <!-- Main flame -->
+  <path d="M60,15
+           C70,35 90,50 85,70
+           C82,82 75,90 60,100
+           C45,90 38,82 35,70
+           C30,50 50,35 60,15Z"
+        fill="url(#fireGradient)" filter="url(#fireGlow)"/>
+  <!-- Inner flame -->
+  <path d="M60,40
+           C67,52 78,60 75,72
+           C73,80 68,88 60,95
+           C52,88 47,80 45,72
+           C42,60 53,52 60,40Z"
+        fill="url(#fireCore)" opacity="0.9"/>
+  <!-- Side flames -->
+  <path d="M30,60 C35,50 25,40 20,55 C18,65 28,75 35,65 C38,60 33,55 30,60Z"
+        fill="#FF4500" filter="url(#fireGlow)" opacity="0.8"/>
+  <path d="M90,60 C85,50 95,40 100,55 C102,65 92,75 85,65 C82,60 87,55 90,60Z"
+        fill="#FF4500" filter="url(#fireGlow)" opacity="0.8"/>
+  <!-- Small ember particles -->
+  <circle cx="25" cy="30" r="4" fill="#FF8C00" opacity="0.7"/>
+  <circle cx="95" cy="35" r="3" fill="#FFD700" opacity="0.8"/>
+  <circle cx="40" cy="20" r="3" fill="#FF4500" opacity="0.6"/>
+  <circle cx="80" cy="22" r="4" fill="#FF8C00" opacity="0.7"/>
+  <circle cx="15" cy="50" r="3" fill="#FFD700" opacity="0.6"/>
+  <circle cx="105" cy="55" r="3" fill="#FF4500" opacity="0.5"/>
+</svg>

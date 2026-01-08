@@ -340,8 +340,10 @@ export interface GiftPayload {
   giftId: number;
   itemId: number;
   itemName: string;
-  senderName: string;
-  recipientName: string;
+  itemRarity: string;
+  itemPreviewUrl: string | null;
+  itemType: string;
   giftMessage: string | null;
+  status: 'pending' | 'claimed' | 'expired' | 'returned';
   expiresAt: string;
 }

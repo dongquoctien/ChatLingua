@@ -301,6 +301,7 @@ export class ChatService {
   ): Promise<PaginatedResponse<Message>> {
     const offset = (page - 1) * limit;
 
+    // Join with shop_gifts to get the latest gift status for gift messages
     const query = `
       SELECT
         m.*,
@@ -308,10 +309,12 @@ export class ChatService {
         u.display_name AS sender_display_name,
         u.avatar AS sender_avatar,
         CASE WHEN cmr.id IS NOT NULL THEN TRUE ELSE FALSE END AS is_read,
-        cmr.read_at
+        cmr.read_at,
+        sg.status AS gift_status
       FROM chat_messages m
       LEFT JOIN users u ON m.sender_id = u.id
       LEFT JOIN chat_message_reads cmr ON m.id = cmr.message_id AND cmr.user_id = ?
+      LEFT JOIN shop_gifts sg ON m.message_type = 'gift' AND JSON_EXTRACT(m.metadata, '$.giftId') = sg.id
       WHERE m.conversation_id = ? AND m.is_deleted = FALSE
       ORDER BY m.created_at DESC
       LIMIT ? OFFSET ?
@@ -421,6 +424,15 @@ export class ChatService {
   }
 
   private mapMessageRow(row: MessageRow): Message {
+    let metadata = row.metadata
+      ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata)
+      : null;
+
+    // For gift messages, update status from shop_gifts table (real-time status)
+    if (row.message_type === 'gift' && metadata && (row as any).gift_status) {
+      metadata = { ...metadata, status: (row as any).gift_status };
+    }
+
     return {
       id: row.id,
       conversationId: row.conversation_id,
@@ -433,9 +445,7 @@ export class ChatService {
       },
       messageType: row.message_type,
       content: row.content,
-      metadata: row.metadata
-        ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata)
-        : null,
+      metadata,
       isRead: Boolean(row.is_read),
       readAt: row.read_at ? row.read_at.toISOString() : null,
       createdAt: row.created_at.toISOString(),

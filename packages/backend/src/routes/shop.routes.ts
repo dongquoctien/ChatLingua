@@ -2,8 +2,6 @@ import { Router, Response } from 'express';
 import { shopService, ItemType, Rarity, ShopBundle } from '../services/shop.service.js';
 import { petService } from '../services/pet.service.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
-import { chatService } from '../services/chat.service.js';
-import { emitToUser } from '../socket/index.js';
 
 const router = Router();
 
@@ -79,6 +77,95 @@ router.get('/items', async (req: AuthRequest, res: Response) => {
       limit,
       offset
     } = req.query;
+
+    // Special handling for pets-eggs category - fetch eggs from pet_types
+    if (category === 'pets-eggs') {
+      const eggs = await petService.getAvailableEggs();
+
+      // Apply filters
+      let filteredEggs = eggs;
+
+      if (rarity) {
+        filteredEggs = filteredEggs.filter(e => e.rarity === rarity);
+      }
+
+      if (minPrice !== undefined) {
+        const min = parseInt(minPrice as string);
+        filteredEggs = filteredEggs.filter(e => e.priceCoins >= min);
+      }
+
+      if (maxPrice !== undefined) {
+        const max = parseInt(maxPrice as string);
+        filteredEggs = filteredEggs.filter(e => e.priceCoins <= max);
+      }
+
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        filteredEggs = filteredEggs.filter(e =>
+          e.name.toLowerCase().includes(searchLower) ||
+          e.description.toLowerCase().includes(searchLower)
+        );
+      }
+
+      // Apply sorting
+      const sortBy = sort as string || 'popularity';
+      switch (sortBy) {
+        case 'price_asc':
+          filteredEggs.sort((a, b) => a.priceCoins - b.priceCoins);
+          break;
+        case 'price_desc':
+          filteredEggs.sort((a, b) => b.priceCoins - a.priceCoins);
+          break;
+        case 'newest':
+          // Eggs don't have created_at in response, keep original order
+          break;
+        case 'popularity':
+        default:
+          // Keep original order (sorted by rarity in getAvailableEggs)
+          break;
+      }
+
+      // Apply pagination
+      const limitNum = Math.min(parseInt(limit as string) || 20, 100);
+      const offsetNum = parseInt(offset as string) || 0;
+      const paginatedEggs = filteredEggs.slice(offsetNum, offsetNum + limitNum);
+
+      // Transform eggs to match ShopItem structure
+      const items = paginatedEggs.map(egg => ({
+        id: egg.id,
+        name: egg.name,
+        slug: egg.slug,
+        description: egg.description,
+        categoryId: 16, // pets-eggs category ID
+        categoryName: 'Pets & Eggs',
+        itemType: 'pet_egg' as const,
+        priceCoins: egg.priceCoins,
+        priceGems: egg.priceGems,
+        originalPrice: null,
+        rarity: egg.rarity,
+        isAvailable: true,
+        isLimited: false,
+        limitedQuantity: null,
+        soldCount: 0,
+        availableFrom: null,
+        availableUntil: null,
+        requiredLevel: 0,
+        requiredAchievement: null,
+        assetUrl: egg.imageUrl,
+        previewUrl: egg.imageUrl,
+        assetData: null,
+        isConsumable: true,
+        effectDurationMinutes: null,
+        purchaseCount: 0,
+        favoriteCount: 0,
+        isOwned: false,
+        isEquipped: false,
+        ownedQuantity: 0
+      }));
+
+      res.json({ items, total: filteredEggs.length });
+      return;
+    }
 
     const result = await shopService.getItems({
       categorySlug: category as string,
@@ -490,36 +577,8 @@ router.post('/gift', async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    // Gift is sent and chat notification is handled in shopService.sendGift
     const gift = await shopService.sendGift(req.userId, recipientId, itemId, message);
-
-    // Send chat notification to recipient
-    try {
-      // Get or create conversation between sender and recipient
-      const conversation = await chatService.getOrCreateConversation(req.userId, recipientId);
-
-      // Create gift notification message
-      const chatMessage = await chatService.createMessage({
-        conversationId: conversation.id,
-        senderId: req.userId,
-        messageType: 'gift',
-        content: message || `🎁 sent you a gift: ${gift.itemName}`,
-        metadata: {
-          giftId: gift.id,
-          itemId: gift.itemId,
-          itemName: gift.itemName,
-          senderName: gift.senderName,
-          recipientName: gift.recipientName,
-          giftMessage: message || null,
-          expiresAt: gift.expiresAt,
-        },
-      });
-
-      // Emit real-time notification to recipient
-      emitToUser(recipientId, 'message:new', chatMessage);
-    } catch (chatError) {
-      // Don't fail the gift if chat notification fails
-      console.error('Failed to send gift chat notification:', chatError);
-    }
 
     res.json(gift);
   } catch (error) {

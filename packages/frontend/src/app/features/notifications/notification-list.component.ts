@@ -14,6 +14,8 @@ import {
   faSpinner,
   faRefresh,
   faCheckCircle,
+  faDumbbell,
+  faGift,
 } from '../../shared/icons';
 import { ApiService, GamificationNotification } from '../../core/services/api.service';
 
@@ -39,6 +41,9 @@ export class NotificationListComponent implements OnInit {
   faSpinner = faSpinner;
   faSync = faRefresh;
   faCheckCircle = faCheckCircle;
+  faDumbbell = faDumbbell;
+  faGift = faGift;
+  
 
   // State
   notifications = signal<GamificationNotification[]>([]);
@@ -110,6 +115,8 @@ export class NotificationListComponent implements OnInit {
         return this.faSync;
       case 'sync_completed':
         return this.faCheckCircle;
+      case 'gift':
+        return this.faGift;
       default:
         return this.faBell;
     }
@@ -131,6 +138,8 @@ export class NotificationListComponent implements OnInit {
         return 'bg-blue-100 text-blue-600';
       case 'sync_completed':
         return 'bg-green-100 text-green-600';
+      case 'gift':
+        return 'bg-pink-100 text-pink-600';
       default:
         return 'bg-gray-100 text-gray-600';
     }
@@ -156,4 +165,6 @@ export class NotificationListComponent implements OnInit {
       year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
     });
   }
+
+
 }

@@ -5,6 +5,12 @@ import { ShopService, Gift } from '../shop.service';
 
 type GiftTab = 'received' | 'sent';
 
+// Interface for claimed gift result popup
+interface ClaimedGiftResult {
+  gift: Gift;
+  message: string;
+}
+
 @Component({
   selector: 'app-shop-gifts',
   standalone: true,
@@ -21,6 +27,7 @@ export class ShopGiftsComponent implements OnInit, AfterViewInit {
   claiming = signal<number | null>(null);
   error = signal<string | null>(null);
   success = signal<string | null>(null);
+  claimedGiftResult = signal<ClaimedGiftResult | null>(null);
 
   activeTab = signal<GiftTab>('received');
   receivedGifts = signal<Gift[]>([]);
@@ -99,7 +106,11 @@ export class ShopGiftsComponent implements OnInit, AfterViewInit {
 
     this.shopService.claimGift(gift.id).subscribe({
       next: () => {
-        this.success.set(`${gift.itemName} has been added to your inventory!`);
+        // Show success popup instead of simple message
+        this.claimedGiftResult.set({
+          gift: gift,
+          message: `You received ${gift.itemName} from ${gift.senderName}!`
+        });
         this.claiming.set(null);
         this.loadGifts(); // Refresh
       },
@@ -108,6 +119,10 @@ export class ShopGiftsComponent implements OnInit, AfterViewInit {
         this.claiming.set(null);
       }
     });
+  }
+
+  closeClaimedGiftPopup(): void {
+    this.claimedGiftResult.set(null);
   }
 
   getStatusColor(status: Gift['status']): string {
@@ -148,6 +163,7 @@ export class ShopGiftsComponent implements OnInit, AfterViewInit {
       'profile_banner': '🏞️',
       'name_effect': '💫',
       'chat_bubble': '💬',
+      'chat_effect': '💬',
       'emoji_pack': '😎',
       'sticker_pack': '🎭',
       'game_theme': '🎮',
@@ -164,6 +180,8 @@ export class ShopGiftsComponent implements OnInit, AfterViewInit {
       'common': 'from-gray-100 to-gray-200',
       'uncommon': 'from-green-100 to-emerald-200',
       'rare': 'from-blue-100 to-cyan-200',
+      'heroic': 'from-red-100 to-rose-200',
+      'mythic': 'from-orange-100 to-amber-200',
       'epic': 'from-purple-100 to-fuchsia-200',
       'legendary': 'from-amber-100 via-yellow-200 to-orange-200'
     };
@@ -175,6 +193,8 @@ export class ShopGiftsComponent implements OnInit, AfterViewInit {
       'common': '',
       'uncommon': 'shadow-green-200',
       'rare': 'shadow-blue-300',
+      'heroic': 'shadow-red-300',
+      'mythic': 'shadow-orange-300',
       'epic': 'shadow-purple-300',
       'legendary': 'shadow-yellow-400 shadow-lg'
     };
@@ -186,6 +206,8 @@ export class ShopGiftsComponent implements OnInit, AfterViewInit {
       'common': '⚪',
       'uncommon': '🌿',
       'rare': '💠',
+      'heroic': '🔴',
+      'mythic': '🟠',
       'epic': '💎',
       'legendary': '👑'
     };

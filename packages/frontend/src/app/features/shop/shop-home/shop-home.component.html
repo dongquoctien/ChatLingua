@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6  gap-3 sm:gap-4">
         @for (deal of dailyDeals(); track deal.id) {
           <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
                [class.opacity-60]="deal.purchased"
@@ -52,7 +52,7 @@
             </div>
 
             <!-- Item Preview - Click to view details -->
-            <a [routerLink]="['items', deal.item.slug]"
+            <div (click)="openItemDetail(deal.item)"
                class="block aspect-square flex items-center justify-center relative bg-gradient-to-br cursor-pointer"
                [ngClass]="getRarityGradient(deal.item.rarity)">
 
@@ -88,15 +88,13 @@
                 }
                 {{ deal.item.rarity }}
               </div>
-            </a>
+            </div>
 
             <!-- Item Info -->
             <div class="p-3">
-              <a [routerLink]="['items', deal.item.slug]" class="block">
-                <h3 class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700">
-                  {{ deal.item.name }}
-                </h3>
-              </a>
+              <h3 (click)="openItemDetail(deal.item)" class="font-semibold text-gray-900 text-sm truncate group-hover:text-gray-700 cursor-pointer">
+                {{ deal.item.name }}
+              </h3>
 
               <!-- Price with savings -->
               <div class="flex items-center gap-2 mt-2">
@@ -147,7 +145,7 @@
         </a>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6  gap-3 sm:gap-4">
         @for (egg of eggTypes(); track egg.id) {
           <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                [ngClass]="{
@@ -157,8 +155,9 @@
                  'ring-2 ring-purple-300': egg.rarity === 'epic',
                  'ring-2 ring-yellow-400 shadow-yellow-200': egg.rarity === 'legendary'
                }">
-            <!-- Egg Preview -->
-            <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
+            <!-- Egg Preview - Clickable for details -->
+            <div (click)="openEggDetail(egg)"
+                 class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4 cursor-pointer"
                  [ngClass]="getRarityGradient(egg.rarity ?? 'common')">
 
               <!-- Animated background for legendary -->
@@ -171,8 +170,13 @@
                 <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
               }
 
+              <!-- Click to view hint -->
+              <div class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                View Details
+              </div>
+
               <!-- Egg Image -->
-              <img [src]="getEggImageUrl(egg.rarity ?? 'common')" [alt]="egg.name"
+              <img [src]="egg.imageUrl || getEggImageUrl(egg.rarity ?? 'common')" [alt]="egg.name"
                    class="w-20 h-20 object-contain relative z-10 group-hover:scale-110 transition-transform duration-300 drop-shadow-lg">
 
               <!-- Rarity Badge -->
@@ -190,7 +194,7 @@
 
             <!-- Egg Info -->
             <div class="p-3">
-              <h3 class="font-semibold text-gray-900 text-sm truncate">
+              <h3 (click)="openEggDetail(egg)" class="font-semibold text-gray-900 text-sm truncate cursor-pointer hover:text-gray-700">
                 {{ egg.name }}
               </h3>
 
@@ -248,7 +252,7 @@
         </a>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6  gap-3 sm:gap-4">
         @for (pet of shopPets(); track pet.id) {
           <div class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                [ngClass]="{
@@ -258,8 +262,9 @@
                  'ring-2 ring-purple-300': pet.rarity === 'epic',
                  'ring-2 ring-yellow-400 shadow-yellow-200': pet.rarity === 'legendary'
                }">
-            <!-- Pet Preview -->
-            <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
+            <!-- Pet Preview - Clickable for details -->
+            <div (click)="openPetDetail(pet)"
+                 class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4 cursor-pointer"
                  [ngClass]="getRarityGradient(pet.rarity ?? 'common')">
 
               <!-- Animated background for legendary -->
@@ -270,6 +275,13 @@
               <!-- Sparkle effect for epic/legendary -->
               @if (pet.rarity === 'epic' || pet.rarity === 'legendary') {
                 <div class="absolute top-2 right-2 text-lg animate-bounce z-10">✨</div>
+              }
+
+              <!-- Click to view hint (only show when not a free starter) -->
+              @if (!(pet.acquisitionType === 'starter_free' && canClaimFreePet())) {
+                <div class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  View Details
+                </div>
               }
 
               <!-- Free Starter Badge -->
@@ -304,7 +316,7 @@
 
             <!-- Pet Info -->
             <div class="p-3">
-              <h3 class="font-semibold text-gray-900 text-sm truncate">
+              <h3 (click)="openPetDetail(pet)" class="font-semibold text-gray-900 text-sm truncate cursor-pointer hover:text-gray-700">
                 {{ pet.name }}
               </h3>
 
@@ -370,7 +382,7 @@
   <!-- Categories -->
   <section class="mb-8 sm:mb-10">
     <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4">Categories</h2>
-    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4">
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-5 xl:grid-cols-6  gap-2 sm:gap-4">
       @for (category of categories(); track category.id) {
         <a [routerLink]="['browse']" [queryParams]="{category: category.slug}"
            class="group flex flex-col items-center p-2 sm:p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-gray-300 transition-all hover:-translate-y-1">
@@ -395,10 +407,10 @@
       </a>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6  gap-3 sm:gap-4">
       @for (item of featuredItems(); track item.id) {
-        <a [routerLink]="['items', item.slug]"
-           class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        <div (click)="openItemDetail(item)"
+           class="group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
            [ngClass]="getRarityGlow(item.rarity)">
           <!-- Item Preview -->
           <div class="aspect-square flex items-center justify-center relative bg-gradient-to-br p-4"
@@ -477,7 +489,7 @@
               }
             </div>
           </div>
-        </a>
+        </div>
       }
     </div>
   </section>
@@ -679,5 +691,448 @@
     <button (click)="error.set(null)" class="ml-2 hover:text-red-200">
       <i class="fa fa-times"></i>
     </button>
+  </div>
+}
+
+<!-- Egg Detail Modal -->
+@if (selectedEgg()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" (click)="closeEggDetail()">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl" (click)="$event.stopPropagation()">
+      <!-- Header with Egg Preview -->
+      <div class="relative p-8 bg-gradient-to-br"
+           [ngClass]="getRarityGradient(selectedEgg()!.rarity ?? 'common')">
+        <!-- Close Button -->
+        <button (click)="closeEggDetail()"
+                class="absolute top-4 right-4 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+          <i class="fa fa-times text-gray-600"></i>
+        </button>
+
+        <!-- Animated background for legendary -->
+        @if (selectedEgg()!.rarity === 'legendary') {
+          <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+        }
+
+        <!-- Egg Image -->
+        <div class="flex justify-center relative z-10">
+          <img [src]="selectedEgg()!.imageUrl || getEggImageUrl(selectedEgg()!.rarity ?? 'common')" [alt]="selectedEgg()!.name"
+               class="w-32 h-32 object-contain drop-shadow-lg">
+        </div>
+
+        <!-- Sparkle for epic/legendary -->
+        @if (selectedEgg()!.rarity === 'epic' || selectedEgg()!.rarity === 'legendary') {
+          <div class="absolute top-4 left-4 text-2xl animate-bounce">✨</div>
+          <div class="absolute bottom-4 right-16 text-xl animate-bounce delay-100">✨</div>
+        }
+      </div>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Title & Rarity -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-gray-900">{{ selectedEgg()!.name }}</h2>
+          <div class="px-3 py-1 rounded-full text-sm font-bold capitalize flex items-center gap-1"
+               [ngClass]="{
+                 'bg-gray-100 text-gray-700': selectedEgg()!.rarity === 'common',
+                 'bg-green-100 text-green-700': selectedEgg()!.rarity === 'uncommon',
+                 'bg-blue-100 text-blue-700': selectedEgg()!.rarity === 'rare',
+                 'bg-purple-100 text-purple-700': selectedEgg()!.rarity === 'epic',
+                 'bg-amber-100 text-amber-700': selectedEgg()!.rarity === 'legendary'
+               }">
+            {{ getEggRarityEmoji(selectedEgg()!.rarity ?? 'common') }} {{ selectedEgg()!.rarity }}
+          </div>
+        </div>
+
+        <!-- Description -->
+        @if (selectedEgg()!.description) {
+          <p class="text-gray-600 mb-4">{{ selectedEgg()!.description }}</p>
+        }
+
+        <!-- Hatch Requirements -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+          <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>🥚</span> Hatch Requirements
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                <span class="text-xl">⚡</span>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">XP Required</div>
+                <div class="font-bold text-gray-900">{{ selectedEgg()!.hatchXpRequired ?? 0 | number }}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <span class="text-xl">⏱️</span>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">Min Time</div>
+                <div class="font-bold text-gray-900">{{ selectedEgg()!.hatchHoursMin ?? 0 }} hours</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price & Actions -->
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full">
+            <span class="text-xl">🪙</span>
+            <span class="font-bold text-gray-900 text-lg">{{ formatPrice(selectedEgg()!.shopPriceCoins ?? 0) }}</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button (click)="closeEggDetail()"
+                    class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+              Close
+            </button>
+            <button (click)="purchaseEggFromModal()"
+                    [disabled]="purchasingEggId() === selectedEgg()!.id || (currency() && currency()!.coins < (selectedEgg()!.shopPriceCoins ?? 0))"
+                    class="px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2"
+                    [ngClass]="{
+                      'bg-gray-900 text-white hover:bg-gray-800': currency() && currency()!.coins >= (selectedEgg()!.shopPriceCoins ?? 0),
+                      'bg-gray-200 text-gray-400 cursor-not-allowed': currency() && currency()!.coins < (selectedEgg()!.shopPriceCoins ?? 0)
+                    }">
+              @if (purchasingEggId() === selectedEgg()!.id) {
+                <i class="fa fa-spinner animate-spin"></i>
+              } @else {
+                <span>🥚</span> Buy Egg
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Pet Detail Modal -->
+@if (selectedPet()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" (click)="closePetDetail()">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl" (click)="$event.stopPropagation()">
+      <!-- Header with Pet Preview -->
+      <div class="relative p-8 bg-gradient-to-br"
+           [ngClass]="getRarityGradient(selectedPet()!.rarity ?? 'common')">
+        <!-- Close Button -->
+        <button (click)="closePetDetail()"
+                class="absolute top-4 right-4 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+          <i class="fa fa-times text-gray-600"></i>
+        </button>
+
+        <!-- Animated background for legendary -->
+        @if (selectedPet()!.rarity === 'legendary') {
+          <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+        }
+
+        <!-- Free Starter Badge -->
+        @if (selectedPet()!.acquisitionType === 'starter_free' && canClaimFreePet()) {
+          <div class="absolute top-4 left-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-3 py-1 rounded-full z-20">
+            FREE STARTER! 🎁
+          </div>
+        }
+
+        <!-- Pet Image -->
+        <div class="flex justify-center relative z-10">
+          @if (selectedPet()!.imageUrl) {
+            <img [src]="selectedPet()!.imageUrl" [alt]="selectedPet()!.name"
+                 class="w-32 h-32 object-contain drop-shadow-lg">
+          } @else {
+            <span class="text-8xl">{{ getPetEmoji(selectedPet()!.slug) }}</span>
+          }
+        </div>
+
+        <!-- Sparkle for epic/legendary -->
+        @if (selectedPet()!.rarity === 'epic' || selectedPet()!.rarity === 'legendary') {
+          <div class="absolute top-4 left-4 text-2xl animate-bounce">✨</div>
+          <div class="absolute bottom-4 right-16 text-xl animate-bounce delay-100">✨</div>
+        }
+      </div>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Title & Rarity -->
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-gray-900">{{ selectedPet()!.name }}</h2>
+          <div class="px-3 py-1 rounded-full text-sm font-bold capitalize flex items-center gap-1"
+               [ngClass]="{
+                 'bg-gray-100 text-gray-700': selectedPet()!.rarity === 'common',
+                 'bg-green-100 text-green-700': selectedPet()!.rarity === 'uncommon',
+                 'bg-blue-100 text-blue-700': selectedPet()!.rarity === 'rare',
+                 'bg-purple-100 text-purple-700': selectedPet()!.rarity === 'epic',
+                 'bg-amber-100 text-amber-700': selectedPet()!.rarity === 'legendary'
+               }">
+            {{ getEggRarityEmoji(selectedPet()!.rarity ?? 'common') }} {{ selectedPet()!.rarity }}
+          </div>
+        </div>
+
+        <!-- Description -->
+        @if (selectedPet()!.description) {
+          <p class="text-gray-600 mb-4">{{ selectedPet()!.description }}</p>
+        }
+
+        <!-- Pet Bonuses -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+          <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>🐾</span> Pet Bonuses
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            @if (selectedPet()!.xpMultiplier && selectedPet()!.xpMultiplier > 1) {
+              <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                  <span class="text-xl">⚡</span>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">XP Bonus</div>
+                  <div class="font-bold text-green-600">+{{ ((selectedPet()!.xpMultiplier - 1) * 100) | number:'1.0-0' }}%</div>
+                </div>
+              </div>
+            }
+            @if (selectedPet()!.coinMultiplier && selectedPet()!.coinMultiplier > 1) {
+              <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <span class="text-xl">🪙</span>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">Coin Bonus</div>
+                  <div class="font-bold text-green-600">+{{ ((selectedPet()!.coinMultiplier - 1) * 100) | number:'1.0-0' }}%</div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Special Ability -->
+          @if (selectedPet()!.specialAbility) {
+            <div class="mt-4 pt-4 border-t border-gray-200">
+              <div class="flex items-center gap-2">
+                <span class="text-purple-500">✨</span>
+                <span class="text-sm text-purple-700 font-medium">{{ selectedPet()!.specialAbility }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Price & Actions -->
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          @if (selectedPet()!.acquisitionType === 'starter_free' && canClaimFreePet()) {
+            <div class="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
+              <span class="text-xl">🎁</span>
+              <span class="font-bold text-green-700 text-lg">Free</span>
+            </div>
+          } @else {
+            <div class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full">
+              <span class="text-xl">🪙</span>
+              <span class="font-bold text-gray-900 text-lg">{{ formatPrice(selectedPet()!.shopPriceCoins ?? 0) }}</span>
+            </div>
+          }
+
+          <div class="flex items-center gap-2">
+            <button (click)="closePetDetail()"
+                    class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+              Close
+            </button>
+            <button (click)="purchasePetFromModal()"
+                    [disabled]="purchasingPetId() === selectedPet()!.id || (!(selectedPet()!.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins < (selectedPet()!.shopPriceCoins ?? 0))"
+                    class="px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2"
+                    [ngClass]="{
+                      'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600': selectedPet()!.acquisitionType === 'starter_free' && canClaimFreePet(),
+                      'bg-gray-900 text-white hover:bg-gray-800': !(selectedPet()!.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins >= (selectedPet()!.shopPriceCoins ?? 0),
+                      'bg-gray-200 text-gray-400 cursor-not-allowed': !(selectedPet()!.acquisitionType === 'starter_free' && canClaimFreePet()) && currency() && currency()!.coins < (selectedPet()!.shopPriceCoins ?? 0)
+                    }">
+              @if (purchasingPetId() === selectedPet()!.id) {
+                <i class="fa fa-spinner animate-spin"></i>
+              } @else if (selectedPet()!.acquisitionType === 'starter_free' && canClaimFreePet()) {
+                <span>🎁</span> Claim Free
+              } @else {
+                <span>🐾</span> Adopt
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Item Detail Modal -->
+@if (selectedItem()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" (click)="closeItemDetail()">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl" (click)="$event.stopPropagation()">
+      <!-- Header with Item Preview -->
+      <div class="relative p-8 bg-gradient-to-br"
+           [ngClass]="getRarityGradient(selectedItem()!.rarity)">
+        <!-- Close Button -->
+        <button (click)="closeItemDetail()"
+                class="absolute top-4 right-4 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition-colors z-30">
+          <i class="fa fa-times text-gray-600"></i>
+        </button>
+
+        <!-- Animated background for legendary -->
+        @if (selectedItem()!.rarity === 'legendary') {
+          <div class="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-amber-100/50 to-orange-200/50 animate-pulse"></div>
+        }
+
+        <!-- Owned Badge -->
+        @if (selectedItem()!.isOwned) {
+          <div class="absolute top-4 left-4 bg-green-500 text-white text-sm font-bold px-3 py-1 rounded-full z-20 flex items-center gap-1">
+            <span>✓</span> Owned
+          </div>
+        }
+
+        <!-- Limited Badge -->
+        @if (selectedItem()!.isLimited) {
+          <div class="absolute bottom-4 left-4 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-3 py-1 rounded-full z-20 animate-pulse flex items-center gap-1">
+            <span>🔥</span> Limited
+          </div>
+        }
+
+        <!-- Item Image -->
+        <div class="flex justify-center relative z-10">
+          @if (selectedItem()!.previewUrl) {
+            <img [src]="selectedItem()!.previewUrl" [alt]="selectedItem()!.name"
+                 class="w-32 h-32 object-contain drop-shadow-lg">
+          } @else {
+            <span class="text-8xl">{{ getItemTypeEmoji(selectedItem()!.itemType) }}</span>
+          }
+        </div>
+
+        <!-- Sparkle for epic/legendary -->
+        @if (selectedItem()!.rarity === 'epic' || selectedItem()!.rarity === 'legendary') {
+          <div class="absolute top-16 left-4 text-2xl animate-bounce">✨</div>
+          <div class="absolute bottom-4 right-16 text-xl animate-bounce delay-100">✨</div>
+        }
+      </div>
+
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Title & Rarity -->
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <p class="text-xs text-gray-500 flex items-center gap-1 mb-1">
+              <span>{{ getItemTypeEmoji(selectedItem()!.itemType) }}</span>
+              {{ getItemTypeName(selectedItem()!.itemType) }}
+            </p>
+            <h2 class="text-xl font-bold text-gray-900">{{ selectedItem()!.name }}</h2>
+          </div>
+          <div class="px-3 py-1 rounded-full text-sm font-bold capitalize flex items-center gap-1"
+               [ngClass]="{
+                 'bg-gray-100 text-gray-700': selectedItem()!.rarity === 'common',
+                 'bg-green-100 text-green-700': selectedItem()!.rarity === 'uncommon',
+                 'bg-blue-100 text-blue-700': selectedItem()!.rarity === 'rare',
+                 'bg-purple-100 text-purple-700': selectedItem()!.rarity === 'epic',
+                 'bg-amber-100 text-amber-700': selectedItem()!.rarity === 'legendary'
+               }">
+            {{ getEggRarityEmoji(selectedItem()!.rarity) }} {{ selectedItem()!.rarity }}
+          </div>
+        </div>
+
+        <!-- Description -->
+        @if (selectedItem()!.description) {
+          <p class="text-gray-600 mb-4">{{ selectedItem()!.description }}</p>
+        }
+
+        <!-- Item Stats -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+          <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <span>📦</span> Item Info
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <span class="text-xl">{{ getItemTypeEmoji(selectedItem()!.itemType) }}</span>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">Type</div>
+                <div class="font-medium text-gray-900">{{ getItemTypeName(selectedItem()!.itemType) }}</div>
+              </div>
+            </div>
+            @if (selectedItem()!.purchaseCount > 0) {
+              <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <span class="text-xl">🏪</span>
+                </div>
+                <div>
+                  <div class="text-xs text-gray-500">Sold</div>
+                  <div class="font-medium text-gray-900">{{ selectedItem()!.purchaseCount }} times</div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Price & Actions -->
+        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div class="flex items-center gap-2 bg-yellow-50 px-4 py-2 rounded-full">
+            <span class="text-xl">🪙</span>
+            <span class="font-bold text-gray-900 text-lg">{{ formatPrice(selectedItem()!.priceCoins) }}</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button (click)="closeItemDetail()"
+                    class="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+              Close
+            </button>
+            @if (!selectedItem()!.isOwned) {
+              <button (click)="purchaseItemFromModal()"
+                      [disabled]="purchasingItemId() === selectedItem()!.id || (currency() && currency()!.coins < selectedItem()!.priceCoins)"
+                      class="px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2"
+                      [ngClass]="{
+                        'bg-gray-900 text-white hover:bg-gray-800': currency() && currency()!.coins >= selectedItem()!.priceCoins,
+                        'bg-gray-200 text-gray-400 cursor-not-allowed': currency() && currency()!.coins < selectedItem()!.priceCoins
+                      }">
+                @if (purchasingItemId() === selectedItem()!.id) {
+                  <i class="fa fa-spinner animate-spin"></i>
+                } @else {
+                  <span>🏪</span> Buy Now
+                }
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Item Purchase Success Modal -->
+@if (itemPurchaseSuccess()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center animate-bounce-in">
+      <!-- Celebration Header -->
+      <div class="text-6xl mb-4">🎉</div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Item Acquired!</h2>
+      <p class="text-gray-600 mb-6">
+        You've successfully purchased <span class="font-semibold">{{ itemPurchaseSuccess()!.itemName }}</span>!
+      </p>
+
+      <!-- Item Preview -->
+      <div class="relative inline-block mb-6">
+        <div class="w-32 h-32 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
+          @if (itemPurchaseSuccess()!.item.previewUrl) {
+            <img [src]="itemPurchaseSuccess()!.item.previewUrl" [alt]="itemPurchaseSuccess()!.item.name"
+                 class="w-20 h-20 object-contain">
+          } @else {
+            <span class="text-5xl">{{ getItemTypeEmoji(itemPurchaseSuccess()!.item.itemType) }}</span>
+          }
+        </div>
+        <div class="absolute -top-2 -right-2 text-2xl animate-bounce">✨</div>
+        <div class="absolute -bottom-2 -left-2 text-2xl animate-bounce delay-100">🎁</div>
+      </div>
+
+      <p class="text-sm text-gray-500 mb-6">
+        Your new item has been added to your inventory!
+      </p>
+
+      <!-- Actions -->
+      <div class="flex gap-3">
+        <button (click)="closeItemPurchaseSuccess()"
+                class="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-gray-700">
+          Continue Shopping
+        </button>
+        <a routerLink="inventory" (click)="closeItemPurchaseSuccess()"
+           class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium flex items-center justify-center gap-2">
+          <span>📦</span> View Inventory
+        </a>
+      </div>
+    </div>
   </div>
 }

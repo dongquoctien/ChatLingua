@@ -1131,7 +1131,7 @@ export interface LeaderboardResponse {
 
 export interface GamificationNotification {
   id: number;
-  notificationType: 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard';
+  notificationType: 'achievement' | 'level_up' | 'challenge' | 'streak' | 'leaderboard'| 'sync_started' |'sync_completed' | 'gift';
   title: string;
   message: string;
   icon?: string;

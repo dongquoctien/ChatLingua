@@ -201,6 +201,8 @@ export class ShopInventoryComponent implements OnInit, OnDestroy {
       'common': 'from-gray-100 to-gray-200',
       'uncommon': 'from-green-100 to-emerald-200',
       'rare': 'from-blue-100 to-cyan-200',
+      'heroic': 'from-red-100 to-rose-200',
+      'mythic': 'from-orange-100 to-amber-200',
       'epic': 'from-purple-100 to-fuchsia-200',
       'legendary': 'from-amber-100 via-yellow-200 to-orange-200'
     };
@@ -212,6 +214,8 @@ export class ShopInventoryComponent implements OnInit, OnDestroy {
       'common': '',
       'uncommon': 'shadow-green-200',
       'rare': 'shadow-blue-300',
+      'heroic': 'shadow-red-300',
+      'mythic': 'shadow-orange-300',
       'epic': 'shadow-purple-300',
       'legendary': 'shadow-yellow-400 shadow-lg'
     };
@@ -223,6 +227,8 @@ export class ShopInventoryComponent implements OnInit, OnDestroy {
       'common': '⚪',
       'uncommon': '🌿',
       'rare': '💠',
+      'heroic': '🔴',
+      'mythic': '🟠',
       'epic': '💎',
       'legendary': '👑'
     };
