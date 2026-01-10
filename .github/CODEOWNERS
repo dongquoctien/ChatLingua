@@ -1,0 +1,27 @@
+# ============================================================
+# ChatLingua CODEOWNERS
+# These owners will be requested for review on PRs
+# ============================================================
+
+# Default owner for everything
+* @dongquoctien
+
+# Frontend
+/packages/frontend/ @dongquoctien
+
+# Backend
+/packages/backend/ @dongquoctien
+
+# MCP Server
+/packages/mcp-server/ @dongquoctien
+
+# Shared types
+/packages/shared/ @dongquoctien
+
+# Infrastructure & DevOps
+/nginx/ @dongquoctien
+/scripts/ @dongquoctien
+/database/ @dongquoctien
+/.github/ @dongquoctien
+/docker-compose*.yml @dongquoctien
+/Dockerfile* @dongquoctien
