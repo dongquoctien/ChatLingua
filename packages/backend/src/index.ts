@@ -3,9 +3,12 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { createServer } from 'http';
+import cron from 'node-cron';
 import routes from './routes/index.js';
 import { initializeSocket } from './socket/index.js';
 import { initPetScheduler } from './jobs/pet-scheduler.js';
+import pool from './config/database.js';
+import type { ResultSetHeader } from 'mysql2';
 
 const app = express();
 const httpServer = createServer(app);
@@ -58,6 +61,23 @@ httpServer.listen(PORT, () => {
 
   // Initialize pet scheduler after server starts
   initPetScheduler();
+
+  // Cleanup inconsistent online status every 5 minutes
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      const [result] = await pool.execute<ResultSetHeader>(
+        `UPDATE user_status
+         SET is_online = FALSE, last_seen_at = NOW()
+         WHERE is_online = TRUE AND socket_id IS NULL`
+      );
+      if (result.affectedRows > 0) {
+        console.log(`[StatusCleanup] Fixed ${result.affectedRows} inconsistent user status`);
+      }
+    } catch (error) {
+      console.error('[StatusCleanup] Error:', error);
+    }
+  });
+  console.log('[StatusCleanup] Scheduled job initialized (every 5 minutes)');
 });
 
 export default app;
