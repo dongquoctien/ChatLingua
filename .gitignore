@@ -137,3 +137,12 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+database/chatlingua-prod-backup.sql
+database/clear-user-data.sql
+database/export-for-production.bat
+database/export-full-database.sh
+database/export-system-data.sh
+database/go-live.sql
+database/init-data.sql
+database/README.md
+chatlingua_backup_2026_01_10.sql

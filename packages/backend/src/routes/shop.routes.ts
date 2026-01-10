@@ -91,19 +91,19 @@ router.get('/items', async (req: AuthRequest, res: Response) => {
 
       if (minPrice !== undefined) {
         const min = parseInt(minPrice as string);
-        filteredEggs = filteredEggs.filter(e => e.priceCoins >= min);
+        filteredEggs = filteredEggs.filter(e => e.shopPriceCoins  >= min);
       }
 
       if (maxPrice !== undefined) {
         const max = parseInt(maxPrice as string);
-        filteredEggs = filteredEggs.filter(e => e.priceCoins <= max);
+        filteredEggs = filteredEggs.filter(e => e.shopPriceCoins  <= max);
       }
 
       if (search) {
         const searchLower = (search as string).toLowerCase();
         filteredEggs = filteredEggs.filter(e =>
           e.name.toLowerCase().includes(searchLower) ||
-          e.description.toLowerCase().includes(searchLower)
+          e.description?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -111,10 +111,10 @@ router.get('/items', async (req: AuthRequest, res: Response) => {
       const sortBy = sort as string || 'popularity';
       switch (sortBy) {
         case 'price_asc':
-          filteredEggs.sort((a, b) => a.priceCoins - b.priceCoins);
+          filteredEggs.sort((a, b) => a.shopPriceCoins  - b.shopPriceCoins );
           break;
         case 'price_desc':
-          filteredEggs.sort((a, b) => b.priceCoins - a.priceCoins);
+          filteredEggs.sort((a, b) => b.shopPriceCoins  - a.shopPriceCoins );
           break;
         case 'newest':
           // Eggs don't have created_at in response, keep original order
@@ -139,8 +139,8 @@ router.get('/items', async (req: AuthRequest, res: Response) => {
         categoryId: 16, // pets-eggs category ID
         categoryName: 'Pets & Eggs',
         itemType: 'pet_egg' as const,
-        priceCoins: egg.priceCoins,
-        priceGems: egg.priceGems,
+        shopPriceCoins : egg.shopPriceCoins ,
+        priceGems: egg.shopPriceCoins,
         originalPrice: null,
         rarity: egg.rarity,
         isAvailable: true,
@@ -860,7 +860,7 @@ router.get('/pet-care', async (req: AuthRequest, res: Response) => {
       grouped[cat].sort((a, b) => {
         const rarityDiff = rarityOrder[a.rarity as keyof typeof rarityOrder] - rarityOrder[b.rarity as keyof typeof rarityOrder];
         if (rarityDiff !== 0) return rarityDiff;
-        return a.priceCoins - b.priceCoins;
+        return a.shopPriceCoins  - b.shopPriceCoins ;
       });
     });
 
@@ -938,7 +938,7 @@ router.get('/pet-equipment', async (req: AuthRequest, res: Response) => {
       grouped[slotKey].sort((a, b) => {
         const rarityDiff = rarityOrder[a.rarity as keyof typeof rarityOrder] - rarityOrder[b.rarity as keyof typeof rarityOrder];
         if (rarityDiff !== 0) return rarityDiff;
-        return a.priceCoins - b.priceCoins;
+        return a.shopPriceCoins  - b.shopPriceCoins ;
       });
     });
 
