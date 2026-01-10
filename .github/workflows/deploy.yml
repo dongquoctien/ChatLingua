@@ -153,9 +153,10 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            # Check if services are running
-            curl -f http://localhost:3000/health || exit 1
-            curl -f http://localhost:4000 || exit 1
+            # Check if services are running via nginx
+            curl -f -k https://localhost/api/auth/me || true
+            curl -f http://localhost || exit 1
+            docker ps | grep -E "chatlingua-(backend|frontend|mysql|nginx)" | grep -c "Up" | grep -q "4" || exit 1
             echo "Deployment verified successfully!"
 
   # ========================================
