@@ -2,6 +2,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DatabaseConnection } from '../database/connection';
 import { RowDataPacket } from 'mysql2/promise';
+import { shouldWriteToV3, logDualWrite } from '../helpers/dual-write.js';
 
 // Backend API URL for TTS generation
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
@@ -349,6 +350,16 @@ export async function generateExercises(
         type: exercise.exerciseType,
         question: exercise.question,
       });
+
+      // Dual-write to V3 master_exercises if enabled
+      if (shouldWriteToV3()) {
+        await dualWriteExerciseToV3(
+          connection,
+          exercise,
+          exercise.relatedVocabularyIds || [],
+          audioUrl
+        );
+      }
     }
 
     await connection.commit();
@@ -364,5 +375,83 @@ export async function generateExercises(
     await connection.rollback();
     connection.release();
     throw error;
+  }
+}
+
+/**
+ * Dual-write exercise to V3 master_exercises table
+ * Creates a master exercise that can be reused across users
+ */
+async function dualWriteExerciseToV3(
+  connection: any,
+  exercise: z.infer<typeof exerciseSchema>,
+  relatedVocabularyIds: number[],
+  audioUrl: string | null
+): Promise<void> {
+  try {
+    logDualWrite('exercise_v3_start', { exerciseType: exercise.exerciseType });
+
+    // Map V2 vocabulary IDs to V3 master_vocabulary IDs
+    const masterVocabIds: number[] = [];
+    for (const vocabId of relatedVocabularyIds) {
+      const [v2Rows] = await connection.execute(
+        `SELECT english_word, part_of_speech FROM vocabulary WHERE id = ?`,
+        [vocabId]
+      ) as [RowDataPacket[], any];
+
+      if (v2Rows.length > 0) {
+        const { english_word, part_of_speech } = v2Rows[0];
+        const [masterRows] = await connection.execute(
+          `SELECT id FROM master_vocabulary WHERE english_word = ? AND part_of_speech = ?`,
+          [english_word, part_of_speech]
+        ) as [RowDataPacket[], any];
+        if (masterRows.length > 0) {
+          masterVocabIds.push(masterRows[0].id);
+        }
+      }
+    }
+
+    // Determine CEFR level based on exercise complexity (simple heuristic)
+    let cefrLevel = 'B1';
+    if (['multiple_choice', 'fill_blank'].includes(exercise.exerciseType)) {
+      cefrLevel = 'A2';
+    } else if (['cloze', 'listening', 'error_correction'].includes(exercise.exerciseType)) {
+      cefrLevel = 'B2';
+    }
+
+    // Insert into master_exercises
+    await connection.execute(
+      `INSERT INTO master_exercises (
+        exercise_type, question, correct_answer, options, explanation,
+        exercise_data, audio_url, cefr_level, difficulty_level, category,
+        related_vocabulary_ids, is_active, times_used
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 0)
+      ON DUPLICATE KEY UPDATE times_used = times_used + 1`,
+      [
+        exercise.exerciseType,
+        exercise.question,
+        exercise.correctAnswer,
+        exercise.options ? JSON.stringify(exercise.options) : null,
+        exercise.explanation || null,
+        exercise.exerciseData ? JSON.stringify(exercise.exerciseData) : null,
+        audioUrl,
+        cefrLevel,
+        'intermediate',
+        'conversation', // Category based on source
+        masterVocabIds.length > 0 ? JSON.stringify(masterVocabIds) : null,
+      ]
+    );
+
+    logDualWrite('exercise_v3_success', {
+      exerciseType: exercise.exerciseType,
+      masterVocabIds,
+    });
+  } catch (error) {
+    // Log error but don't fail the V2 insert
+    console.error('[MCP-DUAL-WRITE] Failed to write exercise to V3:', error);
+    logDualWrite('exercise_v3_error', {
+      exerciseType: exercise.exerciseType,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }

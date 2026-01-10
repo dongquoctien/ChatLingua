@@ -2,6 +2,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DatabaseConnection } from '../database/connection';
 import { RowDataPacket } from 'mysql2/promise';
+import { shouldWriteToV3, logDualWrite } from '../helpers/dual-write.js';
 
 // Tool definition for MCP
 export const enrichVocabularyTool: Tool = {
@@ -435,7 +436,7 @@ async function updateVocabularyDictionary(
   const seeAlsoJson = vocab.seeAlso && vocab.seeAlso.length > 0
     ? JSON.stringify(vocab.seeAlso) : null;
 
-  // Build dynamic UPDATE query
+  // Build dynamic UPDATE query for V2 vocabulary table
   const updates: string[] = [];
   const values: (string | null)[] = [];
 
@@ -512,6 +513,127 @@ async function updateVocabularyDictionary(
   updates.push('updated_at = CURRENT_TIMESTAMP');
   values.push(vocab.id.toString());
 
+  // Update V2 vocabulary table
   const query = `UPDATE vocabulary SET ${updates.join(', ')} WHERE id = ?`;
   await connection.execute(query, values);
+
+  // Dual-write: Also update master_vocabulary in V3 if enabled
+  if (shouldWriteToV3()) {
+    await dualWriteEnrichmentToV3(connection, vocab.id, vocab);
+  }
+}
+
+/**
+ * Dual-write enrichment data to V3 master_vocabulary table
+ * Finds the linked master_vocabulary via user_vocabulary and updates it
+ */
+async function dualWriteEnrichmentToV3(
+  connection: any,
+  v2VocabId: number,
+  vocab: z.infer<typeof vocabularyEnrichmentSchema>
+): Promise<void> {
+  try {
+    logDualWrite('enrich_v3_start', { v2VocabId });
+
+    // First, get the english_word and part_of_speech from V2 vocabulary
+    const [v2Rows] = await connection.execute(
+      `SELECT english_word, part_of_speech FROM vocabulary WHERE id = ?`,
+      [v2VocabId]
+    ) as [RowDataPacket[], any];
+
+    if (v2Rows.length === 0) {
+      logDualWrite('enrich_v3_skip', { v2VocabId, reason: 'V2 vocabulary not found' });
+      return;
+    }
+
+    const { english_word, part_of_speech } = v2Rows[0];
+
+    // Find the corresponding master_vocabulary entry
+    const [masterRows] = await connection.execute(
+      `SELECT id FROM master_vocabulary WHERE english_word = ? AND part_of_speech = ?`,
+      [english_word, part_of_speech]
+    ) as [RowDataPacket[], any];
+
+    if (masterRows.length === 0) {
+      logDualWrite('enrich_v3_skip', { v2VocabId, reason: 'No matching master_vocabulary found' });
+      return;
+    }
+
+    const masterVocabId = masterRows[0].id;
+
+    // Build update query for master_vocabulary
+    const updates: string[] = [];
+    const values: (string | null)[] = [];
+
+    if (vocab.pronunciationUk) {
+      updates.push('pronunciation_uk = ?');
+      values.push(vocab.pronunciationUk);
+    }
+    if (vocab.pronunciationUs) {
+      updates.push('pronunciation_us = ?');
+      values.push(vocab.pronunciationUs);
+    }
+    if (vocab.wordForms && Object.keys(vocab.wordForms).length > 0) {
+      updates.push('word_forms = ?');
+      values.push(JSON.stringify(vocab.wordForms));
+    }
+    if (vocab.definitions && vocab.definitions.length > 0) {
+      updates.push('definitions = ?');
+      values.push(JSON.stringify(
+        vocab.definitions.map((def, index) => ({
+          senseId: index + 1,
+          ...def,
+        }))
+      ));
+    }
+    if (vocab.wordFamily && Object.keys(vocab.wordFamily).length > 0) {
+      updates.push('word_family = ?');
+      values.push(JSON.stringify(vocab.wordFamily));
+    }
+    if (vocab.synonyms && vocab.synonyms.length > 0) {
+      updates.push('synonyms = ?');
+      values.push(JSON.stringify(vocab.synonyms));
+    }
+    if (vocab.antonyms && vocab.antonyms.length > 0) {
+      updates.push('antonyms = ?');
+      values.push(JSON.stringify(vocab.antonyms));
+    }
+    if (vocab.collocations && Object.keys(vocab.collocations).length > 0) {
+      updates.push('collocations = ?');
+      values.push(JSON.stringify(vocab.collocations));
+    }
+    if (vocab.usageNotes) {
+      updates.push('usage_notes = ?');
+      values.push(vocab.usageNotes);
+    }
+    if (vocab.grammarInfo && Object.keys(vocab.grammarInfo).length > 0) {
+      updates.push('grammar_info = ?');
+      values.push(JSON.stringify(vocab.grammarInfo));
+    }
+    if (vocab.extraExamples && vocab.extraExamples.length > 0) {
+      updates.push('extra_examples = ?');
+      values.push(JSON.stringify(vocab.extraExamples));
+    }
+    if (vocab.topics && vocab.topics.length > 0) {
+      updates.push('topics = ?');
+      values.push(JSON.stringify(vocab.topics));
+    }
+
+    if (updates.length > 0) {
+      updates.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(masterVocabId.toString());
+
+      const query = `UPDATE master_vocabulary SET ${updates.join(', ')} WHERE id = ?`;
+      await connection.execute(query, values);
+
+      logDualWrite('enrich_v3_success', { v2VocabId, masterVocabId });
+    }
+  } catch (error) {
+    // Log error but don't fail the V2 update
+    console.error('[MCP-DUAL-WRITE] Failed to enrich vocabulary in V3:', error);
+    logDualWrite('enrich_v3_error', {
+      v2VocabId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
 }

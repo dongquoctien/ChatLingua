@@ -35,6 +35,9 @@ import {
   syncAllPendingRequestsTool,
 } from './sync-requests';
 
+// V3 Tools - Word Map System
+import { v3Tools, v3ToolHandlers } from './v3/index.js';
+
 // Export all tool definitions
 // Order matters for Claude's understanding of the flow:
 // Auth tools first (so user can login)
@@ -44,7 +47,7 @@ export const tools: Tool[] = [
   loginTool,
   loginStatusTool,
   getAuthStatusTool,
-  // Learning flow
+  // Learning flow (V1 - Conversation-based)
   analyzeConversationTool,
   enrichVocabularyTool,
   generateExercisesTool,
@@ -67,6 +70,8 @@ export const tools: Tool[] = [
   startSyncRequestTool,
   completeSyncRequestTool,
   syncAllPendingRequestsTool,
+  // V3 Tools - Word Map System
+  ...v3Tools,
 ];
 
 // Tool handler router
@@ -78,6 +83,11 @@ export async function handleToolCall(
 ): Promise<unknown> {
   // Inject the resolved userId into args (tools can still override if explicitly provided)
   const argsWithUser = { ...args, _resolvedUserId: resolvedUserId };
+
+  // Check V3 tools first
+  if (v3ToolHandlers[name]) {
+    return v3ToolHandlers[name](argsWithUser, db);
+  }
 
   switch (name) {
     // Auth tools

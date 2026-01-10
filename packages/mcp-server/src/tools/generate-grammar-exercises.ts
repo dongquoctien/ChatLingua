@@ -2,6 +2,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DatabaseConnection } from '../database/connection';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import { shouldWriteToV3, logDualWrite } from '../helpers/dual-write.js';
 
 export const generateGrammarExercisesTool: Tool = {
   name: 'generate_grammar_exercises',
@@ -186,6 +187,15 @@ export async function generateGrammarExercises(
         question: exercise.question,
         category: exercise.category,
       });
+
+      // Dual-write to V3 master_exercises if enabled
+      if (shouldWriteToV3()) {
+        await dualWriteGrammarExerciseToV3(
+          connection,
+          exercise,
+          input.grammarPointIds || []
+        );
+      }
     }
 
     await connection.commit();
@@ -201,5 +211,81 @@ export async function generateGrammarExercises(
     await connection.rollback();
     connection.release();
     throw error;
+  }
+}
+
+/**
+ * Dual-write grammar exercise to V3 master_exercises table
+ * Creates a master exercise that can be reused across users
+ */
+async function dualWriteGrammarExerciseToV3(
+  connection: any,
+  exercise: z.infer<typeof exerciseSchema>,
+  grammarPointIds: number[]
+): Promise<void> {
+  try {
+    logDualWrite('grammar_exercise_v3_start', { exerciseType: exercise.exerciseType });
+
+    // Map V2 grammar_point IDs to V3 master_grammar IDs
+    const masterGrammarIds: number[] = [];
+    for (const gpId of grammarPointIds) {
+      const [v2Rows] = await connection.execute(
+        `SELECT grammar_rule, category FROM grammar_points WHERE id = ?`,
+        [gpId]
+      ) as [RowDataPacket[], any];
+
+      if (v2Rows.length > 0) {
+        const { grammar_rule, category } = v2Rows[0];
+        const [masterRows] = await connection.execute(
+          `SELECT id FROM master_grammar WHERE grammar_rule = ? AND category = ?`,
+          [grammar_rule, category]
+        ) as [RowDataPacket[], any];
+        if (masterRows.length > 0) {
+          masterGrammarIds.push(masterRows[0].id);
+        }
+      }
+    }
+
+    // Determine CEFR level based on exercise complexity (simple heuristic)
+    let cefrLevel = 'B1';
+    if (['article_usage', 'preposition_fill'].includes(exercise.exerciseType)) {
+      cefrLevel = 'A2';
+    } else if (['error_correction'].includes(exercise.exerciseType)) {
+      cefrLevel = 'B2';
+    }
+
+    // Insert into master_exercises
+    await connection.execute(
+      `INSERT INTO master_exercises (
+        exercise_type, question, correct_answer, options, explanation,
+        exercise_data, cefr_level, difficulty_level, category,
+        related_grammar_ids, is_active, times_used
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, 0)
+      ON DUPLICATE KEY UPDATE times_used = times_used + 1`,
+      [
+        exercise.exerciseType,
+        exercise.question,
+        exercise.correctAnswer,
+        exercise.options ? JSON.stringify(exercise.options) : null,
+        exercise.explanation || null,
+        exercise.exerciseData ? JSON.stringify(exercise.exerciseData) : null,
+        cefrLevel,
+        'intermediate',
+        exercise.category || 'grammar',
+        masterGrammarIds.length > 0 ? JSON.stringify(masterGrammarIds) : null,
+      ]
+    );
+
+    logDualWrite('grammar_exercise_v3_success', {
+      exerciseType: exercise.exerciseType,
+      masterGrammarIds,
+    });
+  } catch (error) {
+    // Log error but don't fail the V2 insert
+    console.error('[MCP-DUAL-WRITE] Failed to write grammar exercise to V3:', error);
+    logDualWrite('grammar_exercise_v3_error', {
+      exerciseType: exercise.exerciseType,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }

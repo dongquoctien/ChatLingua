@@ -96,6 +96,7 @@ import {
   faShoppingCart,
   faShoppingBag,
   faCheckDouble,
+  faMap,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -204,4 +205,5 @@ export {
   faShoppingCart,
   faShoppingBag,
   faCheckDouble,
+  faMap,
 };

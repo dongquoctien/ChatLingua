@@ -2,6 +2,12 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DatabaseConnection } from '../database/connection';
 import { RowDataPacket } from 'mysql2/promise';
+import {
+  dualWriteVocabularyToV3,
+  dualWriteGrammarToV3,
+  shouldWriteToV3,
+  logDualWrite,
+} from '../helpers/dual-write.js';
 
 // Tool definition for MCP
 export const analyzeConversationTool: Tool = {
@@ -557,6 +563,35 @@ export async function analyzeConversation(
           vocab.exampleSentenceEn || null,
         ]
       );
+
+      // Dual-write to V3 tables if enabled
+      await dualWriteVocabularyToV3(
+        connection,
+        effectiveUserId,
+        {
+          englishWord: vocab.englishWord,
+          vietnameseWord: vocab.vietnameseWord,
+          partOfSpeech: vocab.partOfSpeech,
+          phonetic: vocab.phonetic,
+          pronunciationUk: vocab.pronunciationUk,
+          pronunciationUs: vocab.pronunciationUs,
+          cefrLevel: vocab.cefrLevel,
+          difficultyLevel: input.difficultyLevel,
+          register: vocab.register,
+          definitions: vocab.definitions,
+          wordFamily: vocab.wordFamily,
+          synonyms: vocab.synonyms,
+          antonyms: vocab.antonyms,
+          collocations: vocab.collocations,
+          grammarInfo: vocab.grammarInfo,
+          usageNotes: vocab.usageNotes,
+          extraExamples: vocab.extraExamples,
+          topics: vocab.topics,
+          wordForms: vocab.wordForms,
+        },
+        'conversation',
+        conversationId
+      );
     }
 
     // 3. Insert grammar points
@@ -576,6 +611,23 @@ export async function analyzeConversation(
         ]
       );
       grammarPointIds.push((grammarResult as { insertId: number }).insertId);
+
+      // Dual-write to V3 tables if enabled
+      await dualWriteGrammarToV3(
+        connection,
+        effectiveUserId,
+        {
+          grammarRule: grammar.grammarRule,
+          explanation: grammar.explanation,
+          explanationVi: grammar.explanation, // Use same as explanation for now
+          category: grammar.category,
+          difficultyLevel: input.difficultyLevel,
+          exampleVi: grammar.exampleVi,
+          exampleEn: grammar.exampleEn,
+        },
+        'conversation',
+        conversationId
+      );
     }
 
     // 4. Update user statistics

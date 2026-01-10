@@ -1,0 +1,257 @@
+<div class="container mx-auto px-4 py-6 max-w-2xl">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <a [routerLink]="mapId() ? ['/word-maps', mapId()] : ['/word-maps']"
+       class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Back</span>
+    </a>
+
+    <h1 class="text-xl font-bold text-gray-900">Review Session</h1>
+
+    <div class="text-right">
+      <span class="text-sm text-gray-500">{{ currentIndex() + 1 }}/{{ totalDue() }}</span>
+    </div>
+  </div>
+
+  <!-- Mode Selector -->
+  @if (!sessionComplete()) {
+    <div class="flex gap-2 mb-6 bg-gray-100 rounded-lg p-1">
+      <button
+        (click)="setMode('vocabulary')"
+        class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-white]="mode() === 'vocabulary'"
+        [class.text-gray-900]="mode() === 'vocabulary'"
+        [class.shadow-sm]="mode() === 'vocabulary'"
+        [class.text-gray-600]="mode() !== 'vocabulary'"
+      >
+        Vocabulary ({{ vocabularyQueue().length }})
+      </button>
+      <button
+        (click)="setMode('grammar')"
+        class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-white]="mode() === 'grammar'"
+        [class.text-gray-900]="mode() === 'grammar'"
+        [class.shadow-sm]="mode() === 'grammar'"
+        [class.text-gray-600]="mode() !== 'grammar'"
+      >
+        Grammar ({{ grammarQueue().length }})
+      </button>
+      <button
+        (click)="setMode('mixed')"
+        class="flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-white]="mode() === 'mixed'"
+        [class.text-gray-900]="mode() === 'mixed'"
+        [class.shadow-sm]="mode() === 'mixed'"
+        [class.text-gray-600]="mode() !== 'mixed'"
+      >
+        Mixed
+      </button>
+    </div>
+  }
+
+  <!-- Progress Bar -->
+  <div class="h-2 bg-gray-100 rounded-full overflow-hidden mb-6">
+    <div
+      class="h-full bg-green-500 rounded-full transition-all duration-300"
+      [style.width.%]="progressPercent()"
+    ></div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex justify-center items-center py-12">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && totalDue() === 0) {
+    <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+      <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-check text-3xl text-green-600"></i>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">All Caught Up!</h2>
+      <p class="text-gray-600 mb-6">No items due for review right now. Great job keeping up!</p>
+      <a [routerLink]="mapId() ? ['/word-maps', mapId()] : ['/word-maps']"
+         class="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">
+        <i class="fa-solid fa-arrow-left"></i>
+        Continue Learning
+      </a>
+    </div>
+  }
+
+  <!-- Session Complete -->
+  @if (sessionComplete()) {
+    <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+      <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-trophy text-4xl text-green-600"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Session Complete!</h2>
+      <p class="text-gray-600 mb-6">Great work reviewing your items.</p>
+
+      <!-- Session Stats -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="text-2xl font-bold text-gray-900">{{ reviewedCount() }}</div>
+          <div class="text-sm text-gray-500">Reviewed</div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="text-2xl font-bold text-green-600">{{ correctCount() }}</div>
+          <div class="text-sm text-gray-500">Correct</div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="text-2xl font-bold text-blue-600">+{{ xpEarned() }}</div>
+          <div class="text-sm text-gray-500">XP Earned</div>
+        </div>
+      </div>
+
+      <div class="flex gap-3 justify-center">
+        <button
+          (click)="restartSession()"
+          class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+        >
+          <i class="fa-solid fa-rotate mr-2"></i>Review More
+        </button>
+        <a [routerLink]="mapId() ? ['/word-maps', mapId()] : ['/word-maps']"
+           class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">
+          <i class="fa-solid fa-arrow-left mr-2"></i>Back to Word Map
+        </a>
+      </div>
+    </div>
+  }
+
+  <!-- Flashcard -->
+  @if (!loading() && !sessionComplete() && currentItem()) {
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <!-- Card Header -->
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        @if (getVocabularyItem(); as vocab) {
+          <span class="text-sm text-gray-500">
+            <i class="fa-solid fa-spell-check mr-1"></i>
+            Vocabulary
+          </span>
+          <span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 capitalize">
+            {{ vocab.partOfSpeech }}
+          </span>
+        } @else {
+          @if (getGrammarItem(); as grammar) {
+            <span class="text-sm text-gray-500">
+              <i class="fa-solid fa-language mr-1"></i>
+              Grammar
+            </span>
+            <span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
+              {{ grammar.category }}
+            </span>
+          }
+        }
+      </div>
+
+      <!-- Card Body -->
+      <div
+        (click)="flipCard()"
+        class="min-h-[300px] p-8 flex flex-col items-center justify-center cursor-pointer select-none"
+      >
+        @if (!isFlipped()) {
+          <!-- Front: Vietnamese/Question -->
+          @if (getVocabularyItem(); as vocab) {
+            <div class="text-center">
+              <div class="text-3xl font-bold text-gray-900 mb-4">
+                {{ vocab.vietnameseWord }}
+              </div>
+              <div class="text-gray-400 text-sm">
+                <i class="fa-solid fa-hand-pointer mr-1"></i>Tap to reveal answer
+              </div>
+            </div>
+          } @else {
+            @if (getGrammarItem(); as grammar) {
+              <div class="text-center w-full">
+                <div class="text-2xl font-bold text-gray-900 mb-4">
+                  {{ grammar.grammarRule }}
+                </div>
+                @if (grammar.formula) {
+                  <div class="text-lg text-gray-600 mb-4 font-mono bg-gray-50 p-3 rounded-lg">
+                    {{ grammar.formula }}
+                  </div>
+                }
+                <div class="text-gray-400 text-sm">
+                  <i class="fa-solid fa-hand-pointer mr-1"></i>Tap to reveal answer
+                </div>
+              </div>
+            }
+          }
+        } @else {
+          <!-- Back: English/Answer -->
+          @if (getVocabularyItem(); as vocab) {
+            <div class="text-center">
+              <div class="text-3xl font-bold text-gray-900 mb-2">
+                {{ vocab.englishWord }}
+              </div>
+              @if (vocab.phonetic) {
+                <div class="text-lg text-gray-500 mb-4">
+                  {{ vocab.phonetic }}
+                </div>
+              }
+              <div class="text-gray-600">
+                {{ vocab.vietnameseWord }}
+              </div>
+            </div>
+          } @else {
+            @if (getGrammarItem(); as grammar) {
+              <div class="text-center w-full">
+                <div class="text-lg text-gray-800 mb-4">
+                  {{ grammar.explanationVi }}
+                </div>
+                @if (grammar.examples && grammar.examples.length > 0) {
+                  <div class="bg-gray-50 rounded-lg p-4 text-left">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Example:</div>
+                    <div class="text-gray-800">{{ grammar.examples[0].en }}</div>
+                    <div class="text-gray-500 text-sm mt-1">{{ grammar.examples[0].vi }}</div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        }
+      </div>
+
+      <!-- Mastery Level -->
+      <div class="px-4 py-2 border-t border-gray-100 flex items-center justify-center">
+        <span class="text-sm text-gray-500">
+          Mastery:
+          <span [class]="getMasteryColor(currentItem()?.masteryLevel ?? 0) + ' font-medium'">
+            {{ currentItem()?.masteryLevel ?? 0 }}%
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Rating Buttons (shown after flip) -->
+    @if (isFlipped()) {
+      <div class="mt-6">
+        <div class="text-center text-sm text-gray-500 mb-3">How well did you remember?</div>
+        <div class="grid grid-cols-4 gap-3">
+          @for (q of [1, 2, 3, 5]; track q) {
+            <button
+              (click)="submitReview(q)"
+              [disabled]="submitting()"
+              [class]="getQualityClass(q) + ' py-3 px-4 rounded-lg text-white font-medium transition-colors disabled:opacity-50'"
+            >
+              @if (submitting()) {
+                <i class="fa-solid fa-spinner fa-spin"></i>
+              } @else {
+                {{ getQualityLabel(q) }}
+              }
+            </button>
+          }
+        </div>
+        <div class="grid grid-cols-4 gap-3 mt-2 text-xs text-gray-400 text-center">
+          <div>&lt;1 min</div>
+          <div>~10 min</div>
+          <div>~3 days</div>
+          <div>~1 week</div>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -300,6 +300,44 @@ export const routes: Routes = [
         path: 'pets',
         loadChildren: () => import('./features/pets/pets.routes').then(m => m.petsRoutes),
       },
+      // V3: Word Maps (Curriculum-based Learning)
+      {
+        path: 'word-maps',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/word-maps/word-map-list/word-map-list.component').then(m => m.WordMapListComponent),
+          },
+          {
+            path: 'progress',
+            loadComponent: () => import('./features/word-maps/progress/word-map-progress.component').then(m => m.WordMapProgressComponent),
+          },
+          {
+            path: 'leaderboard',
+            loadComponent: () => import('./features/word-maps/leaderboard/word-map-leaderboard.component').then(m => m.WordMapLeaderboardComponent),
+          },
+          {
+            path: ':mapId',
+            loadComponent: () => import('./features/word-maps/word-map-detail/word-map-detail.component').then(m => m.WordMapDetailComponent),
+          },
+          {
+            path: ':mapId/review',
+            loadComponent: () => import('./features/word-maps/review/word-map-review.component').then(m => m.WordMapReviewComponent),
+          },
+          {
+            path: ':mapId/unit/:unitId',
+            loadComponent: () => import('./features/word-maps/unit-detail/unit-detail.component').then(m => m.UnitDetailComponent),
+          },
+          {
+            path: ':mapId/lesson/:lessonId',
+            loadComponent: () => import('./features/word-maps/lesson-study/lesson-study.component').then(m => m.LessonStudyComponent),
+          },
+          {
+            path: ':mapId/lesson/:lessonId/exam',
+            loadComponent: () => import('./features/word-maps/lesson-exam/lesson-exam.component').then(m => m.LessonExamComponent),
+          },
+        ],
+      },
     ],
   },
   {

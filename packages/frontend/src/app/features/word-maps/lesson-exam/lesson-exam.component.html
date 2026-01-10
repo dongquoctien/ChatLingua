@@ -1,0 +1,336 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      @if (state() === 'in_progress') {
+        <!-- Timer -->
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-clock text-gray-500"></i>
+          <span
+            class="font-mono font-semibold"
+            [class.text-red-500]="timeRemaining() < 60"
+            [class.text-gray-900]="timeRemaining() >= 60"
+          >
+            {{ formattedTime() }}
+          </span>
+        </div>
+
+        <div class="text-center">
+          <h1 class="font-semibold text-gray-900">{{ exam()?.title }}</h1>
+          <p class="text-xs text-gray-500">Question {{ currentQuestionIndex() + 1 }} of {{ questions().length }}</p>
+        </div>
+
+        <!-- Progress -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500">{{ progress() }}%</span>
+        </div>
+      } @else {
+        <button (click)="goBackToMap()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span class="hidden sm:inline">Back</span>
+        </button>
+
+        <h1 class="font-semibold text-gray-900">
+          @if (state() === 'results') {
+            Exam Results
+          } @else {
+            Lesson Exam
+          }
+        </h1>
+
+        <div class="w-20"></div>
+      }
+    </div>
+
+    <!-- Progress Bar -->
+    @if (state() === 'in_progress') {
+      <div class="h-1 bg-gray-100">
+        <div
+          class="h-full bg-green-500 transition-all"
+          [style.width.%]="progress()"
+        ></div>
+      </div>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (state() === 'loading') {
+    <div class="flex justify-center items-center py-24">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="container mx-auto px-4 py-6">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-red-700">{{ error() }}</p>
+        <button
+          (click)="loadExam(lessonId())"
+          class="mt-2 text-red-600 hover:text-red-800 underline text-sm"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Ready State -->
+  @if (state() === 'ready' && exam()) {
+    <div class="container mx-auto px-4 py-6 max-w-2xl">
+      <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div class="text-6xl mb-4">📝</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ exam()?.title }}</h2>
+
+        @if (exam()?.description) {
+          <p class="text-gray-500 mb-6">{{ exam()?.description }}</p>
+        }
+
+        <div class="grid grid-cols-2 gap-4 mb-6 max-w-xs mx-auto">
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-gray-900">{{ questions().length }}</div>
+            <div class="text-sm text-gray-500">Questions</div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-gray-900">{{ Math.round((exam()?.timeLimitSeconds || 0) / 60) }}</div>
+            <div class="text-sm text-gray-500">Minutes</div>
+          </div>
+        </div>
+
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
+          <h4 class="font-semibold text-yellow-800 mb-2">Before you start:</h4>
+          <ul class="text-sm text-yellow-700 space-y-1">
+            <li>• You need {{ exam()?.passingScore }}% to pass</li>
+            <li>• You can navigate between questions</li>
+            <li>• The exam will auto-submit when time runs out</li>
+          </ul>
+        </div>
+
+        <button
+          (click)="startExam()"
+          class="w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+        >
+          <i class="fa-solid fa-play mr-2"></i>Start Exam
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- In Progress State -->
+  @if (state() === 'in_progress' && currentQuestion()) {
+    <div class="container mx-auto px-4 py-6 max-w-2xl">
+      <!-- Question Card -->
+      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <p class="text-sm text-gray-500 mb-2 capitalize">
+          {{ currentQuestion()?.exerciseType?.replace('_', ' ') }}
+        </p>
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">
+          {{ currentQuestion()?.question }}
+        </h3>
+
+        @if (currentQuestion()?.options?.length) {
+          <div class="space-y-3">
+            @for (option of currentQuestion()?.options; track $index) {
+              <button
+                (click)="selectAnswer(option)"
+                class="w-full p-4 text-left rounded-lg border-2 transition-colors"
+                [class]="isAnswerSelected(option)
+                  ? 'border-gray-900 bg-gray-50'
+                  : 'border-gray-200 hover:border-gray-300'"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                    [class]="isAnswerSelected(option)
+                      ? 'border-gray-900 bg-gray-900'
+                      : 'border-gray-300'"
+                  >
+                    @if (isAnswerSelected(option)) {
+                      <i class="fa-solid fa-check text-white text-xs"></i>
+                    }
+                  </div>
+                  <span>{{ option }}</span>
+                </div>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Question Navigator -->
+      <div class="flex flex-wrap gap-2 mb-6 justify-center">
+        @for (q of questions(); track q.id; let i = $index) {
+          <button
+            (click)="goToQuestion(i)"
+            class="w-8 h-8 rounded-lg text-sm font-medium transition-colors"
+            [class]="currentQuestionIndex() === i
+              ? 'bg-gray-900 text-white'
+              : isQuestionAnswered(i)
+                ? 'bg-green-100 text-green-700'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+          >
+            {{ i + 1 }}
+          </button>
+        }
+      </div>
+
+      <!-- Navigation -->
+      <div class="flex gap-3">
+        <button
+          (click)="prevQuestion()"
+          [disabled]="currentQuestionIndex() === 0"
+          class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i class="fa-solid fa-arrow-left mr-2"></i>Previous
+        </button>
+
+        @if (isLastQuestion()) {
+          <button
+            (click)="submitExam()"
+            [disabled]="!allAnswered()"
+            class="flex-1 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Submit Exam<i class="fa-solid fa-check ml-2"></i>
+          </button>
+        } @else {
+          <button
+            (click)="nextQuestion()"
+            class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+          >
+            Next<i class="fa-solid fa-arrow-right ml-2"></i>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Submitting State -->
+  @if (state() === 'submitting') {
+    <div class="flex justify-center items-center py-24">
+      <div class="text-center">
+        <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400 mb-4"></i>
+        <p class="text-gray-500">Submitting your answers...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Results State -->
+  @if (state() === 'results' && examResult()) {
+    <div class="container mx-auto px-4 py-6 max-w-2xl">
+      <div class="bg-white rounded-xl border border-gray-200 p-8 text-center mb-6">
+        @if (examResult()?.isPassed) {
+          <div class="text-6xl mb-4">🎉</div>
+          <h2 class="text-2xl font-bold text-green-600 mb-2">Congratulations!</h2>
+          <p class="text-gray-500 mb-4">You passed the exam!</p>
+        } @else {
+          <div class="text-6xl mb-4">😔</div>
+          <h2 class="text-2xl font-bold text-red-600 mb-2">Not Quite</h2>
+          <p class="text-gray-500 mb-4">You didn't pass this time. Keep practicing!</p>
+        }
+
+        <!-- Score -->
+        <div class="inline-flex items-center justify-center w-32 h-32 rounded-full mb-6"
+          [class]="examResult()?.isPassed ? 'bg-green-100' : 'bg-red-100'">
+          <div>
+            <div class="text-3xl font-bold"
+              [class]="examResult()?.isPassed ? 'text-green-600' : 'text-red-600'">
+              {{ examResult()?.score }}%
+            </div>
+            <div class="text-sm text-gray-500">Score</div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="p-3 bg-gray-50 rounded-lg">
+            <div class="text-lg font-bold text-gray-900">
+              {{ examResult()?.correctAnswers }}/{{ examResult()?.totalQuestions }}
+            </div>
+            <div class="text-xs text-gray-500">Correct</div>
+          </div>
+          <div class="p-3 bg-gray-50 rounded-lg">
+            <div class="text-lg font-bold text-gray-900">
+              {{ Math.floor((examResult()?.timeTakenSeconds || 0) / 60) }}:{{ ((examResult()?.timeTakenSeconds || 0) % 60).toString().padStart(2, '0') }}
+            </div>
+            <div class="text-xs text-gray-500">Time</div>
+          </div>
+          <div class="p-3 bg-gray-50 rounded-lg">
+            <div class="text-lg font-bold text-yellow-600">+{{ examResult()?.xpEarned }}</div>
+            <div class="text-xs text-gray-500">XP Earned</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3">
+          @if (!examResult()?.isPassed) {
+            <button
+              (click)="retryExam()"
+              class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+            >
+              <i class="fa-solid fa-rotate mr-2"></i>Retry
+            </button>
+          }
+          <button
+            (click)="continueToNext()"
+            class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+          >
+            @if (examResult()?.unlockedNext) {
+              Continue to {{ examResult()?.unlockedNext?.title }}
+              <i class="fa-solid fa-arrow-right ml-2"></i>
+            } @else {
+              Back to Map<i class="fa-solid fa-arrow-right ml-2"></i>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Answer Review -->
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200">
+          <h3 class="font-semibold text-gray-900">Answer Review</h3>
+        </div>
+        <div class="divide-y divide-gray-100">
+          @for (q of questions(); track q.id; let i = $index) {
+            @let result = getQuestionResult(q.id);
+            <div class="p-4">
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                  [class]="result?.isCorrect ? 'bg-green-100' : 'bg-red-100'"
+                >
+                  @if (result?.isCorrect) {
+                    <i class="fa-solid fa-check text-green-600 text-xs"></i>
+                  } @else {
+                    <i class="fa-solid fa-times text-red-600 text-xs"></i>
+                  }
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm text-gray-500 mb-1">Question {{ i + 1 }}</p>
+                  <p class="font-medium text-gray-900 mb-2">{{ q.question }}</p>
+
+                  <div class="text-sm space-y-1">
+                    <p>
+                      <span class="text-gray-500">Your answer:</span>
+                      <span [class]="result?.isCorrect ? 'text-green-600' : 'text-red-600'">
+                        {{ result?.userAnswer || '(No answer)' }}
+                      </span>
+                    </p>
+                    @if (!result?.isCorrect) {
+                      <p>
+                        <span class="text-gray-500">Correct answer:</span>
+                        <span class="text-green-600">{{ result?.correctAnswer }}</span>
+                      </p>
+                    }
+                    @if (result?.explanation) {
+                      <p class="text-gray-500 italic mt-2">{{ result?.explanation }}</p>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

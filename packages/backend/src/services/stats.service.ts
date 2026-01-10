@@ -62,7 +62,7 @@ export interface PeriodReport {
   dailyBreakdown: DailyActivity[];
 }
 
-export interface LeaderboardEntry {
+export interface StatsLeaderboardEntry {
   rank: number;
   userId: number;
   username: string;
@@ -201,7 +201,7 @@ export class StatsService {
     };
   }
 
-  async getTopQuizScores(quizId: number, limit: number = 10): Promise<LeaderboardEntry[]> {
+  async getTopQuizScores(quizId: number, limit: number = 10): Promise<StatsLeaderboardEntry[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT qa.user_id, u.username, qa.score, qa.time_taken_seconds, qa.completed_at, q.title as quiz_title
        FROM quiz_attempts qa
@@ -224,7 +224,7 @@ export class StatsService {
     }));
   }
 
-  async getFastestQuizCompletions(quizId: number, limit: number = 10): Promise<LeaderboardEntry[]> {
+  async getFastestQuizCompletions(quizId: number, limit: number = 10): Promise<StatsLeaderboardEntry[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT qa.user_id, u.username, qa.score, qa.time_taken_seconds, qa.completed_at, q.title as quiz_title
        FROM quiz_attempts qa

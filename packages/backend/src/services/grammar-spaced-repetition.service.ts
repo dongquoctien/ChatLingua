@@ -4,6 +4,8 @@ import { calculateSM2, type SM2Result } from './spaced-repetition.service.js';
 import { gamificationService } from './gamification.service.js';
 import { challengeService } from './challenge.service.js';
 import { isAnswerCorrect } from '../utils/answer-matching.js';
+import { shouldWriteToV3, logDualWrite } from '../config/features.js';
+import { masterGrammarService, userGrammarService } from './v3/index.js';
 
 // ============================================================
 // Types

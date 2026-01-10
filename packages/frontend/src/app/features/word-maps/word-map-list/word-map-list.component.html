@@ -1,0 +1,200 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Word Maps</h1>
+    <p class="text-gray-600">Choose a curriculum to start your learning journey</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+      <div class="text-2xl font-bold text-gray-900">{{ maps().length }}</div>
+      <div class="text-sm text-gray-500">Available Maps</div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+      <div class="text-2xl font-bold text-gray-900">{{ activatedMapsCount() }}</div>
+      <div class="text-sm text-gray-500">In Progress</div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+      <div class="text-2xl font-bold text-green-600">{{ completedMapsCount() }}</div>
+      <div class="text-sm text-gray-500">Completed</div>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-4">
+      <div class="text-2xl font-bold text-gray-900">{{ filteredMaps().length }}</div>
+      <div class="text-sm text-gray-500">Showing</div>
+    </div>
+  </div>
+
+  <!-- CEFR Level Filter -->
+  <div class="mb-6">
+    <div class="flex flex-wrap gap-2">
+      <button
+        (click)="filterByLevel('all')"
+        [class]="selectedCefrLevel() === 'all'
+          ? 'px-4 py-2 rounded-full bg-gray-900 text-white font-medium'
+          : 'px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'"
+      >
+        All Levels
+      </button>
+      @for (level of cefrLevels; track level) {
+        <button
+          (click)="filterByLevel(level)"
+          [class]="selectedCefrLevel() === level
+            ? 'px-4 py-2 rounded-full bg-gray-900 text-white font-medium'
+            : 'px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'"
+        >
+          {{ level }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex justify-center items-center py-12">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <div class="flex items-center gap-2 text-red-700">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error() }}</span>
+      </div>
+      <button
+        (click)="loadMaps()"
+        class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+      >
+        Try again
+      </button>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && !error() && filteredMaps().length === 0) {
+    <div class="text-center py-12">
+      <div class="text-6xl mb-4">📚</div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No Word Maps Found</h3>
+      <p class="text-gray-500">
+        @if (selectedCefrLevel() !== 'all') {
+          No maps available for {{ selectedCefrLevel() }} level.
+          <button (click)="filterByLevel('all')" class="text-gray-900 underline">Show all</button>
+        } @else {
+          Word Maps will be available soon.
+        }
+      </p>
+    </div>
+  }
+
+  <!-- Word Maps Grid -->
+  @if (!loading() && !error() && filteredMaps().length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (map of filteredMaps(); track map.id) {
+        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+          <!-- Cover Image -->
+          <div class="h-40 bg-gray-100 relative">
+            @if (map.coverImageUrl) {
+              <img [src]="map.coverImageUrl" [alt]="map.name" class="w-full h-full object-cover">
+            } @else {
+              <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                <span class="text-5xl">📖</span>
+              </div>
+            }
+
+            <!-- CEFR Badge -->
+            <span [class]="'absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-semibold ' + getCefrColor(map.cefrLevel)">
+              {{ map.cefrLevel }}
+            </span>
+
+            <!-- Featured Badge -->
+            @if (map.isFeatured) {
+              <span class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                <i class="fa-solid fa-star mr-1"></i>Featured
+              </span>
+            }
+          </div>
+
+          <!-- Content -->
+          <div class="p-4">
+            <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ map.name }}</h3>
+
+            @if (map.description) {
+              <p class="text-sm text-gray-500 mb-3 line-clamp-2">{{ map.description }}</p>
+            }
+
+            <!-- Stats Row -->
+            <div class="flex items-center gap-4 text-sm text-gray-500 mb-3">
+              <span class="flex items-center gap-1">
+                <i class="fa-solid fa-layer-group"></i>
+                {{ map.totalUnits }} units
+              </span>
+              <span class="flex items-center gap-1">
+                <i class="fa-solid fa-book-open"></i>
+                {{ map.totalLessons }} lessons
+              </span>
+              @if (map.estimatedHours) {
+                <span class="flex items-center gap-1">
+                  <i class="fa-regular fa-clock"></i>
+                  {{ formatEstimatedTime(map.estimatedHours) }}
+                </span>
+              }
+            </div>
+
+            <!-- Progress Bar (if activated) -->
+            @if (map.userProgress?.isActivated) {
+              <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-500">Progress</span>
+                  <span class="font-medium text-gray-900">{{ map.userProgress?.completionPercentage ?? 0 }}%</span>
+                </div>
+                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    [class]="'h-full rounded-full transition-all ' + getProgressBarColor(map.userProgress?.completionPercentage ?? 0)"
+                    [style.width.%]="map.userProgress?.completionPercentage ?? 0"
+                  ></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>{{ map.userProgress?.lessonsCompleted ?? 0 }}/{{ map.totalLessons }} lessons</span>
+                  <span>{{ map.userProgress?.totalXpEarned ?? 0 }} XP</span>
+                </div>
+              </div>
+            }
+
+            <!-- Price/Status -->
+            <div class="flex items-center justify-between">
+              <div>
+                @if (map.isFree) {
+                  <span class="text-green-600 font-medium">Free</span>
+                } @else if (map.priceCoins > 0) {
+                  <span class="flex items-center gap-1 text-gray-700">
+                    <span class="text-lg">🪙</span>
+                    <span class="font-medium">{{ map.priceCoins }}</span>
+                  </span>
+                }
+              </div>
+
+              <!-- Action Button -->
+              <a
+                [routerLink]="['/word-maps', map.id]"
+                class="px-4 py-2 rounded-lg font-medium transition-colors"
+                [class]="map.userProgress?.isActivated
+                  ? 'bg-gray-900 text-white hover:bg-gray-800'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+              >
+                @if (map.userProgress?.completionPercentage === 100) {
+                  <i class="fa-solid fa-check mr-1"></i>Review
+                } @else if (map.userProgress?.isActivated) {
+                  Continue
+                } @else {
+                  View Details
+                }
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
