@@ -8,7 +8,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 interface UserMapProgressRow extends RowDataPacket {
   id: number;
   user_id: number;
-  word_map_id: number;
+  map_id: number;
   current_unit_id: number | null;
   progress_percentage: number;
   total_xp_earned: number;
@@ -23,34 +23,34 @@ interface UserMapProgressRow extends RowDataPacket {
 interface UserUnitProgressRow extends RowDataPacket {
   id: number;
   user_id: number;
-  map_unit_id: number;
+  unit_id: number;
+  map_progress_id: number;
   status: string;
-  progress_percentage: number;
+  completion_percentage: number;
   lessons_completed: number;
-  total_lessons: number;
   xp_earned: number;
   started_at: Date | null;
   completed_at: Date | null;
-  boss_exam_passed: boolean;
-  boss_exam_attempts: number;
+  boss_exams_passed: number;
+  total_exam_attempts: number;
 }
 
 interface UserLessonProgressRow extends RowDataPacket {
   id: number;
   user_id: number;
-  unit_lesson_id: number;
+  lesson_id: number;
+  unit_progress_id: number;
   status: string;
-  progress_percentage: number;
-  content_completed: number;
-  total_content: number;
-  vocabulary_mastered: number;
-  grammar_mastered: number;
-  exercises_completed: number;
+  content_progress_percentage: number;
+  vocabulary_learned: number;
+  grammar_learned: number;
   xp_earned: number;
-  time_spent_seconds: number;
-  started_at: Date | null;
-  completed_at: Date | null;
-  last_activity_at: Date | null;
+  study_time_minutes: number;
+  study_started_at: Date | null;
+  study_completed_at: Date | null;
+  exam_passed_at: Date | null;
+  boss_exam_passed: boolean;
+  exam_attempts: number;
 }
 
 export interface UserMapProgress {
@@ -72,7 +72,7 @@ export interface UserUnitProgress {
   id: number;
   userId: number;
   mapUnitId: number;
-  status: 'locked' | 'available' | 'in_progress' | 'completed';
+  status: 'locked' | 'unlocked' | 'in_progress' | 'completed';
   progressPercentage: number;
   lessonsCompleted: number;
   totalLessons: number;
@@ -87,7 +87,7 @@ export interface UserLessonProgress {
   id: number;
   userId: number;
   unitLessonId: number;
-  status: 'locked' | 'available' | 'in_progress' | 'completed';
+  status: 'locked' | 'unlocked' | 'studying' | 'exam_ready' | 'completed';
   progressPercentage: number;
   contentCompleted: number;
   totalContent: number;
@@ -133,12 +133,12 @@ export class UserProgressService {
    */
   async getUserMapProgress(userId: number): Promise<MapProgressWithDetails[]> {
     const [rows] = await pool.execute<(UserMapProgressRow & RowDataPacket)[]>(
-      `SELECT ump.*, wm.name as map_name, wm.level as map_level,
-              (SELECT COUNT(*) FROM map_units WHERE word_map_id = wm.id AND is_active = TRUE) as total_units
+      `SELECT ump.*, wm.name as map_name, wm.cefr_level as map_level,
+              (SELECT COUNT(*) FROM map_units WHERE map_id = wm.id AND is_active = TRUE) as total_units
        FROM user_map_progress ump
-       JOIN word_maps wm ON ump.word_map_id = wm.id
+       JOIN word_maps wm ON ump.map_id = wm.id
        WHERE ump.user_id = ?
-       ORDER BY wm.level ASC`,
+       ORDER BY wm.cefr_level ASC`,
       [userId]
     );
 
@@ -156,7 +156,7 @@ export class UserProgressService {
   async getOrCreateMapProgress(userId: number, wordMapId: number): Promise<UserMapProgress> {
     // Check existing
     const [existing] = await pool.execute<UserMapProgressRow[]>(
-      'SELECT * FROM user_map_progress WHERE user_id = ? AND word_map_id = ?',
+      'SELECT * FROM user_map_progress WHERE user_id = ? AND map_id = ?',
       [userId, wordMapId]
     );
 
@@ -166,7 +166,7 @@ export class UserProgressService {
 
     // Create new progress
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO user_map_progress (user_id, word_map_id, progress_percentage, total_xp_earned, units_completed, lessons_completed, is_active)
+      `INSERT INTO user_map_progress (user_id, map_id, completion_percentage, total_xp_earned, units_completed, lessons_completed, is_active)
        VALUES (?, ?, 0, 0, 0, 0, TRUE)`,
       [userId, wordMapId]
     );
@@ -228,12 +228,12 @@ export class UserProgressService {
     params.push(userId, wordMapId);
 
     await pool.execute(
-      `UPDATE user_map_progress SET ${updateFields.join(', ')} WHERE user_id = ? AND word_map_id = ?`,
+      `UPDATE user_map_progress SET ${updateFields.join(', ')} WHERE user_id = ? AND map_id = ?`,
       params
     );
 
     const [rows] = await pool.execute<UserMapProgressRow[]>(
-      'SELECT * FROM user_map_progress WHERE user_id = ? AND word_map_id = ?',
+      'SELECT * FROM user_map_progress WHERE user_id = ? AND map_id = ?',
       [userId, wordMapId]
     );
 
@@ -248,28 +248,39 @@ export class UserProgressService {
    * Initialize unit progress for a map
    */
   private async initializeUnitProgress(userId: number, wordMapId: number): Promise<void> {
+    // Get map progress id first
+    const [mapProgress] = await pool.execute<RowDataPacket[]>(
+      'SELECT id FROM user_map_progress WHERE user_id = ? AND map_id = ?',
+      [userId, wordMapId]
+    );
+
+    if (mapProgress.length === 0) return;
+
+    const mapProgressId = mapProgress[0].id as number;
+
     const [units] = await pool.execute<RowDataPacket[]>(
-      'SELECT id, unit_number FROM map_units WHERE word_map_id = ? AND is_active = TRUE ORDER BY unit_number',
+      'SELECT id, unit_number FROM map_units WHERE map_id = ? AND is_active = TRUE ORDER BY unit_number',
       [wordMapId]
     );
 
     if (units.length === 0) return;
 
-    // First unit is available, rest are locked
-    const values = units.map((unit, index) => {
-      const status = index === 0 ? 'available' : 'locked';
-      return `(${userId}, ${unit.id}, '${status}', 0, 0, 0, 0, FALSE, 0)`;
-    }).join(', ');
+    // First unit is unlocked, rest are locked
+    for (let i = 0; i < units.length; i++) {
+      const unit = units[i];
+      const status = i === 0 ? 'unlocked' : 'locked';
 
-    await pool.execute(
-      `INSERT INTO user_unit_progress (user_id, map_unit_id, status, progress_percentage, lessons_completed, total_lessons, xp_earned, boss_exam_passed, boss_exam_attempts)
-       VALUES ${values}
-       ON DUPLICATE KEY UPDATE user_id = user_id`
-    );
+      await pool.execute(
+        `INSERT INTO user_unit_progress (user_id, unit_id, map_progress_id, status, completion_percentage, lessons_completed, xp_earned, boss_exams_passed, total_exam_attempts)
+         VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0)
+         ON DUPLICATE KEY UPDATE user_id = user_id`,
+        [userId, unit.id, mapProgressId, status]
+      );
+    }
 
     // Initialize lesson progress for first unit
-    const firstUnitId = units[0].id;
-    await this.initializeLessonProgress(userId, firstUnitId as number);
+    const firstUnitId = units[0].id as number;
+    await this.initializeLessonProgress(userId, firstUnitId, mapProgressId);
   }
 
   /**
@@ -277,10 +288,10 @@ export class UserProgressService {
    */
   async getUnitProgress(userId: number, wordMapId: number): Promise<UnitProgressWithDetails[]> {
     const [rows] = await pool.execute<(UserUnitProgressRow & RowDataPacket)[]>(
-      `SELECT uup.*, mu.name as unit_name, mu.unit_number, mu.theme as unit_theme
+      `SELECT uup.*, mu.title as unit_name, mu.unit_number, mu.description as unit_theme
        FROM user_unit_progress uup
-       JOIN map_units mu ON uup.map_unit_id = mu.id
-       WHERE uup.user_id = ? AND mu.word_map_id = ?
+       JOIN map_units mu ON uup.unit_id = mu.id
+       WHERE uup.user_id = ? AND mu.map_id = ?
        ORDER BY mu.unit_number ASC`,
       [userId, wordMapId]
     );
@@ -298,7 +309,7 @@ export class UserProgressService {
    */
   async getSingleUnitProgress(userId: number, unitId: number): Promise<UserUnitProgress | null> {
     const [rows] = await pool.execute<UserUnitProgressRow[]>(
-      'SELECT * FROM user_unit_progress WHERE user_id = ? AND map_unit_id = ?',
+      'SELECT * FROM user_unit_progress WHERE user_id = ? AND unit_id = ?',
       [userId, unitId]
     );
 
@@ -312,17 +323,17 @@ export class UserProgressService {
     userId: number,
     unitId: number,
     updates: Partial<{
-      status: 'locked' | 'available' | 'in_progress' | 'completed';
+      status: 'locked' | 'unlocked' | 'in_progress' | 'completed';
       progressPercentage: number;
       lessonsCompleted: number;
       xpEarned: number;
-      bossExamPassed: boolean;
-      bossExamAttempts: number;
+      bossExamsPassed: number;
+      totalExamAttempts: number;
       completedAt: Date | null;
     }>
   ): Promise<UserUnitProgress | null> {
     const updateFields: string[] = [];
-    const params: (string | number | boolean | null | Date)[] = [];
+    const params: (string | number | null | Date)[] = [];
 
     if (updates.status !== undefined) {
       updateFields.push('status = ?');
@@ -332,7 +343,7 @@ export class UserProgressService {
       }
     }
     if (updates.progressPercentage !== undefined) {
-      updateFields.push('progress_percentage = ?');
+      updateFields.push('completion_percentage = ?');
       params.push(updates.progressPercentage);
     }
     if (updates.lessonsCompleted !== undefined) {
@@ -343,13 +354,13 @@ export class UserProgressService {
       updateFields.push('xp_earned = ?');
       params.push(updates.xpEarned);
     }
-    if (updates.bossExamPassed !== undefined) {
-      updateFields.push('boss_exam_passed = ?');
-      params.push(updates.bossExamPassed);
+    if (updates.bossExamsPassed !== undefined) {
+      updateFields.push('boss_exams_passed = ?');
+      params.push(updates.bossExamsPassed);
     }
-    if (updates.bossExamAttempts !== undefined) {
-      updateFields.push('boss_exam_attempts = ?');
-      params.push(updates.bossExamAttempts);
+    if (updates.totalExamAttempts !== undefined) {
+      updateFields.push('total_exam_attempts = ?');
+      params.push(updates.totalExamAttempts);
     }
     if (updates.completedAt !== undefined) {
       updateFields.push('completed_at = ?');
@@ -361,7 +372,7 @@ export class UserProgressService {
     params.push(userId, unitId);
 
     await pool.execute(
-      `UPDATE user_unit_progress SET ${updateFields.join(', ')} WHERE user_id = ? AND map_unit_id = ?`,
+      `UPDATE user_unit_progress SET ${updateFields.join(', ')} WHERE user_id = ? AND unit_id = ?`,
       params
     );
 
@@ -374,7 +385,7 @@ export class UserProgressService {
   async unlockNextUnit(userId: number, completedUnitId: number): Promise<UserUnitProgress | null> {
     // Get the completed unit's map and number
     const [unitInfo] = await pool.execute<RowDataPacket[]>(
-      'SELECT word_map_id, unit_number FROM map_units WHERE id = ?',
+      'SELECT map_id, unit_number FROM map_units WHERE id = ?',
       [completedUnitId]
     );
 
@@ -383,35 +394,45 @@ export class UserProgressService {
     // Find next unit
     const [nextUnit] = await pool.execute<RowDataPacket[]>(
       `SELECT id FROM map_units
-       WHERE word_map_id = ? AND unit_number = ? AND is_active = TRUE`,
-      [unitInfo[0].word_map_id, (unitInfo[0].unit_number as number) + 1]
+       WHERE map_id = ? AND unit_number = ? AND is_active = TRUE`,
+      [unitInfo[0].map_id, (unitInfo[0].unit_number as number) + 1]
     );
 
     if (nextUnit.length === 0) return null;
 
+    // Get map progress id
+    const [mapProgress] = await pool.execute<RowDataPacket[]>(
+      'SELECT id FROM user_map_progress WHERE user_id = ? AND map_id = ?',
+      [userId, unitInfo[0].map_id]
+    );
+
+    if (mapProgress.length === 0) return null;
+
+    const mapProgressId = mapProgress[0].id as number;
+
     // Check if progress exists
     const [existing] = await pool.execute<RowDataPacket[]>(
-      'SELECT id FROM user_unit_progress WHERE user_id = ? AND map_unit_id = ?',
+      'SELECT id FROM user_unit_progress WHERE user_id = ? AND unit_id = ?',
       [userId, nextUnit[0].id]
     );
 
     if (existing.length === 0) {
       // Create new progress
       await pool.execute(
-        `INSERT INTO user_unit_progress (user_id, map_unit_id, status, progress_percentage, lessons_completed, total_lessons, xp_earned, boss_exam_passed, boss_exam_attempts)
-         VALUES (?, ?, 'available', 0, 0, 0, 0, FALSE, 0)`,
-        [userId, nextUnit[0].id]
+        `INSERT INTO user_unit_progress (user_id, unit_id, map_progress_id, status, completion_percentage, lessons_completed, xp_earned, boss_exams_passed, total_exam_attempts)
+         VALUES (?, ?, ?, 'unlocked', 0, 0, 0, 0, 0)`,
+        [userId, nextUnit[0].id, mapProgressId]
       );
     } else {
-      // Update status to available
+      // Update status to unlocked
       await pool.execute(
-        `UPDATE user_unit_progress SET status = 'available' WHERE user_id = ? AND map_unit_id = ? AND status = 'locked'`,
+        `UPDATE user_unit_progress SET status = 'unlocked', unlocked_at = NOW() WHERE user_id = ? AND unit_id = ? AND status = 'locked'`,
         [userId, nextUnit[0].id]
       );
     }
 
     // Initialize lesson progress for the new unit
-    await this.initializeLessonProgress(userId, nextUnit[0].id as number);
+    await this.initializeLessonProgress(userId, nextUnit[0].id as number, mapProgressId);
 
     return this.getSingleUnitProgress(userId, nextUnit[0].id as number);
   }
@@ -423,25 +444,36 @@ export class UserProgressService {
   /**
    * Initialize lesson progress for a unit
    */
-  private async initializeLessonProgress(userId: number, unitId: number): Promise<void> {
+  private async initializeLessonProgress(userId: number, unitId: number, mapProgressId?: number): Promise<void> {
+    // Get unit progress id
+    const [unitProgress] = await pool.execute<RowDataPacket[]>(
+      'SELECT id FROM user_unit_progress WHERE user_id = ? AND unit_id = ?',
+      [userId, unitId]
+    );
+
+    if (unitProgress.length === 0) return;
+
+    const unitProgressId = unitProgress[0].id as number;
+
     const [lessons] = await pool.execute<RowDataPacket[]>(
-      'SELECT id, lesson_number FROM unit_lessons WHERE map_unit_id = ? AND is_active = TRUE ORDER BY lesson_number',
+      'SELECT id, lesson_number FROM unit_lessons WHERE unit_id = ? AND is_active = TRUE ORDER BY lesson_number',
       [unitId]
     );
 
     if (lessons.length === 0) return;
 
-    // First lesson is available, rest are locked
-    const values = lessons.map((lesson, index) => {
-      const status = index === 0 ? 'available' : 'locked';
-      return `(${userId}, ${lesson.id}, '${status}', 0, 0, 0, 0, 0, 0, 0, 0)`;
-    }).join(', ');
+    // First lesson is unlocked, rest are locked
+    for (let i = 0; i < lessons.length; i++) {
+      const lesson = lessons[i];
+      const status = i === 0 ? 'unlocked' : 'locked';
 
-    await pool.execute(
-      `INSERT INTO user_lesson_progress (user_id, unit_lesson_id, status, progress_percentage, content_completed, total_content, vocabulary_mastered, grammar_mastered, exercises_completed, xp_earned, time_spent_seconds)
-       VALUES ${values}
-       ON DUPLICATE KEY UPDATE user_id = user_id`
-    );
+      await pool.execute(
+        `INSERT INTO user_lesson_progress (user_id, lesson_id, unit_progress_id, status, content_progress_percentage, vocabulary_learned, grammar_learned, xp_earned, study_time_minutes, exam_attempts, boss_exam_passed)
+         VALUES (?, ?, ?, ?, 0, 0, 0, 0, 0, 0, FALSE)
+         ON DUPLICATE KEY UPDATE user_id = user_id`,
+        [userId, lesson.id, unitProgressId, status]
+      );
+    }
   }
 
   /**
@@ -451,8 +483,8 @@ export class UserProgressService {
     const [rows] = await pool.execute<(UserLessonProgressRow & RowDataPacket)[]>(
       `SELECT ulp.*, ul.title as lesson_title, ul.lesson_number, ul.lesson_type
        FROM user_lesson_progress ulp
-       JOIN unit_lessons ul ON ulp.unit_lesson_id = ul.id
-       WHERE ulp.user_id = ? AND ul.map_unit_id = ?
+       JOIN unit_lessons ul ON ulp.lesson_id = ul.id
+       WHERE ulp.user_id = ? AND ul.unit_id = ?
        ORDER BY ul.lesson_number ASC`,
       [userId, unitId]
     );
@@ -470,7 +502,7 @@ export class UserProgressService {
    */
   async getSingleLessonProgress(userId: number, lessonId: number): Promise<UserLessonProgress | null> {
     const [rows] = await pool.execute<UserLessonProgressRow[]>(
-      'SELECT * FROM user_lesson_progress WHERE user_id = ? AND unit_lesson_id = ?',
+      'SELECT * FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?',
       [userId, lessonId]
     );
 
@@ -484,69 +516,61 @@ export class UserProgressService {
     userId: number,
     lessonId: number,
     updates: Partial<{
-      status: 'locked' | 'available' | 'in_progress' | 'completed';
+      status: 'locked' | 'unlocked' | 'studying' | 'exam_ready' | 'completed';
       progressPercentage: number;
-      contentCompleted: number;
-      totalContent: number;
-      vocabularyMastered: number;
-      grammarMastered: number;
-      exercisesCompleted: number;
+      vocabularyLearned: number;
+      grammarLearned: number;
       xpEarned: number;
-      timeSpentSeconds: number;
-      completedAt: Date | null;
+      studyTimeMinutes: number;
+      studyCompletedAt: Date | null;
+      examPassedAt: Date | null;
     }>
   ): Promise<UserLessonProgress | null> {
-    const updateFields: string[] = ['last_activity_at = NOW()'];
+    const updateFields: string[] = [];
     const params: (string | number | null | Date)[] = [];
 
     if (updates.status !== undefined) {
       updateFields.push('status = ?');
       params.push(updates.status);
-      if (updates.status === 'in_progress') {
-        updateFields.push('started_at = COALESCE(started_at, NOW())');
+      if (updates.status === 'studying') {
+        updateFields.push('study_started_at = COALESCE(study_started_at, NOW())');
       }
     }
     if (updates.progressPercentage !== undefined) {
-      updateFields.push('progress_percentage = ?');
+      updateFields.push('content_progress_percentage = ?');
       params.push(updates.progressPercentage);
     }
-    if (updates.contentCompleted !== undefined) {
-      updateFields.push('content_completed = ?');
-      params.push(updates.contentCompleted);
+    if (updates.vocabularyLearned !== undefined) {
+      updateFields.push('vocabulary_learned = ?');
+      params.push(updates.vocabularyLearned);
     }
-    if (updates.totalContent !== undefined) {
-      updateFields.push('total_content = ?');
-      params.push(updates.totalContent);
-    }
-    if (updates.vocabularyMastered !== undefined) {
-      updateFields.push('vocabulary_mastered = ?');
-      params.push(updates.vocabularyMastered);
-    }
-    if (updates.grammarMastered !== undefined) {
-      updateFields.push('grammar_mastered = ?');
-      params.push(updates.grammarMastered);
-    }
-    if (updates.exercisesCompleted !== undefined) {
-      updateFields.push('exercises_completed = ?');
-      params.push(updates.exercisesCompleted);
+    if (updates.grammarLearned !== undefined) {
+      updateFields.push('grammar_learned = ?');
+      params.push(updates.grammarLearned);
     }
     if (updates.xpEarned !== undefined) {
       updateFields.push('xp_earned = ?');
       params.push(updates.xpEarned);
     }
-    if (updates.timeSpentSeconds !== undefined) {
-      updateFields.push('time_spent_seconds = time_spent_seconds + ?');
-      params.push(updates.timeSpentSeconds);
+    if (updates.studyTimeMinutes !== undefined) {
+      updateFields.push('study_time_minutes = study_time_minutes + ?');
+      params.push(updates.studyTimeMinutes);
     }
-    if (updates.completedAt !== undefined) {
-      updateFields.push('completed_at = ?');
-      params.push(updates.completedAt);
+    if (updates.studyCompletedAt !== undefined) {
+      updateFields.push('study_completed_at = ?');
+      params.push(updates.studyCompletedAt);
     }
+    if (updates.examPassedAt !== undefined) {
+      updateFields.push('exam_passed_at = ?');
+      params.push(updates.examPassedAt);
+    }
+
+    if (updateFields.length === 0) return this.getSingleLessonProgress(userId, lessonId);
 
     params.push(userId, lessonId);
 
     await pool.execute(
-      `UPDATE user_lesson_progress SET ${updateFields.join(', ')} WHERE user_id = ? AND unit_lesson_id = ?`,
+      `UPDATE user_lesson_progress SET ${updateFields.join(', ')} WHERE user_id = ? AND lesson_id = ?`,
       params
     );
 
@@ -565,7 +589,7 @@ export class UserProgressService {
     const lessonProgress = await this.updateLessonProgress(userId, lessonId, {
       status: 'completed',
       progressPercentage: 100,
-      completedAt: new Date(),
+      examPassedAt: new Date(),
       xpEarned,
     });
 
@@ -575,7 +599,7 @@ export class UserProgressService {
 
     // Get lesson info
     const [lessonInfo] = await pool.execute<RowDataPacket[]>(
-      'SELECT map_unit_id, lesson_number FROM unit_lessons WHERE id = ?',
+      'SELECT unit_id, lesson_number FROM unit_lessons WHERE id = ?',
       [lessonId]
     );
 
@@ -586,8 +610,8 @@ export class UserProgressService {
     // Find next lesson
     const [nextLesson] = await pool.execute<RowDataPacket[]>(
       `SELECT id FROM unit_lessons
-       WHERE map_unit_id = ? AND lesson_number = ? AND is_active = TRUE`,
-      [lessonInfo[0].map_unit_id, (lessonInfo[0].lesson_number as number) + 1]
+       WHERE unit_id = ? AND lesson_number = ? AND is_active = TRUE`,
+      [lessonInfo[0].unit_id, (lessonInfo[0].lesson_number as number) + 1]
     );
 
     let nextLessonProgress: UserLessonProgress | null = null;
@@ -595,15 +619,15 @@ export class UserProgressService {
     if (nextLesson.length > 0) {
       // Unlock next lesson
       await pool.execute(
-        `UPDATE user_lesson_progress SET status = 'available'
-         WHERE user_id = ? AND unit_lesson_id = ? AND status = 'locked'`,
+        `UPDATE user_lesson_progress SET status = 'unlocked', unlocked_at = NOW()
+         WHERE user_id = ? AND lesson_id = ? AND status = 'locked'`,
         [userId, nextLesson[0].id]
       );
       nextLessonProgress = await this.getSingleLessonProgress(userId, nextLesson[0].id as number);
     }
 
     // Update unit progress
-    await this.recalculateUnitProgress(userId, lessonInfo[0].map_unit_id as number);
+    await this.recalculateUnitProgress(userId, lessonInfo[0].unit_id as number);
 
     return { lessonProgress, nextLesson: nextLessonProgress };
   }
@@ -618,8 +642,8 @@ export class UserProgressService {
          SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
          SUM(xp_earned) as total_xp
        FROM user_lesson_progress ulp
-       JOIN unit_lessons ul ON ulp.unit_lesson_id = ul.id
-       WHERE ulp.user_id = ? AND ul.map_unit_id = ?`,
+       JOIN unit_lessons ul ON ulp.lesson_id = ul.id
+       WHERE ulp.user_id = ? AND ul.unit_id = ?`,
       [userId, unitId]
     );
 
@@ -647,10 +671,13 @@ export class UserProgressService {
     sessionType: 'lesson' | 'review' | 'practice' | 'exam',
     targetId?: number
   ): Promise<number> {
+    // Map session types to match the enum in study_sessions table
+    const dbSessionType = sessionType === 'lesson' ? 'study' : sessionType;
+
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO study_sessions (user_id, session_type, word_map_id, map_unit_id, unit_lesson_id, started_at)
+      `INSERT INTO study_sessions (user_id, session_type, map_id, unit_id, lesson_id, started_at)
        VALUES (?, ?, NULL, NULL, ?, NOW())`,
-      [userId, sessionType, targetId || null]
+      [userId, dbSessionType, targetId || null]
     );
 
     return result.insertId;
@@ -671,8 +698,8 @@ export class UserProgressService {
       `UPDATE study_sessions SET
          ended_at = NOW(),
          duration_seconds = TIMESTAMPDIFF(SECOND, started_at, NOW()),
-         items_studied = ?,
-         items_correct = ?,
+         vocabulary_studied = ?,
+         correct_answers = ?,
          xp_earned = ?
        WHERE id = ?`,
       [stats.itemsStudied || 0, stats.itemsCorrect || 0, stats.xpEarned || 0, sessionId]
@@ -706,8 +733,8 @@ export class UserProgressService {
       startedAt: row.started_at as Date,
       endedAt: row.ended_at as Date | null,
       durationSeconds: row.duration_seconds as number,
-      itemsStudied: row.items_studied as number,
-      itemsCorrect: row.items_correct as number,
+      itemsStudied: row.vocabulary_studied as number,
+      itemsCorrect: row.correct_answers as number,
       xpEarned: row.xp_earned as number,
     }));
   }
@@ -727,10 +754,10 @@ export class UserProgressService {
       `SELECT
          COUNT(*) as total_sessions,
          COALESCE(SUM(duration_seconds), 0) as total_time,
-         COALESCE(SUM(items_studied), 0) as total_items,
+         COALESCE(SUM(vocabulary_studied), 0) as total_items,
          COALESCE(SUM(xp_earned), 0) as total_xp,
-         CASE WHEN SUM(items_studied) > 0
-              THEN ROUND(SUM(items_correct) / SUM(items_studied) * 100, 1)
+         CASE WHEN SUM(vocabulary_studied) > 0
+              THEN ROUND(SUM(correct_answers) / SUM(vocabulary_studied) * 100, 1)
               ELSE 0 END as avg_accuracy
        FROM study_sessions
        WHERE user_id = ? AND started_at >= DATE_SUB(NOW(), INTERVAL ? DAY)`,
@@ -767,7 +794,7 @@ export class UserProgressService {
     return {
       id: row.id,
       userId: row.user_id,
-      wordMapId: row.word_map_id,
+      wordMapId: row.map_id,
       currentUnitId: row.current_unit_id,
       progressPercentage: row.progress_percentage,
       totalXpEarned: row.total_xp_earned,
@@ -784,16 +811,16 @@ export class UserProgressService {
     return {
       id: row.id,
       userId: row.user_id,
-      mapUnitId: row.map_unit_id,
-      status: row.status as 'locked' | 'available' | 'in_progress' | 'completed',
-      progressPercentage: row.progress_percentage,
+      mapUnitId: row.unit_id,
+      status: row.status as 'locked' | 'unlocked' | 'in_progress' | 'completed',
+      progressPercentage: Number(row.completion_percentage) || 0,
       lessonsCompleted: row.lessons_completed,
-      totalLessons: row.total_lessons,
+      totalLessons: 0, // Not stored in DB, computed when needed
       xpEarned: row.xp_earned,
       startedAt: row.started_at,
       completedAt: row.completed_at,
-      bossExamPassed: row.boss_exam_passed,
-      bossExamAttempts: row.boss_exam_attempts,
+      bossExamPassed: row.boss_exams_passed > 0,
+      bossExamAttempts: row.total_exam_attempts,
     };
   }
 
@@ -801,19 +828,19 @@ export class UserProgressService {
     return {
       id: row.id,
       userId: row.user_id,
-      unitLessonId: row.unit_lesson_id,
-      status: row.status as 'locked' | 'available' | 'in_progress' | 'completed',
-      progressPercentage: row.progress_percentage,
-      contentCompleted: row.content_completed,
-      totalContent: row.total_content,
-      vocabularyMastered: row.vocabulary_mastered,
-      grammarMastered: row.grammar_mastered,
-      exercisesCompleted: row.exercises_completed,
+      unitLessonId: row.lesson_id,
+      status: row.status as 'locked' | 'unlocked' | 'studying' | 'exam_ready' | 'completed',
+      progressPercentage: Number(row.content_progress_percentage) || 0,
+      contentCompleted: 0, // Not stored in DB
+      totalContent: 0, // Not stored in DB
+      vocabularyMastered: row.vocabulary_learned,
+      grammarMastered: row.grammar_learned,
+      exercisesCompleted: 0, // Not stored in DB
       xpEarned: row.xp_earned,
-      timeSpentSeconds: row.time_spent_seconds,
-      startedAt: row.started_at,
-      completedAt: row.completed_at,
-      lastActivityAt: row.last_activity_at,
+      timeSpentSeconds: row.study_time_minutes * 60,
+      startedAt: row.study_started_at,
+      completedAt: row.exam_passed_at,
+      lastActivityAt: null, // Not stored in DB
     };
   }
 }

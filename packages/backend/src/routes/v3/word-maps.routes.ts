@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../../middleware/auth.js';
-import { wordMapService, userProgressService, examService } from '../../services/v3/index.js';
+import { wordMapService, userProgressService, examService, masterVocabularyService, masterGrammarService, masterExercisesService } from '../../services/v3/index.js';
 import { gamificationService } from '../../services/gamification.service.js';
 import { challengeService } from '../../services/challenge.service.js';
 import { petService } from '../../services/pet.service.js';
@@ -74,25 +74,84 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const includeStructure = req.query.includeStructure === 'true';
-
-    if (includeStructure) {
-      const result = await wordMapService.getMapWithStructure(mapId);
-      if (!result) {
-        res.status(404).json({ error: 'Word map not found' });
-        return;
-      }
-      res.json(result);
-      return;
-    }
-
-    const map = await wordMapService.getMapById(mapId);
-    if (!map) {
+    // Always include units for detail page - frontend expects { map, units }
+    const result = await wordMapService.getMapWithStructure(mapId);
+    if (!result) {
       res.status(404).json({ error: 'Word map not found' });
       return;
     }
 
-    res.json({ map });
+    // Include user progress if authenticated
+    if (req.userId) {
+      // Get map progress
+      const mapProgress = await userProgressService.getUserMapProgress(req.userId);
+      const userMapProgress = mapProgress.find(p => p.wordMapId === mapId);
+
+      // Get unit progress
+      const unitProgress = await userProgressService.getUnitProgress(req.userId, mapId);
+      const unitProgressMap = new Map(unitProgress.map(p => [p.mapUnitId, p]));
+
+      // Get all lesson progress for this map's units
+      const lessonProgressPromises = result.units.map(unit =>
+        userProgressService.getLessonProgress(req.userId!, unit.id)
+      );
+      const allLessonProgress = await Promise.all(lessonProgressPromises);
+      const lessonProgressMap = new Map<number, any>();
+      allLessonProgress.flat().forEach(p => {
+        lessonProgressMap.set(p.unitLessonId, p);
+      });
+
+      // Attach progress to map
+      const mapWithProgress = {
+        ...result.map,
+        userProgress: userMapProgress ? {
+          isActivated: true,
+          completionPercentage: userMapProgress.completionPercentage || 0,
+          currentUnitId: userMapProgress.currentUnitId,
+          currentLessonId: userMapProgress.currentLessonId,
+          unitsCompleted: userMapProgress.unitsCompleted || 0,
+          lessonsCompleted: userMapProgress.lessonsCompleted || 0,
+          totalXpEarned: userMapProgress.totalXpEarned || 0,
+          lastActivityAt: userMapProgress.lastActivityAt,
+        } : null,
+      };
+
+      // Attach progress to units and lessons
+      const unitsWithProgress = result.units.map(unit => {
+        const unitProg = unitProgressMap.get(unit.id);
+        const lessonsWithProgress = unit.lessons.map(lesson => {
+          const lessonProg = lessonProgressMap.get(lesson.id);
+          return {
+            ...lesson,
+            userProgress: lessonProg ? {
+              status: lessonProg.status,
+              contentProgressPercentage: lessonProg.progressPercentage || 0,
+              bossExamPassed: lessonProg.examPassed || false,
+              bestExamScore: lessonProg.bestExamScore || 0,
+              examAttempts: lessonProg.examAttempts || 0,
+              xpEarned: lessonProg.xpEarned || 0,
+            } : null,
+          };
+        });
+
+        return {
+          ...unit,
+          userProgress: unitProg ? {
+            status: unitProg.status,
+            lessonsCompleted: unitProg.lessonsCompleted || 0,
+            completionPercentage: unitProg.completionPercentage || 0,
+            bestBossExamScore: unitProg.bestBossExamScore || 0,
+            xpEarned: unitProg.xpEarned || 0,
+          } : null,
+          lessons: lessonsWithProgress,
+        };
+      });
+
+      res.json({ map: mapWithProgress, units: unitsWithProgress });
+      return;
+    }
+
+    res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get word map';
     res.status(500).json({ error: message });
@@ -200,7 +259,112 @@ router.get('/units/:unitId', async (req: AuthRequest, res: Response) => {
 // Lessons
 // ============================================================
 
-// GET /api/v3/word-maps/lessons/:lessonId - Get lesson with content
+// GET /api/v3/word-maps/lessons/:lessonId/content - Get lesson content (frontend uses this endpoint)
+router.get('/lessons/:lessonId/content', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const result = await wordMapService.getLessonWithContent(lessonId);
+    if (!result) {
+      res.status(404).json({ error: 'Lesson not found' });
+      return;
+    }
+
+    // Fetch actual content from master tables based on content references
+    const vocabularyIds = result.content
+      .filter(c => c.contentType === 'vocabulary' && c.masterVocabularyId)
+      .map(c => c.masterVocabularyId!);
+    const grammarIds = result.content
+      .filter(c => c.contentType === 'grammar' && c.masterGrammarId)
+      .map(c => c.masterGrammarId!);
+    const exerciseIds = result.content
+      .filter(c => c.contentType === 'exercise' && c.masterExerciseId)
+      .map(c => c.masterExerciseId!);
+    const customContent = result.content.filter(c =>
+      c.contentType !== 'vocabulary' && c.contentType !== 'grammar' && c.contentType !== 'exercise'
+    );
+
+    // Fetch actual vocabulary items
+    const vocabularyPromises = vocabularyIds.map(id => masterVocabularyService.getById(id));
+    const vocabularyResults = await Promise.all(vocabularyPromises);
+    const vocabulary = vocabularyResults.filter(v => v !== null).map(v => ({
+      id: v!.id,
+      englishWord: v!.englishWord,
+      vietnameseWord: v!.vietnameseWord,
+      phonetic: v!.phonetic,
+      pronunciationUk: v!.pronunciationUk,
+      pronunciationUs: v!.pronunciationUs,
+      partOfSpeech: v!.partOfSpeech,
+      cefrLevel: v!.cefrLevel,
+      definitions: v!.definitions,
+      wordFamily: v!.wordFamily,
+      synonyms: v!.synonyms,
+      antonyms: v!.antonyms,
+      collocations: v!.collocations,
+      extraExamples: v!.extraExamples,
+      usageNotes: v!.usageNotes,
+    }));
+
+    // Fetch actual grammar items
+    const grammarPromises = grammarIds.map(id => masterGrammarService.getById(id));
+    const grammarResults = await Promise.all(grammarPromises);
+    const grammar = grammarResults.filter(g => g !== null).map(g => ({
+      id: g!.id,
+      grammarRule: g!.grammarRule,
+      category: g!.category,
+      cefrLevel: g!.cefrLevel,
+      explanation: g!.explanation,
+      explanationVi: g!.explanationVi,
+      formula: g!.formula,
+      examples: g!.examples,
+      commonMistakes: g!.commonMistakes,
+      usageTips: g!.tips,
+    }));
+
+    // Fetch actual exercise items
+    const exercisePromises = exerciseIds.map(id => masterExercisesService.getById(id));
+    const exerciseResults = await Promise.all(exercisePromises);
+    const exercises = exerciseResults.filter(e => e !== null).map(e => ({
+      id: e!.id,
+      exerciseType: e!.exerciseType,
+      question: e!.question,
+      options: e!.options,
+      correctAnswer: e!.correctAnswer,
+      explanation: e!.explanation,
+      exerciseData: e!.exerciseData,
+      audioUrl: e!.audioUrl,
+      timeLimitSeconds: e!.timeLimitSeconds,
+      points: e!.points,
+    }));
+
+    // Build response in format frontend expects
+    const responseData = {
+      lesson: result.lesson,
+      vocabulary,
+      grammar,
+      exercises,
+      customContent,
+    };
+
+    // Include user progress if authenticated
+    if (req.userId) {
+      const progress = await userProgressService.getSingleLessonProgress(req.userId, lessonId);
+      res.json({ ...responseData, userProgress: progress });
+      return;
+    }
+
+    res.json(responseData);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get lesson content';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/v3/word-maps/lessons/:lessonId - Get lesson with content (legacy)
 router.get('/lessons/:lessonId', async (req: AuthRequest, res: Response) => {
   try {
     const lessonId = parseInt(req.params.lessonId);
@@ -448,12 +612,13 @@ router.post('/lessons/:lessonId/exam/start', async (req: AuthRequest, res: Respo
         id: exam.id,
         title: exam.title,
         description: exam.description,
-        examType: exam.examType,
         passingScore: exam.passingScore,
         timeLimitSeconds: result.timeLimit,
-        exerciseCount: exam.exerciseCount,
-        xpReward: exam.xpReward,
-        bonusXpPerfect: exam.bonusXpPerfect,
+        totalQuestions: exam.totalQuestions,
+        passXp: exam.passXp,
+        perfectScoreBonusXp: exam.perfectScoreBonusXp,
+        passCoins: exam.passCoins,
+        perfectScoreBonusCoins: exam.perfectScoreBonusCoins,
       },
       questions: result.exercises,
     });
@@ -553,15 +718,18 @@ router.post('/exams/:attemptId/submit', async (req: AuthRequest, res: Response) 
     }
 
     res.json({
-      passed: result.passed,
+      isPassed: result.passed,
+      passed: result.passed, // For backward compatibility
       score: result.score,
       xpEarned,
-      correctCount: result.correctCount,
-      totalCount: result.totalCount,
+      correctAnswers: result.correctCount,
+      totalQuestions: result.totalCount,
+      timeTakenSeconds: timeSpentSeconds || 0,
       questionResults: result.detailedResults.map(r => ({
         questionId: r.exerciseId,
         isCorrect: r.isCorrect,
         correctAnswer: r.correctAnswer,
+        userAnswer: r.userAnswer,
       })),
       levelUp,
       achievements: achievements.map(a => ({

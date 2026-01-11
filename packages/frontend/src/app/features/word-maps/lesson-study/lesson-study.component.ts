@@ -8,6 +8,7 @@ import {
   GrammarContent,
   ExerciseContent
 } from '../word-map.service';
+import { PronunciationService } from '../../../core/services/pronunciation.service';
 
 type StudySection = 'overview' | 'vocabulary' | 'grammar' | 'exercises' | 'complete';
 
@@ -28,6 +29,23 @@ export class LessonStudyComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private wordMapService = inject(WordMapService);
+  private pronunciationService = inject(PronunciationService);
+
+  // Pronunciation state
+  get speakingAccent() {
+    return this.pronunciationService.speaking;
+  }
+
+  get speakingWord() {
+    return this.pronunciationService.speakingWord;
+  }
+
+  // Check if a specific word is currently being spoken with a specific accent
+  isSpeaking(word: string, accent: 'uk' | 'us'): boolean {
+    const currentAccent = this.speakingAccent();
+    const currentWord = this.speakingWord();
+    return currentAccent === accent && currentWord === word.toLowerCase().trim();
+  }
 
   // State
   mapId = signal<number>(0);
@@ -281,6 +299,29 @@ export class LessonStudyComponent implements OnInit {
     return 'neutral';
   }
 
+  // Text input for fill_blank / translation exercises
+  onTextInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const exercise = this.currentExercise();
+    if (!exercise) return;
+
+    const answers = new Map(this.exerciseAnswers());
+    answers.set(exercise.id, input.value);
+    this.exerciseAnswers.set(answers);
+  }
+
+  getTextAnswerState(): 'correct' | 'incorrect' | 'neutral' {
+    const exercise = this.currentExercise();
+    if (!exercise || !this.isExerciseAnswered()) return 'neutral';
+
+    const answer = this.exerciseAnswers().get(exercise.id);
+    if (!answer) return 'incorrect';
+
+    return answer.toLowerCase().trim() === exercise.correctAnswer.toLowerCase().trim()
+      ? 'correct'
+      : 'incorrect';
+  }
+
   // Complete lesson
   completeLesson(): void {
     if (this.completing()) return;
@@ -311,5 +352,11 @@ export class LessonStudyComponent implements OnInit {
 
   goBackToMap(): void {
     this.router.navigate(['/word-maps', this.mapId()]);
+  }
+
+  // Pronunciation
+  speak(word: string, accent: 'uk' | 'us', event?: Event): void {
+    event?.stopPropagation(); // Prevent card flip when clicking speak button
+    this.pronunciationService.speak(word, accent);
   }
 }

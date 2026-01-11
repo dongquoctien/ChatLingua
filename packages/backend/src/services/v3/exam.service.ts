@@ -8,17 +8,25 @@ import { masterExercisesService } from './master-exercises.service.js';
 
 interface LessonExamRow extends RowDataPacket {
   id: number;
-  unit_lesson_id: number;
-  exam_type: string;
+  lesson_id: number | null;
+  unit_id: number | null;
+  exam_number: number;
   title: string;
   description: string | null;
-  passing_score: number;
   time_limit_seconds: number | null;
+  passing_score: number;
   max_attempts: number | null;
-  exercise_count: number;
+  shuffle_questions: boolean;
+  show_answers_after: boolean;
   exercise_ids: string;
-  xp_reward: number;
-  bonus_xp_perfect: number;
+  total_questions: number;
+  total_points: number;
+  random_question_count: number | null;
+  pass_xp: number;
+  perfect_score_bonus_xp: number;
+  pass_coins: number;
+  perfect_score_bonus_coins: number;
+  display_order: number;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -27,30 +35,43 @@ interface LessonExamRow extends RowDataPacket {
 interface UserExamAttemptRow extends RowDataPacket {
   id: number;
   user_id: number;
-  lesson_exam_id: number;
+  exam_id: number;
+  lesson_progress_id: number | null;
+  unit_progress_id: number | null;
   attempt_number: number;
   started_at: Date;
   completed_at: Date | null;
   score: number;
-  passed: boolean;
-  time_spent_seconds: number;
+  total_questions: number;
+  correct_answers: number;
+  time_taken_seconds: number;
   answers: string | null;
+  is_passed: boolean;
   xp_earned: number;
+  coins_earned: number;
 }
 
 export interface LessonExam {
   id: number;
-  unitLessonId: number;
-  examType: 'checkpoint' | 'boss' | 'review';
+  lessonId: number | null;
+  unitId: number | null;
+  examNumber: number;
   title: string;
   description: string | null;
-  passingScore: number;
   timeLimitSeconds: number | null;
+  passingScore: number;
   maxAttempts: number | null;
-  exerciseCount: number;
+  shuffleQuestions: boolean;
+  showAnswersAfter: boolean;
   exerciseIds: number[];
-  xpReward: number;
-  bonusXpPerfect: number;
+  totalQuestions: number;
+  totalPoints: number;
+  randomQuestionCount: number | null;
+  passXp: number;
+  perfectScoreBonusXp: number;
+  passCoins: number;
+  perfectScoreBonusCoins: number;
+  displayOrder: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -59,15 +80,20 @@ export interface LessonExam {
 export interface UserExamAttempt {
   id: number;
   userId: number;
-  lessonExamId: number;
+  examId: number;
+  lessonProgressId: number | null;
+  unitProgressId: number | null;
   attemptNumber: number;
   startedAt: Date;
   completedAt: Date | null;
   score: number;
-  passed: boolean;
-  timeSpentSeconds: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  timeTakenSeconds: number;
   answers: ExamAnswer[] | null;
+  isPassed: boolean;
   xpEarned: number;
+  coinsEarned: number;
 }
 
 export interface ExamAnswer {
@@ -85,18 +111,29 @@ export interface ExamWithDetails extends LessonExam {
   hasPassed?: boolean;
 }
 
+// Keep backward compatibility with old interface name
+export type { LessonExam as Exam };
+
 export interface CreateExamInput {
-  unitLessonId: number;
-  examType: 'checkpoint' | 'boss' | 'review';
+  lessonId?: number;
+  unitId?: number;
+  examNumber?: number;
   title: string;
   description?: string;
-  passingScore?: number;
   timeLimitSeconds?: number;
+  passingScore?: number;
   maxAttempts?: number;
-  exerciseCount: number;
+  shuffleQuestions?: boolean;
+  showAnswersAfter?: boolean;
   exerciseIds: number[];
-  xpReward?: number;
-  bonusXpPerfect?: number;
+  totalQuestions: number;
+  totalPoints?: number;
+  randomQuestionCount?: number;
+  passXp?: number;
+  perfectScoreBonusXp?: number;
+  passCoins?: number;
+  perfectScoreBonusCoins?: number;
+  displayOrder?: number;
 }
 
 // ============================================================
@@ -126,8 +163,8 @@ export class ExamService {
   async getExamsForLesson(lessonId: number): Promise<LessonExam[]> {
     const [rows] = await pool.execute<LessonExamRow[]>(
       `SELECT * FROM lesson_exams
-       WHERE unit_lesson_id = ? AND is_active = TRUE
-       ORDER BY exam_type ASC`,
+       WHERE lesson_id = ? AND is_active = TRUE
+       ORDER BY display_order ASC`,
       [lessonId]
     );
 
@@ -139,9 +176,9 @@ export class ExamService {
    */
   async getBossExamForUnit(unitId: number): Promise<LessonExam | null> {
     const [rows] = await pool.execute<LessonExamRow[]>(
-      `SELECT le.* FROM lesson_exams le
-       JOIN unit_lessons ul ON le.unit_lesson_id = ul.id
-       WHERE ul.map_unit_id = ? AND le.exam_type = 'boss' AND le.is_active = TRUE
+      `SELECT * FROM lesson_exams
+       WHERE unit_id = ? AND is_active = TRUE
+       ORDER BY display_order ASC
        LIMIT 1`,
       [unitId]
     );
@@ -160,9 +197,9 @@ export class ExamService {
       `SELECT
          COUNT(*) as attempts,
          MAX(score) as best_score,
-         MAX(passed) as has_passed
+         MAX(is_passed) as has_passed
        FROM user_exam_attempts
-       WHERE user_id = ? AND lesson_exam_id = ?`,
+       WHERE user_id = ? AND exam_id = ?`,
       [userId, examId]
     );
 
@@ -180,22 +217,33 @@ export class ExamService {
   async createExam(input: CreateExamInput): Promise<LessonExam> {
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO lesson_exams (
-        unit_lesson_id, exam_type, title, description, passing_score,
-        time_limit_seconds, max_attempts, exercise_count, exercise_ids,
-        xp_reward, bonus_xp_perfect, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+        lesson_id, unit_id, exam_number, title, description,
+        time_limit_seconds, passing_score, max_attempts,
+        shuffle_questions, show_answers_after, exercise_ids,
+        total_questions, total_points, random_question_count,
+        pass_xp, perfect_score_bonus_xp, pass_coins, perfect_score_bonus_coins,
+        display_order, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
       [
-        input.unitLessonId,
-        input.examType,
+        input.lessonId || null,
+        input.unitId || null,
+        input.examNumber || 1,
         input.title,
         input.description || null,
+        input.timeLimitSeconds || 300,
         input.passingScore || 70,
-        input.timeLimitSeconds || null,
         input.maxAttempts || null,
-        input.exerciseCount,
+        input.shuffleQuestions !== false ? 1 : 0,
+        input.showAnswersAfter !== false ? 1 : 0,
         JSON.stringify(input.exerciseIds),
-        input.xpReward || 50,
-        input.bonusXpPerfect || 25,
+        input.totalQuestions,
+        input.totalPoints || input.totalQuestions * 10,
+        input.randomQuestionCount || null,
+        input.passXp || 50,
+        input.perfectScoreBonusXp || 20,
+        input.passCoins || 20,
+        input.perfectScoreBonusCoins || 10,
+        input.displayOrder || 0,
       ]
     );
 
@@ -294,7 +342,7 @@ export class ExamService {
     // Check max attempts
     if (exam.maxAttempts !== null) {
       const [attempts] = await pool.execute<RowDataPacket[]>(
-        'SELECT COUNT(*) as count FROM user_exam_attempts WHERE user_id = ? AND lesson_exam_id = ?',
+        'SELECT COUNT(*) as count FROM user_exam_attempts WHERE user_id = ? AND exam_id = ?',
         [userId, examId]
       );
       if ((attempts[0].count as number) >= exam.maxAttempts) {
@@ -304,24 +352,35 @@ export class ExamService {
 
     // Get attempt number
     const [lastAttempt] = await pool.execute<RowDataPacket[]>(
-      'SELECT MAX(attempt_number) as last FROM user_exam_attempts WHERE user_id = ? AND lesson_exam_id = ?',
+      'SELECT MAX(attempt_number) as last FROM user_exam_attempts WHERE user_id = ? AND exam_id = ?',
       [userId, examId]
     );
     const attemptNumber = ((lastAttempt[0].last as number) || 0) + 1;
 
     // Create attempt
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO user_exam_attempts (user_id, lesson_exam_id, attempt_number, started_at, score, passed, time_spent_seconds, xp_earned)
-       VALUES (?, ?, ?, NOW(), 0, FALSE, 0, 0)`,
-      [userId, examId, attemptNumber]
+      `INSERT INTO user_exam_attempts (user_id, exam_id, attempt_number, started_at, score, total_questions, correct_answers, time_taken_seconds, answers, is_passed, xp_earned, coins_earned)
+       VALUES (?, ?, ?, NOW(), 0, ?, 0, 0, '[]', FALSE, 0, 0)`,
+      [userId, examId, attemptNumber, exam.totalQuestions]
     );
 
     // Get exercises
     const exercises = await masterExercisesService.getByIds(exam.exerciseIds);
 
+    // Shuffle exercises if needed
+    let selectedExercises = [...exercises];
+    if (exam.shuffleQuestions) {
+      selectedExercises.sort(() => Math.random() - 0.5);
+    }
+
+    // Limit to random_question_count if set
+    if (exam.randomQuestionCount && exam.randomQuestionCount < selectedExercises.length) {
+      selectedExercises = selectedExercises.slice(0, exam.randomQuestionCount);
+    }
+
     return {
       attemptId: result.insertId,
-      exercises: exercises.map(ex => ({
+      exercises: selectedExercises.map(ex => ({
         id: ex.id,
         exerciseType: ex.exerciseType,
         question: ex.question,
@@ -345,7 +404,7 @@ export class ExamService {
     xpEarned: number;
     correctCount: number;
     totalCount: number;
-    detailedResults: { exerciseId: number; isCorrect: boolean; correctAnswer: string }[];
+    detailedResults: { exerciseId: number; isCorrect: boolean; correctAnswer: string; userAnswer: string }[];
   } | { error: string }> {
     // Get attempt
     const [attemptRows] = await pool.execute<UserExamAttemptRow[]>(
@@ -363,7 +422,7 @@ export class ExamService {
     }
 
     // Get exam
-    const exam = await this.getExamById(attempt.lesson_exam_id);
+    const exam = await this.getExamById(attempt.exam_id);
     if (!exam) {
       return { error: 'Exam not found' };
     }
@@ -374,7 +433,7 @@ export class ExamService {
 
     // Grade answers
     let correctCount = 0;
-    const detailedResults: { exerciseId: number; isCorrect: boolean; correctAnswer: string }[] = [];
+    const detailedResults: { exerciseId: number; isCorrect: boolean; correctAnswer: string; userAnswer: string }[] = [];
 
     for (const answer of answers) {
       const exercise = exerciseMap.get(answer.exerciseId);
@@ -387,6 +446,7 @@ export class ExamService {
         exerciseId: answer.exerciseId,
         isCorrect,
         correctAnswer: exercise.correctAnswer,
+        userAnswer: answer.userAnswer,
       });
 
       // Update answer with correct status
@@ -398,9 +458,15 @@ export class ExamService {
     const passed = score >= exam.passingScore;
 
     // Calculate XP
-    let xpEarned = passed ? exam.xpReward : Math.round(exam.xpReward * 0.2); // 20% XP even if failed
+    let xpEarned = passed ? exam.passXp : Math.round(exam.passXp * 0.2); // 20% XP even if failed
     if (score === 100) {
-      xpEarned += exam.bonusXpPerfect;
+      xpEarned += exam.perfectScoreBonusXp;
+    }
+
+    // Calculate coins
+    let coinsEarned = passed ? exam.passCoins : Math.round(exam.passCoins * 0.1);
+    if (score === 100) {
+      coinsEarned += exam.perfectScoreBonusCoins;
     }
 
     // Update attempt
@@ -408,12 +474,14 @@ export class ExamService {
       `UPDATE user_exam_attempts SET
          completed_at = NOW(),
          score = ?,
-         passed = ?,
-         time_spent_seconds = ?,
+         correct_answers = ?,
+         time_taken_seconds = ?,
          answers = ?,
-         xp_earned = ?
+         is_passed = ?,
+         xp_earned = ?,
+         coins_earned = ?
        WHERE id = ?`,
-      [score, passed, timeSpentSeconds, JSON.stringify(answers), xpEarned, attemptId]
+      [score, correctCount, timeSpentSeconds, JSON.stringify(answers), passed, xpEarned, coinsEarned, attemptId]
     );
 
     return {
@@ -458,7 +526,7 @@ export class ExamService {
     const params: (number)[] = [userId];
 
     if (examId) {
-      query += ' AND lesson_exam_id = ?';
+      query += ' AND exam_id = ?';
       params.push(examId);
     }
 
@@ -495,7 +563,7 @@ export class ExamService {
     const [stats] = await pool.execute<RowDataPacket[]>(
       `SELECT
          COUNT(*) as total_attempts,
-         SUM(passed) as total_passed,
+         SUM(is_passed) as total_passed,
          AVG(score) as avg_score,
          SUM(xp_earned) as total_xp
        FROM user_exam_attempts
@@ -505,13 +573,12 @@ export class ExamService {
 
     const [byType] = await pool.execute<RowDataPacket[]>(
       `SELECT
-         le.exam_type,
+         'lesson' as exam_type,
          COUNT(*) as attempts,
-         SUM(uea.passed) as passed
+         SUM(uea.is_passed) as passed
        FROM user_exam_attempts uea
-       JOIN lesson_exams le ON uea.lesson_exam_id = le.id
-       WHERE uea.user_id = ? AND uea.completed_at IS NOT NULL
-       GROUP BY le.exam_type`,
+       JOIN lesson_exams le ON uea.exam_id = le.id
+       WHERE uea.user_id = ? AND uea.completed_at IS NOT NULL`,
       [userId]
     );
 
@@ -541,13 +608,13 @@ export class ExamService {
    */
   async generateExamForLesson(
     lessonId: number,
-    examType: 'checkpoint' | 'boss' | 'review',
+    examTitle: string = 'Lesson Exam',
     exerciseCount: number = 10
   ): Promise<LessonExam | null> {
     // Get lesson vocabulary and grammar
     const [lessonContent] = await pool.execute<RowDataPacket[]>(
-      `SELECT content_type, master_content_id FROM lesson_content
-       WHERE unit_lesson_id = ? AND content_type IN ('vocabulary', 'grammar')`,
+      `SELECT content_type, master_vocabulary_id, master_grammar_id FROM lesson_content
+       WHERE lesson_id = ? AND content_type IN ('vocabulary', 'grammar')`,
       [lessonId]
     );
 
@@ -557,10 +624,10 @@ export class ExamService {
     const grammarIds: number[] = [];
 
     for (const content of lessonContent) {
-      if (content.content_type === 'vocabulary') {
-        vocabIds.push(content.master_content_id as number);
-      } else if (content.content_type === 'grammar') {
-        grammarIds.push(content.master_content_id as number);
+      if (content.content_type === 'vocabulary' && content.master_vocabulary_id) {
+        vocabIds.push(content.master_vocabulary_id as number);
+      } else if (content.content_type === 'grammar' && content.master_grammar_id) {
+        grammarIds.push(content.master_grammar_id as number);
       }
     }
 
@@ -574,14 +641,13 @@ export class ExamService {
 
     // Create exam
     const exam = await this.createExam({
-      unitLessonId: lessonId,
-      examType,
-      title: `${examType.charAt(0).toUpperCase() + examType.slice(1)} Exam`,
-      exerciseCount: exercises.length,
+      lessonId,
+      title: examTitle,
+      totalQuestions: exercises.length,
       exerciseIds: exercises.map(e => e.id),
-      passingScore: examType === 'boss' ? 80 : 70,
-      xpReward: examType === 'boss' ? 100 : 50,
-      bonusXpPerfect: examType === 'boss' ? 50 : 25,
+      passingScore: 70,
+      passXp: 50,
+      perfectScoreBonusXp: 20,
     });
 
     return exam;
@@ -604,18 +670,26 @@ export class ExamService {
   private mapToLessonExam(row: LessonExamRow): LessonExam {
     return {
       id: row.id,
-      unitLessonId: row.unit_lesson_id,
-      examType: row.exam_type as 'checkpoint' | 'boss' | 'review',
+      lessonId: row.lesson_id,
+      unitId: row.unit_id,
+      examNumber: row.exam_number,
       title: row.title,
       description: row.description,
-      passingScore: row.passing_score,
       timeLimitSeconds: row.time_limit_seconds,
+      passingScore: row.passing_score,
       maxAttempts: row.max_attempts,
-      exerciseCount: row.exercise_count,
+      shuffleQuestions: Boolean(row.shuffle_questions),
+      showAnswersAfter: Boolean(row.show_answers_after),
       exerciseIds: this.parseJson<number[]>(row.exercise_ids) || [],
-      xpReward: row.xp_reward,
-      bonusXpPerfect: row.bonus_xp_perfect,
-      isActive: row.is_active,
+      totalQuestions: row.total_questions,
+      totalPoints: row.total_points,
+      randomQuestionCount: row.random_question_count,
+      passXp: row.pass_xp,
+      perfectScoreBonusXp: row.perfect_score_bonus_xp,
+      passCoins: row.pass_coins,
+      perfectScoreBonusCoins: row.perfect_score_bonus_coins,
+      displayOrder: row.display_order,
+      isActive: Boolean(row.is_active),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -625,15 +699,20 @@ export class ExamService {
     return {
       id: row.id,
       userId: row.user_id,
-      lessonExamId: row.lesson_exam_id,
+      examId: row.exam_id,
+      lessonProgressId: row.lesson_progress_id,
+      unitProgressId: row.unit_progress_id,
       attemptNumber: row.attempt_number,
       startedAt: row.started_at,
       completedAt: row.completed_at,
-      score: row.score,
-      passed: row.passed,
-      timeSpentSeconds: row.time_spent_seconds,
+      score: Number(row.score),
+      totalQuestions: row.total_questions,
+      correctAnswers: row.correct_answers,
+      timeTakenSeconds: row.time_taken_seconds,
       answers: this.parseJson<ExamAnswer[]>(row.answers),
+      isPassed: Boolean(row.is_passed),
       xpEarned: row.xp_earned,
+      coinsEarned: row.coins_earned,
     };
   }
 }

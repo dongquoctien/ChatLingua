@@ -1,6 +1,6 @@
 <div class="min-h-screen bg-gray-50">
   <!-- Header -->
-  <div class="bg-white border-b border-gray-200 sticky top-0 z-10">
+  <div class="bg-white border-b border-gray-200  top-0 z-10">
     <div class="container mx-auto px-4 py-3 flex items-center justify-between">
       <button (click)="goBackToMap()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
         <i class="fa-solid fa-arrow-left"></i>
@@ -119,8 +119,37 @@
                 {{ currentVocab()?.vocabulary?.englishWord }}
               </h3>
               @if (currentVocab()?.vocabulary?.phonetic) {
-                <p class="text-gray-500 mb-4">{{ currentVocab()?.vocabulary?.phonetic }}</p>
+                <p class="text-gray-500 mb-2">{{ currentVocab()?.vocabulary?.phonetic }}</p>
               }
+              <!-- Pronunciation buttons -->
+              <div class="flex justify-center gap-2 mb-4">
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'uk', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play UK pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>UK</span>
+                </button>
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'us', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play US pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>US</span>
+                </button>
+              </div>
               <p class="text-sm text-gray-400">
                 <span class="capitalize">{{ currentVocab()?.vocabulary?.partOfSpeech }}</span>
                 · {{ currentVocab()?.vocabulary?.cefrLevel }}
@@ -131,9 +160,38 @@
             <!-- Back: Vietnamese + Details -->
             <div class="text-center">
               <p class="text-sm text-gray-400 mb-2">Vietnamese</p>
-              <h3 class="text-3xl font-bold text-gray-900 mb-4">
+              <h3 class="text-3xl font-bold text-gray-900 mb-2">
                 {{ currentVocab()?.vocabulary?.vietnameseWord }}
               </h3>
+              <!-- Pronunciation buttons on back -->
+              <div class="flex justify-center gap-2 mb-4">
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'uk', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play UK pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>UK</span>
+                </button>
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'us', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play US pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>US</span>
+                </button>
+              </div>
 
               @if (currentVocab()?.vocabulary?.definitions?.length) {
                 <div class="text-left bg-gray-50 rounded-lg p-4 mt-4">
@@ -287,29 +345,76 @@
             {{ currentExercise()?.question }}
           </h3>
 
+          <!-- Multiple choice options -->
           @if (currentExercise()?.options?.length) {
             <div class="space-y-2">
               @for (option of currentExercise()?.options; track $index) {
-                <button
-                  (click)="selectAnswer(option)"
-                  [disabled]="isExerciseAnswered()"
-                  class="w-full p-4 text-left rounded-lg border-2 transition-colors"
-                  [class]="
-                    getAnswerState(option) === 'correct' ? 'border-green-500 bg-green-50 text-green-700' :
-                    getAnswerState(option) === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' :
-                    isAnswerSelected(option) ? 'border-gray-900 bg-gray-50' :
-                    'border-gray-200 hover:border-gray-300'
-                  "
-                >
-                  <div class="flex items-center justify-between">
-                    <span>{{ option }}</span>
-                    @if (getAnswerState(option) === 'correct') {
-                      <i class="fa-solid fa-check text-green-500"></i>
-                    } @else if (getAnswerState(option) === 'incorrect') {
-                      <i class="fa-solid fa-times text-red-500"></i>
+                <div class="flex items-center gap-2">
+                  <!-- Pronunciation button for option -->
+                  <button
+                    (click)="speak(option, 'us', $event)"
+                    class="shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors"
+                    [class]="isSpeaking(option, 'us') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                    title="Play pronunciation"
+                  >
+                    @if (isSpeaking(option, 'us')) {
+                      <i class="fa-solid fa-volume-high"></i>
+                    } @else {
+                      <i class="fa-solid fa-volume-up"></i>
                     }
-                  </div>
-                </button>
+                  </button>
+                  <!-- Answer option button -->
+                  <button
+                    (click)="selectAnswer(option)"
+                    [disabled]="isExerciseAnswered()"
+                    class="flex-1 p-4 text-left rounded-lg border-2 transition-colors"
+                    [class]="
+                      getAnswerState(option) === 'correct' ? 'border-green-500 bg-green-50 text-green-700' :
+                      getAnswerState(option) === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' :
+                      isAnswerSelected(option) ? 'border-gray-900 bg-gray-50' :
+                      'border-gray-200 hover:border-gray-300'
+                    "
+                  >
+                    <div class="flex items-center justify-between">
+                      <span>{{ option }}</span>
+                      @if (getAnswerState(option) === 'correct') {
+                        <i class="fa-solid fa-check text-green-500"></i>
+                      } @else if (getAnswerState(option) === 'incorrect') {
+                        <i class="fa-solid fa-times text-red-500"></i>
+                      }
+                    </div>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Fill blank / Translation / Text input exercises -->
+          @if (!currentExercise()?.options?.length && (currentExercise()?.exerciseType === 'fill_blank' || currentExercise()?.exerciseType === 'translation')) {
+            <div class="space-y-3">
+              <input
+                type="text"
+                [value]="exerciseAnswers().get(currentExercise()!.id) || ''"
+                (input)="onTextInput($event)"
+                [disabled]="isExerciseAnswered()"
+                placeholder="Type your answer..."
+                class="w-full p-4 text-lg border-2 rounded-lg transition-colors focus:outline-none"
+                [class]="
+                  isExerciseAnswered() && getTextAnswerState() === 'correct' ? 'border-green-500 bg-green-50 text-green-700' :
+                  isExerciseAnswered() && getTextAnswerState() === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' :
+                  'border-gray-200 focus:border-gray-900'
+                "
+              />
+              @if (isExerciseAnswered()) {
+                <div class="flex items-center gap-2 text-sm">
+                  @if (getTextAnswerState() === 'correct') {
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    <span class="text-green-700">Correct!</span>
+                  } @else {
+                    <i class="fa-solid fa-times text-red-500"></i>
+                    <span class="text-red-700">Incorrect. The answer is: <strong>{{ currentExercise()?.correctAnswer }}</strong></span>
+                  }
+                </div>
               }
             </div>
           }
