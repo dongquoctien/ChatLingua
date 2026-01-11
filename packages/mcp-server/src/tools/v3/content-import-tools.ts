@@ -184,11 +184,6 @@ Returns the created map ID for adding content.`,
     properties: {
       name: { type: 'string', description: 'Word Map name' },
       description: { type: 'string', description: 'Word Map description' },
-      level: {
-        type: 'string',
-        enum: ['beginner', 'elementary', 'intermediate', 'upper_intermediate', 'advanced', 'proficient'],
-        description: 'Difficulty level',
-      },
       cefrLevel: {
         type: 'string',
         enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
@@ -239,7 +234,7 @@ Returns the created map ID for adding content.`,
         description: 'Units with their lessons',
       },
     },
-    required: ['name', 'level', 'cefrLevel', 'units'],
+    required: ['name', 'cefrLevel', 'units'],
   },
 };
 
@@ -263,12 +258,20 @@ Content is displayed in the order specified.`,
           properties: {
             contentType: {
               type: 'string',
-              enum: ['vocabulary', 'grammar', 'exercise'],
+              enum: ['vocabulary', 'grammar', 'exercise', 'text', 'audio', 'video', 'image'],
               description: 'Type of content',
             },
-            masterContentId: {
+            masterVocabularyId: {
               type: 'number',
-              description: 'ID from master_vocabulary, master_grammar, or master_exercises',
+              description: 'ID from master_vocabulary (for vocabulary content)',
+            },
+            masterGrammarId: {
+              type: 'number',
+              description: 'ID from master_grammar (for grammar content)',
+            },
+            masterExerciseId: {
+              type: 'number',
+              description: 'ID from master_exercises (for exercise content)',
             },
             customContent: {
               type: 'object',
@@ -276,7 +279,8 @@ Content is displayed in the order specified.`,
             },
             section: {
               type: 'string',
-              description: 'Section name for grouping',
+              enum: ['warmup', 'study', 'practice', 'review', 'extension'],
+              description: 'Section within lesson',
             },
           },
           required: ['contentType'],
@@ -629,7 +633,6 @@ const unitSchema = z.object({
 const createWordMapSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
-  level: z.enum(['beginner', 'elementary', 'intermediate', 'upper_intermediate', 'advanced', 'proficient']),
   cefrLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),
   coverImageUrl: z.string().optional(),
   publisher: z.string().optional(),
@@ -641,10 +644,12 @@ const createWordMapSchema = z.object({
 });
 
 const contentItemSchema = z.object({
-  contentType: z.enum(['vocabulary', 'grammar', 'exercise']),
-  masterContentId: z.number().optional(),
+  contentType: z.enum(['vocabulary', 'grammar', 'exercise', 'text', 'audio', 'video', 'image']),
+  masterVocabularyId: z.number().optional(),
+  masterGrammarId: z.number().optional(),
+  masterExerciseId: z.number().optional(),
   customContent: z.record(z.unknown()).optional(),
-  section: z.string().optional(),
+  section: z.enum(['warmup', 'study', 'practice', 'review', 'extension']).optional(),
 });
 
 const addLessonContentSchema = z.object({
@@ -906,14 +911,13 @@ export async function createWordMap(
   // Create the word map
   const mapResult = await db.execute(
     `INSERT INTO word_maps (
-      name, description, cover_image_url, level, cefr_level, publisher,
+      name, description, cover_image_url, cefr_level, publisher,
       total_units, estimated_hours, is_free, price_coins, is_featured, is_active
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
     [
       input.name,
       input.description || null,
       input.coverImageUrl || null,
-      input.level,
       input.cefrLevel,
       input.publisher || null,
       input.units.length,
@@ -935,14 +939,13 @@ export async function createWordMap(
 
     const unitResult = await db.execute(
       `INSERT INTO map_units (
-        word_map_id, unit_number, name, theme, description, thumbnail_url,
+        map_id, unit_number, title, description, thumbnail_url,
         is_review_unit, boss_passing_score, total_lessons, completion_xp, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
       [
         mapId,
         unitNumber,
-        unit.name,
-        unit.theme || null,
+        unit.name,  // Input uses 'name', DB stores in 'title'
         unit.description || null,
         unit.thumbnailUrl || null,
         unit.isReviewUnit,
@@ -962,7 +965,7 @@ export async function createWordMap(
 
       const lessonResult = await db.execute(
         `INSERT INTO unit_lessons (
-          map_unit_id, lesson_number, title, lesson_type, description,
+          unit_id, lesson_number, title, lesson_type, description,
           video_url, audio_url, estimated_minutes, study_xp, exam_xp,
           has_boss_exam, is_active
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
@@ -1020,7 +1023,7 @@ export async function addLessonContent(
 
   // Get current max display order
   const maxOrderRows = await db.query<RowDataPacket[]>(
-    `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE unit_lesson_id = ?`,
+    `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE lesson_id = ?`,
     [input.lessonId]
   );
 
@@ -1028,22 +1031,29 @@ export async function addLessonContent(
   const contentIds: number[] = [];
 
   for (const item of input.content) {
-    if (!item.masterContentId && !item.customContent) {
+    // Determine which master ID to use based on content type
+    const masterVocabId = item.contentType === 'vocabulary' ? (item.masterVocabularyId || null) : null;
+    const masterGrammarId = item.contentType === 'grammar' ? (item.masterGrammarId || null) : null;
+    const masterExerciseId = item.contentType === 'exercise' ? (item.masterExerciseId || null) : null;
+
+    if (!masterVocabId && !masterGrammarId && !masterExerciseId && !item.customContent) {
       continue; // Skip invalid items
     }
 
     const result = await db.execute(
       `INSERT INTO lesson_content (
-        unit_lesson_id, content_type, master_content_id, custom_content,
-        display_order, section, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
+        lesson_id, content_type, master_vocabulary_id, master_grammar_id, master_exercise_id,
+        custom_content, display_order, section, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
       [
         input.lessonId,
         item.contentType,
-        item.masterContentId || null,
+        masterVocabId,
+        masterGrammarId,
+        masterExerciseId,
         item.customContent ? JSON.stringify(item.customContent) : null,
         displayOrder++,
-        item.section || null,
+        item.section || 'study',
       ]
     );
 
@@ -1053,9 +1063,9 @@ export async function addLessonContent(
   // Update lesson content counts
   await db.query(
     `UPDATE unit_lessons ul SET
-       total_vocabulary = (SELECT COUNT(*) FROM lesson_content WHERE unit_lesson_id = ul.id AND content_type = 'vocabulary' AND is_active = TRUE),
-       total_grammar = (SELECT COUNT(*) FROM lesson_content WHERE unit_lesson_id = ul.id AND content_type = 'grammar' AND is_active = TRUE),
-       total_exercises = (SELECT COUNT(*) FROM lesson_content WHERE unit_lesson_id = ul.id AND content_type = 'exercise' AND is_active = TRUE)
+       total_vocabulary = (SELECT COUNT(*) FROM lesson_content WHERE lesson_id = ul.id AND content_type = 'vocabulary' AND is_active = TRUE),
+       total_grammar = (SELECT COUNT(*) FROM lesson_content WHERE lesson_id = ul.id AND content_type = 'grammar' AND is_active = TRUE),
+       total_exercises = (SELECT COUNT(*) FROM lesson_content WHERE lesson_id = ul.id AND content_type = 'exercise' AND is_active = TRUE)
      WHERE id = ?`,
     [input.lessonId]
   );
@@ -1131,7 +1141,7 @@ export async function importAudioTracks(
 
   // Get all units for this map
   const units = await db.query<RowDataPacket[]>(
-    `SELECT id, unit_number FROM map_units WHERE word_map_id = ?`,
+    `SELECT id, unit_number FROM map_units WHERE map_id = ?`,
     [input.mapId]
   );
 
@@ -1172,8 +1182,8 @@ export async function importAudioTracks(
       // Create media resource entry
       const result = await db.execute(
         `INSERT INTO media_resources (
-          word_map_id, resource_type, resource_url, filename,
-          title, metadata, is_active
+          source_map_id, resource_type, file_url, original_filename,
+          title, unit_reference, is_active
         ) VALUES (?, 'audio', ?, ?, ?, ?, TRUE)
         ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
         [
@@ -1181,13 +1191,13 @@ export async function importAudioTracks(
           resourceUrl,
           filename,
           filename,
-          JSON.stringify(values),
+          unitNumber,
         ]
       );
 
       // Link to first lesson in unit (or specific lesson based on page)
       const lessonRows = await db.query<RowDataPacket[]>(
-        `SELECT id FROM unit_lessons WHERE map_unit_id = ? ORDER BY lesson_number LIMIT 1`,
+        `SELECT id FROM unit_lessons WHERE unit_id = ? ORDER BY lesson_number LIMIT 1`,
         [unitId]
       );
 
@@ -1246,8 +1256,8 @@ export async function importEvolveContent(
   if (input.unitNumber && input.lessonNumber) {
     const lessonRows = await db.query<RowDataPacket[]>(
       `SELECT ul.id FROM unit_lessons ul
-       JOIN map_units mu ON ul.map_unit_id = mu.id
-       WHERE mu.word_map_id = ? AND mu.unit_number = ? AND ul.lesson_number = ?`,
+       JOIN map_units mu ON ul.unit_id = mu.id
+       WHERE mu.map_id = ? AND mu.unit_number = ? AND ul.lesson_number = ?`,
       [input.mapId, input.unitNumber, input.lessonNumber]
     );
 
@@ -1321,17 +1331,17 @@ export async function importEvolveContent(
       // Link to lesson if specified
       if (lessonId) {
         const maxOrderRows = await db.query<RowDataPacket[]>(
-          `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE unit_lesson_id = ?`,
+          `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE lesson_id = ?`,
           [lessonId]
         );
         const displayOrder = (maxOrderRows[0].max_order as number) + 1;
 
         await db.execute(
           `INSERT INTO lesson_content (
-            unit_lesson_id, content_type, master_content_id, display_order, section, is_active
+            lesson_id, content_type, master_vocabulary_id, display_order, section, is_active
           ) VALUES (?, 'vocabulary', ?, ?, ?, TRUE)
           ON DUPLICATE KEY UPDATE id = id`,
-          [lessonId, vocabId, displayOrder, vocab.section || null]
+          [lessonId, vocabId, displayOrder, vocab.section || 'study']
         );
       }
     }
@@ -1398,17 +1408,17 @@ export async function importEvolveContent(
       // Link to lesson if specified
       if (lessonId) {
         const maxOrderRows = await db.query<RowDataPacket[]>(
-          `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE unit_lesson_id = ?`,
+          `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE lesson_id = ?`,
           [lessonId]
         );
         const displayOrder = (maxOrderRows[0].max_order as number) + 1;
 
         await db.execute(
           `INSERT INTO lesson_content (
-            unit_lesson_id, content_type, master_content_id, display_order, section, is_active
+            lesson_id, content_type, master_grammar_id, display_order, section, is_active
           ) VALUES (?, 'grammar', ?, ?, ?, TRUE)
           ON DUPLICATE KEY UPDATE id = id`,
-          [lessonId, grammarId, displayOrder, grammar.section || null]
+          [lessonId, grammarId, displayOrder, grammar.section || 'study']
         );
       }
     }
@@ -1418,8 +1428,8 @@ export async function importEvolveContent(
   if (lessonId) {
     await db.query(
       `UPDATE unit_lessons ul SET
-         total_vocabulary = (SELECT COUNT(*) FROM lesson_content WHERE unit_lesson_id = ul.id AND content_type = 'vocabulary' AND is_active = TRUE),
-         total_grammar = (SELECT COUNT(*) FROM lesson_content WHERE unit_lesson_id = ul.id AND content_type = 'grammar' AND is_active = TRUE)
+         total_vocabulary = (SELECT COUNT(*) FROM lesson_content WHERE lesson_id = ul.id AND content_type = 'vocabulary' AND is_active = TRUE),
+         total_grammar = (SELECT COUNT(*) FROM lesson_content WHERE lesson_id = ul.id AND content_type = 'grammar' AND is_active = TRUE)
        WHERE id = ?`,
       [lessonId]
     );
@@ -1504,7 +1514,7 @@ export async function linkMediaResource(
 
   // Verify lesson exists
   const lessonRows = await db.query<RowDataPacket[]>(
-    `SELECT id, map_unit_id FROM unit_lessons WHERE id = ?`,
+    `SELECT id, unit_id FROM unit_lessons WHERE id = ?`,
     [input.lessonId]
   );
 
@@ -1514,20 +1524,20 @@ export async function linkMediaResource(
 
   // Get word map ID from unit
   const unitRows = await db.query<RowDataPacket[]>(
-    `SELECT word_map_id FROM map_units WHERE id = ?`,
-    [lessonRows[0].map_unit_id]
+    `SELECT map_id FROM map_units WHERE id = ?`,
+    [lessonRows[0].unit_id]
   );
 
-  const wordMapId = unitRows[0]?.word_map_id;
+  const mapId = unitRows[0]?.map_id;
 
   // Create media resource
   const result = await db.execute(
     `INSERT INTO media_resources (
-      word_map_id, resource_type, resource_url, title, description,
+      source_map_id, resource_type, file_url, title, description,
       duration_seconds, transcript, is_active
     ) VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)`,
     [
-      wordMapId,
+      mapId,
       input.resourceType,
       input.resourceUrl,
       input.title || path.basename(input.resourceUrl),
@@ -1555,17 +1565,21 @@ export async function linkMediaResource(
   // Also add as lesson content if section specified
   if (input.section) {
     const maxOrderRows = await db.query<RowDataPacket[]>(
-      `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE unit_lesson_id = ?`,
+      `SELECT COALESCE(MAX(display_order), 0) as max_order FROM lesson_content WHERE lesson_id = ?`,
       [input.lessonId]
     );
     const displayOrder = (maxOrderRows[0].max_order as number) + 1;
 
+    // Map resource type to content_type enum
+    const contentType = input.resourceType === 'document' ? 'text' : input.resourceType;
+
     await db.execute(
       `INSERT INTO lesson_content (
-        unit_lesson_id, content_type, custom_content, display_order, section, is_active
-      ) VALUES (?, 'media', ?, ?, ?, TRUE)`,
+        lesson_id, content_type, custom_content, display_order, section, is_active
+      ) VALUES (?, ?, ?, ?, ?, TRUE)`,
       [
         input.lessonId,
+        contentType,
         JSON.stringify({
           resourceId,
           resourceType: input.resourceType,

@@ -1,3 +1,8 @@
+# ============================================================
+# ChatLingua Production Docker Compose
+# Deploy with: docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+
 services:
   # MySQL Database
   mysql:
@@ -27,7 +32,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile.backend
     container_name: chatlingua-backend
+    restart: always
     restart: always
     environment:
       NODE_ENV: production
@@ -43,8 +50,21 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: chatlingua
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: chatlingua
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: https://chatlingua.online
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
       - chatlingua-network
+    expose:
+      - "3000"
     expose:
       - "3000"
 
@@ -52,6 +72,7 @@ services:
   frontend:
     build:
       context: .
+      dockerfile: Dockerfile.frontend
       dockerfile: Dockerfile.frontend
     container_name: chatlingua-frontend
     restart: always
@@ -73,8 +94,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "80:80"
+      - "443:443"
     depends_on:
       - backend
+      - frontend
       - frontend
     networks:
       - chatlingua-network
@@ -91,6 +115,10 @@ services:
 networks:
   chatlingua-network:
     driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
 
 volumes:
   mysql_data:

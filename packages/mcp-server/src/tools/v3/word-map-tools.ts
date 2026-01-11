@@ -185,15 +185,21 @@ interface WordMapRow extends RowDataPacket {
   name: string;
   description: string | null;
   cover_image_url: string | null;
-  level: string;
   cefr_level: string;
   publisher: string | null;
   total_units: number;
+  total_lessons: number;
+  total_vocabulary: number;
+  total_grammar: number;
   estimated_hours: number | null;
   is_free: boolean;
   price_coins: number;
+  price_gems: number;
+  display_order: number;
   is_featured: boolean;
   is_active: boolean;
+  is_published: boolean;
+  created_by: number | null;
   // User progress (joined)
   progress_percentage?: number;
   units_completed?: number;
@@ -204,19 +210,23 @@ interface WordMapRow extends RowDataPacket {
 
 interface MapUnitRow extends RowDataPacket {
   id: number;
-  word_map_id: number;
+  map_id: number;  // DB uses map_id, not word_map_id
   unit_number: number;
-  name: string;
-  theme: string | null;
+  title: string;  // DB uses title, not name
   description: string | null;
   thumbnail_url: string | null;
   is_review_unit: boolean;
+  review_unit_ids: unknown | null;
+  prerequisite_unit_id: number | null;
   boss_exam_count: number;
   boss_passing_score: number;
   total_lessons: number;
   total_vocabulary: number;
   total_grammar: number;
+  total_exercises: number;
   completion_xp: number;
+  completion_coins: number;
+  display_order: number;
   is_active: boolean;
   // User progress (joined)
   status?: string;
@@ -227,7 +237,7 @@ interface MapUnitRow extends RowDataPacket {
 
 interface UnitLessonRow extends RowDataPacket {
   id: number;
-  map_unit_id: number;
+  unit_id: number;  // DB uses unit_id, not map_unit_id
   lesson_number: number;
   title: string;
   lesson_type: string;
@@ -235,10 +245,19 @@ interface UnitLessonRow extends RowDataPacket {
   thumbnail_url: string | null;
   video_url: string | null;
   audio_url: string | null;
+  pdf_page_start: number | null;
+  pdf_page_end: number | null;
+  prerequisite_lesson_id: number | null;
+  has_boss_exam: boolean;
+  boss_passing_score: number;
+  total_vocabulary: number;
+  total_grammar: number;
+  total_exercises: number;
   estimated_minutes: number;
   study_xp: number;
   exam_xp: number;
-  has_boss_exam: boolean;
+  coins_reward: number;
+  display_order: number;
   is_active: boolean;
   // User progress (joined)
   status?: string;
@@ -249,9 +268,11 @@ interface UnitLessonRow extends RowDataPacket {
 
 interface LessonContentRow extends RowDataPacket {
   id: number;
-  unit_lesson_id: number;
+  lesson_id: number;
   content_type: string;
-  master_content_id: number | null;
+  master_vocabulary_id: number | null;
+  master_grammar_id: number | null;
+  master_exercise_id: number | null;
   custom_content: string | null;
   display_order: number;
   section: string | null;
@@ -288,14 +309,15 @@ export async function getWordMaps(
     name: string;
     description: string | null;
     coverImageUrl: string | null;
-    level: string;
     cefrLevel: string;
     publisher: string | null;
     totalUnits: number;
+    totalLessons: number;
     estimatedHours: number | null;
     isFree: boolean;
     priceCoins: number;
     isFeatured: boolean;
+    isPublished: boolean;
     progress?: {
       percentage: number;
       unitsCompleted: number;
@@ -312,7 +334,7 @@ export async function getWordMaps(
   let sql = `
     SELECT wm.*
     ${effectiveUserId ? `,
-      ump.progress_percentage,
+      ump.completion_percentage as progress_percentage,
       ump.units_completed,
       ump.lessons_completed,
       ump.total_xp_earned,
@@ -320,7 +342,7 @@ export async function getWordMaps(
     ` : ''}
     FROM word_maps wm
     ${effectiveUserId ? `
-      LEFT JOIN user_map_progress ump ON wm.id = ump.word_map_id AND ump.user_id = ?
+      LEFT JOIN user_map_progress ump ON wm.id = ump.map_id AND ump.user_id = ?
     ` : ''}
     WHERE wm.is_active = TRUE
   `;
@@ -333,7 +355,7 @@ export async function getWordMaps(
     params.push(input.cefrLevel);
   }
 
-  sql += ` ORDER BY wm.display_order ASC, wm.level ASC`;
+  sql += ` ORDER BY wm.display_order ASC, wm.cefr_level ASC`;
 
   const rows = await db.query<WordMapRow[]>(sql, params);
 
@@ -342,14 +364,15 @@ export async function getWordMaps(
     name: row.name,
     description: row.description,
     coverImageUrl: row.cover_image_url,
-    level: row.level,
     cefrLevel: row.cefr_level,
     publisher: row.publisher,
     totalUnits: row.total_units,
+    totalLessons: row.total_lessons,
     estimatedHours: row.estimated_hours,
     isFree: Boolean(row.is_free),
     priceCoins: row.price_coins,
     isFeatured: Boolean(row.is_featured),
+    isPublished: Boolean(row.is_published),
     ...(effectiveUserId ? {
       progress: {
         percentage: row.progress_percentage ?? 0,
@@ -377,13 +400,11 @@ export async function getWordMapDetail(
     id: number;
     name: string;
     description: string | null;
-    level: string;
     cefrLevel: string;
     units: Array<{
       id: number;
       unitNumber: number;
       name: string;
-      theme: string | null;
       description: string | null;
       isReviewUnit: boolean;
       totalLessons: number;
@@ -427,15 +448,15 @@ export async function getWordMapDetail(
     SELECT mu.*
     ${effectiveUserId ? `,
       uup.status,
-      uup.progress_percentage,
+      uup.completion_percentage as progress_percentage,
       uup.lessons_completed,
-      uup.boss_exam_passed
+      uup.boss_exams_passed as boss_exam_passed
     ` : ''}
     FROM map_units mu
     ${effectiveUserId ? `
-      LEFT JOIN user_unit_progress uup ON mu.id = uup.map_unit_id AND uup.user_id = ?
+      LEFT JOIN user_unit_progress uup ON mu.id = uup.unit_id AND uup.user_id = ?
     ` : ''}
-    WHERE mu.word_map_id = ? AND mu.is_active = TRUE
+    WHERE mu.map_id = ? AND mu.is_active = TRUE
     ORDER BY mu.unit_number ASC
   `;
 
@@ -448,15 +469,13 @@ export async function getWordMapDetail(
       SELECT ul.*
       ${effectiveUserId ? `,
         ulp.status,
-        ulp.progress_percentage,
-        ulp.content_completed,
-        ulp.total_content
+        ulp.content_progress_percentage as progress_percentage
       ` : ''}
       FROM unit_lessons ul
       ${effectiveUserId ? `
-        LEFT JOIN user_lesson_progress ulp ON ul.id = ulp.unit_lesson_id AND ulp.user_id = ?
+        LEFT JOIN user_lesson_progress ulp ON ul.id = ulp.lesson_id AND ulp.user_id = ?
       ` : ''}
-      WHERE ul.map_unit_id = ? AND ul.is_active = TRUE
+      WHERE ul.unit_id = ? AND ul.is_active = TRUE
       ORDER BY ul.lesson_number ASC
     `;
 
@@ -466,8 +485,7 @@ export async function getWordMapDetail(
     return {
       id: unit.id,
       unitNumber: unit.unit_number,
-      name: unit.name,
-      theme: unit.theme,
+      name: unit.title,  // DB uses title, not name
       description: unit.description,
       isReviewUnit: Boolean(unit.is_review_unit),
       totalLessons: unit.total_lessons,
@@ -499,14 +517,14 @@ export async function getWordMapDetail(
 
   if (effectiveUserId) {
     const progressRows = await db.query<RowDataPacket[]>(
-      `SELECT * FROM user_map_progress WHERE user_id = ? AND word_map_id = ?`,
+      `SELECT * FROM user_map_progress WHERE user_id = ? AND map_id = ?`,
       [effectiveUserId, input.mapId]
     );
 
     if (progressRows.length > 0) {
       const p = progressRows[0];
       progress = {
-        percentage: p.progress_percentage ?? 0,
+        percentage: p.completion_percentage ?? 0,
         currentUnitId: p.current_unit_id,
         unitsCompleted: p.units_completed ?? 0,
         lessonsCompleted: p.lessons_completed ?? 0,
@@ -520,7 +538,6 @@ export async function getWordMapDetail(
       id: wordMap.id,
       name: wordMap.name,
       description: wordMap.description,
-      level: wordMap.level,
       cefrLevel: wordMap.cefr_level,
       units,
       progress,
@@ -555,7 +572,7 @@ export async function activateWordMap(
 
   // Check if already activated
   const existingProgress = await db.query<RowDataPacket[]>(
-    `SELECT * FROM user_map_progress WHERE user_id = ? AND word_map_id = ?`,
+    `SELECT * FROM user_map_progress WHERE user_id = ? AND map_id = ?`,
     [effectiveUserId, input.mapId]
   );
 
@@ -565,7 +582,7 @@ export async function activateWordMap(
 
   // Get first unit
   const firstUnitRows = await db.query<MapUnitRow[]>(
-    `SELECT * FROM map_units WHERE word_map_id = ? AND is_active = TRUE ORDER BY unit_number ASC LIMIT 1`,
+    `SELECT * FROM map_units WHERE map_id = ? AND is_active = TRUE ORDER BY unit_number ASC LIMIT 1`,
     [input.mapId]
   );
 
@@ -573,30 +590,44 @@ export async function activateWordMap(
 
   // Create map progress
   await db.execute(
-    `INSERT INTO user_map_progress (user_id, word_map_id, current_unit_id, progress_percentage, total_xp_earned, units_completed, lessons_completed, is_active)
-     VALUES (?, ?, ?, 0, 0, 0, 0, TRUE)`,
+    `INSERT INTO user_map_progress (user_id, map_id, current_unit_id, current_lesson_id, completion_percentage, units_completed, lessons_completed, total_xp_earned, is_active)
+     VALUES (?, ?, ?, NULL, 0, 0, 0, 0, TRUE)`,
     [effectiveUserId, input.mapId, firstUnitId]
   );
 
+  // Get the map progress id for foreign key
+  const mapProgressRows = await db.query<RowDataPacket[]>(
+    `SELECT id FROM user_map_progress WHERE user_id = ? AND map_id = ?`,
+    [effectiveUserId, input.mapId]
+  );
+  const mapProgressId = mapProgressRows[0]?.id;
+
   // Unlock first unit
-  if (firstUnitId) {
+  if (firstUnitId && mapProgressId) {
     await db.execute(
-      `INSERT INTO user_unit_progress (user_id, map_unit_id, status, progress_percentage, lessons_completed, total_lessons, xp_earned, boss_exam_passed, boss_exam_attempts)
-       VALUES (?, ?, 'available', 0, 0, 0, 0, FALSE, 0)`,
+      `INSERT INTO user_unit_progress (user_id, unit_id, map_progress_id, status, completion_percentage, lessons_completed, xp_earned)
+       VALUES (?, ?, ?, 'unlocked', 0, 0, 0)`,
+      [effectiveUserId, firstUnitId, mapProgressId]
+    );
+
+    // Get the unit progress id for foreign key
+    const unitProgressRows = await db.query<RowDataPacket[]>(
+      `SELECT id FROM user_unit_progress WHERE user_id = ? AND unit_id = ?`,
       [effectiveUserId, firstUnitId]
     );
+    const unitProgressId = unitProgressRows[0]?.id;
 
     // Unlock first lesson of first unit
     const firstLessonRows = await db.query<UnitLessonRow[]>(
-      `SELECT * FROM unit_lessons WHERE map_unit_id = ? AND is_active = TRUE ORDER BY lesson_number ASC LIMIT 1`,
+      `SELECT * FROM unit_lessons WHERE unit_id = ? AND is_active = TRUE ORDER BY lesson_number ASC LIMIT 1`,
       [firstUnitId]
     );
 
-    if (firstLessonRows.length > 0) {
+    if (firstLessonRows.length > 0 && unitProgressId) {
       await db.execute(
-        `INSERT INTO user_lesson_progress (user_id, unit_lesson_id, status, progress_percentage, content_completed, total_content, vocabulary_mastered, grammar_mastered, exercises_completed, xp_earned, time_spent_seconds)
-         VALUES (?, ?, 'available', 0, 0, 0, 0, 0, 0, 0, 0)`,
-        [effectiveUserId, firstLessonRows[0].id]
+        `INSERT INTO user_lesson_progress (user_id, lesson_id, unit_progress_id, status, content_progress_percentage, xp_earned)
+         VALUES (?, ?, ?, 'unlocked', 0, 0)`,
+        [effectiveUserId, firstLessonRows[0].id, unitProgressId]
       );
     }
   }
@@ -680,10 +711,10 @@ export async function getLessonContent(
             mg.grammar_rule, mg.category, mg.explanation, mg.explanation_vi, mg.examples,
             me.exercise_type, me.question, me.options, me.correct_answer
      FROM lesson_content lc
-     LEFT JOIN master_vocabulary mv ON lc.content_type = 'vocabulary' AND lc.master_content_id = mv.id
-     LEFT JOIN master_grammar mg ON lc.content_type = 'grammar' AND lc.master_content_id = mg.id
-     LEFT JOIN master_exercises me ON lc.content_type = 'exercise' AND lc.master_content_id = me.id
-     WHERE lc.unit_lesson_id = ? AND lc.is_active = TRUE
+     LEFT JOIN master_vocabulary mv ON lc.content_type = 'vocabulary' AND lc.master_vocabulary_id = mv.id
+     LEFT JOIN master_grammar mg ON lc.content_type = 'grammar' AND lc.master_grammar_id = mg.id
+     LEFT JOIN master_exercises me ON lc.content_type = 'exercise' AND lc.master_exercise_id = me.id
+     WHERE lc.lesson_id = ? AND lc.is_active = TRUE
      ORDER BY lc.display_order ASC`,
     [input.lessonId]
   );
@@ -731,7 +762,7 @@ export async function getLessonContent(
   for (const row of contentRows) {
     if (row.content_type === 'vocabulary' && row.english_word) {
       vocabulary.push({
-        id: row.master_content_id!,
+        id: row.master_vocabulary_id!,
         englishWord: row.english_word,
         vietnameseWord: row.vietnamese_word!,
         phonetic: row.phonetic ?? null,
@@ -740,7 +771,7 @@ export async function getLessonContent(
       });
     } else if (row.content_type === 'grammar' && row.grammar_rule) {
       grammar.push({
-        id: row.master_content_id!,
+        id: row.master_grammar_id!,
         grammarRule: row.grammar_rule,
         category: row.category!,
         explanation: row.explanation!,
@@ -749,7 +780,7 @@ export async function getLessonContent(
       });
     } else if (row.content_type === 'exercise' && row.question && input.includeExercises) {
       exercises.push({
-        id: row.master_content_id!,
+        id: row.master_exercise_id!,
         exerciseType: row.exercise_type!,
         question: row.question,
         options: parseJson<string[]>(row.options),
@@ -768,7 +799,7 @@ export async function getLessonContent(
 
   if (effectiveUserId) {
     const progressRows = await db.query<RowDataPacket[]>(
-      `SELECT * FROM user_lesson_progress WHERE user_id = ? AND unit_lesson_id = ?`,
+      `SELECT * FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?`,
       [effectiveUserId, input.lessonId]
     );
 
@@ -776,23 +807,23 @@ export async function getLessonContent(
       const p = progressRows[0];
       progress = {
         status: p.status ?? 'locked',
-        percentage: p.progress_percentage ?? 0,
-        contentCompleted: p.content_completed ?? 0,
-        totalContent: p.total_content ?? contentRows.length,
+        percentage: p.content_progress_percentage ?? 0,
+        contentCompleted: 0, // Not tracked in current schema
+        totalContent: contentRows.length,
       };
     }
 
     // Mark lesson as in_progress if not already
-    if (!progress || progress.status === 'available') {
+    if (!progress || progress.status === 'unlocked') {
       await db.query(
         `UPDATE user_lesson_progress
-         SET status = 'in_progress', started_at = COALESCE(started_at, NOW()), total_content = ?
-         WHERE user_id = ? AND unit_lesson_id = ?`,
-        [contentRows.length, effectiveUserId, input.lessonId]
+         SET status = 'studying', study_started_at = COALESCE(study_started_at, NOW())
+         WHERE user_id = ? AND lesson_id = ?`,
+        [effectiveUserId, input.lessonId]
       );
 
       progress = {
-        status: 'in_progress',
+        status: 'studying',
         percentage: 0,
         contentCompleted: 0,
         totalContent: contentRows.length,
@@ -854,7 +885,7 @@ export async function completeLessonStudy(
 
   // Check if user has progress
   const progressRows = await db.query<RowDataPacket[]>(
-    `SELECT * FROM user_lesson_progress WHERE user_id = ? AND unit_lesson_id = ?`,
+    `SELECT * FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?`,
     [effectiveUserId, input.lessonId]
   );
 
@@ -865,17 +896,16 @@ export async function completeLessonStudy(
   // Update lesson progress
   await db.query(
     `UPDATE user_lesson_progress
-     SET status = 'completed',
-         progress_percentage = 100,
-         completed_at = NOW(),
-         last_activity_at = NOW(),
-         time_spent_seconds = time_spent_seconds + ?,
-         vocabulary_mastered = COALESCE(?, vocabulary_mastered),
-         grammar_mastered = COALESCE(?, grammar_mastered),
+     SET status = 'exam_ready',
+         content_progress_percentage = 100,
+         study_completed_at = NOW(),
+         study_time_minutes = study_time_minutes + ?,
+         vocabulary_learned = COALESCE(?, vocabulary_learned),
+         grammar_learned = COALESCE(?, grammar_learned),
          xp_earned = xp_earned + ?
-     WHERE user_id = ? AND unit_lesson_id = ?`,
+     WHERE user_id = ? AND lesson_id = ?`,
     [
-      input.timeSpentSeconds ?? 0,
+      Math.round((input.timeSpentSeconds ?? 0) / 60),
       input.vocabularyMastered,
       input.grammarMastered,
       lesson.study_xp,
@@ -889,24 +919,24 @@ export async function completeLessonStudy(
     `UPDATE user_unit_progress uup
      SET lessons_completed = (
        SELECT COUNT(*) FROM user_lesson_progress ulp
-       JOIN unit_lessons ul ON ulp.unit_lesson_id = ul.id
-       WHERE ulp.user_id = ? AND ul.map_unit_id = ? AND ulp.status = 'completed'
+       JOIN unit_lessons ul ON ulp.lesson_id = ul.id
+       WHERE ulp.user_id = ? AND ul.unit_id = ? AND ulp.status IN ('exam_ready', 'completed')
      ),
-     progress_percentage = (
-       SELECT ROUND(COUNT(CASE WHEN ulp.status = 'completed' THEN 1 END) * 100 / COUNT(*))
+     completion_percentage = (
+       SELECT ROUND(COUNT(CASE WHEN ulp.status IN ('exam_ready', 'completed') THEN 1 END) * 100 / COUNT(*))
        FROM user_lesson_progress ulp
-       JOIN unit_lessons ul ON ulp.unit_lesson_id = ul.id
-       WHERE ulp.user_id = ? AND ul.map_unit_id = ?
+       JOIN unit_lessons ul ON ulp.lesson_id = ul.id
+       WHERE ulp.user_id = ? AND ul.unit_id = ?
      )
-     WHERE user_id = ? AND map_unit_id = ?`,
-    [effectiveUserId, lesson.map_unit_id, effectiveUserId, lesson.map_unit_id, effectiveUserId, lesson.map_unit_id]
+     WHERE user_id = ? AND unit_id = ?`,
+    [effectiveUserId, lesson.unit_id, effectiveUserId, lesson.unit_id, effectiveUserId, lesson.unit_id]
   );
 
   // Check if there's a next lesson to unlock
   const nextLessonRows = await db.query<UnitLessonRow[]>(
     `SELECT * FROM unit_lessons
-     WHERE map_unit_id = ? AND lesson_number = ? AND is_active = TRUE`,
-    [lesson.map_unit_id, lesson.lesson_number + 1]
+     WHERE unit_id = ? AND lesson_number = ? AND is_active = TRUE`,
+    [lesson.unit_id, lesson.lesson_number + 1]
   );
 
   let nextLesson: { id: number; title: string; unlocked: boolean } | undefined;
@@ -916,20 +946,29 @@ export async function completeLessonStudy(
 
     // Check if already has progress
     const existingProgressRows = await db.query<RowDataPacket[]>(
-      `SELECT * FROM user_lesson_progress WHERE user_id = ? AND unit_lesson_id = ?`,
+      `SELECT * FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?`,
       [effectiveUserId, next.id]
     );
 
     if (existingProgressRows.length === 0) {
-      // Unlock next lesson
-      await db.execute(
-        `INSERT INTO user_lesson_progress (user_id, unit_lesson_id, status, progress_percentage, content_completed, total_content, vocabulary_mastered, grammar_mastered, exercises_completed, xp_earned, time_spent_seconds)
-         VALUES (?, ?, 'available', 0, 0, 0, 0, 0, 0, 0, 0)`,
-        [effectiveUserId, next.id]
+      // Get unit progress id for foreign key
+      const unitProgressRows = await db.query<RowDataPacket[]>(
+        `SELECT id FROM user_unit_progress WHERE user_id = ? AND unit_id = ?`,
+        [effectiveUserId, lesson.unit_id]
       );
+      const unitProgressId = unitProgressRows[0]?.id;
+
+      if (unitProgressId) {
+        // Unlock next lesson
+        await db.execute(
+          `INSERT INTO user_lesson_progress (user_id, lesson_id, unit_progress_id, status, content_progress_percentage, xp_earned)
+           VALUES (?, ?, ?, 'unlocked', 0, 0)`,
+          [effectiveUserId, next.id, unitProgressId]
+        );
+      }
     } else if (existingProgressRows[0].status === 'locked') {
       await db.query(
-        `UPDATE user_lesson_progress SET status = 'available' WHERE user_id = ? AND unit_lesson_id = ?`,
+        `UPDATE user_lesson_progress SET status = 'unlocked' WHERE user_id = ? AND lesson_id = ?`,
         [effectiveUserId, next.id]
       );
     }

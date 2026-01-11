@@ -178,9 +178,9 @@ const getStudyStatsSchema = z.object({
 
 interface MapProgressRow extends RowDataPacket {
   id: number;
-  word_map_id: number;
+  map_id: number;
   word_map_name: string;
-  progress_percentage: number;
+  completion_percentage: number;
   units_completed: number;
   lessons_completed: number;
   total_xp_earned: number;
@@ -273,9 +273,9 @@ export async function getUserProgress(
   const mapProgressRows = await db.query<MapProgressRow[]>(
     `SELECT ump.*,
             wm.name as word_map_name,
-            mu.name as current_unit_name
+            mu.title as current_unit_name
      FROM user_map_progress ump
-     JOIN word_maps wm ON ump.word_map_id = wm.id
+     JOIN word_maps wm ON ump.map_id = wm.id
      LEFT JOIN map_units mu ON ump.current_unit_id = mu.id
      WHERE ump.user_id = ? AND ump.is_active = TRUE
      ORDER BY ump.updated_at DESC`,
@@ -283,13 +283,13 @@ export async function getUserProgress(
   );
 
   // Calculate totals
-  const totalXpEarned = mapProgressRows.reduce((sum, m) => sum + m.total_xp_earned, 0);
-  const completedMaps = mapProgressRows.filter(m => m.progress_percentage >= 100).length;
+  const totalXpEarned = mapProgressRows.reduce((sum, m) => sum + (m.total_xp_earned || 0), 0);
+  const completedMaps = mapProgressRows.filter(m => (m.completion_percentage || 0) >= 100).length;
 
-  // Get total time spent
+  // Get total time spent (from user_map_progress.total_study_time_minutes)
   const [timeStats] = await db.query<RowDataPacket[]>(
-    `SELECT COALESCE(SUM(time_spent_seconds), 0) as total_time
-     FROM user_lesson_progress
+    `SELECT COALESCE(SUM(total_study_time_minutes), 0) as total_time_minutes
+     FROM user_map_progress
      WHERE user_id = ?`,
     [effectiveUserId]
   );
@@ -299,17 +299,17 @@ export async function getUserProgress(
     progress: {
       totalVocabulary: (vocabStats[0].total as number) || 0,
       totalXpEarned,
-      totalTimeSpentMinutes: Math.round(((timeStats[0].total_time as number) || 0) / 60),
+      totalTimeSpentMinutes: (timeStats[0].total_time_minutes as number) || 0,
       activeMaps: mapProgressRows.length,
       completedMaps,
       maps: mapProgressRows.map(m => ({
         id: m.id,
-        mapId: m.word_map_id,
+        mapId: m.map_id,
         mapName: m.word_map_name,
-        progressPercentage: m.progress_percentage,
-        unitsCompleted: m.units_completed,
-        lessonsCompleted: m.lessons_completed,
-        xpEarned: m.total_xp_earned,
+        progressPercentage: m.completion_percentage || 0,
+        unitsCompleted: m.units_completed || 0,
+        lessonsCompleted: m.lessons_completed || 0,
+        xpEarned: m.total_xp_earned || 0,
         currentUnit: m.current_unit_id ? {
           id: m.current_unit_id,
           name: m.current_unit_name || '',
@@ -538,7 +538,7 @@ export async function getLeaderboard(
         RANK() OVER (ORDER BY ump.total_xp_earned DESC) as \`rank\`
       FROM user_map_progress ump
       JOIN users u ON ump.user_id = u.id
-      WHERE ump.word_map_id = ? AND ump.is_active = TRUE
+      WHERE ump.map_id = ? AND ump.is_active = TRUE
       ORDER BY total_xp DESC
       LIMIT ?
     `;
@@ -596,9 +596,9 @@ export async function getLeaderboard(
           SELECT
             total_xp_earned as total_xp,
             (SELECT COUNT(*) + 1 FROM user_map_progress
-             WHERE word_map_id = ? AND total_xp_earned > ump.total_xp_earned AND is_active = TRUE) as \`rank\`
+             WHERE map_id = ? AND total_xp_earned > ump.total_xp_earned AND is_active = TRUE) as \`rank\`
           FROM user_map_progress ump
-          WHERE user_id = ? AND word_map_id = ? AND is_active = TRUE
+          WHERE user_id = ? AND map_id = ? AND is_active = TRUE
         `;
         userRankParams = [input.mapId, effectiveUserId, input.mapId];
       } else {
@@ -667,14 +667,14 @@ export async function getStudyStats(
     dateCondition = 'AND completed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)';
   }
 
-  // Get lesson stats
+  // Get lesson stats (use study_time_minutes instead of time_spent_seconds)
   const [lessonStats] = await db.query<RowDataPacket[]>(
     `SELECT
        COUNT(CASE WHEN status = 'completed' THEN 1 END) as lessons_completed,
        COALESCE(SUM(xp_earned), 0) as xp_earned,
-       COALESCE(SUM(time_spent_seconds), 0) as time_spent
+       COALESCE(SUM(study_time_minutes), 0) as time_spent_minutes
      FROM user_lesson_progress
-     WHERE user_id = ? ${dateCondition.replace('completed_at', 'COALESCE(completed_at, created_at)')}`,
+     WHERE user_id = ? ${dateCondition.replace('completed_at', 'COALESCE(study_completed_at, created_at)')}`,
     params
   );
 
@@ -688,14 +688,14 @@ export async function getStudyStats(
     params
   );
 
-  // Get exam stats
+  // Get exam stats (use is_passed, score instead of passed, percentage)
   const [examStats] = await db.query<RowDataPacket[]>(
     `SELECT
        COUNT(*) as attempts,
-       SUM(CASE WHEN passed = TRUE THEN 1 ELSE 0 END) as passed,
-       AVG(percentage) as avg_score
+       SUM(CASE WHEN is_passed = TRUE THEN 1 ELSE 0 END) as passed,
+       AVG(score) as avg_score
      FROM user_exam_attempts
-     WHERE user_id = ? AND status = 'completed' ${dateCondition}`,
+     WHERE user_id = ? AND completed_at IS NOT NULL ${dateCondition}`,
     params
   );
 
@@ -737,7 +737,7 @@ export async function getStudyStats(
       examsAttempted: (examStats[0].attempts as number) || 0,
       examsPassed: (examStats[0].passed as number) || 0,
       averageExamScore: Math.round((examStats[0].avg_score as number) || 0),
-      timeSpentMinutes: Math.round(((lessonStats[0].time_spent as number) || 0) / 60),
+      timeSpentMinutes: (lessonStats[0].time_spent_minutes as number) || 0,
       xpEarned: (lessonStats[0].xp_earned as number) || 0,
       streakDays: (streakResult[0]?.streak as number) || 0,
     },

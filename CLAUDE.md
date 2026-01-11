@@ -137,6 +137,46 @@ All API types are defined in `core/services/api.service.ts`. Key types:
 - `features/shop/shop.service.ts` - Shop items, purchases, inventory, wishlist, gifts
 - `features/pets/services/pet.service.ts` - Pet care, feeding, training, daily tasks
 
+### V3 Architecture (Word Map System)
+
+The V3 architecture separates content from user progress, enabling curriculum-based learning:
+
+**Database Schema (V3 Tables)**:
+- `master_vocabulary` - Canonical vocabulary definitions (not user-specific)
+- `master_grammar` - Canonical grammar rules
+- `master_exercises` - Reusable exercise templates
+- `user_vocabulary` - User's learning progress for vocabulary (links to master)
+- `user_grammar` - User's learning progress for grammar
+- `word_maps` - Curriculum courses with CEFR levels
+- `word_map_units` - Units within a Word Map
+- `unit_lessons` - Lessons within a unit
+- `lesson_content` - Links lessons to master content
+- `exam_attempts` - User exam history
+
+**V3 Services** (`services/v3/`):
+- `master-vocabulary.service.ts` - CRUD for master vocabulary
+- `master-grammar.service.ts` - CRUD for master grammar
+- `master-exercises.service.ts` - CRUD for master exercises
+- `user-vocabulary.service.ts` - User vocabulary with SM2 spaced repetition
+- `user-grammar.service.ts` - User grammar with SM2 spaced repetition
+- `word-map.service.ts` - Word Map curriculum management
+- `user-progress.service.ts` - XP, streaks, overall progress
+- `exam.service.ts` - Exam attempts and scoring
+
+**Feature Flags** (`config/features.ts`):
+Controls gradual V3 migration:
+- `USE_V3_TABLES` - Read from V3 tables
+- `DUAL_WRITE_ENABLED` - Write to both V2 and V3
+- `DEPRECATE_V2_TABLES` - Stop writing to V2
+- `WORD_MAP_ENABLED` - Enable Word Map features
+
+**Frontend** (`features/word-maps/`):
+- `word-map-list/` - Browse available Word Maps
+- `word-map-detail/` - View units and progress
+- `lesson-study/` - Study lesson content
+- `lesson-exam/` - Take lesson exams
+- `review/` - Spaced repetition review queue
+
 ### Database
 
 MySQL 8.0 via Docker. Migrations in `database/migrations/` run automatically on container init.
@@ -253,6 +293,34 @@ For consistency in header buttons, use emoji symbols:
   - User-generated content (conversations, vocabulary examples)
   - Learning content translations
   - Explanatory text for Vietnamese learners where contextually appropriate
+
+## Testing
+
+### Backend Tests (`packages/backend/tests/`)
+
+Run tests with:
+```bash
+cd packages/backend
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # With coverage report
+```
+
+**Test Structure**:
+- `tests/utils/` - Algorithm and utility tests (SM2, feature flags)
+- `tests/services/` - Service business logic tests
+- `tests/integration/` - API route and data migration tests
+
+**Key Test Files**:
+- `sm2-algorithm.test.ts` - Spaced repetition algorithm tests
+- `feature-flags.test.ts` - Migration feature flag tests
+- `user-vocabulary.service.test.ts` - Vocabulary SM2 integration
+- `user-grammar.service.test.ts` - Grammar SM2 integration
+- `word-map.service.test.ts` - XP, progress, exam scoring
+- `api-routes.test.ts` - Request/response validation
+- `data-migration.test.ts` - V2 to V3 migration logic
+
+Tests use Vitest and don't require database connection (pure business logic tests).
 
 ## Screenshots
 

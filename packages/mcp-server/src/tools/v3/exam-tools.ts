@@ -153,56 +153,70 @@ const getExamHistorySchema = z.object({
 
 interface LessonExamRow extends RowDataPacket {
   id: number;
-  unit_lesson_id: number;
-  exam_type: string;
-  title: string | null;
+  lesson_id: number | null;
+  unit_id: number | null;
+  exam_number: number;
+  title: string;
   description: string | null;
-  time_limit_minutes: number | null;
+  time_limit_seconds: number | null;
   passing_score: number;
-  total_questions: number;
+  max_attempts: number | null;
   shuffle_questions: boolean;
-  shuffle_options: boolean;
-  show_correct_after: boolean;
-  max_attempts: number;
+  show_answers_after: boolean;
+  exercise_ids: string; // JSON array
+  total_questions: number;
+  total_points: number;
+  random_question_count: number | null;
+  pass_xp: number;
+  perfect_score_bonus_xp: number;
+  pass_coins: number;
+  perfect_score_bonus_coins: number;
+  display_order: number;
   is_active: boolean;
 }
 
-interface ExamQuestionRow extends RowDataPacket {
+// Note: exam_questions table doesn't exist in current schema
+// Exams use exercise_ids JSON array in lesson_exams table
+// Exercises are fetched from master_exercises table
+interface MasterExerciseRow extends RowDataPacket {
   id: number;
-  lesson_exam_id: number;
-  master_exercise_id: number | null;
-  custom_question: string | null;
-  custom_options: string | null;
-  custom_correct_answer: string | null;
+  exercise_type: string;
+  question: string;
+  options: string | null; // JSON array
+  correct_answer: string;
+  explanation: string | null;
+  hint: string | null;
+  audio_url: string | null;
+  image_url: string | null;
+  exercise_data: string | null; // JSON
+  cefr_level: string | null;
+  category: string | null;
+  tags: string | null; // JSON array
   points: number;
-  display_order: number;
-  // Joined exercise fields
-  exercise_type?: string;
-  question?: string;
-  options?: string;
-  correct_answer?: string;
-  explanation?: string;
+  is_active: boolean;
 }
 
 interface ExamAttemptRow extends RowDataPacket {
   id: number;
   user_id: number;
-  lesson_exam_id: number;
-  unit_lesson_id: number;
+  exam_id: number;
+  lesson_progress_id: number | null;
+  unit_progress_id: number | null;
   attempt_number: number;
-  status: string;
-  score: number | null;
-  total_points: number | null;
-  percentage: number | null;
-  passed: boolean | null;
   started_at: Date;
   completed_at: Date | null;
-  time_spent_seconds: number | null;
-  answers_json: string | null;
-  results_json: string | null;
+  score: number; // decimal(5,2)
+  total_questions: number;
+  correct_answers: number;
+  time_taken_seconds: number;
+  answers: string; // JSON
+  is_passed: boolean;
+  xp_earned: number;
+  coins_earned: number;
   // Joined lesson fields
   lesson_title?: string;
   exam_title?: string;
+  lesson_id?: number;
 }
 
 // ============================================================
@@ -218,7 +232,7 @@ export async function startLessonExam(
     id: number;
     examId: number;
     attemptNumber: number;
-    timeLimitMinutes: number | null;
+    timeLimitSeconds: number | null;
     totalQuestions: number;
     passingScore: number;
   };
@@ -235,7 +249,7 @@ export async function startLessonExam(
 
   // Check if lesson has an exam
   const examRows = await db.query<LessonExamRow[]>(
-    `SELECT * FROM lesson_exams WHERE unit_lesson_id = ? AND is_active = TRUE`,
+    `SELECT * FROM lesson_exams WHERE lesson_id = ? AND is_active = TRUE`,
     [input.lessonId]
   );
 
@@ -245,9 +259,12 @@ export async function startLessonExam(
 
   const exam = examRows[0];
 
-  // Check if user completed lesson study
+  // Get user's lesson progress (need the progress ID for FK)
   const progressRows = await db.query<RowDataPacket[]>(
-    `SELECT * FROM user_lesson_progress WHERE user_id = ? AND unit_lesson_id = ? AND status = 'completed'`,
+    `SELECT ulp.*, uup.id as unit_progress_id
+     FROM user_lesson_progress ulp
+     JOIN user_unit_progress uup ON ulp.unit_progress_id = uup.id
+     WHERE ulp.user_id = ? AND ulp.lesson_id = ? AND ulp.status IN ('exam_ready', 'completed')`,
     [effectiveUserId, input.lessonId]
   );
 
@@ -255,38 +272,19 @@ export async function startLessonExam(
     return { success: false, error: 'Complete the lesson study phase before taking the exam' };
   }
 
+  const lessonProgress = progressRows[0];
+
   // Check max attempts
   const attemptCountRows = await db.query<RowDataPacket[]>(
-    `SELECT COUNT(*) as count FROM user_exam_attempts WHERE user_id = ? AND lesson_exam_id = ?`,
+    `SELECT COUNT(*) as count FROM user_exam_attempts WHERE user_id = ? AND exam_id = ?`,
     [effectiveUserId, exam.id]
   );
 
-  if (exam.max_attempts > 0 && (attemptCountRows[0].count as number) >= exam.max_attempts) {
+  if (exam.max_attempts && exam.max_attempts > 0 && (attemptCountRows[0].count as number) >= exam.max_attempts) {
     return { success: false, error: `Maximum attempts (${exam.max_attempts}) reached for this exam` };
   }
 
-  // Get exam questions with exercises
-  const questionRows = await db.query<ExamQuestionRow[]>(
-    `SELECT eq.*,
-            me.exercise_type, me.question, me.options, me.correct_answer, me.explanation
-     FROM exam_questions eq
-     LEFT JOIN master_exercises me ON eq.master_exercise_id = me.id
-     WHERE eq.lesson_exam_id = ? AND eq.is_active = TRUE
-     ORDER BY ${exam.shuffle_questions ? 'RAND()' : 'eq.display_order ASC'}`,
-    [exam.id]
-  );
-
-  // Create attempt
-  const attemptNumber = (attemptCountRows[0].count as number) + 1;
-  const result = await db.execute(
-    `INSERT INTO user_exam_attempts (user_id, lesson_exam_id, unit_lesson_id, attempt_number, status, started_at)
-     VALUES (?, ?, ?, ?, 'in_progress', NOW())`,
-    [effectiveUserId, exam.id, input.lessonId, attemptNumber]
-  );
-
-  const attemptId = result.insertId;
-
-  // Format questions (without answers)
+  // Parse exercise_ids JSON to get exercises
   const parseJson = <T>(value: unknown): T | null => {
     if (value === null || value === undefined) return null;
     if (typeof value === 'object') return value as T;
@@ -300,23 +298,46 @@ export async function startLessonExam(
     return null;
   };
 
-  const questions = questionRows.map(q => {
-    const questionText = q.custom_question ?? q.question ?? '';
-    let options = parseJson<string[]>(q.custom_options ?? q.options);
+  const exerciseIds = parseJson<number[]>(exam.exercise_ids) ?? [];
 
-    // Shuffle options if enabled
-    if (options && exam.shuffle_options) {
-      options = [...options].sort(() => Math.random() - 0.5);
-    }
+  if (exerciseIds.length === 0) {
+    return { success: false, error: 'No questions configured for this exam' };
+  }
 
-    return {
-      id: q.id,
-      exerciseType: q.exercise_type ?? 'multiple_choice',
-      question: questionText,
-      options,
-      points: q.points,
-    };
-  });
+  // Get exercises from master_exercises
+  const exerciseRows = await db.query<MasterExerciseRow[]>(
+    `SELECT * FROM master_exercises
+     WHERE id IN (${exerciseIds.map(() => '?').join(',')}) AND is_active = TRUE`,
+    exerciseIds
+  );
+
+  // Shuffle questions if enabled
+  let questions = exerciseRows.map(ex => ({
+    id: ex.id,
+    exerciseType: ex.exercise_type,
+    question: ex.question,
+    options: parseJson<string[]>(ex.options),
+    points: ex.points || 1,
+  }));
+
+  if (exam.shuffle_questions) {
+    questions = questions.sort(() => Math.random() - 0.5);
+  }
+
+  // Limit to random_question_count if set
+  if (exam.random_question_count && exam.random_question_count < questions.length) {
+    questions = questions.slice(0, exam.random_question_count);
+  }
+
+  // Create attempt
+  const attemptNumber = (attemptCountRows[0].count as number) + 1;
+  const result = await db.execute(
+    `INSERT INTO user_exam_attempts (user_id, exam_id, lesson_progress_id, unit_progress_id, attempt_number, started_at, score, total_questions, correct_answers, time_taken_seconds, answers, is_passed)
+     VALUES (?, ?, ?, ?, ?, NOW(), 0, ?, 0, 0, '[]', FALSE)`,
+    [effectiveUserId, exam.id, lessonProgress.id, lessonProgress.unit_progress_id, attemptNumber, questions.length]
+  );
+
+  const attemptId = result.insertId;
 
   return {
     success: true,
@@ -324,7 +345,7 @@ export async function startLessonExam(
       id: attemptId,
       examId: exam.id,
       attemptNumber,
-      timeLimitMinutes: exam.time_limit_minutes,
+      timeLimitSeconds: exam.time_limit_seconds,
       totalQuestions: questions.length,
       passingScore: exam.passing_score,
     },
@@ -344,6 +365,7 @@ export async function submitExamAnswers(
     percentage: number;
     passed: boolean;
     xpEarned: number;
+    coinsEarned: number;
     correctCount: number;
     totalQuestions: number;
     questionResults: Array<{
@@ -364,9 +386,12 @@ export async function submitExamAnswers(
   const input = submitExamAnswersSchema.parse(args);
   const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
 
-  // Get attempt
+  // Get attempt with lesson info
   const attemptRows = await db.query<ExamAttemptRow[]>(
-    `SELECT * FROM user_exam_attempts WHERE id = ? AND user_id = ?`,
+    `SELECT uea.*, le.lesson_id
+     FROM user_exam_attempts uea
+     JOIN lesson_exams le ON uea.exam_id = le.id
+     WHERE uea.id = ? AND uea.user_id = ?`,
     [input.attemptId, effectiveUserId]
   );
 
@@ -376,25 +401,43 @@ export async function submitExamAnswers(
 
   const attempt = attemptRows[0];
 
-  if (attempt.status !== 'in_progress') {
+  // Check if already completed (completed_at is set)
+  if (attempt.completed_at) {
     return { success: false, error: 'This exam attempt has already been submitted' };
   }
 
-  // Get exam and questions
+  // Get exam
   const examRows = await db.query<LessonExamRow[]>(
     `SELECT * FROM lesson_exams WHERE id = ?`,
-    [attempt.lesson_exam_id]
+    [attempt.exam_id]
   );
+
+  if (examRows.length === 0) {
+    return { success: false, error: 'Exam not found' };
+  }
 
   const exam = examRows[0];
 
-  const questionRows = await db.query<ExamQuestionRow[]>(
-    `SELECT eq.*,
-            me.exercise_type, me.question, me.options, me.correct_answer, me.explanation
-     FROM exam_questions eq
-     LEFT JOIN master_exercises me ON eq.master_exercise_id = me.id
-     WHERE eq.lesson_exam_id = ?`,
-    [attempt.lesson_exam_id]
+  // Parse exercise_ids to get exercises
+  const parseJson = <T>(value: unknown): T | null => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'object') return value as T;
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value) as T;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const exerciseIds = parseJson<number[]>(exam.exercise_ids) ?? [];
+
+  // Get exercises from master_exercises
+  const exerciseRows = await db.query<MasterExerciseRow[]>(
+    `SELECT * FROM master_exercises WHERE id IN (${exerciseIds.map(() => '?').join(',')})`,
+    exerciseIds
   );
 
   // Grade each answer
@@ -411,25 +454,26 @@ export async function submitExamAnswers(
   let totalPoints = 0;
   let correctCount = 0;
 
-  for (const question of questionRows) {
-    const userAnswerObj = input.answers.find(a => a.questionId === question.id);
+  for (const exercise of exerciseRows) {
+    const userAnswerObj = input.answers.find(a => a.questionId === exercise.id);
     const userAnswer = userAnswerObj?.answer ?? '';
-    const correctAnswer = question.custom_correct_answer ?? question.correct_answer ?? '';
+    const correctAnswer = exercise.correct_answer ?? '';
 
     // Simple string comparison (case-insensitive, trimmed)
     const isCorrect = userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
-    const pointsEarned = isCorrect ? question.points : 0;
+    const points = exercise.points || 1;
+    const pointsEarned = isCorrect ? points : 0;
 
-    totalPoints += question.points;
+    totalPoints += points;
     totalScore += pointsEarned;
     if (isCorrect) correctCount++;
 
     questionResults.push({
-      questionId: question.id,
+      questionId: exercise.id,
       correct: isCorrect,
       userAnswer,
       correctAnswer,
-      explanation: question.explanation ?? null,
+      explanation: exercise.explanation ?? null,
       pointsEarned,
     });
   }
@@ -437,111 +481,140 @@ export async function submitExamAnswers(
   const percentage = totalPoints > 0 ? Math.round((totalScore / totalPoints) * 100) : 0;
   const passed = percentage >= exam.passing_score;
 
+  // Calculate XP and coins earned
+  let xpEarned = 0;
+  let coinsEarned = 0;
+  if (passed) {
+    xpEarned = exam.pass_xp || 0;
+    coinsEarned = exam.pass_coins || 0;
+
+    // Bonus for perfect score
+    if (percentage === 100) {
+      xpEarned += exam.perfect_score_bonus_xp || 0;
+      coinsEarned += exam.perfect_score_bonus_coins || 0;
+    }
+  }
+
   // Update attempt
   await db.query(
     `UPDATE user_exam_attempts
-     SET status = 'completed',
-         score = ?,
-         total_points = ?,
-         percentage = ?,
-         passed = ?,
+     SET score = ?,
+         total_questions = ?,
+         correct_answers = ?,
          completed_at = NOW(),
-         time_spent_seconds = ?,
-         answers_json = ?,
-         results_json = ?
+         time_taken_seconds = ?,
+         answers = ?,
+         is_passed = ?,
+         xp_earned = ?,
+         coins_earned = ?
      WHERE id = ?`,
     [
-      totalScore,
-      totalPoints,
-      percentage,
-      passed,
+      percentage, // score is percentage in this schema
+      exerciseRows.length,
+      correctCount,
       input.timeSpentSeconds ?? 0,
-      JSON.stringify(input.answers),
-      JSON.stringify(questionResults),
+      JSON.stringify({ answers: input.answers, results: questionResults }),
+      passed,
+      xpEarned,
+      coinsEarned,
       input.attemptId,
     ]
   );
 
-  // Calculate XP earned
-  let xpEarned = 0;
-  if (passed) {
-    // Get lesson XP value
-    const lessonRows = await db.query<RowDataPacket[]>(
-      `SELECT exam_xp FROM unit_lessons WHERE id = ?`,
-      [attempt.unit_lesson_id]
+  // Update lesson progress if passed
+  if (passed && attempt.lesson_progress_id) {
+    await db.query(
+      `UPDATE user_lesson_progress
+       SET status = 'completed',
+           exam_passed_at = NOW(),
+           boss_exam_passed = TRUE,
+           best_exam_score = GREATEST(COALESCE(best_exam_score, 0), ?),
+           exam_attempts = exam_attempts + 1,
+           last_exam_attempt_at = NOW(),
+           xp_earned = xp_earned + ?
+       WHERE id = ?`,
+      [percentage, xpEarned, attempt.lesson_progress_id]
     );
-
-    if (lessonRows.length > 0) {
-      xpEarned = lessonRows[0].exam_xp as number;
-
-      // Update lesson progress XP
-      await db.query(
-        `UPDATE user_lesson_progress
-         SET xp_earned = xp_earned + ?
-         WHERE user_id = ? AND unit_lesson_id = ?`,
-        [xpEarned, effectiveUserId, attempt.unit_lesson_id]
-      );
-    }
+  } else if (attempt.lesson_progress_id) {
+    // Update attempt count even if failed
+    await db.query(
+      `UPDATE user_lesson_progress
+       SET exam_attempts = exam_attempts + 1,
+           last_exam_attempt_at = NOW(),
+           best_exam_score = GREATEST(COALESCE(best_exam_score, 0), ?)
+       WHERE id = ?`,
+      [percentage, attempt.lesson_progress_id]
+    );
   }
 
   // Check for unit/next lesson unlock
   let nextStep: { message: string; unlockedUnit?: number; unlockedLesson?: number } | undefined;
 
-  if (passed) {
+  if (passed && attempt.lesson_id) {
     // Get current lesson info
     const lessonInfoRows = await db.query<RowDataPacket[]>(
-      `SELECT ul.*, mu.word_map_id, mu.unit_number, mu.total_lessons
+      `SELECT ul.*, mu.map_id, mu.unit_number, mu.total_lessons
        FROM unit_lessons ul
-       JOIN map_units mu ON ul.map_unit_id = mu.id
+       JOIN map_units mu ON ul.unit_id = mu.id
        WHERE ul.id = ?`,
-      [attempt.unit_lesson_id]
+      [attempt.lesson_id]
     );
 
     if (lessonInfoRows.length > 0) {
       const lesson = lessonInfoRows[0];
+
+      // Get map_progress_id for FK
+      const mapProgressRows = await db.query<RowDataPacket[]>(
+        `SELECT id FROM user_map_progress WHERE user_id = ? AND map_id = ?`,
+        [effectiveUserId, lesson.map_id]
+      );
+
+      const mapProgressId = mapProgressRows.length > 0 ? mapProgressRows[0].id : null;
 
       // Check if this was the last lesson in the unit
       if (lesson.lesson_number >= lesson.total_lessons) {
         // Try to unlock next unit
         const nextUnitRows = await db.query<RowDataPacket[]>(
           `SELECT * FROM map_units
-           WHERE word_map_id = ? AND unit_number = ? AND is_active = TRUE`,
-          [lesson.word_map_id, lesson.unit_number + 1]
+           WHERE map_id = ? AND unit_number = ? AND is_active = TRUE`,
+          [lesson.map_id, lesson.unit_number + 1]
         );
 
-        if (nextUnitRows.length > 0) {
+        if (nextUnitRows.length > 0 && mapProgressId) {
           const nextUnit = nextUnitRows[0];
 
           // Check if already unlocked
           const existingUnitProgress = await db.query<RowDataPacket[]>(
-            `SELECT * FROM user_unit_progress WHERE user_id = ? AND map_unit_id = ?`,
+            `SELECT * FROM user_unit_progress WHERE user_id = ? AND unit_id = ?`,
             [effectiveUserId, nextUnit.id]
           );
 
           if (existingUnitProgress.length === 0) {
             // Unlock next unit
-            await db.execute(
-              `INSERT INTO user_unit_progress (user_id, map_unit_id, status, progress_percentage, lessons_completed, total_lessons, xp_earned, boss_exam_passed, boss_exam_attempts)
-               VALUES (?, ?, 'available', 0, 0, ?, 0, FALSE, 0)`,
-              [effectiveUserId, nextUnit.id, nextUnit.total_lessons]
+            const unitProgressResult = await db.execute(
+              `INSERT INTO user_unit_progress (user_id, unit_id, map_progress_id, status, completion_percentage, lessons_completed, xp_earned)
+               VALUES (?, ?, ?, 'unlocked', 0, 0, 0)`,
+              [effectiveUserId, nextUnit.id, mapProgressId]
             );
+
+            const newUnitProgressId = unitProgressResult.insertId;
 
             // Unlock first lesson of next unit
             const firstLessonRows = await db.query<RowDataPacket[]>(
-              `SELECT * FROM unit_lessons WHERE map_unit_id = ? AND lesson_number = 1 AND is_active = TRUE`,
+              `SELECT * FROM unit_lessons WHERE unit_id = ? AND lesson_number = 1 AND is_active = TRUE`,
               [nextUnit.id]
             );
 
             if (firstLessonRows.length > 0) {
               await db.execute(
-                `INSERT INTO user_lesson_progress (user_id, unit_lesson_id, status, progress_percentage, content_completed, total_content, vocabulary_mastered, grammar_mastered, exercises_completed, xp_earned, time_spent_seconds)
-                 VALUES (?, ?, 'available', 0, 0, 0, 0, 0, 0, 0, 0)`,
-                [effectiveUserId, firstLessonRows[0].id]
+                `INSERT INTO user_lesson_progress (user_id, lesson_id, unit_progress_id, status, content_progress_percentage, xp_earned)
+                 VALUES (?, ?, ?, 'unlocked', 0, 0)`,
+                [effectiveUserId, firstLessonRows[0].id, newUnitProgressId]
               );
             }
 
             nextStep = {
-              message: `Congratulations! You unlocked Unit ${nextUnit.unit_number}: ${nextUnit.name}`,
+              message: `Congratulations! You unlocked Unit ${nextUnit.unit_number}: ${nextUnit.title}`,
               unlockedUnit: nextUnit.id,
             };
           }
@@ -550,24 +623,24 @@ export async function submitExamAnswers(
         // Unlock next lesson in same unit
         const nextLessonRows = await db.query<RowDataPacket[]>(
           `SELECT * FROM unit_lessons
-           WHERE map_unit_id = ? AND lesson_number = ? AND is_active = TRUE`,
-          [lesson.map_unit_id, lesson.lesson_number + 1]
+           WHERE unit_id = ? AND lesson_number = ? AND is_active = TRUE`,
+          [lesson.unit_id, lesson.lesson_number + 1]
         );
 
-        if (nextLessonRows.length > 0) {
+        if (nextLessonRows.length > 0 && attempt.unit_progress_id) {
           const nextLesson = nextLessonRows[0];
 
           // Check if already unlocked
           const existingLessonProgress = await db.query<RowDataPacket[]>(
-            `SELECT * FROM user_lesson_progress WHERE user_id = ? AND unit_lesson_id = ?`,
+            `SELECT * FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?`,
             [effectiveUserId, nextLesson.id]
           );
 
           if (existingLessonProgress.length === 0) {
             await db.execute(
-              `INSERT INTO user_lesson_progress (user_id, unit_lesson_id, status, progress_percentage, content_completed, total_content, vocabulary_mastered, grammar_mastered, exercises_completed, xp_earned, time_spent_seconds)
-               VALUES (?, ?, 'available', 0, 0, 0, 0, 0, 0, 0, 0)`,
-              [effectiveUserId, nextLesson.id]
+              `INSERT INTO user_lesson_progress (user_id, lesson_id, unit_progress_id, status, content_progress_percentage, xp_earned)
+               VALUES (?, ?, ?, 'unlocked', 0, 0)`,
+              [effectiveUserId, nextLesson.id, attempt.unit_progress_id]
             );
           }
 
@@ -589,8 +662,9 @@ export async function submitExamAnswers(
       percentage,
       passed,
       xpEarned,
+      coinsEarned,
       correctCount,
-      totalQuestions: questionRows.length,
+      totalQuestions: exerciseRows.length,
       questionResults,
     },
     nextStep,
@@ -604,18 +678,19 @@ export async function getExamResults(
   success: boolean;
   attempt: {
     id: number;
-    lessonId: number;
+    lessonId: number | null;
     lessonTitle: string;
     examTitle: string | null;
     attemptNumber: number;
-    status: string;
     score: number;
-    totalPoints: number;
-    percentage: number;
+    totalQuestions: number;
+    correctAnswers: number;
     passed: boolean;
+    xpEarned: number;
+    coinsEarned: number;
     startedAt: Date;
     completedAt: Date | null;
-    timeSpentSeconds: number | null;
+    timeTakenSeconds: number;
   };
   questionResults: Array<{
     questionId: number;
@@ -629,13 +704,14 @@ export async function getExamResults(
   const input = getExamResultsSchema.parse(args);
   const effectiveUserId = input.userId ?? input._resolvedUserId ?? 1;
 
-  const [rows] = await db.query<ExamAttemptRow[]>(
+  const rows = await db.query<ExamAttemptRow[]>(
     `SELECT uea.*,
             ul.title as lesson_title,
-            le.title as exam_title
+            le.title as exam_title,
+            le.lesson_id
      FROM user_exam_attempts uea
-     JOIN unit_lessons ul ON uea.unit_lesson_id = ul.id
-     JOIN lesson_exams le ON uea.lesson_exam_id = le.id
+     JOIN lesson_exams le ON uea.exam_id = le.id
+     LEFT JOIN unit_lessons ul ON le.lesson_id = ul.id
      WHERE uea.id = ? AND uea.user_id = ?`,
     [input.attemptId, effectiveUserId]
   );
@@ -646,11 +722,11 @@ export async function getExamResults(
 
   const attempt = rows[0];
 
-  if (attempt.status !== 'completed') {
+  if (!attempt.completed_at) {
     return { success: false, error: 'Exam has not been submitted yet' };
   }
 
-  // Parse results JSON
+  // Parse results from answers JSON
   let questionResults: Array<{
     questionId: number;
     correct: boolean;
@@ -660,9 +736,12 @@ export async function getExamResults(
     pointsEarned: number;
   }> = [];
 
-  if (attempt.results_json) {
+  if (attempt.answers) {
     try {
-      questionResults = JSON.parse(attempt.results_json);
+      const parsed = JSON.parse(attempt.answers);
+      if (parsed.results) {
+        questionResults = parsed.results;
+      }
     } catch {
       // Results not available
     }
@@ -672,18 +751,19 @@ export async function getExamResults(
     success: true,
     attempt: {
       id: attempt.id,
-      lessonId: attempt.unit_lesson_id,
+      lessonId: attempt.lesson_id ?? null,
       lessonTitle: attempt.lesson_title ?? '',
       examTitle: attempt.exam_title ?? null,
       attemptNumber: attempt.attempt_number,
-      status: attempt.status,
       score: attempt.score ?? 0,
-      totalPoints: attempt.total_points ?? 0,
-      percentage: attempt.percentage ?? 0,
-      passed: Boolean(attempt.passed),
+      totalQuestions: attempt.total_questions ?? 0,
+      correctAnswers: attempt.correct_answers ?? 0,
+      passed: Boolean(attempt.is_passed),
+      xpEarned: attempt.xp_earned ?? 0,
+      coinsEarned: attempt.coins_earned ?? 0,
       startedAt: attempt.started_at,
       completedAt: attempt.completed_at,
-      timeSpentSeconds: attempt.time_spent_seconds,
+      timeTakenSeconds: attempt.time_taken_seconds ?? 0,
     },
     questionResults,
   };
@@ -696,14 +776,16 @@ export async function getExamHistory(
   success: boolean;
   attempts: Array<{
     id: number;
-    lessonId: number;
+    lessonId: number | null;
     lessonTitle: string;
     examTitle: string | null;
     attemptNumber: number;
-    status: string;
-    score: number | null;
-    percentage: number | null;
-    passed: boolean | null;
+    score: number;
+    totalQuestions: number;
+    correctAnswers: number;
+    passed: boolean;
+    xpEarned: number;
+    coinsEarned: number;
     completedAt: Date | null;
   }>;
   total: number;
@@ -714,17 +796,18 @@ export async function getExamHistory(
   let sql = `
     SELECT uea.*,
            ul.title as lesson_title,
-           le.title as exam_title
+           le.title as exam_title,
+           le.lesson_id
     FROM user_exam_attempts uea
-    JOIN unit_lessons ul ON uea.unit_lesson_id = ul.id
-    JOIN lesson_exams le ON uea.lesson_exam_id = le.id
+    JOIN lesson_exams le ON uea.exam_id = le.id
+    LEFT JOIN unit_lessons ul ON le.lesson_id = ul.id
     WHERE uea.user_id = ?
   `;
 
   const params: (number | string)[] = [effectiveUserId];
 
   if (input.lessonId) {
-    sql += ` AND uea.unit_lesson_id = ?`;
+    sql += ` AND le.lesson_id = ?`;
     params.push(input.lessonId);
   }
 
@@ -735,14 +818,16 @@ export async function getExamHistory(
 
   const attempts = rows.map(row => ({
     id: row.id,
-    lessonId: row.unit_lesson_id,
+    lessonId: row.lesson_id ?? null,
     lessonTitle: row.lesson_title ?? '',
     examTitle: row.exam_title ?? null,
     attemptNumber: row.attempt_number,
-    status: row.status,
-    score: row.score,
-    percentage: row.percentage,
-    passed: row.passed,
+    score: row.score ?? 0,
+    totalQuestions: row.total_questions ?? 0,
+    correctAnswers: row.correct_answers ?? 0,
+    passed: Boolean(row.is_passed),
+    xpEarned: row.xp_earned ?? 0,
+    coinsEarned: row.coins_earned ?? 0,
     completedAt: row.completed_at,
   }));
 
