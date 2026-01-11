@@ -12,8 +12,11 @@ import {
   faLightbulb,
   faQuoteLeft,
   faComments,
+  faGlobe,
+  faExternalLinkAlt,
 } from '../../../shared/icons';
 import { ApiService, DictionaryEntry, RelatedWords, Vocabulary } from '../../../core/services/api.service';
+import { PronunciationService, CachedDictionaryData, FreeDictionaryMeaning } from '../../../core/services/pronunciation.service';
 
 @Component({
   selector: 'app-vocabulary-detail',
@@ -30,6 +33,7 @@ export class VocabularyDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private apiService = inject(ApiService);
+  private pronunciationService = inject(PronunciationService);
 
   // Icons
   faArrowLeft = faArrowLeft;
@@ -41,12 +45,20 @@ export class VocabularyDetailComponent implements OnInit {
   faLightbulb = faLightbulb;
   faQuoteLeft = faQuoteLeft;
   faComments = faComments;
+  faGlobe = faGlobe;
+  faExternalLinkAlt = faExternalLinkAlt;
 
   entry = signal<DictionaryEntry | null>(null);
   relatedWords = signal<RelatedWords | null>(null);
+  freeDictData = signal<CachedDictionaryData | null>(null);
+  freeDictLoading = signal(false);
   loading = signal(true);
   error = signal<string | null>(null);
-  speakingAccent = signal<'uk' | 'us' | null>(null);
+
+  // Use PronunciationService's speaking signal
+  get speakingAccent() {
+    return this.pronunciationService.speaking;
+  }
 
   // CEFR level colors (Tailwind classes) - color-coded by difficulty
   cefrColors: Record<string, string> = {
@@ -58,56 +70,46 @@ export class VocabularyDetailComponent implements OnInit {
     C2: 'bg-purple-600',     // Proficiency - hardest
   };
 
-  // Speech synthesis voices
-  private ukVoice: SpeechSynthesisVoice | null = null;
-  private usVoice: SpeechSynthesisVoice | null = null;
-
   ngOnInit() {
-    this.loadVoices();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadDictionaryEntry(parseInt(id, 10));
     }
   }
 
-  private loadVoices() {
-    const loadAvailableVoices = () => {
-      const voices = speechSynthesis.getVoices();
-      this.ukVoice = voices.find(v =>
-        v.lang === 'en-GB' || v.lang.startsWith('en-GB')
-      ) || null;
-      this.usVoice = voices.find(v =>
-        v.lang === 'en-US' || v.lang.startsWith('en-US')
-      ) || null;
-      if (!this.ukVoice && !this.usVoice) {
-        const englishVoice = voices.find(v => v.lang.startsWith('en'));
-        this.ukVoice = englishVoice || null;
-        this.usVoice = englishVoice || null;
-      }
-    };
-
-    if (speechSynthesis.getVoices().length > 0) {
-      loadAvailableVoices();
-    } else {
-      speechSynthesis.onvoiceschanged = loadAvailableVoices;
-    }
-  }
-
   loadDictionaryEntry(id: number) {
     this.loading.set(true);
     this.error.set(null);
+    this.freeDictData.set(null);
 
     this.apiService.getDictionaryEntry(id).subscribe({
       next: (entry) => {
         this.entry.set(entry);
         this.loading.set(false);
         this.loadRelatedWords(id);
+        // Load Free Dictionary data concurrently
+        this.loadFreeDictionaryData(entry.englishWord);
       },
       error: () => {
         this.error.set('Failed to load dictionary entry');
         this.loading.set(false);
       },
     });
+  }
+
+  /**
+   * Load additional dictionary data from Free Dictionary API
+   */
+  async loadFreeDictionaryData(word: string) {
+    this.freeDictLoading.set(true);
+    try {
+      const data = await this.pronunciationService.fetchFullDictionary(word);
+      this.freeDictData.set(data);
+    } catch {
+      // Silently fail - Free Dictionary data is supplementary
+    } finally {
+      this.freeDictLoading.set(false);
+    }
   }
 
   loadRelatedWords(id: number) {
@@ -131,27 +133,11 @@ export class VocabularyDetailComponent implements OnInit {
   }
 
   speak(word: string, accent: 'uk' | 'us') {
-    if (this.speakingAccent()) {
-      speechSynthesis.cancel();
-    }
-
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-
-    const voice = accent === 'uk' ? this.ukVoice : this.usVoice;
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = accent === 'uk' ? 'en-GB' : 'en-US';
-    } else {
-      utterance.lang = accent === 'uk' ? 'en-GB' : 'en-US';
-    }
-
-    utterance.onstart = () => this.speakingAccent.set(accent);
-    utterance.onend = () => this.speakingAccent.set(null);
-    utterance.onerror = () => this.speakingAccent.set(null);
-
-    speechSynthesis.speak(utterance);
+    const entry = this.entry();
+    this.pronunciationService.speak(word, accent, {
+      uk: entry?.audioUkUrl,
+      us: entry?.audioUsUrl
+    });
   }
 
   playAudio(url: string | null) {
@@ -245,5 +231,84 @@ export class VocabularyDetailComponent implements OnInit {
 
   navigateToConversation(conversationId: number) {
     this.router.navigate(['/conversations', conversationId]);
+  }
+
+  // ============================================================
+  // Free Dictionary Data Helpers
+  // ============================================================
+
+  /**
+   * Get all unique synonyms from Free Dictionary data
+   */
+  getFreeDictSynonyms(): string[] {
+    const data = this.freeDictData();
+    if (!data) return [];
+    return PronunciationService.extractAllSynonyms(data);
+  }
+
+  /**
+   * Get all unique antonyms from Free Dictionary data
+   */
+  getFreeDictAntonyms(): string[] {
+    const data = this.freeDictData();
+    if (!data) return [];
+    return PronunciationService.extractAllAntonyms(data);
+  }
+
+  /**
+   * Get meanings grouped by part of speech
+   */
+  getFreeDictMeanings(): FreeDictionaryMeaning[] {
+    return this.freeDictData()?.meanings || [];
+  }
+
+  /**
+   * Check if Free Dictionary has additional data not in our database
+   */
+  hasAdditionalFreeDictData(): boolean {
+    const data = this.freeDictData();
+    if (!data) return false;
+
+    const entry = this.entry();
+    if (!entry) return false;
+
+    // Check if Free Dictionary has more synonyms/antonyms
+    const freeSynonyms = this.getFreeDictSynonyms();
+    const freeAntonyms = this.getFreeDictAntonyms();
+    const dbSynonyms = entry.synonyms || [];
+    const dbAntonyms = entry.antonyms || [];
+
+    const hasMoreSynonyms = freeSynonyms.some(s => !dbSynonyms.includes(s));
+    const hasMoreAntonyms = freeAntonyms.some(a => !dbAntonyms.includes(a));
+    const hasExamples = data.meanings.some(m =>
+      m.definitions.some(d => d.example)
+    );
+
+    return hasMoreSynonyms || hasMoreAntonyms || hasExamples || data.meanings.length > 0;
+  }
+
+  /**
+   * Get source URLs from Free Dictionary
+   */
+  getSourceUrls(): string[] {
+    return this.freeDictData()?.sourceUrls || [];
+  }
+
+  /**
+   * Format part of speech from Free Dictionary
+   */
+  formatFreeDictPos(pos: string): string {
+    const labels: Record<string, string> = {
+      noun: 'noun',
+      verb: 'verb',
+      adjective: 'adj',
+      adverb: 'adv',
+      preposition: 'prep',
+      conjunction: 'conj',
+      pronoun: 'pron',
+      interjection: 'interj',
+      exclamation: 'excl',
+    };
+    return labels[pos.toLowerCase()] || pos;
   }
 }

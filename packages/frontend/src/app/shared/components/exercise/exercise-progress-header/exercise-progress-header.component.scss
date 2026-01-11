@@ -1,0 +1,8 @@
+@keyframes timerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.timer-warning {
+  animation: timerPulse 1s ease-in-out infinite;
+}

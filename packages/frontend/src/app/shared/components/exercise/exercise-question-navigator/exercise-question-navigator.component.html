@@ -1,0 +1,18 @@
+<div class="flex flex-wrap items-center gap-4 mt-5 p-4 bg-white rounded-lg shadow-sm">
+  @if (showLabel()) {
+    <span class="font-medium text-gray-600">{{ labelText() }}</span>
+  }
+  <div class="flex flex-wrap gap-2">
+    @for (question of questions(); track trackByIndex($index); let i = $index) {
+      <button class="w-9 h-9 rounded-full text-sm font-semibold transition-all"
+              [ngClass]="{
+                'bg-gray-200 text-gray-600': !question.hasAnswer && i !== currentIndex(),
+                'bg-gray-900 text-white': question.hasAnswer && i !== currentIndex(),
+                'ring-2 ring-gray-900 scale-110': i === currentIndex()
+              }"
+              (click)="onSelectQuestion(i)">
+        {{ i + 1 }}
+      </button>
+    }
+  </div>
+</div>

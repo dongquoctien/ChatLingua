@@ -1,0 +1,140 @@
+<!-- Celebration Animation -->
+@if (showConfetti()) {
+  <div class="fixed inset-0 z-50 pointer-events-none animate-fade-in-out">
+    <div class="absolute inset-0 overflow-hidden">
+      @for (item of confettiItems(); track item.index) {
+        <div class="confetti" [style.--delay]="item.delay" [style.--x]="item.x"></div>
+      }
+    </div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center animate-celebration-pop">
+      <fa-icon [icon]="faTrophy" class="text-7xl text-yellow-400 drop-shadow-lg animate-bounce"></fa-icon>
+      <h2 class="mt-4 text-3xl font-bold text-gray-800">Congratulations!</h2>
+    </div>
+  </div>
+}
+
+<!-- Results Card -->
+<div class="card max-w-6xl mx-auto overflow-hidden">
+  <!-- Header with score -->
+  <div class="text-center p-8 md:p-12 bg-gradient-to-b from-gray-50 to-white">
+    <!-- Trophy with rank colors -->
+    <div class="relative inline-block">
+      <fa-icon [icon]="result().percentage >= 50 ? faTrophy : faFrown"
+               class="text-7xl mb-2"
+               [ngClass]="{
+                 'text-gray-500': rank() === 'iron',
+                 'text-amber-700 trophy-bronze': rank() === 'bronze',
+                 'text-gray-400 trophy-silver': rank() === 'silver',
+                 'text-yellow-400 trophy-gold': rank() === 'gold'
+               }"></fa-icon>
+      <span class="block text-xs font-bold uppercase tracking-wider mt-1 mb-3"
+            [ngClass]="{
+              'text-gray-500': rank() === 'iron',
+              'text-amber-700': rank() === 'bronze',
+              'text-gray-400': rank() === 'silver',
+              'text-yellow-600': rank() === 'gold'
+            }">
+        {{ rankLabel() }}
+      </span>
+    </div>
+
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">{{ congratsMessage() }}</h2>
+
+    <div class="mb-4">
+      <div class="text-5xl font-bold text-gray-900">{{ result().score }}/{{ result().total }}</div>
+      <div class="text-2xl text-gray-600">{{ result().percentage }}%</div>
+    </div>
+
+    <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-600 mb-4">
+      <fa-icon [icon]="faClock"></fa-icon>
+      Time: {{ timeSpent() }}
+    </div>
+
+    <!-- XP Display -->
+    @if ((result().xpAwarded ?? 0) > 0) {
+      <div class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl animate-xp-pop"
+           [class.border-2]="result().percentage >= 90"
+           [class.border-yellow-400]="result().percentage >= 90"
+           [class.shadow-lg]="result().percentage >= 90">
+        <fa-icon [icon]="faBolt" class="text-xl text-yellow-500"></fa-icon>
+        <span class="text-lg font-semibold text-orange-600">+{{ result().xpAwarded }} XP</span>
+        @if (result().isPerfect) {
+          <span class="flex items-center gap-1 ml-2 px-3 py-1 bg-gradient-to-r from-yellow-400 to-amber-400 text-amber-900 rounded-full text-sm font-bold uppercase">
+            ⭐ Perfect!
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <hr class="border-gray-200">
+
+  <!-- Question Review -->
+  <div class="p-6 md:p-8">
+    <h3 class="text-xl font-semibold text-gray-900 mb-4">Question Review</h3>
+    <div class="space-y-4">
+      @for (answer of result().results; track answer.exerciseId) {
+        <div class="p-4 rounded-lg border-l-4"
+             [ngClass]="{
+               'bg-gray-100 border-gray-900': answer.isCorrect,
+               'bg-red-50 border-red-500': !answer.isCorrect
+             }">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="font-bold text-gray-800">Q{{ answer.questionOrder }}</span>
+            <fa-icon [icon]="answer.isCorrect ? faCheckCircle : faTimesCircle"
+                     [ngClass]="{
+                       'text-gray-900': answer.isCorrect,
+                       'text-red-500': !answer.isCorrect
+                     }"></fa-icon>
+            <span class="px-2 py-0.5 bg-gray-200 rounded text-xs text-gray-600">{{ getTypeLabel(answer.exerciseType) }}</span>
+          </div>
+          <p class="text-gray-800 mb-3 leading-relaxed">{{ answer.questionText }}</p>
+          <div class="text-sm space-y-1">
+            <div>
+              <strong>Your answer:</strong>
+              <span [ngClass]="{
+                      'text-red-600 line-through': !answer.isCorrect
+                    }">
+                {{ formatAnswer(answer.userAnswer, answer.exerciseType) }}
+              </span>
+            </div>
+            @if (!answer.isCorrect) {
+              <div>
+                <strong>Correct answer:</strong>
+                <span class="text-gray-900 font-medium">{{ formatAnswer(answer.correctAnswer, answer.exerciseType) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex justify-center gap-4 p-6 border-t border-gray-200">
+    @if (backButtonRoute()) {
+      <a [routerLink]="backButtonRoute()" class="btn btn-primary">{{ backButtonText() }}</a>
+    } @else {
+      <button class="btn btn-primary" (click)="onBack()">{{ backButtonText() }}</button>
+    }
+
+    @if (showShareButton()) {
+      <button class="btn btn-secondary" (click)="onShare()">
+        <fa-icon [icon]="faShare" class="mr-2"></fa-icon>
+        Share
+      </button>
+    }
+
+    @if (historyRoute()) {
+      <a [routerLink]="historyRoute()" class="btn btn-secondary">
+        <fa-icon [icon]="faHistory" class="mr-2"></fa-icon>
+        {{ historyButtonText() }}
+      </a>
+    } @else {
+      <button class="btn btn-secondary" (click)="onHistory()">
+        <fa-icon [icon]="faHistory" class="mr-2"></fa-icon>
+        {{ historyButtonText() }}
+      </button>
+    }
+  </div>
+</div>

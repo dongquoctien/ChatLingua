@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
+import { PronunciationService } from '../../../core/services/pronunciation.service';
 import { DialogService } from '../../../shared/services/dialog.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
@@ -27,6 +28,7 @@ import { GameStateService } from '../services/game-state.service';
 })
 export class SpellingBeeComponent implements OnInit, OnDestroy {
   private gameStateService = inject(GameStateService);
+  private pronunciationService = inject(PronunciationService);
   @ViewChild('inputField') inputField!: ElementRef<HTMLInputElement>;
 
   // Game state
@@ -65,8 +67,8 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
   private timerInterval: any = null;
   private startTime: number = 0;
 
-  // Audio
-  isPlaying = signal(false);
+  // Audio - Use PronunciationService's speaking signal
+  isPlaying = () => this.pronunciationService.speaking() !== null;
 
   // Game result
   showGameOver = signal(false);
@@ -169,18 +171,15 @@ export class SpellingBeeComponent implements OnInit, OnDestroy {
     const word = this.currentWord();
     if (!word || this.isPlaying()) return;
 
-    this.isPlaying.set(true);
     // Play ding sound when playing word
     this.audioService.playSound('ding');
 
-    // Use browser speech synthesis
-    const utterance = new SpeechSynthesisUtterance(word.englishWord);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.8;
-    utterance.onend = () => this.isPlaying.set(false);
-    utterance.onerror = () => this.isPlaying.set(false);
-
-    speechSynthesis.speak(utterance);
+    // Use PronunciationService with fallback chain
+    // GameVocabulary has single audioUrl, pass it as both UK/US
+    this.pronunciationService.speak(word.englishWord, 'us', {
+      uk: word.audioUrl,
+      us: word.audioUrl
+    });
   }
 
   submitAnswer(): void {

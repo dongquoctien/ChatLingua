@@ -197,7 +197,25 @@ export class DashboardComponent implements OnInit {
   closeAchievementDialog() {
     const achievement = this.selectedAchievement();
     if (achievement) {
-      this.apiService.markAchievementSeen(achievement.id).subscribe();
+      // Mark as seen in backend - use achievementId (from achievements table)
+      this.apiService.markAchievementSeen(achievement.achievementId).subscribe();
+
+      // Update local state to prevent popup from showing again
+      this.achievements.update(achievements =>
+        achievements.map(a =>
+          a.id === achievement.id ? { ...a, isNew: false } : a
+        )
+      );
+
+      // Also update newAchievements list and show next one if available
+      const remaining = this.newAchievements().filter(a => a.id !== achievement.id);
+      this.newAchievements.set(remaining);
+
+      // Show next achievement if there are more
+      if (remaining.length > 0) {
+        setTimeout(() => this.showAchievementUnlock(remaining[0]), 300);
+        return;
+      }
     }
     this.showAchievementDialog.set(false);
     this.selectedAchievement.set(null);

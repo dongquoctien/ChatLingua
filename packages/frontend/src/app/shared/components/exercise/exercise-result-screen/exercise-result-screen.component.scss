@@ -1,0 +1,84 @@
+// Celebration animations
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes celebrationPop {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes xpPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes confettiSpin {
+  0% { transform: rotateX(0) rotateY(0); }
+  50% { transform: rotateX(180deg) rotateY(180deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+
+.animate-fade-in-out {
+  animation: fadeInOut 3s ease-in-out forwards;
+}
+
+.animate-celebration-pop {
+  animation: celebrationPop 0.5s ease-out;
+}
+
+.animate-xp-pop {
+  animation: xpPop 0.5s ease-out;
+}
+
+// Trophy rank styles
+.trophy-gold {
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.trophy-silver {
+  filter: drop-shadow(0 0 6px rgba(192, 192, 192, 0.8)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+.trophy-bronze {
+  filter: drop-shadow(0 0 4px rgba(205, 127, 50, 0.6)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+// Confetti
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -20px;
+  left: var(--x, 50%);
+  animation: confettiFall 3s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+
+  &::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+    animation: confettiSpin 1s linear infinite;
+  }
+
+  @for $i from 1 through 20 {
+    &:nth-child(#{$i})::before {
+      background: nth(
+        (#ef4444 #ec4899 #a855f7 #8b5cf6 #6366f1 #3b82f6 #0ea5e9 #14b8a6 #22c55e #84cc16 #eab308 #f59e0b #f97316),
+        ($i % 13) + 1
+      );
+    }
+  }
+}
