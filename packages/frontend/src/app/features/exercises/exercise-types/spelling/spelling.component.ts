@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faVolumeUp, faCheck, faLightbulb, faRedo } from '@fortawesome/free-solid-svg-icons';
+import { PronunciationService } from '../../../../core/services/pronunciation.service';
 
 export interface SpellingData {
   word: string;
@@ -22,6 +23,8 @@ export interface SpellingData {
   styleUrl: './spelling.component.scss',
 })
 export class SpellingComponent implements OnInit, OnDestroy {
+  private pronunciationService = inject(PronunciationService);
+
   @Input() exerciseData!: SpellingData;
   @Input() audioUrl?: string;
   @Input() currentAnswer = '';  // Restore previous answer
@@ -36,17 +39,15 @@ export class SpellingComponent implements OnInit, OnDestroy {
 
   // State
   userAnswer = signal('');
-  isPlaying = signal(false);
   playsRemaining = signal(5);
   showHint = signal(false);
 
-  private speechSynthesis: SpeechSynthesis | null = null;
+  // Use PronunciationService's speaking signal - wrap as computed for template compatibility
+  isPlaying = () => this.pronunciationService.speaking() !== null;
+
   private audioElement: HTMLAudioElement | null = null;
 
   ngOnInit() {
-    if (typeof window !== 'undefined') {
-      this.speechSynthesis = window.speechSynthesis;
-    }
     // Restore previous answer if provided
     if (this.currentAnswer) {
       this.userAnswer.set(this.currentAnswer);
@@ -54,9 +55,7 @@ export class SpellingComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.speechSynthesis) {
-      this.speechSynthesis.cancel();
-    }
+    this.pronunciationService.stop();
     if (this.audioElement) {
       this.audioElement.pause();
       this.audioElement = null;
@@ -66,43 +65,33 @@ export class SpellingComponent implements OnInit, OnDestroy {
   playAudio(rate: number = 1) {
     if (this.playsRemaining() <= 0) return;
 
-    this.isPlaying.set(true);
     this.playsRemaining.update(p => p - 1);
 
-    // Try audio URL first if available
-    if (this.audioUrl) {
-      this.playFromUrl(rate);
-    } else if (this.speechSynthesis && this.exerciseData?.word) {
-      this.playWithSpeechSynthesis(rate);
+    // For rate != 1, we need to handle audio playback differently
+    if (rate !== 1 && this.audioUrl) {
+      // Use custom audio element for playback rate control
+      this.playFromUrlWithRate(rate);
     } else {
-      this.isPlaying.set(false);
+      // Use PronunciationService with fallback chain (normal speed)
+      this.pronunciationService.speak(this.exerciseData?.word || '', 'us');
     }
   }
 
-  private playFromUrl(rate: number) {
-    if (!this.audioUrl) return;
+  private playFromUrlWithRate(rate: number) {
+    if (!this.audioUrl) {
+      // Fallback to speech synthesis for slow playback
+      this.pronunciationService.speakWithSynthesis(this.exerciseData?.word || '', 'us');
+      return;
+    }
 
     this.audioElement = new Audio(this.audioUrl);
     this.audioElement.playbackRate = rate;
-    this.audioElement.onended = () => this.isPlaying.set(false);
+    this.audioElement.onended = () => this.pronunciationService.stop();
     this.audioElement.onerror = () => {
-      this.isPlaying.set(false);
       // Fallback to speech synthesis
-      this.playWithSpeechSynthesis(rate);
+      this.pronunciationService.speakWithSynthesis(this.exerciseData?.word || '', 'us');
     };
     this.audioElement.play();
-  }
-
-  private playWithSpeechSynthesis(rate: number) {
-    if (!this.speechSynthesis || !this.exerciseData?.word) return;
-
-    const utterance = new SpeechSynthesisUtterance(this.exerciseData.word);
-    utterance.lang = 'en-US';
-    utterance.rate = rate;
-    utterance.onend = () => this.isPlaying.set(false);
-    utterance.onerror = () => this.isPlaying.set(false);
-
-    this.speechSynthesis.speak(utterance);
   }
 
   toggleHint() {

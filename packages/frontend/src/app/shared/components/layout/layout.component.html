@@ -3,7 +3,7 @@
   <!-- Mobile Overlay -->
   @if (isMobile() && sidebarOpen()) {
     <div
-      class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+      class="fixed inset-0 bg-black/50 z-40 md:hidden"
       (click)="toggleSidebar()">
     </div>
   }
@@ -11,7 +11,7 @@
   <!-- Sidebar -->
   <aside
     [class]="sidebarOpen() ? 'translate-x-0' : '-translate-x-full'"
-    class="fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col"
+    class="fixed md:static inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out md:translate-x-0 flex flex-col"
     [ngClass]="sidebarCollapsed() && !isMobile() ? 'w-16' : 'w-64'">
     <!-- Logo -->
     <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-200"
@@ -41,8 +41,8 @@
       }
     </nav>
 
-    <!-- Collapse Toggle Button (Desktop only) -->
-    <div class="hidden lg:flex border-t border-gray-200 p-2">
+    <!-- Collapse Toggle Button (Desktop/Tablet only) -->
+    <div class="hidden md:flex border-t border-gray-200 p-2">
       <button
         (click)="toggleSidebarCollapse()"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
@@ -60,15 +60,15 @@
   <div class="flex-1 flex flex-col min-w-0">
     <!-- Header -->
     <header class="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 shadow-sm">
-      <!-- Left: Menu Button -->
+      <!-- Left: Menu Button (Mobile only) -->
       <button
         (click)="toggleSidebar()"
-        class="p-2 rounded-lg hover:bg-gray-100 transition-colors lg:hidden">
+        class="p-2 rounded-lg hover:bg-gray-100 transition-colors md:hidden">
         <fa-icon [icon]="sidebarOpen() ? faTimes : faBars" class="text-xl text-gray-600"></fa-icon>
       </button>
 
-      <!-- Desktop: Spacer -->
-      <div class="hidden lg:block"></div>
+      <!-- Desktop/Tablet: Spacer -->
+      <div class="hidden md:block"></div>
 
       <!-- Right: Actions -->
       <div class="flex items-center gap-2">

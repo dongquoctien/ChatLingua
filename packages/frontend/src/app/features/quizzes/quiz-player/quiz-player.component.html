@@ -1,3 +1,5 @@
+<div class="max-w-6xl mx-auto">
+
 <!-- Loading -->
 @if (loading()) {
   <div class="flex flex-col items-center justify-center min-h-[300px] text-gray-500">
@@ -7,83 +9,167 @@
 }
 
 <!-- Results Screen -->
-@else if (completed()) {
-  <div class="card max-w-xl mx-auto mt-12 text-center p-10">
-    <!-- Result Icon -->
-    <fa-icon [icon]="result()!.score >= 70 ? faTrophy : faFrown"
-             class="text-6xl mb-6"
-             [ngClass]="result()!.score >= 70 ? 'text-gray-900' : 'text-orange-500'">
-    </fa-icon>
+@else if (completed() && exerciseResult()) {
+  <app-exercise-result-screen
+    [result]="exerciseResult()!"
+    [timeSpent]="formattedTime()"
+    [title]="quiz()?.title || 'Quiz Complete'"
+    [backButtonText]="'Back to Quizzes'"
+    [historyRoute]="'/quizzes/history'"
+    [historyButtonText]="'Quiz History'"
+    [formatAnswerFn]="formatAnswerForDisplay"
+    [getTypeLabelFn]="getExerciseTypeLabel"
+    (backClick)="onResultBack()"
+    (shareClick)="openShareDialog()"
+    (historyClick)="onResultHistory()"
+  />
+}
 
-    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Quiz Complete!</h2>
+<!-- Quiz Player -->
+@else if (!loading()) {
+  <!-- Header -->
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+    <h1 class="text-2xl font-semibold text-gray-800">{{ quiz()?.title }}</h1>
+  </div>
 
-    <!-- Score Display -->
-    <div class="text-6xl font-bold text-gray-800 mb-2">{{ result()!.score }}%</div>
-    <div class="text-lg text-gray-500 mb-2">
-      {{ correctCount() }}/{{ result()!.totalQuestions }} correct
-    </div>
-    <div class="text-gray-500 mb-4">
-      Time: {{ formatTime(timeSpent()) }}
-    </div>
+  <!-- Progress Header -->
+  <app-exercise-progress-header
+    [currentIndex]="currentIndex()"
+    [totalQuestions]="totalQuestions()"
+    [answeredCount]="answeredCount()"
+    [timeSeconds]="timeRemaining()"
+    [timerMode]="'countdown'"
+    [showKeyboardHints]="true"
+    [showMobileHint]="true"
+  />
 
-    <!-- XP Earned Display -->
-    @if ((result()!.xpAwarded ?? 0) > 0) {
-      <div class="xp-earned inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-lg font-semibold"
-           [ngClass]="result()!.isPerfect ? 'xp-perfect' : ''">
-        <fa-icon [icon]="faBolt" class="text-yellow-500 text-xl"></fa-icon>
-        <span class="text-orange-600">+{{ result()!.xpAwarded }} XP</span>
-        @if (result()!.isPerfect) {
-          <span class="flex items-center gap-1 ml-2 px-3 py-1 bg-gradient-to-r from-yellow-400 to-amber-400 text-amber-900 rounded-full text-sm font-bold uppercase">
-            <fa-icon [icon]="faStar"></fa-icon>
-            Perfect!
-          </span>
-        }
-      </div>
-    }
+  <!-- Question Card -->
+  @if (currentExercise(); as exercise) {
+    <app-exercise-question-card
+      [exerciseType]="exercise.exerciseType"
+      [questionNumber]="currentIndex() + 1"
+      [slideDirection]="slideDirection()"
+      [isFirstQuestion]="isFirstQuestion()"
+      [isLastQuestion]="isLastQuestion()"
+      [canSubmit]="canSubmit()"
+      [answeredCount]="answeredCount()"
+      [totalQuestions]="totalQuestions()"
+      [submitButtonText]="'Submit Quiz'"
+      (previousClick)="previousQuestion()"
+      (nextClick)="nextQuestion()"
+      (submitClick)="submitQuiz()"
+    >
+      <!-- Question Text for basic types -->
+      @if (exercise.exerciseType === 'multiple_choice' || exercise.exerciseType === 'fill_blank' || exercise.exerciseType === 'translation') {
+        <p class="text-lg text-gray-800 p-4 bg-gray-50 rounded-lg mb-5 leading-relaxed">{{ exercise.questionText }}</p>
+      }
 
-    <!-- Results Breakdown -->
-    <div class="mt-8 p-4 bg-gray-50 rounded-lg text-left">
-      <h3 class="font-semibold text-gray-800 mb-4">Results</h3>
-      <div class="flex flex-col gap-3">
-        @for (r of result()!.results; track r.exerciseId; let i = $index) {
-          <div class="p-3 rounded-lg"
-               [ngClass]="r.isCorrect ? 'bg-gray-100' : 'bg-red-50'">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="font-semibold text-gray-800">Q{{ i + 1 }}</span>
-              <fa-icon [icon]="r.isCorrect ? faCheckCircle : faTimesCircle"
-                       [ngClass]="r.isCorrect ? 'text-gray-700' : 'text-red-500'"></fa-icon>
-              @if (r.isCorrect) {
-                <span class="text-sm text-gray-600">Correct!</span>
+      <!-- Exercise Content -->
+      @switch (exercise.exerciseType) {
+        @case ('multiple_choice') {
+          @if (exercise.options && exercise.options.length > 0) {
+            <div class="space-y-3">
+              @for (option of exercise.options; track option; let i = $index) {
+                <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50"
+                       [class.border-gray-900]="currentAnswer === option"
+                       [class.bg-gray-50]="currentAnswer === option">
+                  <input type="radio" name="answer" [value]="option" [(ngModel)]="currentAnswer"
+                         class="w-4 h-4 text-gray-900 border-gray-300 focus:ring-gray-500">
+                  <span class="ml-3 text-gray-800">{{ option }}</span>
+                </label>
               }
             </div>
-            @if (!r.isCorrect) {
-              <div class="text-sm space-y-1 mt-2">
-                <div class="flex gap-2">
-                  <span class="text-red-600 font-medium shrink-0">Your:</span>
-                  <span class="text-red-700">{{ formatAnswerForDisplay(r.userAnswer, r.exerciseId) }}</span>
-                </div>
-                <div class="flex gap-2">
-                  <span class="text-gray-700 font-medium shrink-0">Correct:</span>
-                  <span class="text-gray-800">{{ formatAnswerForDisplay(r.correctAnswer, r.exerciseId) }}</span>
-                </div>
-              </div>
-            }
-          </div>
+          } @else {
+            <input type="text" [(ngModel)]="currentAnswer"
+                   class="input w-full" placeholder="Your answer">
+          }
         }
-      </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="flex justify-center gap-4 mt-6">
-      <button class="btn btn-secondary flex items-center gap-2" (click)="openShareDialog()">
-        <fa-icon [icon]="faShare"></fa-icon>
-        Share
-      </button>
-      <button class="btn btn-primary" routerLink="/quizzes">
-        Back to Quizzes
-      </button>
-    </div>
-  </div>
+        @case ('fill_blank') {
+          <input type="text" [(ngModel)]="currentAnswer"
+                 class="input w-full" placeholder="Your answer">
+        }
+
+        @case ('translation') {
+          <input type="text" [(ngModel)]="currentAnswer"
+                 class="input w-full" placeholder="Your answer">
+        }
+
+        @case ('sentence_building') {
+          <app-sentence-building
+            [exerciseData]="parseExerciseData(exercise)"
+            [currentAnswer]="getAnswer(exercise.id)"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswer(exercise.id, $event)">
+          </app-sentence-building>
+        }
+
+        @case ('matching') {
+          <app-matching
+            [exerciseData]="parseExerciseData(exercise)"
+            [currentAnswer]="getAnswer(exercise.id)"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswer(exercise.id, $event)">
+          </app-matching>
+        }
+
+        @case ('spelling') {
+          <app-spelling
+            [exerciseData]="parseExerciseData(exercise)"
+            [audioUrl]="exercise.audioUrl || ''"
+            [currentAnswer]="getAnswer(exercise.id)"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswer(exercise.id, $event)">
+          </app-spelling>
+        }
+
+        @case ('listening') {
+          <app-listening
+            [exerciseData]="parseExerciseData(exercise)"
+            [audioUrl]="exercise.audioUrl || ''"
+            [currentAnswer]="getAnswer(exercise.id)"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswer(exercise.id, $event)">
+          </app-listening>
+        }
+
+        @case ('error_correction') {
+          <app-error-correction
+            [question]="exercise.questionText"
+            [exerciseData]="parseExerciseData(exercise)"
+            [currentAnswer]="getAnswer(exercise.id)"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswer(exercise.id, $event)">
+          </app-error-correction>
+        }
+
+        @case ('verb_conjugation') {
+          <app-verb-conjugation
+            [exerciseData]="parseExerciseData(exercise)"
+            [currentAnswer]="getAnswer(exercise.id)"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswer(exercise.id, $event)">
+          </app-verb-conjugation>
+        }
+
+        @case ('cloze') {
+          <app-cloze
+            [exerciseData]="parseExerciseData(exercise)"
+            [currentAnswer]="getAnswer(exercise.id)"
+            [disabled]="false"
+            (answerChange)="onExerciseAnswer(exercise.id, $event)">
+          </app-cloze>
+        }
+      }
+    </app-exercise-question-card>
+  }
+
+  <!-- Question Navigator -->
+  <app-exercise-question-navigator
+    [questions]="navigatorQuestions()"
+    [currentIndex]="currentIndex()"
+    (questionSelect)="goToQuestion($event)"
+  />
 }
 
 <!-- Share Dialog -->
@@ -95,187 +181,4 @@
     (shared)="onShared($event)"
   />
 }
-
-<!-- Quiz Player -->
-@else {
-  <!-- Header -->
-  <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
-    <h1 class="text-2xl font-semibold text-gray-800">{{ quiz()?.title }}</h1>
-    <div class="flex items-center gap-2 px-4 py-2 rounded-lg text-lg font-medium"
-         [ngClass]="timeRemaining() < 60 ? 'bg-red-100 text-red-700 timer-warning' : 'bg-gray-100 text-gray-700'">
-      <fa-icon [icon]="faClock"></fa-icon>
-      {{ formatTime(timeRemaining()) }}
-    </div>
-  </div>
-
-  <!-- Progress Bar -->
-  <div class="flex items-center gap-4 mb-6">
-    <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-      <div class="h-full bg-gray-900 transition-all duration-300 rounded-full"
-           [style.width.%]="progressPercent()"></div>
-    </div>
-    <span class="text-sm text-gray-500 whitespace-nowrap">
-      Question {{ currentIndex() + 1 }} of {{ exercises().length }}
-    </span>
-  </div>
-
-  <!-- Exercise Card -->
-  <div class="card max-w-2xl mx-auto mb-6">
-    @if (currentExercise(); as exercise) {
-      <!-- Exercise Type Header -->
-      <div class="border-b border-gray-200 px-6 py-3">
-        <h3 class="font-medium text-gray-700">
-          @switch (exercise.exerciseType) {
-            @case ('multiple_choice') { Multiple Choice }
-            @case ('fill_blank') { Fill in the Blank }
-            @case ('translation') { Translation }
-            @case ('sentence_building') { Sentence Building }
-            @case ('matching') { Matching }
-            @case ('spelling') { Spelling }
-            @case ('listening') { Listening }
-            @case ('error_correction') { Error Correction }
-            @case ('verb_conjugation') { Verb Conjugation }
-            @case ('cloze') { Cloze Test }
-          }
-        </h3>
-      </div>
-
-      <!-- Exercise Content -->
-      <div class="p-6">
-        <p class="text-lg leading-relaxed text-gray-800 mb-6">{{ exercise.questionText }}</p>
-
-        @switch (exercise.exerciseType) {
-          @case ('multiple_choice') {
-            @if (exercise.options) {
-              <div class="flex flex-col gap-3">
-                @for (option of exercise.options; track option) {
-                  <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer transition-colors hover:bg-gray-50"
-                         [ngClass]="{'bg-gray-50 border-gray-400': getAnswer(exercise.id) === option}">
-                    <input type="radio"
-                           class="w-4 h-4 text-gray-900 border-gray-300 focus:ring-gray-500"
-                           [name]="'question-' + exercise.id"
-                           [value]="option"
-                           [checked]="getAnswer(exercise.id) === option"
-                           (change)="setAnswer(exercise.id, option)">
-                    <span class="text-gray-700">{{ option }}</span>
-                  </label>
-                }
-              </div>
-            }
-          }
-
-          @case ('sentence_building') {
-            <app-sentence-building
-              [exerciseData]="parseExerciseData(exercise)"
-              [currentAnswer]="getAnswer(exercise.id)"
-              [disabled]="false"
-              (answerChange)="onExerciseAnswer(exercise.id, $event)">
-            </app-sentence-building>
-          }
-
-          @case ('matching') {
-            <app-matching
-              [exerciseData]="parseExerciseData(exercise)"
-              [currentAnswer]="getAnswer(exercise.id)"
-              [disabled]="false"
-              (answerChange)="onExerciseAnswer(exercise.id, $event)">
-            </app-matching>
-          }
-
-          @case ('spelling') {
-            <app-spelling
-              [exerciseData]="parseExerciseData(exercise)"
-              [audioUrl]="exercise.audioUrl || ''"
-              [currentAnswer]="getAnswer(exercise.id)"
-              [disabled]="false"
-              (answerChange)="onExerciseAnswer(exercise.id, $event)">
-            </app-spelling>
-          }
-
-          @case ('listening') {
-            <app-listening
-              [exerciseData]="parseExerciseData(exercise)"
-              [audioUrl]="exercise.audioUrl || ''"
-              [currentAnswer]="getAnswer(exercise.id)"
-              [disabled]="false"
-              (answerChange)="onExerciseAnswer(exercise.id, $event)">
-            </app-listening>
-          }
-
-          @case ('error_correction') {
-            <app-error-correction
-              [question]="exercise.questionText"
-              [exerciseData]="parseExerciseData(exercise)"
-              [currentAnswer]="getAnswer(exercise.id)"
-              [disabled]="false"
-              (answerChange)="onExerciseAnswer(exercise.id, $event)">
-            </app-error-correction>
-          }
-
-          @case ('verb_conjugation') {
-            <app-verb-conjugation
-              [exerciseData]="parseExerciseData(exercise)"
-              [currentAnswer]="getAnswer(exercise.id)"
-              [disabled]="false"
-              (answerChange)="onExerciseAnswer(exercise.id, $event)">
-            </app-verb-conjugation>
-          }
-
-          @case ('cloze') {
-            <app-cloze
-              [exerciseData]="parseExerciseData(exercise)"
-              [currentAnswer]="getAnswer(exercise.id)"
-              [disabled]="false"
-              (answerChange)="onExerciseAnswer(exercise.id, $event)">
-            </app-cloze>
-          }
-
-          @default {
-            <!-- Default: fill_blank and translation -->
-            <input type="text"
-                   class="input w-full"
-                   placeholder="Your answer"
-                   [ngModel]="getAnswer(exercise.id)"
-                   (ngModelChange)="setAnswer(exercise.id, $event)">
-          }
-        }
-      </div>
-
-      <!-- Navigation Buttons -->
-      <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-        <button class="btn btn-secondary flex items-center gap-2"
-                (click)="previousQuestion()"
-                [disabled]="currentIndex() === 0">
-          <fa-icon [icon]="faArrowLeft"></fa-icon>
-          Previous
-        </button>
-
-        @if (currentIndex() < exercises().length - 1) {
-          <button class="btn btn-primary flex items-center gap-2" (click)="nextQuestion()">
-            Next
-            <fa-icon [icon]="faArrowRight"></fa-icon>
-          </button>
-        } @else {
-          <button class="btn bg-red-600 hover:bg-red-700 text-white" (click)="submitQuiz()">
-            Submit Quiz
-          </button>
-        }
-      </div>
-    }
-  </div>
-
-  <!-- Question Navigation -->
-  <div class="flex justify-center gap-2 flex-wrap">
-    @for (ex of exercises(); track ex.id; let i = $index) {
-      <button class="w-10 h-10 rounded-full font-medium text-sm transition-all"
-              [ngClass]="{
-                'bg-gray-900 text-white': hasAnswer(ex.id),
-                'bg-gray-200 text-gray-600': !hasAnswer(ex.id),
-                'ring-2 ring-gray-400 ring-offset-2 scale-110': i === currentIndex()
-              }"
-              (click)="goToQuestion(i)">
-        {{ i + 1 }}
-      </button>
-    }
-  </div>
-}
+</div>

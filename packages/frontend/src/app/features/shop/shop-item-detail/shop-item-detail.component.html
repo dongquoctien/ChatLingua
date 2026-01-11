@@ -2,7 +2,7 @@
   <!-- Breadcrumb -->
   <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap">
     <a routerLink="/shop" class="hover:text-gray-700 flex items-center gap-1 flex-shrink-0">
-      <span>🏪</span> <span class="hidden sm:inline">Shop</span>
+       <span class="hidden sm:inline">Shop</span>
     </a>
     <i class="fa fa-chevron-right text-xs"></i>
     <a routerLink="/shop/browse" class="hover:text-gray-700 flex-shrink-0">Browse</a>
@@ -185,7 +185,7 @@
             }
             <div class="flex items-center justify-between py-1.5 sm:py-2">
               <span class="text-gray-500 flex items-center gap-1.5 sm:gap-2 text-sm">
-                <span>🏪</span> Purchased
+                 Purchased
               </span>
               <span class="font-medium text-sm">{{ item()!.purchaseCount }} times</span>
             </div>
@@ -316,7 +316,7 @@
                   <span>❤️</span> {{ item()!.favoriteCount || 0 }} favorites
                 </span>
                 <span class="flex items-center gap-1">
-                  <span>🏪</span> {{ item()!.purchaseCount || 0 }} sold
+                   {{ item()!.purchaseCount || 0 }} sold
                 </span>
               </div>
             }

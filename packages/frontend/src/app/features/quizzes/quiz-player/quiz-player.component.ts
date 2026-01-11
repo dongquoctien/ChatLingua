@@ -1,20 +1,11 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
-  faClock,
-  faTrophy,
-  faFrown,
-  faCheckCircle,
-  faTimesCircle,
-  faArrowLeft,
-  faArrowRight,
+  faDumbbell,
   faSpinner,
-  faBolt,
-  faStar,
-  faShare,
 } from '../../../shared/icons';
 import { ApiService, Exercise, Quiz, QuizSubmitResponse } from '../../../core/services/api.service';
 import { ShareDialogComponent, ShareableContent } from '../../chat/components/share-dialog/share-dialog.component';
@@ -31,6 +22,18 @@ import {
   VerbConjugationComponent,
   ClozeComponent,
 } from '../../exercises/exercise-types';
+
+// Import shared exercise components
+import {
+  ExerciseProgressHeaderComponent,
+  ExerciseQuestionCardComponent,
+  ExerciseQuestionNavigatorComponent,
+  ExerciseResultScreenComponent,
+  SlideDirection,
+  NavigatorQuestion,
+  ExerciseResult,
+  ResultAnswer,
+} from '../../../shared/components/exercise';
 
 @Component({
   selector: 'app-quiz-player',
@@ -49,6 +52,11 @@ import {
     VerbConjugationComponent,
     ClozeComponent,
     ShareDialogComponent,
+    // Shared exercise components
+    ExerciseProgressHeaderComponent,
+    ExerciseQuestionCardComponent,
+    ExerciseQuestionNavigatorComponent,
+    ExerciseResultScreenComponent,
   ],
   templateUrl: './quiz-player.component.html',
   styleUrl: './quiz-player.component.scss',
@@ -60,17 +68,8 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
   private chatService = inject(ChatService);
 
   // Icons
-  faClock = faClock;
-  faTrophy = faTrophy;
-  faFrown = faFrown;
-  faCheckCircle = faCheckCircle;
-  faTimesCircle = faTimesCircle;
-  faArrowLeft = faArrowLeft;
-  faArrowRight = faArrowRight;
+  faDumbbell = faDumbbell;
   faSpinner = faSpinner;
-  faBolt = faBolt;
-  faStar = faStar;
-  faShare = faShare;
 
   quiz = signal<Quiz | null>(null);
   exercises = signal<Exercise[]>([]);
@@ -81,10 +80,22 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
   completed = signal(false);
   result = signal<QuizSubmitResponse | null>(null);
 
+  // Animation state
+  slideDirection = signal<SlideDirection>('none');
+  isAnimating = signal(false);
+
   timeRemaining = signal(0);
   timeSpent = signal(0);
   private timerInterval: any;
   private startTime = 0;
+
+  // Touch gesture state
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private touchEndX = 0;
+  private touchEndY = 0;
+  private readonly SWIPE_THRESHOLD = 50;
+  private readonly SWIPE_ANGLE_LIMIT = 30;
 
   // Share dialog state
   showShareDialog = signal(false);
@@ -93,10 +104,66 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
 
   currentExercise = computed(() => this.exercises()[this.currentIndex()]);
   progressPercent = computed(() => ((this.currentIndex() + 1) / this.exercises().length) * 100);
-  correctCount = computed(() => {
+  answeredCount = computed(() => Object.keys(this.answers()).length);
+  totalQuestions = computed(() => this.exercises().length);
+  canSubmit = computed(() => this.answeredCount() === this.totalQuestions());
+  isFirstQuestion = computed(() => this.currentIndex() === 0);
+  isLastQuestion = computed(() => this.currentIndex() === this.totalQuestions() - 1);
+
+  // Computed for navigator
+  navigatorQuestions = computed<NavigatorQuestion[]>(() =>
+    this.exercises().map(ex => ({
+      id: ex.id,
+      hasAnswer: this.hasAnswer(ex.id),
+    }))
+  );
+
+  // Computed for result screen
+  exerciseResult = computed<ExerciseResult | null>(() => {
     const res = this.result();
-    return res ? res.results.filter(r => r.isCorrect).length : 0;
+    if (!res) return null;
+
+    const resultAnswers: ResultAnswer[] = res.results.map((r, i) => {
+      const exercise = this.exercises().find(e => e.id === r.exerciseId);
+      return {
+        exerciseId: r.exerciseId,
+        questionOrder: i + 1,
+        questionText: exercise?.questionText || '',
+        exerciseType: exercise?.exerciseType || 'multiple_choice',
+        userAnswer: r.userAnswer,
+        correctAnswer: r.correctAnswer,
+        isCorrect: r.isCorrect,
+      };
+    });
+
+    return {
+      score: res.results.filter(r => r.isCorrect).length,
+      total: res.totalQuestions,
+      percentage: res.score,
+      xpAwarded: res.xpAwarded,
+      isPerfect: res.isPerfect,
+      results: resultAnswers,
+    };
   });
+
+  formattedTime = computed(() => {
+    const secs = this.timeSpent();
+    const mins = Math.floor(secs / 60);
+    const remainingSecs = secs % 60;
+    return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
+  });
+
+  get currentAnswer(): string {
+    const exercise = this.currentExercise();
+    if (!exercise) return '';
+    return this.answers()[exercise.id] || '';
+  }
+
+  set currentAnswer(value: string) {
+    const exercise = this.currentExercise();
+    if (!exercise) return;
+    this.setAnswer(exercise.id, value);
+  }
 
   getAnswer(id: number): string {
     return this.answers()[id] || '';
@@ -110,17 +177,10 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
     return !!this.answers()[id];
   }
 
-  /**
-   * Handle answer from exercise components (new types)
-   */
   onExerciseAnswer(exerciseId: number, answer: string): void {
     this.setAnswer(exerciseId, answer);
   }
 
-  /**
-   * Parse exercise data JSON safely
-   * For listening exercises, merge top-level options into exerciseData
-   */
   parseExerciseData(exercise: Exercise): any {
     let data: any = null;
 
@@ -136,7 +196,6 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
       }
     }
 
-    // For listening exercises, merge options into exerciseData as comprehensionOptions
     if (exercise.exerciseType === 'listening' && exercise.options?.length) {
       data = data || { questionType: 'comprehension' };
       data.comprehensionOptions = exercise.options;
@@ -157,6 +216,89 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
     }
   }
 
+  @HostListener('document:keydown', ['$event'])
+  handleKeydown(event: KeyboardEvent) {
+    if (this.loading() || this.completed() || this.isAnimating()) return;
+
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      if (event.key === 'Enter' && !event.shiftKey && !this.isLastQuestion()) {
+        event.preventDefault();
+        this.nextQuestion();
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        this.previousQuestion();
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        this.nextQuestion();
+        break;
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+        const exercise = this.currentExercise();
+        if (exercise?.exerciseType === 'multiple_choice' && exercise.options) {
+          const optionIndex = parseInt(event.key) - 1;
+          if (optionIndex < exercise.options.length) {
+            this.currentAnswer = exercise.options[optionIndex];
+          }
+        }
+        break;
+      case 'Enter':
+        if (event.ctrlKey || event.metaKey) {
+          if (this.canSubmit()) {
+            event.preventDefault();
+            this.submitQuiz();
+          }
+        }
+        break;
+    }
+  }
+
+  @HostListener('touchstart', ['$event'])
+  onTouchStart(event: TouchEvent) {
+    if (this.loading() || this.completed()) return;
+    this.touchStartX = event.touches[0].clientX;
+    this.touchStartY = event.touches[0].clientY;
+  }
+
+  @HostListener('touchmove', ['$event'])
+  onTouchMove(event: TouchEvent) {
+    if (this.loading() || this.completed()) return;
+    this.touchEndX = event.touches[0].clientX;
+    this.touchEndY = event.touches[0].clientY;
+  }
+
+  @HostListener('touchend', ['$event'])
+  onTouchEnd(event: TouchEvent) {
+    if (this.loading() || this.completed() || this.isAnimating()) return;
+
+    const deltaX = this.touchEndX - this.touchStartX;
+    const deltaY = this.touchEndY - this.touchStartY;
+
+    if (Math.abs(deltaX) < this.SWIPE_THRESHOLD) return;
+
+    const angle = Math.abs(Math.atan2(deltaY, deltaX) * 180 / Math.PI);
+    if (angle > this.SWIPE_ANGLE_LIMIT && angle < 180 - this.SWIPE_ANGLE_LIMIT) return;
+
+    if (deltaX > 0) {
+      this.previousQuestion();
+    } else {
+      this.nextQuestion();
+    }
+
+    this.touchStartX = 0;
+    this.touchStartY = 0;
+    this.touchEndX = 0;
+    this.touchEndY = 0;
+  }
+
   startQuiz(quizId: number) {
     this.apiService.getQuiz(quizId).subscribe({
       next: (quiz) => {
@@ -164,7 +306,6 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
         this.apiService.startQuiz(quizId).subscribe({
           next: (response) => {
             this.attemptId.set(response.attemptId);
-            // Shuffle questions and options
             const shuffledExercises = this.shuffleExercises(response.exercises);
             this.exercises.set(shuffledExercises);
             this.startTime = Date.now();
@@ -187,14 +328,8 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Shuffle questions order and multiple choice options
-   */
   private shuffleExercises(exercises: Exercise[]): Exercise[] {
-    // Shuffle question order
     const shuffled = this.shuffleArray([...exercises]);
-
-    // Shuffle options for multiple choice questions
     return shuffled.map(exercise => {
       if (exercise.exerciseType === 'multiple_choice' && exercise.options) {
         return {
@@ -206,9 +341,6 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Fisher-Yates shuffle algorithm
-   */
   private shuffleArray<T>(array: T[]): T[] {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -229,19 +361,36 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
   }
 
   previousQuestion() {
-    if (this.currentIndex() > 0) {
-      this.currentIndex.update(i => i - 1);
+    if (!this.isFirstQuestion() && !this.isAnimating()) {
+      this.animateToQuestion(this.currentIndex() - 1, 'right');
     }
   }
 
   nextQuestion() {
-    if (this.currentIndex() < this.exercises().length - 1) {
-      this.currentIndex.update(i => i + 1);
+    if (!this.isLastQuestion() && !this.isAnimating()) {
+      this.animateToQuestion(this.currentIndex() + 1, 'left');
     }
   }
 
   goToQuestion(index: number) {
-    this.currentIndex.set(index);
+    if (index >= 0 && index < this.totalQuestions() && !this.isAnimating()) {
+      const direction = index > this.currentIndex() ? 'left' : 'right';
+      this.animateToQuestion(index, direction);
+    }
+  }
+
+  private animateToQuestion(newIndex: number, direction: SlideDirection) {
+    this.isAnimating.set(true);
+    this.slideDirection.set(direction);
+
+    setTimeout(() => {
+      this.currentIndex.set(newIndex);
+      this.slideDirection.set('none');
+
+      setTimeout(() => {
+        this.isAnimating.set(false);
+      }, 250);
+    }, 200);
   }
 
   submitQuiz() {
@@ -271,40 +420,38 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
     });
   }
 
-  formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
+  getExerciseTypeLabel = (type: string): string => {
+    const labels: Record<string, string> = {
+      'multiple_choice': 'Multiple Choice',
+      'fill_blank': 'Fill in the Blank',
+      'translation': 'Translation',
+      'sentence_building': 'Sentence Building',
+      'matching': 'Matching',
+      'spelling': 'Spelling',
+      'listening': 'Listening',
+      'error_correction': 'Error Correction',
+      'verb_conjugation': 'Verb Conjugation',
+      'cloze': 'Cloze Test',
+    };
+    return labels[type] || type;
+  };
 
-  /**
-   * Format answer for display in results based on exercise type
-   */
-  formatAnswerForDisplay(answer: string | null | undefined, exerciseId: number): string {
+  formatAnswerForDisplay = (answer: string | null, exerciseType: string): string => {
     if (!answer) return '(no answer)';
 
-    // Find the exercise to determine its type
-    const exercise = this.exercises().find(e => e.id === exerciseId);
-    if (!exercise) return answer;
-
     try {
-      switch (exercise.exerciseType) {
+      switch (exerciseType) {
         case 'matching': {
-          // Parse matching answer: array of {en, vi, correct} or JSON object
           const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
           if (Array.isArray(parsed)) {
-            // User answer format: [{en, vi, correct}, ...]
             return parsed.map((p: any) => `${p.en} → ${p.vi}`).join(', ');
           } else if (typeof parsed === 'object') {
-            // Correct answer format: {en: vi, ...}
             return Object.entries(parsed).map(([en, vi]) => `${en} → ${vi}`).join(', ');
           }
           return answer;
         }
 
         case 'sentence_building': {
-          // User's constructed sentence - just show as is if it's a string
-          // If it's an array of words, join them
           if (answer.startsWith('[')) {
             const parsed = JSON.parse(answer);
             if (Array.isArray(parsed)) {
@@ -317,27 +464,22 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
         case 'cloze': {
           const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
 
-          // Helper to extract string value from any type
           const extractValue = (item: any): string => {
             if (item === null || item === undefined) return '';
             if (typeof item === 'string') return item;
             if (typeof item === 'number') return String(item);
             if (typeof item === 'object') {
-              // Try common keys first
               const val = item.answer ?? item.value ?? item.text;
               if (typeof val === 'string') return val;
               if (typeof val === 'number') return String(val);
-              // Fallback to stringify
               return JSON.stringify(item);
             }
             return String(item);
           };
 
           if (Array.isArray(parsed)) {
-            // Handle array of objects or strings
             return parsed.map((a: any, i: number) => `[${i + 1}] ${extractValue(a)}`).join(', ');
           } else if (typeof parsed === 'object' && parsed !== null) {
-            // Handle object with numbered keys like {"1": "have been", "2": "since"}
             return Object.entries(parsed)
               .sort(([a], [b]) => Number(a) - Number(b))
               .map(([key, val]) => `[${key}] ${extractValue(val)}`)
@@ -350,9 +492,16 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
           return answer;
       }
     } catch {
-      // If parsing fails, return as-is
       return answer;
     }
+  };
+
+  onResultBack(): void {
+    this.router.navigate(['/quizzes']);
+  }
+
+  onResultHistory(): void {
+    this.router.navigate(['/quizzes/history']);
   }
 
   // Share functionality
@@ -373,11 +522,13 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
       performanceText = 'Keep Practicing!';
     }
 
+    const correctCount = res.results.filter(r => r.isCorrect).length;
+
     this.shareContent.set({
       type: 'quiz',
       id: quizData.id,
       title: quizData.title,
-      subtitle: `${score}% • ${this.correctCount()}/${res.totalQuestions} correct • ${performanceText}`,
+      subtitle: `${score}% • ${correctCount}/${res.totalQuestions} correct • ${performanceText}`,
       icon: '📋',
       iconBgColor: 'bg-indigo-100',
       iconColor: 'text-indigo-600',
@@ -385,9 +536,9 @@ export class QuizPlayerComponent implements OnInit, OnDestroy {
         quizId: quizData.id,
         quizTitle: quizData.title,
         score: score,
-        correctCount: this.correctCount(),
+        correctCount: correctCount,
         totalQuestions: res.totalQuestions,
-        timeSpent: this.formatTime(this.timeSpent()),
+        timeSpent: this.formattedTime(),
         xpAwarded: res.xpAwarded || 0,
         isPerfect: res.isPerfect || false,
       },

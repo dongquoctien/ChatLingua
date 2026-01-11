@@ -756,6 +756,7 @@ export class ApiService {
       map(response => {
         const mapItem = (item: ApiAchievementItem): UserAchievementInfo => ({
           id: item.id,
+          achievementId: item.achievementId, // Used for markAchievementSeen API
           achievementCode: item.achievement.achievementCode,
           name: item.achievement.name,
           description: item.achievement.description,
@@ -1081,6 +1082,7 @@ export interface UserXPStatus {
 
 export interface UserAchievementInfo {
   id: number;
+  achievementId: number; // ID from achievements table (used for markAchievementSeen API)
   achievementCode: string;
   name: string;
   description: string;
