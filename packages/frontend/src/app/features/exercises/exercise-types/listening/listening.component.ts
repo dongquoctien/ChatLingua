@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faPlay, faPause, faCheck, faRedo, faVolumeUp } from '@fortawesome/free-solid-svg-icons';
+import { PronunciationService } from '../../../../core/services/pronunciation.service';
 
 export interface ListeningData {
   transcript: string;
@@ -23,6 +24,8 @@ export interface ListeningData {
   styleUrl: './listening.component.scss',
 })
 export class ListeningComponent implements OnInit, OnDestroy {
+  private pronunciationService = inject(PronunciationService);
+
   @Input() exerciseData!: ListeningData;
   @Input() audioUrl!: string;
   @Input() currentAnswer = '';  // Restore previous answer
@@ -45,7 +48,6 @@ export class ListeningComponent implements OnInit, OnDestroy {
   playsRemaining = signal(3);
 
   private audioElement: HTMLAudioElement | null = null;
-  private speechSynthesis: SpeechSynthesis | null = null;
 
   // Computed
   progressPercent = computed(() => {
@@ -55,8 +57,6 @@ export class ListeningComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (typeof window !== 'undefined') {
-      this.speechSynthesis = window.speechSynthesis;
-
       if (this.audioUrl) {
         this.initAudioElement();
       }
@@ -72,9 +72,7 @@ export class ListeningComponent implements OnInit, OnDestroy {
       this.audioElement.pause();
       this.audioElement = null;
     }
-    if (this.speechSynthesis) {
-      this.speechSynthesis.cancel();
-    }
+    this.pronunciationService.stop();
   }
 
   private initAudioElement() {
@@ -114,7 +112,8 @@ export class ListeningComponent implements OnInit, OnDestroy {
       this.audioElement.playbackRate = this.playbackRate();
       this.audioElement.play();
       this.isPlaying.set(true);
-    } else if (this.speechSynthesis && this.exerciseData?.transcript) {
+    } else if (this.exerciseData?.transcript) {
+      // Use PronunciationService as fallback when no audio URL
       this.playWithSpeechSynthesis();
     }
   }
@@ -123,28 +122,28 @@ export class ListeningComponent implements OnInit, OnDestroy {
     if (this.audioElement) {
       this.audioElement.pause();
     }
-    if (this.speechSynthesis) {
-      this.speechSynthesis.pause();
-    }
+    this.pronunciationService.stop();
     this.isPlaying.set(false);
   }
 
   private playWithSpeechSynthesis() {
-    if (!this.speechSynthesis || !this.exerciseData?.transcript) return;
-
-    const utterance = new SpeechSynthesisUtterance(this.exerciseData.transcript);
-    utterance.lang = 'en-US';
-    utterance.rate = this.playbackRate();
-    utterance.onend = () => this.isPlaying.set(false);
-    utterance.onerror = () => this.isPlaying.set(false);
+    if (!this.exerciseData?.transcript) return;
 
     // Estimate duration (rough: 150 words per minute)
     const wordCount = this.exerciseData.transcript.split(' ').length;
     const estimatedDuration = (wordCount / 150) * 60;
     this.duration.set(estimatedDuration);
 
-    this.speechSynthesis.speak(utterance);
+    // Use PronunciationService for speech synthesis
+    this.pronunciationService.speakWithSynthesis(this.exerciseData.transcript, 'us');
     this.isPlaying.set(true);
+
+    // Set up a timer to estimate when playback ends
+    setTimeout(() => {
+      if (this.isPlaying()) {
+        this.isPlaying.set(false);
+      }
+    }, estimatedDuration * 1000);
   }
 
   setSpeed(rate: number) {

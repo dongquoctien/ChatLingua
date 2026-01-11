@@ -1,40 +1,42 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
   faDumbbell,
-  faTrophy,
-  faFrown,
-  faCheckCircle,
-  faTimesCircle,
   faSpinner,
-  faArrowLeft,
-  faArrowRight,
-  faClock,
   faHistory,
-  faBolt,
-  faShare,
 } from '../../../shared/icons';
 import {
   ApiService,
   SessionExercise,
   SessionResult,
-  SessionAnswer,
 } from '../../../core/services/api.service';
 import { ShareDialogComponent, ShareableContent } from '../../chat/components/share-dialog/share-dialog.component';
 import { ChatService } from '../../chat/services/chat.service';
 import type { UserStatusInfo } from '../../chat/chat.types';
 
 // New exercise type components
-import { SentenceBuildingComponent, SentenceBuildingData } from '../exercise-types/sentence-building/sentence-building.component';
-import { MatchingComponent, MatchingData } from '../exercise-types/matching/matching.component';
-import { SpellingComponent, SpellingData } from '../exercise-types/spelling/spelling.component';
-import { ListeningComponent, ListeningData } from '../exercise-types/listening/listening.component';
-import { ErrorCorrectionComponent, ErrorCorrectionData } from '../exercise-types/error-correction/error-correction.component';
-import { VerbConjugationComponent, VerbConjugationData } from '../exercise-types/verb-conjugation/verb-conjugation.component';
-import { ClozeComponent, ClozeData } from '../exercise-types/cloze/cloze.component';
+import { SentenceBuildingComponent } from '../exercise-types/sentence-building/sentence-building.component';
+import { MatchingComponent } from '../exercise-types/matching/matching.component';
+import { SpellingComponent } from '../exercise-types/spelling/spelling.component';
+import { ListeningComponent } from '../exercise-types/listening/listening.component';
+import { ErrorCorrectionComponent } from '../exercise-types/error-correction/error-correction.component';
+import { VerbConjugationComponent } from '../exercise-types/verb-conjugation/verb-conjugation.component';
+import { ClozeComponent } from '../exercise-types/cloze/cloze.component';
+
+// Import shared exercise components
+import {
+  ExerciseProgressHeaderComponent,
+  ExerciseQuestionCardComponent,
+  ExerciseQuestionNavigatorComponent,
+  ExerciseResultScreenComponent,
+  SlideDirection,
+  NavigatorQuestion,
+  ExerciseResult,
+  ResultAnswer,
+} from '../../../shared/components/exercise';
 
 type PracticeState = 'start' | 'loading' | 'practice' | 'submitting' | 'results';
 
@@ -55,6 +57,11 @@ type PracticeState = 'start' | 'loading' | 'practice' | 'submitting' | 'results'
     VerbConjugationComponent,
     ClozeComponent,
     ShareDialogComponent,
+    // Shared exercise components
+    ExerciseProgressHeaderComponent,
+    ExerciseQuestionCardComponent,
+    ExerciseQuestionNavigatorComponent,
+    ExerciseResultScreenComponent,
   ],
   templateUrl: './exercise-practice.component.html',
   styleUrl: './exercise-practice.component.scss',
@@ -66,17 +73,8 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
 
   // Icons
   faDumbbell = faDumbbell;
-  faTrophy = faTrophy;
-  faFrown = faFrown;
-  faCheckCircle = faCheckCircle;
-  faTimesCircle = faTimesCircle;
   faSpinner = faSpinner;
-  faArrowLeft = faArrowLeft;
-  faArrowRight = faArrowRight;
-  faClock = faClock;
   faHistory = faHistory;
-  faBolt = faBolt;
-  faShare = faShare;
 
   // State
   state = signal<PracticeState>('start');
@@ -88,9 +86,8 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
   error = signal<string | null>(null);
 
   // Animation state
-  slideDirection = signal<'left' | 'right' | 'none'>('none');
+  slideDirection = signal<SlideDirection>('none');
   isAnimating = signal(false);
-  showCelebration = signal(false);
 
   // Share dialog state
   showShareDialog = signal(false);
@@ -126,6 +123,42 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
   canSubmit = computed(() => this.answeredCount() === this.totalQuestions());
   isFirstQuestion = computed(() => this.currentIndex() === 0);
   isLastQuestion = computed(() => this.currentIndex() === this.totalQuestions() - 1);
+
+  // Computed for navigator
+  navigatorQuestions = computed<NavigatorQuestion[]>(() =>
+    this.exercises().map(ex => ({
+      id: ex.id,
+      hasAnswer: this.hasAnswer(ex.id),
+    }))
+  );
+
+  // Computed for result screen
+  exerciseResult = computed<ExerciseResult | null>(() => {
+    const res = this.result();
+    if (!res) return null;
+
+    const resultAnswers: ResultAnswer[] = res.results.map((r) => {
+      const exercise = this.exercises().find(e => e.id === r.exerciseId);
+      return {
+        exerciseId: r.exerciseId,
+        questionOrder: r.questionOrder || 0,
+        questionText: r.questionText || '',
+        exerciseType: r.exerciseType || 'multiple_choice',
+        userAnswer: r.userAnswer,
+        correctAnswer: r.correctAnswer,
+        isCorrect: r.isCorrect,
+      };
+    });
+
+    return {
+      score: res.score,
+      total: res.total,
+      percentage: res.percentage,
+      xpAwarded: res.xpAwarded,
+      isPerfect: res.percentage === 100,
+      results: resultAnswers,
+    };
+  });
 
   get currentAnswer(): string {
     const exercise = this.currentExercise();
@@ -292,7 +325,7 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private animateToQuestion(newIndex: number, direction: 'left' | 'right') {
+  private animateToQuestion(newIndex: number, direction: SlideDirection) {
     this.isAnimating.set(true);
     this.slideDirection.set(direction);
 
@@ -317,10 +350,6 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
       next: (result) => {
         this.result.set(result);
         this.state.set('results');
-
-        if (result.percentage >= 70) {
-          this.triggerCelebration();
-        }
       },
       error: (err) => {
         this.error.set(err.error?.error || 'Failed to submit session');
@@ -364,7 +393,7 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     return data as T;
   }
 
-  getExerciseTypeLabel(type: string): string {
+  getExerciseTypeLabel = (type: string): string => {
     const labels: Record<string, string> = {
       'multiple_choice': 'Multiple Choice',
       'fill_blank': 'Fill in the Blank',
@@ -378,11 +407,7 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
       'cloze': 'Cloze Test',
     };
     return labels[type] || type;
-  }
-
-  getQuestionNumbers(): number[] {
-    return Array.from({ length: this.totalQuestions() }, (_, i) => i + 1);
-  }
+  };
 
   private startTimer() {
     this.startTime = Date.now();
@@ -399,14 +424,7 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private triggerCelebration() {
-    this.showCelebration.set(true);
-    setTimeout(() => {
-      this.showCelebration.set(false);
-    }, 3000);
-  }
-
-  formatAnswerForDisplay(answer: string | null | undefined, exerciseType: string): string {
+  formatAnswerForDisplay = (answer: string | null, exerciseType: string): string => {
     if (!answer) return '(no answer)';
 
     try {
@@ -434,27 +452,22 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
         case 'cloze': {
           const parsed = typeof answer === 'string' ? JSON.parse(answer) : answer;
 
-          // Helper to extract string value from any type
           const extractValue = (item: any): string => {
             if (item === null || item === undefined) return '';
             if (typeof item === 'string') return item;
             if (typeof item === 'number') return String(item);
             if (typeof item === 'object') {
-              // Try common keys first
               const val = item.answer ?? item.value ?? item.text;
               if (typeof val === 'string') return val;
               if (typeof val === 'number') return String(val);
-              // Fallback to stringify
               return JSON.stringify(item);
             }
             return String(item);
           };
 
           if (Array.isArray(parsed)) {
-            // Handle array of objects or strings
             return parsed.map((a: any, i: number) => `[${i + 1}] ${extractValue(a)}`).join(', ');
           } else if (typeof parsed === 'object' && parsed !== null) {
-            // Handle object with numbered keys like {"1": "have been", "2": "since"}
             return Object.entries(parsed)
               .sort(([a], [b]) => Number(a) - Number(b))
               .map(([key, val]) => `[${key}] ${extractValue(val)}`)
@@ -469,7 +482,7 @@ export class ExercisePracticeComponent implements OnInit, OnDestroy {
     } catch {
       return answer;
     }
-  }
+  };
 
   // Share functionality
   openShareDialog(): void {

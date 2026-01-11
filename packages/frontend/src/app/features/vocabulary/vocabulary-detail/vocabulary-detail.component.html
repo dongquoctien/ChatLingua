@@ -239,25 +239,41 @@
         <hr class="border-gray-200">
       }
 
-      <!-- Synonyms & Antonyms -->
-      @if (entry.synonyms?.length || entry.antonyms?.length) {
+      <!-- Synonyms & Antonyms (Combined from DB + Free Dictionary) -->
+      @if (entry.synonyms?.length || entry.antonyms?.length || getFreeDictSynonyms().length || getFreeDictAntonyms().length) {
         <div class="p-5">
-          @if (entry.synonyms?.length) {
+          <!-- Synonyms -->
+          @if (entry.synonyms?.length || getFreeDictSynonyms().length) {
             <div class="mb-4">
               <h3 class="inline text-xs font-semibold text-gray-500 uppercase tracking-wider mr-3">SYNONYMS</h3>
               <div class="inline-flex flex-wrap gap-2">
-                @for (syn of entry.synonyms; track syn) {
+                <!-- DB synonyms -->
+                @for (syn of entry.synonyms || []; track syn) {
                   <span class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm">{{ syn }}</span>
+                }
+                <!-- Free Dictionary synonyms (excluding duplicates) -->
+                @for (syn of getFreeDictSynonyms(); track syn) {
+                  @if (!(entry.synonyms || []).includes(syn)) {
+                    <span class="px-3 py-1.5 bg-gray-50 text-gray-600 rounded-full text-sm border border-gray-200" title="From Free Dictionary API">{{ syn }}</span>
+                  }
                 }
               </div>
             </div>
           }
-          @if (entry.antonyms?.length) {
+          <!-- Antonyms -->
+          @if (entry.antonyms?.length || getFreeDictAntonyms().length) {
             <div>
               <h3 class="inline text-xs font-semibold text-gray-500 uppercase tracking-wider mr-3">ANTONYMS</h3>
               <div class="inline-flex flex-wrap gap-2">
-                @for (ant of entry.antonyms; track ant) {
+                <!-- DB antonyms -->
+                @for (ant of entry.antonyms || []; track ant) {
                   <span class="px-3 py-1.5 bg-red-100 text-red-700 rounded-full text-sm">{{ ant }}</span>
+                }
+                <!-- Free Dictionary antonyms (excluding duplicates) -->
+                @for (ant of getFreeDictAntonyms(); track ant) {
+                  @if (!(entry.antonyms || []).includes(ant)) {
+                    <span class="px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-sm border border-red-200" title="From Free Dictionary API">{{ ant }}</span>
+                  }
                 }
               </div>
             </div>
@@ -277,6 +293,116 @@
               <p class="text-gray-400 italic text-sm mt-1">{{ idiom.meaningVi }}</p>
             </div>
           }
+        </div>
+        <hr class="border-gray-200">
+      }
+
+      <!-- Free Dictionary Additional Meanings -->
+      @if (freeDictData(); as dictData) {
+        @if (dictData.meanings.length > 0) {
+          <div class="p-5 bg-gradient-to-r from-blue-50 to-white">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <fa-icon [icon]="faGlobe" class="mr-2"></fa-icon>
+                ADDITIONAL DEFINITIONS (Free Dictionary)
+              </h3>
+              @if (freeDictLoading()) {
+                <fa-icon [icon]="faSpinner" animation="spin" class="text-gray-400 text-sm"></fa-icon>
+              }
+            </div>
+
+            @for (meaning of dictData.meanings; track meaning.partOfSpeech; let mIdx = $index) {
+              <div class="mb-6 last:mb-0">
+                <!-- Part of Speech Header -->
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded uppercase">
+                    {{ formatFreeDictPos(meaning.partOfSpeech) }}
+                  </span>
+                  @if (meaning.synonyms.length > 0) {
+                    <span class="text-xs text-gray-400">{{ meaning.synonyms.length }} synonyms</span>
+                  }
+                </div>
+
+                <!-- Definitions -->
+                @for (def of meaning.definitions.slice(0, 5); track def.definition; let dIdx = $index) {
+                  <div class="mb-4 last:mb-0 pl-4 border-l-2 border-blue-200">
+                    <div class="flex items-start gap-2">
+                      <span class="text-xs font-semibold text-gray-400 mt-0.5">{{ dIdx + 1 }}.</span>
+                      <div class="flex-1">
+                        <p class="text-gray-800 leading-relaxed">{{ def.definition }}</p>
+
+                        <!-- Example from Free Dictionary -->
+                        @if (def.example) {
+                          <div class="mt-2 flex gap-2 p-2.5 bg-white rounded border border-gray-100">
+                            <fa-icon [icon]="faQuoteLeft" class="text-blue-200 text-xs flex-shrink-0 mt-0.5"></fa-icon>
+                            <p class="text-gray-600 text-sm italic leading-relaxed">{{ def.example }}</p>
+                          </div>
+                        }
+
+                        <!-- Definition-level synonyms -->
+                        @if (def.synonyms.length > 0) {
+                          <div class="mt-2 flex flex-wrap gap-1.5">
+                            <span class="text-xs text-gray-400">Syn:</span>
+                            @for (syn of def.synonyms.slice(0, 6); track syn) {
+                              <span class="px-2 py-0.5 bg-gray-50 text-gray-600 text-xs rounded border border-gray-200">{{ syn }}</span>
+                            }
+                            @if (def.synonyms.length > 6) {
+                              <span class="text-xs text-gray-400">+{{ def.synonyms.length - 6 }} more</span>
+                            }
+                          </div>
+                        }
+
+                        <!-- Definition-level antonyms -->
+                        @if (def.antonyms.length > 0) {
+                          <div class="mt-1.5 flex flex-wrap gap-1.5">
+                            <span class="text-xs text-gray-400">Ant:</span>
+                            @for (ant of def.antonyms.slice(0, 6); track ant) {
+                              <span class="px-2 py-0.5 bg-red-50 text-red-600 text-xs rounded border border-red-200">{{ ant }}</span>
+                            }
+                            @if (def.antonyms.length > 6) {
+                              <span class="text-xs text-gray-400">+{{ def.antonyms.length - 6 }} more</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- Show more indicator -->
+                @if (meaning.definitions.length > 5) {
+                  <p class="text-xs text-gray-400 pl-4 mt-2">
+                    + {{ meaning.definitions.length - 5 }} more definitions...
+                  </p>
+                }
+              </div>
+            }
+
+            <!-- Source Attribution -->
+            @if (getSourceUrls().length > 0) {
+              <div class="mt-4 pt-3 border-t border-gray-200">
+                <div class="flex items-center gap-2 text-xs text-gray-400">
+                  <span>Source:</span>
+                  @for (url of getSourceUrls().slice(0, 2); track url) {
+                    <a [href]="url" target="_blank" rel="noopener noreferrer"
+                       class="text-blue-500 hover:text-blue-700 hover:underline flex items-center gap-1">
+                      Wiktionary
+                      <fa-icon [icon]="faExternalLinkAlt" class="text-[10px]"></fa-icon>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <hr class="border-gray-200">
+        }
+      } @else if (freeDictLoading()) {
+        <!-- Loading state for Free Dictionary -->
+        <div class="p-5 bg-gradient-to-r from-blue-50 to-white">
+          <div class="flex items-center gap-3 text-gray-400">
+            <fa-icon [icon]="faSpinner" animation="spin"></fa-icon>
+            <span class="text-sm">Loading additional definitions from Free Dictionary...</span>
+          </div>
         </div>
         <hr class="border-gray-200">
       }

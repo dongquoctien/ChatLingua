@@ -22,7 +22,7 @@
     <p>Complete some exercises first to create quizzes!</p>
   </div>
 } @else {
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
     @for (quiz of quizzes(); track quiz.id) {
       <div class="card">
         <!-- Header -->
@@ -95,7 +95,7 @@
              [class.opacity-50]="(quiz.attemptCount || 0) >= quiz.maxAttempts"
              [class.pointer-events-none]="(quiz.attemptCount || 0) >= quiz.maxAttempts">
             @if ((quiz.attemptCount || 0) >= quiz.maxAttempts) {
-              Max attempts
+              Done
             } @else {
               Start Quiz
             }

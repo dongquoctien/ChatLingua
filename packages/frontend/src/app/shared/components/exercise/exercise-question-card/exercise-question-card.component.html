@@ -1,0 +1,41 @@
+<div class="card max-w-3xl mx-auto"
+     [class.animate-slide-out-left]="slideDirection() === 'left'"
+     [class.animate-slide-out-right]="slideDirection() === 'right'"
+     [class.animate-slide-in]="slideDirection() === 'none'">
+
+  <!-- Header -->
+  <div class="p-4 md:p-6 border-b border-gray-100">
+    <h3 class="text-lg font-semibold text-gray-900">{{ getTypeLabel() }}</h3>
+    <p class="text-sm text-gray-500">Question {{ questionNumber() }}</p>
+  </div>
+
+  <!-- Content -->
+  <div class="p-4 md:p-6">
+    <!-- Question text (if provided) -->
+    @if (questionText()) {
+      <p class="text-lg text-gray-800 p-4 bg-gray-50 rounded-lg mb-5 leading-relaxed">{{ questionText() }}</p>
+    }
+
+    <!-- Custom exercise content via ng-content -->
+    <ng-content></ng-content>
+  </div>
+
+  <!-- Navigation Footer -->
+  <div class="flex items-center justify-between p-4 border-t border-gray-100">
+    <button class="btn btn-secondary" (click)="onPrevious()" [disabled]="isFirstQuestion()">
+      <fa-icon [icon]="faArrowLeft" class="mr-1"></fa-icon>
+      Previous
+    </button>
+
+    @if (!isLastQuestion()) {
+      <button class="btn btn-primary" (click)="onNext()">
+        Next
+        <fa-icon [icon]="faArrowRight" class="ml-1"></fa-icon>
+      </button>
+    } @else {
+      <button class="btn bg-gray-800 hover:bg-gray-900 text-white" (click)="onSubmit()" [disabled]="!canSubmit()">
+        {{ submitButtonText() }} ({{ answeredCount() }}/{{ totalQuestions() }})
+      </button>
+    }
+  </div>
+</div>

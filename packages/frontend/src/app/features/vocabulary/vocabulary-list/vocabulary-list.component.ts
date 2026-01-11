@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faSearch, faLanguage, faSpinner, faBook, faListUl, faVolumeUp, faEye, faChevronLeft, faChevronRight } from '../../../shared/icons';
 import { ApiService, Vocabulary } from '../../../core/services/api.service';
+import { PronunciationService } from '../../../core/services/pronunciation.service';
 
 @Component({
   selector: 'app-vocabulary-list',
@@ -21,6 +22,7 @@ import { ApiService, Vocabulary } from '../../../core/services/api.service';
 export class VocabularyListComponent implements OnInit {
   private apiService = inject(ApiService);
   private router = inject(Router);
+  private pronunciationService = inject(PronunciationService);
 
   // Icons
   faSearch = faSearch;
@@ -39,6 +41,11 @@ export class VocabularyListComponent implements OnInit {
   pageSize = signal(20);
   loading = signal(true);
   speakingWordId = signal<number | null>(null);
+
+  // Use PronunciationService's speaking signal
+  get speaking() {
+    return this.pronunciationService.speaking;
+  }
 
   searchTerm = '';
   difficulty = '';
@@ -124,21 +131,19 @@ export class VocabularyListComponent implements OnInit {
     return word.phonetic || word.pronunciationUk || word.pronunciationUs || null;
   }
 
-  speak(wordId: number, wordText: string, event: Event) {
+  speak(wordId: number, word: Vocabulary, event: Event) {
     event.stopPropagation();
-    if (this.speakingWordId()) {
-      speechSynthesis.cancel();
-    }
 
-    const utterance = new SpeechSynthesisUtterance(wordText);
-    utterance.rate = 0.9;
-    utterance.lang = 'en-US';
+    // Track which word is speaking for UI feedback
+    this.speakingWordId.set(wordId);
 
-    utterance.onstart = () => this.speakingWordId.set(wordId);
-    utterance.onend = () => this.speakingWordId.set(null);
-    utterance.onerror = () => this.speakingWordId.set(null);
-
-    speechSynthesis.speak(utterance);
+    // Use PronunciationService with fallback chain (Vocabulary doesn't have audio URLs, they're in DictionaryEntry)
+    this.pronunciationService.speak(word.englishWord, 'us').finally(() => {
+      // Clear speaking state after playback completes
+      if (this.speakingWordId() === wordId) {
+        this.speakingWordId.set(null);
+      }
+    });
   }
 
   get totalPages(): number {

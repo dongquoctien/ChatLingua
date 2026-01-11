@@ -135,14 +135,16 @@ router.post('/:gameCode/start', async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Start session
-    const sessionId = await gameService.startSession(userId, game.id);
+    // Start session and consume pet energy
+    const { sessionId, energyConsumed, petEnergy } = await gameService.startSession(userId, game.id);
 
     // Get active boosters
     const activeBoosters = await shopService.getActiveBoosters(userId);
 
     res.json({
       sessionId,
+      petEnergyConsumed: energyConsumed,
+      petEnergy,
       game: {
         id: game.id,
         gameCode: game.game_code,

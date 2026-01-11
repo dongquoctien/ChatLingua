@@ -23,6 +23,7 @@ import {
   FlashcardDirection,
   LearningGoals,
 } from '../../../core/services/api.service';
+import { PronunciationService } from '../../../core/services/pronunciation.service';
 
 interface FlashcardState {
   item: QueueItem;
@@ -44,6 +45,7 @@ interface FlashcardState {
 export class FlashcardComponent implements OnInit, OnDestroy {
   private apiService = inject(ApiService);
   private router = inject(Router);
+  private pronunciationService = inject(PronunciationService);
   private sessionStartTime = 0;
 
   // Icons
@@ -66,10 +68,14 @@ export class FlashcardComponent implements OnInit, OnDestroy {
   currentIndex = signal(0);
   currentCard = signal<FlashcardState | null>(null);
   preferredDirection = signal<FlashcardDirection>('mixed');
-  speaking = signal(false);
   sessionStats = signal({ completed: 0, correct: 0 });
   lastResult = signal<ReviewResult | null>(null);
   showCompletion = signal(false);
+
+  // Use PronunciationService's speaking signal
+  get speaking() {
+    return this.pronunciationService.speaking;
+  }
 
   // Timer
   elapsedSeconds = signal(0);
@@ -240,20 +246,8 @@ export class FlashcardComponent implements OnInit, OnDestroy {
   }
 
   speak(text: string) {
-    if (this.speaking()) {
-      speechSynthesis.cancel();
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.lang = 'en-US';
-
-    utterance.onstart = () => this.speaking.set(true);
-    utterance.onend = () => this.speaking.set(false);
-    utterance.onerror = () => this.speaking.set(false);
-
-    speechSynthesis.speak(utterance);
+    // Use PronunciationService with fallback chain (QueueItem doesn't have audio URLs)
+    this.pronunciationService.speak(text, 'us');
   }
 
   goBack() {

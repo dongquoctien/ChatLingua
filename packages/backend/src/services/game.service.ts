@@ -210,12 +210,20 @@ class GameService {
   // Game Sessions
   // ============================================================
 
-  async startSession(userId: number, gameId: number): Promise<number> {
+  async startSession(userId: number, gameId: number): Promise<{ sessionId: number; energyConsumed: boolean; petEnergy?: number }> {
+    // Consume pet energy when starting a game (5 energy per game)
+    const energyResult = await petService.consumeEnergyForGame(userId, 5);
+
     const [result] = await pool.query<ResultSetHeader>(
       `INSERT INTO game_sessions (user_id, game_id, status) VALUES (?, ?, 'in_progress')`,
       [userId, gameId]
     );
-    return result.insertId;
+
+    return {
+      sessionId: result.insertId,
+      energyConsumed: energyResult.success,
+      petEnergy: energyResult.currentEnergy
+    };
   }
 
   async getSession(sessionId: number): Promise<GameSessionRow | null> {

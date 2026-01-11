@@ -1,10 +1,5 @@
 <div class="max-w-6xl mx-auto">
 
-<!-- <div class="mb-6">
-  <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Practice Exercises</h1>
-  <p class="text-gray-600 mt-1">Test your English knowledge</p>
-</div> -->
-
 <!-- Start Screen -->
 @if (state() === 'start') {
   <div class="card max-w-md mx-auto text-center p-8 md:p-12">
@@ -37,89 +32,73 @@
 
 <!-- Practice Mode -->
 @if (state() === 'practice') {
-  <!-- Header with progress and timer -->
-  <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 mb-4 p-4 bg-white rounded-lg shadow-sm">
-    <div class="flex-1">
-      <div class="w-full bg-gray-200 rounded-full h-2">
-        <div class="bg-gray-900 h-2 rounded-full transition-all duration-300" [style.width.%]="progressPercent()"></div>
-      </div>
-      <div class="flex justify-between mt-2 text-sm">
-        <span class="text-gray-600">Question {{ currentIndex() + 1 }} of {{ totalQuestions() }}</span>
-        <span class="text-gray-900 font-medium">{{ answeredCount() }}/{{ totalQuestions() }} answered</span>
-      </div>
-    </div>
-    <div class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-700 font-semibold self-end md:self-auto">
-      <fa-icon [icon]="faClock"></fa-icon>
-      <span>{{ formattedTime() }}</span>
-    </div>
-  </div>
-
-  <!-- Keyboard shortcuts hint (desktop) -->
-  <div class="hidden md:flex justify-center gap-5 mb-4 px-4 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
-    <span class="flex items-center gap-1">
-      <kbd class="px-2 py-0.5 bg-white border border-gray-300 rounded text-xs font-medium">←</kbd>
-      <kbd class="px-2 py-0.5 bg-white border border-gray-300 rounded text-xs font-medium">→</kbd>
-      Navigate
-    </span>
-    <span class="flex items-center gap-1">
-      <kbd class="px-2 py-0.5 bg-white border border-gray-300 rounded text-xs font-medium">1-4</kbd>
-      Select option
-    </span>
-    <span class="flex items-center gap-1">
-      <kbd class="px-2 py-0.5 bg-white border border-gray-300 rounded text-xs font-medium">Ctrl+Enter</kbd>
-      Submit
-    </span>
-  </div>
-
-  <!-- Mobile swipe hint -->
-  <div class="md:hidden text-center mb-4 p-3 bg-gray-100 rounded-lg">
-    <span class="text-sm text-gray-700">👆 Swipe left/right to navigate 👆</span>
-  </div>
+  <!-- Progress Header -->
+  <app-exercise-progress-header
+    [currentIndex]="currentIndex()"
+    [totalQuestions]="totalQuestions()"
+    [answeredCount]="answeredCount()"
+    [timeSeconds]="elapsedSeconds()"
+    [timerMode]="'elapsed'"
+    [showKeyboardHints]="true"
+    [showMobileHint]="true"
+  />
 
   <!-- Question Card -->
-  <div class="card max-w-3xl mx-auto"
-       [class.animate-slide-out-left]="slideDirection() === 'left'"
-       [class.animate-slide-out-right]="slideDirection() === 'right'"
-       [class.animate-slide-in]="slideDirection() === 'none'">
-    @if (currentExercise(); as exercise) {
-      <div class="p-4 md:p-6 border-b border-gray-100">
-        <h3 class="text-lg font-semibold text-gray-900">{{ getExerciseTypeLabel(exercise.exerciseType) }}</h3>
-        <p class="text-sm text-gray-500">Question {{ currentIndex() + 1 }}</p>
-      </div>
+  @if (currentExercise(); as exercise) {
+    <app-exercise-question-card
+      [exerciseType]="exercise.exerciseType"
+      [questionNumber]="currentIndex() + 1"
+      [slideDirection]="slideDirection()"
+      [isFirstQuestion]="isFirstQuestion()"
+      [isLastQuestion]="isLastQuestion()"
+      [canSubmit]="canSubmit()"
+      [answeredCount]="answeredCount()"
+      [totalQuestions]="totalQuestions()"
+      [submitButtonText]="'Submit All'"
+      (previousClick)="previousQuestion()"
+      (nextClick)="nextQuestion()"
+      (submitClick)="submitSession()"
+    >
+      <!-- Question Text for basic types -->
+      @if (exercise.exerciseType === 'multiple_choice' || exercise.exerciseType === 'fill_blank' || exercise.exerciseType === 'translation') {
+        <p class="text-lg text-gray-800 p-4 bg-gray-50 rounded-lg mb-5 leading-relaxed">{{ exercise.questionText }}</p>
+      }
 
-      <div class="p-4 md:p-6">
-        <!-- Original exercise types -->
-        @if (exercise.exerciseType === 'multiple_choice' || exercise.exerciseType === 'fill_blank' || exercise.exerciseType === 'translation') {
-          <p class="text-lg text-gray-800 p-4 bg-gray-50 rounded-lg mb-5 leading-relaxed">{{ exercise.questionText }}</p>
-
-          @if (exercise.exerciseType === 'multiple_choice') {
-            @if (exercise.options && exercise.options.length > 0) {
-              <div class="space-y-3">
-                @for (option of exercise.options; track option; let i = $index) {
-                  <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50"
-                         [class.border-gray-900]="currentAnswer === option"
-                         [class.bg-gray-50]="currentAnswer === option">
-                    <input type="radio" name="answer" [value]="option" [(ngModel)]="currentAnswer"
-                           class="w-4 h-4 text-gray-900 border-gray-300 focus:ring-gray-500">
-                    <span class="ml-3 text-gray-800">{{ option }}</span>
-                  </label>
-                }
-              </div>
-            } @else {
-              <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded mb-4">
-                <p class="text-amber-700 text-sm">Options not available. Please type your answer:</p>
-              </div>
-              <input type="text" [(ngModel)]="currentAnswer" (keyup.enter)="isLastQuestion() ? null : nextQuestion()"
-                     class="input w-full" placeholder="Your answer">
-            }
+      <!-- Exercise Content -->
+      @switch (exercise.exerciseType) {
+        @case ('multiple_choice') {
+          @if (exercise.options && exercise.options.length > 0) {
+            <div class="space-y-3">
+              @for (option of exercise.options; track option; let i = $index) {
+                <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50"
+                       [class.border-gray-900]="currentAnswer === option"
+                       [class.bg-gray-50]="currentAnswer === option">
+                  <input type="radio" name="answer" [value]="option" [(ngModel)]="currentAnswer"
+                         class="w-4 h-4 text-gray-900 border-gray-300 focus:ring-gray-500">
+                  <span class="ml-3 text-gray-800">{{ option }}</span>
+                </label>
+              }
+            </div>
           } @else {
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded mb-4">
+              <p class="text-amber-700 text-sm">Options not available. Please type your answer:</p>
+            </div>
             <input type="text" [(ngModel)]="currentAnswer" (keyup.enter)="isLastQuestion() ? null : nextQuestion()"
                    class="input w-full" placeholder="Your answer">
           }
         }
 
-        <!-- Sentence Building -->
-        @if (exercise.exerciseType === 'sentence_building') {
+        @case ('fill_blank') {
+          <input type="text" [(ngModel)]="currentAnswer" (keyup.enter)="isLastQuestion() ? null : nextQuestion()"
+                 class="input w-full" placeholder="Your answer">
+        }
+
+        @case ('translation') {
+          <input type="text" [(ngModel)]="currentAnswer" (keyup.enter)="isLastQuestion() ? null : nextQuestion()"
+                 class="input w-full" placeholder="Your answer">
+        }
+
+        @case ('sentence_building') {
           <app-sentence-building
             [exerciseData]="getExerciseData(exercise)!"
             [disabled]="false"
@@ -127,8 +106,7 @@
           </app-sentence-building>
         }
 
-        <!-- Matching -->
-        @if (exercise.exerciseType === 'matching') {
+        @case ('matching') {
           <app-matching
             [exerciseData]="getExerciseData(exercise)!"
             [disabled]="false"
@@ -136,8 +114,7 @@
           </app-matching>
         }
 
-        <!-- Spelling -->
-        @if (exercise.exerciseType === 'spelling') {
+        @case ('spelling') {
           <app-spelling
             [exerciseData]="getExerciseData(exercise)!"
             [audioUrl]="exercise.audioUrl"
@@ -146,8 +123,7 @@
           </app-spelling>
         }
 
-        <!-- Listening -->
-        @if (exercise.exerciseType === 'listening') {
+        @case ('listening') {
           <app-listening
             [exerciseData]="getExerciseData(exercise)!"
             [audioUrl]="exercise.audioUrl!"
@@ -156,8 +132,7 @@
           </app-listening>
         }
 
-        <!-- Error Correction -->
-        @if (exercise.exerciseType === 'error_correction') {
+        @case ('error_correction') {
           <app-error-correction
             [question]="exercise.questionText"
             [exerciseData]="getExerciseData(exercise)!"
@@ -166,8 +141,7 @@
           </app-error-correction>
         }
 
-        <!-- Verb Conjugation -->
-        @if (exercise.exerciseType === 'verb_conjugation') {
+        @case ('verb_conjugation') {
           <app-verb-conjugation
             [exerciseData]="getExerciseData(exercise)!"
             [disabled]="false"
@@ -175,186 +149,40 @@
           </app-verb-conjugation>
         }
 
-        <!-- Cloze Test -->
-        @if (exercise.exerciseType === 'cloze') {
+        @case ('cloze') {
           <app-cloze
             [exerciseData]="getExerciseData(exercise)!"
             [disabled]="false"
             (answerChange)="onExerciseAnswerChange($event)">
           </app-cloze>
         }
-      </div>
-
-      <div class="flex items-center justify-between p-4 border-t border-gray-100">
-        <button class="btn btn-secondary" (click)="previousQuestion()" [disabled]="isFirstQuestion()">
-          <fa-icon [icon]="faArrowLeft" class="mr-1"></fa-icon>
-          Previous
-        </button>
-
-        @if (!isLastQuestion()) {
-          <button class="btn btn-primary" (click)="nextQuestion()">
-            Next
-            <fa-icon [icon]="faArrowRight" class="ml-1"></fa-icon>
-          </button>
-        } @else {
-          <button class="btn bg-gray-800 hover:bg-gray-900 text-white" (click)="submitSession()" [disabled]="!canSubmit()">
-            Submit All ({{ answeredCount() }}/{{ totalQuestions() }})
-          </button>
-        }
-      </div>
-    }
-  </div>
+      }
+    </app-exercise-question-card>
+  }
 
   <!-- Question Navigator -->
-  <div class="flex flex-wrap items-center gap-4 mt-5 p-4 bg-white rounded-lg shadow-sm">
-    <span class="font-medium text-gray-600">Jump to:</span>
-    <div class="flex flex-wrap gap-2">
-      @for (num of getQuestionNumbers(); track num; let i = $index) {
-        <button class="w-9 h-9 rounded-full text-sm font-semibold transition-all"
-                [class.bg-gray-200]="!hasAnswer(exercises()[i].id) && i !== currentIndex()"
-                [class.text-gray-600]="!hasAnswer(exercises()[i].id) && i !== currentIndex()"
-                [class.bg-gray-900]="hasAnswer(exercises()[i].id) && i !== currentIndex()"
-                [class.text-white]="hasAnswer(exercises()[i].id) && i !== currentIndex()"
-                [class.ring-2]="i === currentIndex()"
-                [class.ring-gray-900]="i === currentIndex()"
-                [class.scale-110]="i === currentIndex()"
-                (click)="goToQuestion(i)">
-          {{ num }}
-        </button>
-      }
-    </div>
-  </div>
-}
-
-<!-- Celebration Animation -->
-@if (showCelebration()) {
-  <div class="fixed inset-0 z-50 pointer-events-none animate-fade-in-out">
-    <div class="absolute inset-0 overflow-hidden">
-      @for (i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]; track i) {
-        <div class="confetti" [style.--delay]="i * 0.1 + 's'" [style.--x]="(i * 17 % 100) + '%'"></div>
-      }
-    </div>
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center animate-celebration-pop">
-      <fa-icon [icon]="faTrophy" class="text-7xl text-yellow-400 drop-shadow-lg animate-bounce"></fa-icon>
-      <h2 class="mt-4 text-3xl font-bold text-gray-800">Congratulations!</h2>
-    </div>
-  </div>
+  <app-exercise-question-navigator
+    [questions]="navigatorQuestions()"
+    [currentIndex]="currentIndex()"
+    (questionSelect)="goToQuestion($event)"
+  />
 }
 
 <!-- Results Screen -->
-@if (state() === 'results' && result()) {
-  <div class="card max-w-6xl mx-auto overflow-hidden">
-    <div class="text-center p-8 md:p-12 bg-gradient-to-b from-gray-50 to-white">
-      <!-- Trophy with rank colors: Iron (<50), Bronze (50-69), Silver (70-89), Gold (90+) -->
-      <div class="relative inline-block">
-        <fa-icon [icon]="result()!.percentage >= 50 ? faTrophy : faFrown"
-                 class="text-7xl mb-2"
-                 [ngClass]="{
-                   'text-gray-500': result()!.percentage < 50,
-                   'text-amber-700 trophy-bronze': result()!.percentage >= 50 && result()!.percentage < 70,
-                   'text-gray-400 trophy-silver': result()!.percentage >= 70 && result()!.percentage < 90,
-                   'text-yellow-400 trophy-gold': result()!.percentage >= 90
-                 }"></fa-icon>
-        <span class="block text-xs font-bold uppercase tracking-wider mt-1 mb-3"
-              [ngClass]="{
-                'text-gray-500': result()!.percentage < 50,
-                'text-amber-700': result()!.percentage >= 50 && result()!.percentage < 70,
-                'text-gray-400': result()!.percentage >= 70 && result()!.percentage < 90,
-                'text-yellow-600': result()!.percentage >= 90
-              }">
-          @if (result()!.percentage >= 90) {
-            Gold Rank
-          } @else if (result()!.percentage >= 70) {
-            Silver Rank
-          } @else if (result()!.percentage >= 50) {
-            Bronze Rank
-          } @else {
-            Iron Rank
-          }
-        </span>
-      </div>
-      <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-        @if (result()!.percentage >= 90) {
-          Excellent!
-        } @else if (result()!.percentage >= 70) {
-          Great Job!
-        } @else if (result()!.percentage >= 50) {
-          Good Effort!
-        } @else {
-          Keep Practicing!
-        }
-      </h2>
-      <div class="mb-4">
-        <div class="text-5xl font-bold text-gray-900">{{ result()!.score }}/{{ result()!.total }}</div>
-        <div class="text-2xl text-gray-600">{{ result()!.percentage }}%</div>
-      </div>
-      <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-600 mb-4">
-        <fa-icon [icon]="faClock"></fa-icon>
-        Time: {{ formattedTime() }}
-      </div>
-
-      @if ((result()!.xpAwarded ?? 0) > 0) {
-        <div class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-100 to-orange-100 rounded-xl animate-xp-pop"
-             [class.border-2]="result()!.percentage >= 90"
-             [class.border-yellow-400]="result()!.percentage >= 90"
-             [class.shadow-lg]="result()!.percentage >= 90">
-          <fa-icon [icon]="faBolt" class="text-xl text-yellow-500"></fa-icon>
-          <span class="text-lg font-semibold text-orange-600">+{{ result()!.xpAwarded }} XP</span>
-        </div>
-      }
-    </div>
-
-    <hr class="border-gray-200">
-
-    <!-- Question Review -->
-    <div class="p-6 md:p-8">
-      <h3 class="text-xl font-semibold text-gray-900 mb-4">Question Review</h3>
-      <div class="space-y-4">
-        @for (answer of result()!.results; track answer.exerciseId) {
-          <div class="p-4 rounded-lg border-l-4"
-               [class.bg-gray-100]="answer.isCorrect"
-               [class.border-gray-900]="answer.isCorrect"
-               [class.bg-red-50]="!answer.isCorrect"
-               [class.border-red-500]="!answer.isCorrect">
-            <div class="flex items-center gap-3 mb-2">
-              <span class="font-bold text-gray-800">Q{{ answer.questionOrder }}</span>
-              <fa-icon [icon]="answer.isCorrect ? faCheckCircle : faTimesCircle"
-                       [class.text-gray-900]="answer.isCorrect"
-                       [class.text-red-500]="!answer.isCorrect"></fa-icon>
-              <span class="px-2 py-0.5 bg-gray-200 rounded text-xs text-gray-600">{{ getExerciseTypeLabel(answer.exerciseType) }}</span>
-            </div>
-            <p class="text-gray-800 mb-3 leading-relaxed">{{ answer.questionText }}</p>
-            <div class="text-sm space-y-1">
-              <div>
-                <strong>Your answer:</strong>
-                <span [class.text-red-600]="!answer.isCorrect" [class.line-through]="!answer.isCorrect">
-                  {{ formatAnswerForDisplay(answer.userAnswer, answer.exerciseType) }}
-                </span>
-              </div>
-              @if (!answer.isCorrect) {
-                <div>
-                  <strong>Correct answer:</strong>
-                  <span class="text-gray-900 font-medium">{{ formatAnswerForDisplay(answer.correctAnswer, answer.exerciseType) }}</span>
-                </div>
-              }
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <div class="flex justify-center gap-4 p-6 border-t border-gray-200">
-      <button class="btn btn-primary" (click)="practiceAgain()">Practice Again</button>
-      <button class="btn btn-secondary" (click)="openShareDialog()">
-        <fa-icon [icon]="faShare" class="mr-2"></fa-icon>
-        Share
-      </button>
-      <button class="btn btn-secondary" (click)="viewHistory()">
-        <fa-icon [icon]="faHistory" class="mr-2"></fa-icon>
-        View History
-      </button>
-    </div>
-  </div>
+@if (state() === 'results' && exerciseResult()) {
+  <app-exercise-result-screen
+    [result]="exerciseResult()!"
+    [timeSpent]="formattedTime()"
+    [title]="'Practice Complete'"
+    [backButtonText]="'Practice Again'"
+    [historyRoute]="'/exercises/history'"
+    [historyButtonText]="'View History'"
+    [formatAnswerFn]="formatAnswerForDisplay"
+    [getTypeLabelFn]="getExerciseTypeLabel"
+    (backClick)="practiceAgain()"
+    (shareClick)="openShareDialog()"
+    (historyClick)="viewHistory()"
+  />
 }
 
 <!-- Share Dialog -->
@@ -367,4 +195,3 @@
   />
 }
 </div>
-

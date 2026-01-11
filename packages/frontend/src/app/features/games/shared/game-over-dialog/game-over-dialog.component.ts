@@ -56,7 +56,12 @@ export class GameOverDialogComponent implements OnChanges {
     if (changes['isOpen'] && this.isOpen && !this.hasPlayedSound) {
       this.hasPlayedSound = true;
 
-      if (this.result?.victory) {
+      // Play victory sound for good performance, game-over for poor performance
+      const isGoodPerformance = this.result?.victory ||
+        (this.result && this.result.accuracy >= 70 && this.result.wordsCorrect > 0) ||
+        (this.result && this.result.wordsWrong === 0 && this.result.wordsCorrect > 0);
+
+      if (isGoodPerformance) {
         this.audioService.playSound('victory');
       } else {
         this.audioService.playSound('game-over');
@@ -125,6 +130,23 @@ export class GameOverDialogComponent implements OnChanges {
     if (accuracy >= 80) return { grade: 'B', color: 'blue', message: 'Great job!' };
     if (accuracy >= 70) return { grade: 'C', color: 'yellow', message: 'Good effort!' };
     return { grade: 'D', color: 'red', message: 'Keep practicing!' };
+  }
+
+  get headerText(): string {
+    if (!this.result) return 'Game Over!';
+
+    // Check explicit victory flag first
+    if (this.result.victory) return 'Victory!';
+
+    // Auto-detect based on performance
+    const accuracy = this.result.accuracy;
+    const hasCorrectAnswers = this.result.wordsCorrect > 0;
+
+    if (accuracy >= 90 && hasCorrectAnswers) return 'Complete!';
+    if (accuracy >= 70 && hasCorrectAnswers) return 'Finished!';
+    if (this.result.wordsWrong === 0 && hasCorrectAnswers) return 'Complete!';
+
+    return 'Game Over!';
   }
 
   onPlayAgain(): void {

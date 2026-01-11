@@ -69,6 +69,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
   userMenuOpen = signal(false);
   notificationMenuOpen = signal(false);
 
+
   // Notification badge and list
   notificationBadge = signal<{ unreadCount: number; hasNewAchievements: boolean }>({
     unreadCount: 0,

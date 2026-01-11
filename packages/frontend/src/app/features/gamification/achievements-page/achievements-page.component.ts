@@ -42,9 +42,9 @@ export class AchievementsPageComponent implements OnInit {
   }
 
   onAchievementClick(achievement: UserAchievementInfo) {
-    // Mark as seen if it's new
+    // Mark as seen if it's new - use achievementId (from achievements table)
     if (achievement.isNew) {
-      this.apiService.markAchievementSeen(achievement.id).subscribe(() => {
+      this.apiService.markAchievementSeen(achievement.achievementId).subscribe(() => {
         // Update the local state
         const updated = this.achievements().map(a =>
           a.id === achievement.id ? { ...a, isNew: false } : a
