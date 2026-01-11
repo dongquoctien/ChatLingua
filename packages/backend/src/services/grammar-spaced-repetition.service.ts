@@ -3,6 +3,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { calculateSM2, type SM2Result } from './spaced-repetition.service.js';
 import { gamificationService } from './gamification.service.js';
 import { challengeService } from './challenge.service.js';
+import { petService } from './pet.service.js';
 import { isAnswerCorrect } from '../utils/answer-matching.js';
 
 // ============================================================
@@ -470,6 +471,41 @@ export class GrammarSpacedRepetitionService {
     // Update challenge progress
     await challengeService.checkProgress(userId, 'review_complete');
 
+    // ============================================================
+    // Pet Care Integration - Play with pet based on grammar review
+    // ============================================================
+    try {
+      // Quality 0-2 = poor, 3-5 = good. Convert to percentage (0-100)
+      const scorePercent = Math.round((quality / 5) * 100);
+      await petService.processCareFromActivity(
+        userId,
+        'play', // Grammar reviews = play care type
+        'review', // Map grammar review to 'review' source type
+        scorePercent
+      );
+      console.log(`[Pet Care] Processed grammar review for user ${userId}, quality: ${quality}`);
+    } catch (error) {
+      console.error('Failed to process pet care from grammar review:', error);
+    }
+
+    // Pet Daily Tasks Integration
+    try {
+      await petService.recordActivityForTasks(userId, 'review', { // Map to 'review'
+        scorePercent: Math.round((quality / 5) * 100),
+        count: 1
+      });
+    } catch (error) {
+      console.error('Failed to update pet tasks from grammar review:', error);
+    }
+
+    // Pet XP Integration
+    try {
+      await petService.onLearningActivity(userId, 'grammar_review', xpAmount);
+      console.log(`[Pet XP] Pet gained XP from grammar review: userId=${userId}, xp=${xpAmount}`);
+    } catch (error) {
+      console.error('Failed to process pet XP from grammar review:', error);
+    }
+
     return result;
   }
 
@@ -581,6 +617,40 @@ export class GrammarSpacedRepetitionService {
 
     // Update challenge progress
     await challengeService.checkProgress(userId, 'exercise_complete', { isCorrect });
+
+    // ============================================================
+    // Pet Care Integration - Feed pet based on grammar exercise
+    // ============================================================
+    try {
+      const scorePercent = isCorrect ? 100 : 0;
+      await petService.processCareFromActivity(
+        userId,
+        'feed', // Grammar exercises = feed care type
+        'exercise', // Map grammar exercise to 'exercise' source type
+        scorePercent
+      );
+      console.log(`[Pet Care] Processed grammar exercise for user ${userId}, correct: ${isCorrect}`);
+    } catch (error) {
+      console.error('Failed to process pet care from grammar exercise:', error);
+    }
+
+    // Pet Daily Tasks Integration
+    try {
+      await petService.recordActivityForTasks(userId, 'exercise', { // Map to 'exercise'
+        scorePercent: isCorrect ? 100 : 0,
+        count: 1
+      });
+    } catch (error) {
+      console.error('Failed to update pet tasks from grammar exercise:', error);
+    }
+
+    // Pet XP Integration
+    try {
+      await petService.onLearningActivity(userId, 'grammar_exercise', xpAmount);
+      console.log(`[Pet XP] Pet gained XP from grammar exercise: userId=${userId}, xp=${xpAmount}`);
+    } catch (error) {
+      console.error('Failed to process pet XP from grammar exercise:', error);
+    }
 
     return {
       isCorrect,

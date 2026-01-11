@@ -604,8 +604,9 @@ class PetService {
     if (hunger > 50) happiness = Math.max(0, happiness - Math.floor((hunger - 50) / 10));
     if (hoursSinceInteraction > 12) happiness = Math.max(0, happiness - 10);
 
-    // Energy regenerates when not playing
-    let energy = Math.min(100, pet.energy + Math.floor(hoursSinceInteraction * 2));
+    // Energy regenerates when not playing (based on time since last play, not interaction)
+    // This ensures energy doesn't instantly regenerate after playing a game
+    let energy = Math.min(100, pet.energy + Math.floor(hoursSincePlayed * 2));
 
     // HP and death state
     let hp = pet.hp ?? 100;
@@ -1275,10 +1276,10 @@ class PetService {
     const pet = await this.getActivePet(userId);
     if (!pet) return;
 
-    // Pet gains XP when user learns (5% of user XP - reduced from 10% for difficulty)
-    const petXpGain = Math.floor(xpEarned * 0.05);
-    // Happiness gain also reduced (max 3 instead of 5)
-    const happinessGain = Math.min(3, Math.floor(xpEarned / 15));
+    // Pet gains XP when user learns (3% of user XP - reduced for harder progression)
+    const petXpGain = Math.floor(xpEarned * 0.03);
+    // Happiness gain reduced (max 2, requires 20+ XP to get 1 happiness)
+    const happinessGain = Math.min(2, Math.floor(xpEarned / 20));
 
     await pool.query(`
       UPDATE user_pets SET
@@ -2911,6 +2912,48 @@ class PetService {
   }
 
   /**
+   * Consume energy when starting a game
+   * Called at game start, returns false if pet doesn't have enough energy
+   * Default cost: 5 energy per game (range: 5-10)
+   */
+  async consumeEnergyForGame(userId: number, energyCost: number = 5): Promise<{ success: boolean; currentEnergy: number; message: string }> {
+    const pet = await this.getActivePet(userId);
+    if (!pet) {
+      return { success: true, currentEnergy: 0, message: 'No active pet' };
+    }
+
+    // Check if pet has enough energy
+    if (pet.energy < energyCost) {
+      return {
+        success: false,
+        currentEnergy: pet.energy,
+        message: `Not enough energy! Need ${energyCost}, have ${pet.energy}. Wait for energy to regenerate.`
+      };
+    }
+
+    // Deduct energy
+    await pool.query(`
+      UPDATE user_pets SET
+        energy = GREATEST(0, energy - ?),
+        last_played_at = NOW(),
+        last_interaction_at = NOW()
+      WHERE id = ?
+    `, [energyCost, pet.id]);
+
+    const newEnergy = Math.max(0, pet.energy - energyCost);
+    console.log(`[Pet Energy] userId=${userId}, petId=${pet.id}, consumed=${energyCost}, before=${pet.energy}, after=${newEnergy}`);
+
+    // Emit event for real-time update
+    petEvents.emit('pet:energy', { userId, pet: { ...pet, energy: newEnergy }, energyChange: -energyCost });
+
+    return {
+      success: true,
+      currentEnergy: newEnergy,
+      message: `Used ${energyCost} energy to play`
+    };
+  }
+
+  /**
    * Process pet care based on activity score (0-100)
    * Called after completing exercises or games
    */
@@ -2921,18 +2964,25 @@ class PetService {
     score: number,
     sourceId?: number
   ): Promise<CareResult> {
+    console.log(`[Pet Care START] userId=${userId}, careType=${careType}, sourceType=${sourceType}, score=${score}`);
+
     const pet = await this.getActivePet(userId);
     if (!pet) {
+      console.log(`[Pet Care] No active pet for user ${userId}`);
       throw new Error('NO_ACTIVE_PET');
     }
 
+    console.log(`[Pet Care] Found pet: id=${pet.id}, energy=${pet.energy}, happiness=${pet.happiness}`);
+
     if (pet.isDead) {
+      console.log(`[Pet Care] Pet ${pet.id} is dead`);
       throw new Error('PET_IS_DEAD');
     }
 
     // Get tier based on score
     const tier = await this.getScoreTier(score, careType);
     if (!tier) {
+      console.log(`[Pet Care] No tier found, using fallback`);
       // Fallback minimum values
       return this.applyCareWithoutTier(userId, pet, careType, score, sourceType, sourceId);
     }
@@ -2940,35 +2990,56 @@ class PetService {
     // Calculate care effects with tier multiplier
     const hpChange = Math.round(tier.hpBonus * tier.multiplier);
     const happinessChange = Math.round(tier.happinessBonus * tier.multiplier);
-    const energyChange = careType === 'play' ? -Math.round(10 * tier.multiplier) : Math.round(tier.energyBonus * tier.multiplier);
+    // Energy: only for feed/heart activities (games consume energy at start, not here)
+    const energyChange = careType === 'play' ? null : Math.round(tier.energyBonus * tier.multiplier);
     const hungerChange = -Math.round(tier.hungerReduction * tier.multiplier);
     const xpGained = Math.round(tier.xpBonus * tier.multiplier);
     const carePoints = Math.round(tier.baseCarePoints * tier.multiplier);
+
+    console.log(`[Pet Care] userId=${userId}, petId=${pet.id}, careType=${careType}, score=${score}, tier=${tier.tierName}`);
 
     // Track previous HP for death mechanic
     const previousHp = pet.hp ?? 100;
     const newHp = Math.min(100, Math.max(0, previousHp + hpChange));
 
-    // Apply care to pet
+    // Build dynamic update based on care type
+    const updateFields = [
+      'hp = LEAST(100, GREATEST(0, COALESCE(hp, 100) + ?))',
+      'happiness = LEAST(100, GREATEST(0, happiness + ?))',
+      'hunger = LEAST(100, GREATEST(0, hunger + ?))',
+      'experience = experience + ?',
+      'last_care_at = NOW()',
+      'last_interaction_at = NOW()',
+      'total_interactions = total_interactions + 1'
+    ];
+    const params: number[] = [hpChange, happinessChange, hungerChange, xpGained];
+
+    // Only update energy for non-play activities (games handle energy at start)
+    if (careType !== 'play' && energyChange !== null) {
+      updateFields.splice(2, 0, 'energy = LEAST(100, GREATEST(0, energy + ?))');
+      params.splice(2, 0, energyChange);
+    }
+
+    // Update last_played_at when careType is 'play'
+    if (careType === 'play') {
+      updateFields.push('last_played_at = NOW()');
+    }
+
     await pool.query(`
       UPDATE user_pets SET
-        hp = LEAST(100, GREATEST(0, COALESCE(hp, 100) + ?)),
-        happiness = LEAST(100, GREATEST(0, happiness + ?)),
-        energy = LEAST(100, GREATEST(0, energy + ?)),
-        hunger = LEAST(100, GREATEST(0, hunger + ?)),
-        experience = experience + ?,
-        last_care_at = NOW(),
-        last_interaction_at = NOW(),
-        total_interactions = total_interactions + 1
+        ${updateFields.join(',\n        ')}
       WHERE id = ?
-    `, [hpChange, happinessChange, energyChange, hungerChange, xpGained, pet.id]);
+    `, [...params, pet.id]);
+
+    console.log(`[Pet Care UPDATE] petId=${pet.id}, hpChange=${hpChange}, happinessChange=${happinessChange}, xpGained=${xpGained}`);
 
     // Update HP zero tracking for death mechanic
     await this.updateHpZeroTracking(pet.id, newHp, previousHp);
 
-    // Log the care action
+    // Log the care action (use 0 for energyChange if null - games handle energy at start)
+    const logEnergyChange = energyChange ?? 0;
     await this.logCareAction(pet.id, userId, careType, sourceType, sourceId, score, carePoints, {
-      hpChange, happinessChange, energyChange, hungerChange, xpGained
+      hpChange, happinessChange, energyChange: logEnergyChange, hungerChange, xpGained
     });
 
     await this.checkLevelUp(pet.id);
@@ -2997,7 +3068,7 @@ class PetService {
       carePoints,
       hpChange,
       happinessChange,
-      energyChange,
+      energyChange: logEnergyChange,
       hungerChange,
       xpGained,
       message,
@@ -3013,36 +3084,57 @@ class PetService {
     sourceType: 'exercise' | 'game' | 'review',
     sourceId?: number
   ): Promise<CareResult> {
-    // Minimal care when no tier found
-    const hpChange = 5;
-    const happinessChange = 3;
-    const energyChange = careType === 'play' ? -5 : 0;
-    const hungerChange = -5;
-    const xpGained = 5;
+    // Minimal care when no tier found (reduced for harder progression)
+    const hpChange = 2;
+    const happinessChange = 1;
+    // Energy: only for feed/heart activities (games consume energy at start, not here)
+    const energyChange = careType === 'play' ? null : 0;
+    const hungerChange = -2;
+    const xpGained = 2;
     const carePoints = 1;
+
+    console.log(`[Pet Care NoTier] careType=${careType}, score=${score}, energyChange=${energyChange}`);
 
     // Track previous HP for death mechanic
     const previousHp = pet.hp ?? 100;
     const newHp = Math.min(100, Math.max(0, previousHp + hpChange));
 
+    // Build dynamic update - add last_played_at for play care type
+    const updateFields = [
+      'hp = LEAST(100, GREATEST(0, COALESCE(hp, 100) + ?))',
+      'happiness = LEAST(100, GREATEST(0, happiness + ?))',
+      'hunger = LEAST(100, GREATEST(0, hunger + ?))',
+      'experience = experience + ?',
+      'last_care_at = NOW()',
+      'last_interaction_at = NOW()',
+      'total_interactions = total_interactions + 1'
+    ];
+    const params: (number | null)[] = [hpChange, happinessChange, hungerChange, xpGained];
+
+    // Only update energy for non-play activities (games handle energy at start)
+    if (careType !== 'play' && energyChange !== null) {
+      updateFields.splice(2, 0, 'energy = LEAST(100, GREATEST(0, energy + ?))');
+      params.splice(2, 0, energyChange);
+    }
+
+    // Update last_played_at when careType is 'play' (games consume energy at start)
+    if (careType === 'play') {
+      updateFields.push('last_played_at = NOW()');
+    }
+
     await pool.query(`
       UPDATE user_pets SET
-        hp = LEAST(100, GREATEST(0, COALESCE(hp, 100) + ?)),
-        happiness = LEAST(100, GREATEST(0, happiness + ?)),
-        energy = LEAST(100, GREATEST(0, energy + ?)),
-        hunger = LEAST(100, GREATEST(0, hunger + ?)),
-        experience = experience + ?,
-        last_care_at = NOW(),
-        last_interaction_at = NOW(),
-        total_interactions = total_interactions + 1
+        ${updateFields.join(',\n        ')}
       WHERE id = ?
-    `, [hpChange, happinessChange, energyChange, hungerChange, xpGained, pet.id]);
+    `, [...params, pet.id]);
 
     // Update HP zero tracking for death mechanic
     await this.updateHpZeroTracking(pet.id, newHp, previousHp);
 
+    // Log with 0 for energyChange since games handle energy at start
+    const logEnergyChange = energyChange ?? 0;
     await this.logCareAction(pet.id, userId, careType, sourceType, sourceId, score, carePoints, {
-      hpChange, happinessChange, energyChange, hungerChange, xpGained
+      hpChange, happinessChange, energyChange: logEnergyChange, hungerChange, xpGained
     });
 
     const updatedPet = await this.getActivePet(userId);
@@ -3055,7 +3147,7 @@ class PetService {
       carePoints,
       hpChange,
       happinessChange,
-      energyChange,
+      energyChange: logEnergyChange,
       hungerChange,
       xpGained,
       message: `Cared for ${petName}! Keep practicing for better rewards!`,

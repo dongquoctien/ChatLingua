@@ -2,6 +2,7 @@ import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { gamificationService } from './gamification.service.js';
 import { challengeService } from './challenge.service.js';
+import { petService } from './pet.service.js';
 import { isAnswerCorrect } from '../utils/answer-matching.js';
 
 interface QuizRow extends RowDataPacket {
@@ -405,6 +406,39 @@ export class QuizService {
       }
     } catch (error) {
       console.error('Failed to update challenge progress:', error);
+    }
+
+    // ============================================================
+    // Pet Care Integration - Feed pet based on quiz performance
+    // ============================================================
+    try {
+      await petService.processCareFromActivity(
+        userId,
+        'feed', // Quiz activities = feed care type
+        'exercise', // Map quiz to 'exercise' source type
+        score // Pass score percentage
+      );
+      console.log(`[Pet Care] Processed quiz completion for user ${userId}, score: ${score}%`);
+    } catch (error) {
+      console.error('Failed to process pet care from quiz:', error);
+    }
+
+    // Pet Daily Tasks Integration - Update task progress for quizzes
+    try {
+      await petService.recordActivityForTasks(userId, 'exercise', { // Map quiz to 'exercise'
+        scorePercent: score,
+        count: 1
+      });
+    } catch (error) {
+      console.error('Failed to update pet tasks from quiz:', error);
+    }
+
+    // Pet XP Integration - Pet gains XP from learning activities
+    try {
+      await petService.onLearningActivity(userId, 'quiz', xpAwarded);
+      console.log(`[Pet XP] Pet gained XP from quiz: userId=${userId}, xp=${xpAwarded}`);
+    } catch (error) {
+      console.error('Failed to process pet XP from quiz:', error);
     }
 
     return {

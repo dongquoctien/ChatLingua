@@ -1,6 +1,6 @@
 import pool from '../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { isAnswerCorrect } from '../utils/answer-matching.js';
+import { isAnswerCorrect, isMatchingAnswerCorrect } from '../utils/answer-matching.js';
 import { challengeService } from './challenge.service.js';
 import { gamificationService } from './gamification.service.js';
 import { petService } from './pet.service.js';
@@ -35,6 +35,7 @@ interface SessionAnswerRow extends RowDataPacket {
   question_text?: string;
   options?: string;
   correct_answer?: string;
+  exercise_data?: string | object;
 }
 
 interface ExerciseRow extends RowDataPacket {
@@ -291,7 +292,7 @@ export class ExerciseSessionService {
 
     // Get all exercises for this session
     const [answerRows] = await pool.execute<SessionAnswerRow[]>(
-      `SELECT esa.*, e.exercise_type, e.question as question_text, e.options, e.correct_answer
+      `SELECT esa.*, e.exercise_type, e.question as question_text, e.options, e.correct_answer, e.exercise_data
        FROM exercise_session_answers esa
        JOIN exercises e ON esa.exercise_id = e.id
        WHERE esa.session_id = ?
@@ -307,7 +308,32 @@ export class ExerciseSessionService {
       const userAnswer = input.answers[row.exercise_id.toString()] || '';
       const correctAnswer = row.correct_answer || '';
       const exerciseType = row.exercise_type || '';
-      const correct = isAnswerCorrect(userAnswer, correctAnswer, exerciseType);
+
+      // Special handling for matching exercises - compare pairs by text
+      let correct: boolean;
+      if (exerciseType === 'matching') {
+        // For matching, the correct pairs are in exercise_data.pairs
+        let exerciseData: { pairs?: Array<{ en: string; vi: string }> } | null = null;
+        if (row.exercise_data) {
+          if (typeof row.exercise_data === 'object') {
+            exerciseData = row.exercise_data as { pairs?: Array<{ en: string; vi: string }> };
+          } else if (typeof row.exercise_data === 'string') {
+            try {
+              exerciseData = JSON.parse(row.exercise_data);
+            } catch {
+              exerciseData = null;
+            }
+          }
+        }
+
+        if (exerciseData?.pairs) {
+          correct = isMatchingAnswerCorrect(userAnswer, JSON.stringify(exerciseData.pairs));
+        } else {
+          correct = false;
+        }
+      } else {
+        correct = isAnswerCorrect(userAnswer, correctAnswer, exerciseType);
+      }
 
       if (correct) {
         correctCount++;
