@@ -113,3 +113,52 @@ export function isExactMatch(userAnswer: string, correctAnswer: string): boolean
   if (!correctAnswer || !userAnswer) return false;
   return userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
 }
+
+/**
+ * Grade matching exercise answers
+ * Compares user's matched pairs against correct pairs by text content
+ *
+ * @param userAnswerJson - JSON string of user's matches: [{en: string, vi: string}, ...]
+ * @param correctAnswerJson - JSON string of correct pairs: [{en: string, vi: string}, ...]
+ * @returns true if all pairs are correctly matched
+ */
+export function isMatchingAnswerCorrect(
+  userAnswerJson: string,
+  correctAnswerJson: string
+): boolean {
+  try {
+    const userPairs = JSON.parse(userAnswerJson);
+    const correctPairs = JSON.parse(correctAnswerJson);
+
+    if (!Array.isArray(userPairs) || !Array.isArray(correctPairs)) {
+      return false;
+    }
+
+    // Build a map of correct English -> Vietnamese mappings
+    const correctMap = new Map<string, string>();
+    for (const pair of correctPairs) {
+      if (pair.en && pair.vi) {
+        correctMap.set(pair.en.toLowerCase().trim(), pair.vi.toLowerCase().trim());
+      }
+    }
+
+    // Check each user pair against correct mappings
+    let correctCount = 0;
+    for (const userPair of userPairs) {
+      if (!userPair.en || !userPair.vi) continue;
+
+      const enKey = userPair.en.toLowerCase().trim();
+      const userVi = userPair.vi.toLowerCase().trim();
+      const expectedVi = correctMap.get(enKey);
+
+      if (expectedVi && expectedVi === userVi) {
+        correctCount++;
+      }
+    }
+
+    // All pairs must be correct
+    return correctCount === correctPairs.length && correctCount === userPairs.length;
+  } catch {
+    return false;
+  }
+}
