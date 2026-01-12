@@ -85,7 +85,13 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
     if (req.userId) {
       // Get map progress
       const mapProgress = await userProgressService.getUserMapProgress(req.userId);
-      const userMapProgress = mapProgress.find(p => p.wordMapId === mapId);
+      let userMapProgress = mapProgress.find(p => p.wordMapId === mapId);
+
+      // If user has map progress but no unit/lesson progress, trigger initialization
+      // This fixes users who had map progress created before unit/lesson initialization was added
+      if (userMapProgress) {
+        await userProgressService.getOrCreateMapProgress(req.userId, mapId);
+      }
 
       // Get unit progress
       const unitProgress = await userProgressService.getUnitProgress(req.userId, mapId);
@@ -106,9 +112,9 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
         ...result.map,
         userProgress: userMapProgress ? {
           isActivated: true,
-          completionPercentage: userMapProgress.completionPercentage || 0,
+          completionPercentage: userMapProgress.progressPercentage || 0,
           currentUnitId: userMapProgress.currentUnitId,
-          currentLessonId: userMapProgress.currentLessonId,
+          currentLessonId: null,
           unitsCompleted: userMapProgress.unitsCompleted || 0,
           lessonsCompleted: userMapProgress.lessonsCompleted || 0,
           totalXpEarned: userMapProgress.totalXpEarned || 0,
@@ -139,8 +145,8 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
           userProgress: unitProg ? {
             status: unitProg.status,
             lessonsCompleted: unitProg.lessonsCompleted || 0,
-            completionPercentage: unitProg.completionPercentage || 0,
-            bestBossExamScore: unitProg.bestBossExamScore || 0,
+            completionPercentage: unitProg.progressPercentage || 0,
+            bossExamPassed: unitProg.bossExamPassed || false,
             xpEarned: unitProg.xpEarned || 0,
           } : null,
           lessons: lessonsWithProgress,
@@ -322,7 +328,7 @@ router.get('/lessons/:lessonId/content', async (req: AuthRequest, res: Response)
       formula: g!.formula,
       examples: g!.examples,
       commonMistakes: g!.commonMistakes,
-      usageTips: g!.tips,
+      usageTips: g!.usageTips,
     }));
 
     // Fetch actual exercise items
@@ -402,9 +408,9 @@ router.post('/lessons/:lessonId/start', async (req: AuthRequest, res: Response) 
       return;
     }
 
-    // Update progress to in_progress
+    // Update progress to studying
     const progress = await userProgressService.updateLessonProgress(req.userId!, lessonId, {
-      status: 'in_progress',
+      status: 'studying',
     });
 
     if (!progress) {
@@ -442,12 +448,12 @@ router.post('/lessons/:lessonId/complete', async (req: AuthRequest, res: Respons
 
     // Update lesson progress
     const progress = await userProgressService.updateLessonProgress(req.userId!, lessonId, {
-      status: 'completed',
+      status: 'exam_ready',
       progressPercentage: 100,
-      vocabularyMastered: vocabCount,
-      grammarMastered: grammarCount,
-      timeSpentSeconds: timeSpentSeconds || 0,
-      completedAt: new Date(),
+      vocabularyLearned: vocabCount,
+      grammarLearned: grammarCount,
+      studyTimeMinutes: Math.ceil((timeSpentSeconds || 0) / 60),
+      studyCompletedAt: new Date(),
       xpEarned,
     });
 
@@ -554,13 +560,12 @@ router.post('/lessons/:lessonId/progress', async (req: AuthRequest, res: Respons
       return;
     }
 
-    const { contentCompleted, totalContent, timeSpentSeconds } = req.body;
+    const { vocabularyLearned, grammarLearned, timeSpentSeconds } = req.body;
 
     const progress = await userProgressService.updateLessonProgress(req.userId!, lessonId, {
-      contentCompleted,
-      totalContent,
-      progressPercentage: totalContent > 0 ? Math.round((contentCompleted / totalContent) * 100) : 0,
-      timeSpentSeconds,
+      vocabularyLearned: vocabularyLearned || 0,
+      grammarLearned: grammarLearned || 0,
+      studyTimeMinutes: Math.ceil((timeSpentSeconds || 0) / 60),
     });
 
     if (!progress) {

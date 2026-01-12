@@ -65,10 +65,11 @@ httpServer.listen(PORT, () => {
   // Cleanup inconsistent online status every 5 minutes
   cron.schedule('*/5 * * * *', async () => {
     try {
+      // Fix users who are marked online but have no socket connection
       const [result] = await pool.execute<ResultSetHeader>(
         `UPDATE user_status
-         SET is_online = FALSE, last_seen_at = NOW()
-         WHERE is_online = TRUE AND socket_id IS NULL`
+         SET is_online = FALSE, status_type = 'offline', last_seen_at = COALESCE(last_seen_at, NOW())
+         WHERE socket_id IS NULL AND (is_online = TRUE OR status_type = 'online')`
       );
       if (result.affectedRows > 0) {
         console.log(`[StatusCleanup] Fixed ${result.affectedRows} inconsistent user status`);

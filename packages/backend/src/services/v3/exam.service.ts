@@ -1,6 +1,9 @@
 import pool from '../../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { masterExercisesService } from './master-exercises.service.js';
+import { gamificationService } from '../gamification.service.js';
+import { petService } from '../pet.service.js';
+import { challengeService } from '../challenge.service.js';
 
 // ============================================================
 // Types
@@ -257,12 +260,8 @@ export class ExamService {
    */
   async updateExam(id: number, updates: Partial<CreateExamInput>): Promise<LessonExam | null> {
     const updateFields: string[] = [];
-    const params: (string | number | null)[] = [];
+    const params: (string | number | null | boolean)[] = [];
 
-    if (updates.examType !== undefined) {
-      updateFields.push('exam_type = ?');
-      params.push(updates.examType);
-    }
     if (updates.title !== undefined) {
       updateFields.push('title = ?');
       params.push(updates.title);
@@ -283,21 +282,49 @@ export class ExamService {
       updateFields.push('max_attempts = ?');
       params.push(updates.maxAttempts || null);
     }
-    if (updates.exerciseCount !== undefined) {
-      updateFields.push('exercise_count = ?');
-      params.push(updates.exerciseCount);
+    if (updates.totalQuestions !== undefined) {
+      updateFields.push('total_questions = ?');
+      params.push(updates.totalQuestions);
+    }
+    if (updates.totalPoints !== undefined) {
+      updateFields.push('total_points = ?');
+      params.push(updates.totalPoints || null);
     }
     if (updates.exerciseIds !== undefined) {
       updateFields.push('exercise_ids = ?');
       params.push(JSON.stringify(updates.exerciseIds));
     }
-    if (updates.xpReward !== undefined) {
-      updateFields.push('xp_reward = ?');
-      params.push(updates.xpReward);
+    if (updates.shuffleQuestions !== undefined) {
+      updateFields.push('shuffle_questions = ?');
+      params.push(updates.shuffleQuestions);
     }
-    if (updates.bonusXpPerfect !== undefined) {
-      updateFields.push('bonus_xp_perfect = ?');
-      params.push(updates.bonusXpPerfect);
+    if (updates.showAnswersAfter !== undefined) {
+      updateFields.push('show_answers_after = ?');
+      params.push(updates.showAnswersAfter);
+    }
+    if (updates.randomQuestionCount !== undefined) {
+      updateFields.push('random_question_count = ?');
+      params.push(updates.randomQuestionCount || null);
+    }
+    if (updates.passXp !== undefined) {
+      updateFields.push('pass_xp = ?');
+      params.push(updates.passXp || null);
+    }
+    if (updates.perfectScoreBonusXp !== undefined) {
+      updateFields.push('perfect_score_bonus_xp = ?');
+      params.push(updates.perfectScoreBonusXp || null);
+    }
+    if (updates.passCoins !== undefined) {
+      updateFields.push('pass_coins = ?');
+      params.push(updates.passCoins || null);
+    }
+    if (updates.perfectScoreBonusCoins !== undefined) {
+      updateFields.push('perfect_score_bonus_coins = ?');
+      params.push(updates.perfectScoreBonusCoins || null);
+    }
+    if (updates.displayOrder !== undefined) {
+      updateFields.push('display_order = ?');
+      params.push(updates.displayOrder || null);
     }
 
     if (updateFields.length === 0) return this.getExamById(id);
@@ -402,6 +429,7 @@ export class ExamService {
     passed: boolean;
     score: number;
     xpEarned: number;
+    coinsEarned: number;
     correctCount: number;
     totalCount: number;
     detailedResults: { exerciseId: number; isCorrect: boolean; correctAnswer: string; userAnswer: string }[];
@@ -484,6 +512,69 @@ export class ExamService {
       [score, correctCount, timeSpentSeconds, JSON.stringify(answers), passed, xpEarned, coinsEarned, attemptId]
     );
 
+    // ============================================================
+    // Phase 6 Integration: Gamification, Pet Tasks, Challenges
+    // ============================================================
+
+    try {
+      // 1. Award XP via gamification service
+      if (xpEarned > 0) {
+        await gamificationService.awardXP(
+          userId,
+          xpEarned,
+          'exercise', // Use 'exercise' as XPSource for exams
+          attemptId,
+          `Word Map Exam: ${exam.title} (${score}%)`
+        );
+        console.log(`[Exam] Awarded ${xpEarned} XP to user ${userId} for exam ${exam.title}`);
+      }
+
+      // 2. Award coins
+      if (coinsEarned > 0) {
+        await petService.addCurrency(userId, coinsEarned, 0, 'exam_reward');
+        console.log(`[Exam] Awarded ${coinsEarned} coins to user ${userId} for exam ${exam.title}`);
+      }
+
+      // 3. Update leaderboard
+      await gamificationService.updateLeaderboard(userId, {
+        xp: xpEarned,
+        exercises: 1, // Count exam as exercise for leaderboard
+        quizzes: 1    // Also count as quiz
+      });
+
+      // 4. Pet Daily Tasks Integration
+      await petService.recordActivityForTasks(userId, 'exercise', {
+        scorePercent: score,
+        count: 1
+      });
+      console.log(`[Pet Tasks] Updated exercise task progress from exam: userId=${userId}, score=${score}%`);
+
+      // 5. Daily Challenge Progress
+      await challengeService.checkProgress(userId, 'exercise_complete');
+      if (score === 100) {
+        await challengeService.checkProgress(userId, 'perfect_quiz', { isPerfect: true });
+      }
+      if (timeSpentSeconds < 120) {
+        await challengeService.checkProgress(userId, 'speed_quiz', { timeSeconds: timeSpentSeconds });
+      }
+      console.log(`[Challenge] Updated challenge progress from exam: userId=${userId}`);
+
+      // 6. Create notification for exam completion (only for passed exams)
+      if (passed) {
+        await gamificationService.createNotification(userId, {
+          notificationType: 'achievement',
+          title: 'Exam Passed!',
+          message: `You passed "${exam.title}" with ${score}% and earned ${xpEarned} XP!`,
+          icon: 'fa-trophy',
+          metadata: { examId: exam.id, attemptId, score, xpEarned, coinsEarned }
+        });
+      }
+
+    } catch (integrationError) {
+      // Don't fail the exam submission if integration fails
+      console.error('[Exam] Integration error (gamification/pet/challenge):', integrationError);
+    }
+
     return {
       passed,
       score,
@@ -491,6 +582,7 @@ export class ExamService {
       correctCount,
       totalCount,
       detailedResults,
+      coinsEarned, // Add coins to response
     };
   }
 

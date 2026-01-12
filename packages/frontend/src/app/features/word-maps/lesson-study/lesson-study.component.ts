@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -69,6 +69,16 @@ export class LessonStudyComponent implements OnInit {
   exerciseAnswers = signal<Map<number, string>>(new Map());
   exerciseResults = signal<Map<number, boolean>>(new Map());
 
+  // Matching exercise state
+  matchingSelectedEn = signal<number | null>(null);
+  matchingSelectedVi = signal<number | null>(null);
+  matchingMatches = signal<Map<number, { enIdx: number; viIdx: number }>>(new Map());
+  matchingShuffledVi = signal<string[]>([]);
+
+  // Sentence building state
+  sentenceAvailableWords = signal<string[]>([]);
+  sentenceArrangedWords = signal<string[]>([]);
+
   // Computed
   lesson = computed(() => this.lessonContent()?.lesson);
   vocabularyList = computed(() => this.lessonContent()?.vocabulary || []);
@@ -114,6 +124,28 @@ export class LessonStudyComponent implements OnInit {
     return Array.from(results.values()).filter(v => v).length;
   });
 
+  // Track last initialized exercise to avoid re-initialization
+  private lastInitializedExerciseId = signal<number | null>(null);
+
+  constructor() {
+    // Initialize matching/sentence_building exercises when currentExercise changes
+    effect(() => {
+      const exercise = this.currentExercise();
+      if (!exercise) return;
+
+      // Skip if already initialized this exercise
+      if (this.lastInitializedExerciseId() === exercise.id) return;
+
+      if (exercise.exerciseType === 'matching' && exercise.exerciseData?.['pairs']) {
+        this.initMatchingExercise();
+        this.lastInitializedExerciseId.set(exercise.id);
+      } else if (exercise.exerciseType === 'sentence_building' && exercise.exerciseData?.['words']) {
+        this.initSentenceBuildingExercise();
+        this.lastInitializedExerciseId.set(exercise.id);
+      }
+    }, { allowSignalWrites: true });
+  }
+
   ngOnInit(): void {
     const mapId = this.route.snapshot.paramMap.get('mapId');
     const lessonId = this.route.snapshot.paramMap.get('lessonId');
@@ -123,7 +155,23 @@ export class LessonStudyComponent implements OnInit {
       this.lessonId.set(+lessonId);
       this.loadLessonContent(+lessonId);
     }
+
+    // Check for section query param to skip directly to a section (for testing)
+    const section = this.route.snapshot.queryParamMap.get('section');
+    if (section === 'exercises') {
+      // Will be handled after content loads
+      this.skipToExercises = true;
+    }
+
+    // Check for exerciseIndex query param to start at a specific exercise
+    const exerciseIndexParam = this.route.snapshot.queryParamMap.get('exerciseIndex');
+    if (exerciseIndexParam) {
+      this.startAtExerciseIndex = parseInt(exerciseIndexParam, 10);
+    }
   }
+
+  private skipToExercises = false;
+  private startAtExerciseIndex: number | null = null;
 
   loadLessonContent(lessonId: number): void {
     this.loading.set(true);
@@ -140,6 +188,15 @@ export class LessonStudyComponent implements OnInit {
           isStudied: false
         })));
         this.loading.set(false);
+
+        // Handle skip to exercises (for testing)
+        if (this.skipToExercises && content.exercises.length > 0) {
+          this.startExercises();
+          // Also handle starting at specific exercise index
+          if (this.startAtExerciseIndex !== null && this.startAtExerciseIndex < content.exercises.length) {
+            this.currentExerciseIndex.set(this.startAtExerciseIndex);
+          }
+        }
       },
       error: (err) => {
         this.error.set('Failed to load lesson content.');
@@ -320,6 +377,192 @@ export class LessonStudyComponent implements OnInit {
     return answer.toLowerCase().trim() === exercise.correctAnswer.toLowerCase().trim()
       ? 'correct'
       : 'incorrect';
+  }
+
+  // ========================================
+  // Matching exercise methods
+  // ========================================
+  initMatchingExercise(): void {
+    const exercise = this.currentExercise();
+    if (!exercise?.exerciseData?.['pairs']) return;
+
+    const pairs = exercise.exerciseData['pairs'] as { en: string; vi: string }[];
+    // Shuffle Vietnamese items
+    const shuffledVi = pairs.map(p => p.vi).sort(() => Math.random() - 0.5);
+    this.matchingShuffledVi.set(shuffledVi);
+    this.matchingMatches.set(new Map());
+    this.matchingSelectedEn.set(null);
+    this.matchingSelectedVi.set(null);
+  }
+
+  getMatchingPairs(): { en: string; vi: string }[] {
+    const exercise = this.currentExercise();
+    return (exercise?.exerciseData?.['pairs'] as { en: string; vi: string }[]) || [];
+  }
+
+  selectMatchingEn(index: number): void {
+    if (this.isExerciseAnswered()) return;
+    // Check if already matched
+    const matches = this.matchingMatches();
+    for (const match of matches.values()) {
+      if (match.enIdx === index) return;
+    }
+
+    if (this.matchingSelectedEn() === index) {
+      this.matchingSelectedEn.set(null);
+    } else {
+      this.matchingSelectedEn.set(index);
+      this.tryMatchingMatch();
+    }
+  }
+
+  selectMatchingVi(index: number): void {
+    if (this.isExerciseAnswered()) return;
+    // Check if already matched
+    const matches = this.matchingMatches();
+    for (const match of matches.values()) {
+      if (match.viIdx === index) return;
+    }
+
+    if (this.matchingSelectedVi() === index) {
+      this.matchingSelectedVi.set(null);
+    } else {
+      this.matchingSelectedVi.set(index);
+      this.tryMatchingMatch();
+    }
+  }
+
+  private tryMatchingMatch(): void {
+    const enIdx = this.matchingSelectedEn();
+    const viIdx = this.matchingSelectedVi();
+
+    if (enIdx !== null && viIdx !== null) {
+      const matches = new Map(this.matchingMatches());
+      const matchId = matches.size;
+      matches.set(matchId, { enIdx, viIdx });
+      this.matchingMatches.set(matches);
+
+      this.matchingSelectedEn.set(null);
+      this.matchingSelectedVi.set(null);
+
+      // Update answer if all matched
+      const pairs = this.getMatchingPairs();
+      if (matches.size === pairs.length) {
+        this.updateMatchingAnswer();
+      }
+    }
+  }
+
+  isMatchingEnMatched(index: number): boolean {
+    const matches = this.matchingMatches();
+    for (const match of matches.values()) {
+      if (match.enIdx === index) return true;
+    }
+    return false;
+  }
+
+  isMatchingViMatched(index: number): boolean {
+    const matches = this.matchingMatches();
+    for (const match of matches.values()) {
+      if (match.viIdx === index) return true;
+    }
+    return false;
+  }
+
+  private updateMatchingAnswer(): void {
+    const exercise = this.currentExercise();
+    if (!exercise) return;
+
+    const pairs = this.getMatchingPairs();
+    const shuffledVi = this.matchingShuffledVi();
+    const matches = this.matchingMatches();
+
+    // Build answer array
+    const answer = Array.from(matches.values()).map(match => ({
+      en: pairs[match.enIdx].en,
+      vi: shuffledVi[match.viIdx]
+    }));
+
+    const answers = new Map(this.exerciseAnswers());
+    answers.set(exercise.id, JSON.stringify(answer));
+    this.exerciseAnswers.set(answers);
+  }
+
+  resetMatching(): void {
+    this.initMatchingExercise();
+    const exercise = this.currentExercise();
+    if (exercise) {
+      const answers = new Map(this.exerciseAnswers());
+      answers.delete(exercise.id);
+      this.exerciseAnswers.set(answers);
+    }
+  }
+
+  // ========================================
+  // Sentence building exercise methods
+  // ========================================
+  initSentenceBuildingExercise(): void {
+    const exercise = this.currentExercise();
+    if (!exercise?.exerciseData?.['words']) return;
+
+    const words = [...(exercise.exerciseData['words'] as string[])];
+    // Shuffle words
+    this.sentenceAvailableWords.set(words.sort(() => Math.random() - 0.5));
+    this.sentenceArrangedWords.set([]);
+  }
+
+  addWordToSentence(index: number): void {
+    if (this.isExerciseAnswered()) return;
+
+    const available = [...this.sentenceAvailableWords()];
+    const word = available[index];
+    available.splice(index, 1);
+    this.sentenceAvailableWords.set(available);
+
+    const arranged = [...this.sentenceArrangedWords(), word];
+    this.sentenceArrangedWords.set(arranged);
+
+    // Update answer
+    this.updateSentenceAnswer();
+  }
+
+  removeWordFromSentence(index: number): void {
+    if (this.isExerciseAnswered()) return;
+
+    const arranged = [...this.sentenceArrangedWords()];
+    const word = arranged[index];
+    arranged.splice(index, 1);
+    this.sentenceArrangedWords.set(arranged);
+
+    const available = [...this.sentenceAvailableWords(), word];
+    this.sentenceAvailableWords.set(available);
+
+    // Update answer
+    this.updateSentenceAnswer();
+  }
+
+  private updateSentenceAnswer(): void {
+    const exercise = this.currentExercise();
+    if (!exercise) return;
+
+    const sentence = this.sentenceArrangedWords().join(' ');
+    const answers = new Map(this.exerciseAnswers());
+    if (sentence) {
+      answers.set(exercise.id, sentence);
+    } else {
+      answers.delete(exercise.id);
+    }
+    this.exerciseAnswers.set(answers);
+  }
+
+  resetSentenceBuilding(): void {
+    this.initSentenceBuildingExercise();
+    const exercise = this.currentExercise();
+    if (exercise) {
+      const answers = new Map(this.exerciseAnswers());
+      answers.delete(exercise.id);
+      this.exerciseAnswers.set(answers);
+    }
   }
 
   // Complete lesson

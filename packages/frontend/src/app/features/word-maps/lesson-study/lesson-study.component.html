@@ -419,6 +419,119 @@
             </div>
           }
 
+          <!-- Matching exercise -->
+          @if (currentExercise()?.exerciseType === 'matching') {
+            <div class="space-y-4">
+              <p class="text-sm text-gray-600 mb-2">Match the English words with their Vietnamese translations</p>
+              <div class="grid grid-cols-2 gap-4">
+                <!-- English column -->
+                <div class="space-y-2">
+                  <p class="text-xs font-semibold text-gray-500 uppercase mb-2">English</p>
+                  @for (pair of getMatchingPairs(); track $index) {
+                    <button
+                      (click)="selectMatchingEn($index)"
+                      [disabled]="isExerciseAnswered() || isMatchingEnMatched($index)"
+                      class="w-full p-3 text-left rounded-lg border-2 transition-all"
+                      [class]="
+                        isMatchingEnMatched($index) ? 'border-green-500 bg-green-50 text-green-700 cursor-default' :
+                        matchingSelectedEn() === $index ? 'border-gray-900 bg-gray-100' :
+                        'border-gray-200 hover:border-gray-400'
+                      "
+                    >
+                      <span class="font-medium">{{ pair.en }}</span>
+                      @if (isMatchingEnMatched($index)) {
+                        <i class="fa-solid fa-check text-green-500 ml-2"></i>
+                      }
+                    </button>
+                  }
+                </div>
+                <!-- Vietnamese column -->
+                <div class="space-y-2">
+                  <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Vietnamese</p>
+                  @for (vi of matchingShuffledVi(); track $index) {
+                    <button
+                      (click)="selectMatchingVi($index)"
+                      [disabled]="isExerciseAnswered() || isMatchingViMatched($index)"
+                      class="w-full p-3 text-left rounded-lg border-2 transition-all"
+                      [class]="
+                        isMatchingViMatched($index) ? 'border-green-500 bg-green-50 text-green-700 cursor-default' :
+                        matchingSelectedVi() === $index ? 'border-gray-900 bg-gray-100' :
+                        'border-gray-200 hover:border-gray-400'
+                      "
+                    >
+                      <span class="font-medium">{{ vi }}</span>
+                      @if (isMatchingViMatched($index)) {
+                        <i class="fa-solid fa-check text-green-500 ml-2"></i>
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+              <!-- Progress indicator -->
+              <div class="text-center text-sm text-gray-500 mt-2">
+                {{ matchingMatches().size }} / {{ getMatchingPairs().length }} matched
+              </div>
+            </div>
+          }
+
+          <!-- Sentence building exercise -->
+          @if (currentExercise()?.exerciseType === 'sentence_building') {
+            <div class="space-y-4">
+              <p class="text-sm text-gray-600 mb-2">Arrange the words to form a correct sentence</p>
+
+              <!-- Sentence area (drop zone) -->
+              <div class="min-h-[60px] p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                @if (sentenceArrangedWords().length === 0) {
+                  <p class="text-gray-400 text-center">Click words below to build the sentence</p>
+                } @else {
+                  <div class="flex flex-wrap gap-2">
+                    @for (word of sentenceArrangedWords(); track $index) {
+                      <button
+                        (click)="removeWordFromSentence($index)"
+                        [disabled]="isExerciseAnswered()"
+                        class="px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:hover:bg-gray-900 transition-colors"
+                      >
+                        {{ word }}
+                        @if (!isExerciseAnswered()) {
+                          <i class="fa-solid fa-times ml-1 text-gray-400"></i>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Word bank -->
+              <div class="space-y-2">
+                <p class="text-xs font-semibold text-gray-500 uppercase">Word Bank</p>
+                <div class="flex flex-wrap gap-2">
+                  @for (word of sentenceAvailableWords(); track $index) {
+                    <button
+                      (click)="addWordToSentence($index)"
+                      [disabled]="isExerciseAnswered()"
+                      class="px-3 py-2 bg-white border-2 border-gray-200 rounded-lg hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {{ word }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Result feedback -->
+              @if (isExerciseAnswered()) {
+                <div class="flex items-center gap-2 text-sm mt-2">
+                  @if (getTextAnswerState() === 'correct') {
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    <span class="text-green-700">Correct!</span>
+                  } @else {
+                    <i class="fa-solid fa-times text-red-500"></i>
+                    <span class="text-red-700">Incorrect. The answer is: <strong>{{ currentExercise()?.correctAnswer }}</strong></span>
+                  }
+                </div>
+              }
+            </div>
+          }
+
           @if (isExerciseAnswered() && currentExercise()?.explanation) {
             <div class="mt-4 p-3 bg-gray-50 rounded-lg">
               <p class="text-sm text-gray-700">

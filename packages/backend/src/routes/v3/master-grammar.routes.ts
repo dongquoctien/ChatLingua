@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { authMiddleware, AuthRequest } from '../../middleware/auth.js';
+import { authMiddleware, adminMiddleware, AuthRequest } from '../../middleware/auth.js';
 import { masterGrammarService } from '../../services/v3/index.js';
 
 const router = Router();
@@ -144,13 +144,12 @@ router.get('/:id/related', async (req: AuthRequest, res: Response) => {
 });
 
 // ============================================================
-// Admin-only routes (for future use)
+// Admin-only routes
 // ============================================================
 
 // POST /api/v3/master/grammar - Create grammar (admin only)
-router.post('/', async (req: AuthRequest, res: Response) => {
+router.post('/', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    // TODO: Add admin check middleware
     const grammar = await masterGrammarService.create(req.body);
     res.status(201).json({ grammar });
   } catch (error) {
@@ -160,7 +159,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 // PUT /api/v3/master/grammar/:id - Update grammar (admin only)
-router.put('/:id', async (req: AuthRequest, res: Response) => {
+router.put('/:id', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -168,7 +167,6 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // TODO: Add admin check middleware
     const grammar = await masterGrammarService.update(id, req.body);
     if (!grammar) {
       res.status(404).json({ error: 'Grammar not found' });
@@ -183,7 +181,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 // DELETE /api/v3/master/grammar/:id - Delete grammar (admin only)
-router.delete('/:id', async (req: AuthRequest, res: Response) => {
+router.delete('/:id', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -191,7 +189,6 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // TODO: Add admin check middleware
     const deleted = await masterGrammarService.delete(id);
     if (!deleted) {
       res.status(404).json({ error: 'Grammar not found' });

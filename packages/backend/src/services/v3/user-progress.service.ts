@@ -161,6 +161,9 @@ export class UserProgressService {
     );
 
     if (existing.length > 0) {
+      // Map progress exists, but ensure unit/lesson progress is also initialized
+      // This handles cases where map progress was created before unit/lesson initialization was added
+      await this.ensureUnitLessonProgressExists(userId, wordMapId);
       return this.mapToUserMapProgress(existing[0]);
     }
 
@@ -180,6 +183,27 @@ export class UserProgressService {
     );
 
     return this.mapToUserMapProgress(rows[0]);
+  }
+
+  /**
+   * Ensure unit and lesson progress exists for a map
+   * This is used to fix cases where map progress exists but unit/lesson progress doesn't
+   */
+  private async ensureUnitLessonProgressExists(userId: number, wordMapId: number): Promise<void> {
+    // Check if unit progress exists
+    const [unitProgress] = await pool.execute<RowDataPacket[]>(
+      `SELECT uup.id FROM user_unit_progress uup
+       JOIN map_units mu ON uup.unit_id = mu.id
+       WHERE uup.user_id = ? AND mu.map_id = ?
+       LIMIT 1`,
+      [userId, wordMapId]
+    );
+
+    if (unitProgress.length === 0) {
+      // No unit progress found, initialize it
+      console.log(`[UserProgress] Initializing missing unit/lesson progress for user ${userId}, map ${wordMapId}`);
+      await this.initializeUnitProgress(userId, wordMapId);
+    }
   }
 
   /**
@@ -846,3 +870,4 @@ export class UserProgressService {
 }
 
 export const userProgressService = new UserProgressService();
+// trigger reload Mon, Jan 12, 2026 11:58:45 PM

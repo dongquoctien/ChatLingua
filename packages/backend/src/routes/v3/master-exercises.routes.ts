@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { authMiddleware, AuthRequest } from '../../middleware/auth.js';
+import { authMiddleware, adminMiddleware, AuthRequest } from '../../middleware/auth.js';
 import { masterExercisesService } from '../../services/v3/index.js';
 import type { ExerciseTypeV3 } from '../../services/v3/master-exercises.service.js';
 
@@ -166,13 +166,12 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 // ============================================================
-// Admin-only routes (for future use)
+// Admin-only routes
 // ============================================================
 
 // POST /api/v3/master/exercises - Create exercise (admin only)
-router.post('/', async (req: AuthRequest, res: Response) => {
+router.post('/', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    // TODO: Add admin check middleware
     const exercise = await masterExercisesService.create(req.body);
     res.status(201).json({ exercise });
   } catch (error) {
@@ -182,9 +181,8 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/v3/master/exercises/bulk - Bulk create exercises (admin only)
-router.post('/bulk', async (req: AuthRequest, res: Response) => {
+router.post('/bulk', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    // TODO: Add admin check middleware
     const { exercises } = req.body;
     if (!Array.isArray(exercises) || exercises.length === 0) {
       res.status(400).json({ error: 'Exercises array is required' });
@@ -200,7 +198,7 @@ router.post('/bulk', async (req: AuthRequest, res: Response) => {
 });
 
 // PUT /api/v3/master/exercises/:id - Update exercise (admin only)
-router.put('/:id', async (req: AuthRequest, res: Response) => {
+router.put('/:id', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -208,7 +206,6 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // TODO: Add admin check middleware
     const exercise = await masterExercisesService.update(id, req.body);
     if (!exercise) {
       res.status(404).json({ error: 'Exercise not found' });
@@ -223,7 +220,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 });
 
 // DELETE /api/v3/master/exercises/:id - Delete exercise (admin only)
-router.delete('/:id', async (req: AuthRequest, res: Response) => {
+router.delete('/:id', adminMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -231,7 +228,6 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // TODO: Add admin check middleware
     const deleted = await masterExercisesService.delete(id);
     if (!deleted) {
       res.status(404).json({ error: 'Exercise not found' });
