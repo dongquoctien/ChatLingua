@@ -581,6 +581,115 @@ router.post('/lessons/:lessonId/progress', async (req: AuthRequest, res: Respons
 });
 
 // ============================================================
+// Step Progress Tracking (Continue Learning & Replay)
+// ============================================================
+
+// GET /api/v3/word-maps/lessons/:lessonId/step-progress - Get lesson step progress
+router.get('/lessons/:lessonId/step-progress', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const progress = await userProgressService.getLessonStepProgress(req.userId!, lessonId);
+    res.json(progress);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get step progress';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/lessons/:lessonId/step-progress - Save lesson step progress
+router.post('/lessons/:lessonId/step-progress', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const { currentStep, currentStepIndex, stepProgress } = req.body;
+
+    // Validate currentStep
+    const validSteps = ['overview', 'vocabulary', 'grammar', 'exercises', 'exam', 'complete'];
+    if (!validSteps.includes(currentStep)) {
+      res.status(400).json({ error: 'Invalid step name' });
+      return;
+    }
+
+    await userProgressService.saveLessonStepProgress(req.userId!, lessonId, {
+      currentStep,
+      currentStepIndex: currentStepIndex || 0,
+      stepProgress: stepProgress || {},
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to save step progress';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/lessons/:lessonId/reset-for-replay - Reset lesson for replay
+router.post('/lessons/:lessonId/reset-for-replay', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const result = await userProgressService.resetLessonForReplay(req.userId!, lessonId);
+
+    if (!result.success) {
+      res.status(400).json({ error: result.message });
+      return;
+    }
+
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to reset lesson';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/v3/word-maps/lessons/:lessonId/can-access - Check if user can access lesson
+router.get('/lessons/:lessonId/can-access', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const result = await userProgressService.canAccessLesson(req.userId!, lessonId);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to check access';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/v3/word-maps/:mapId/continue-lesson - Get lesson that can be continued
+router.get('/:mapId/continue-lesson', async (req: AuthRequest, res: Response) => {
+  try {
+    const mapId = parseInt(req.params.mapId);
+    if (isNaN(mapId)) {
+      res.status(400).json({ error: 'Invalid map ID' });
+      return;
+    }
+
+    const continuableLesson = await userProgressService.getContinuableLessonForMap(req.userId!, mapId);
+    res.json({ lesson: continuableLesson });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get continue lesson';
+    res.status(500).json({ error: message });
+  }
+});
+
+// ============================================================
 // Exams
 // ============================================================
 

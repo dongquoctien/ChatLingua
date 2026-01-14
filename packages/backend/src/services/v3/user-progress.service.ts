@@ -867,7 +867,255 @@ export class UserProgressService {
       lastActivityAt: null, // Not stored in DB
     };
   }
+
+  // ============================================================
+  // Step Progress Tracking (Continue Learning & Replay)
+  // ============================================================
+
+  /**
+   * Save lesson step progress
+   * Called every time user completes a vocabulary card, grammar point, or exercise
+   */
+  async saveLessonStepProgress(
+    userId: number,
+    lessonId: number,
+    stepData: {
+      currentStep: 'overview' | 'vocabulary' | 'grammar' | 'exercises' | 'exam' | 'complete';
+      currentStepIndex: number;
+      stepProgress: {
+        vocabulary?: { studied: number[]; total: number; currentIndex: number; completed: boolean };
+        grammar?: { viewed: number[]; total: number; currentIndex: number; completed: boolean };
+        exercises?: { answered: number[]; correct: number[]; total: number; currentIndex: number; completed: boolean };
+      };
+    }
+  ): Promise<void> {
+    const stepProgressJson = JSON.stringify(stepData.stepProgress);
+
+    // Determine if user can continue (not completed and has made progress)
+    const canContinue = stepData.currentStep !== 'complete' && (
+      stepData.currentStep !== 'overview' ||
+      stepData.currentStepIndex > 0 ||
+      Object.keys(stepData.stepProgress).length > 0
+    );
+
+    await pool.execute(
+      `UPDATE user_lesson_progress
+       SET current_step = ?,
+           current_step_index = ?,
+           step_progress = ?,
+           can_continue = ?,
+           last_step_at = NOW(),
+           status = CASE
+             WHEN status = 'unlocked' THEN 'studying'
+             ELSE status
+           END,
+           study_started_at = COALESCE(study_started_at, NOW())
+       WHERE user_id = ? AND lesson_id = ?`,
+      [stepData.currentStep, stepData.currentStepIndex, stepProgressJson, canContinue, userId, lessonId]
+    );
+  }
+
+  /**
+   * Get lesson step progress for continuation
+   */
+  async getLessonStepProgress(
+    userId: number,
+    lessonId: number
+  ): Promise<{
+    canContinue: boolean;
+    currentStep: string;
+    currentStepIndex: number;
+    stepProgress: {
+      vocabulary?: { studied: number[]; total: number; currentIndex: number; completed: boolean };
+      grammar?: { viewed: number[]; total: number; currentIndex: number; completed: boolean };
+      exercises?: { answered: number[]; correct: number[]; total: number; currentIndex: number; completed: boolean };
+    } | null;
+    lastStepAt: Date | null;
+    status: string;
+  }> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT current_step, current_step_index, step_progress, can_continue, last_step_at, status
+       FROM user_lesson_progress
+       WHERE user_id = ? AND lesson_id = ?`,
+      [userId, lessonId]
+    );
+
+    if (rows.length === 0) {
+      return {
+        canContinue: false,
+        currentStep: 'overview',
+        currentStepIndex: 0,
+        stepProgress: null,
+        lastStepAt: null,
+        status: 'locked',
+      };
+    }
+
+    const row = rows[0];
+    let stepProgress = null;
+
+    if (row.step_progress) {
+      try {
+        stepProgress = typeof row.step_progress === 'string'
+          ? JSON.parse(row.step_progress)
+          : row.step_progress;
+      } catch (e) {
+        console.error('Error parsing step_progress:', e);
+      }
+    }
+
+    return {
+      canContinue: Boolean(row.can_continue),
+      currentStep: row.current_step || 'overview',
+      currentStepIndex: row.current_step_index || 0,
+      stepProgress,
+      lastStepAt: row.last_step_at || null,
+      status: row.status || 'locked',
+    };
+  }
+
+  /**
+   * Reset lesson progress to allow replay
+   * Keeps completion status but resets step progress for a fresh playthrough
+   */
+  async resetLessonForReplay(
+    userId: number,
+    lessonId: number
+  ): Promise<{ success: boolean; message: string }> {
+    // Check if lesson exists and is completed or at least unlocked
+    const [lesson] = await pool.execute<RowDataPacket[]>(
+      `SELECT status, allow_replay FROM user_lesson_progress
+       WHERE user_id = ? AND lesson_id = ?`,
+      [userId, lessonId]
+    );
+
+    if (lesson.length === 0) {
+      return { success: false, message: 'Lesson progress not found' };
+    }
+
+    if (lesson[0].status === 'locked') {
+      return { success: false, message: 'Cannot replay a locked lesson' };
+    }
+
+    if (!lesson[0].allow_replay) {
+      return { success: false, message: 'Replay is not allowed for this lesson' };
+    }
+
+    // Reset step progress for replay but keep the original completion status
+    await pool.execute(
+      `UPDATE user_lesson_progress
+       SET current_step = 'overview',
+           current_step_index = 0,
+           step_progress = NULL,
+           can_continue = FALSE,
+           last_step_at = NOW()
+       WHERE user_id = ? AND lesson_id = ?`,
+      [userId, lessonId]
+    );
+
+    return { success: true, message: 'Lesson reset for replay' };
+  }
+
+  /**
+   * Check if user can access a lesson (for replay or continue)
+   */
+  async canAccessLesson(
+    userId: number,
+    lessonId: number
+  ): Promise<{ canAccess: boolean; reason: string; status: string }> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT status, allow_replay, can_continue FROM user_lesson_progress
+       WHERE user_id = ? AND lesson_id = ?`,
+      [userId, lessonId]
+    );
+
+    if (rows.length === 0) {
+      return { canAccess: false, reason: 'Lesson progress not found', status: 'not_found' };
+    }
+
+    const row = rows[0];
+    const status = row.status as string;
+
+    if (status === 'locked') {
+      return { canAccess: false, reason: 'Lesson is locked', status };
+    }
+
+    return { canAccess: true, reason: 'Access granted', status };
+  }
+
+  /**
+   * Get lesson with continue learning info for a user in a map
+   * Returns the first lesson that can be continued
+   */
+  async getContinuableLessonForMap(
+    userId: number,
+    mapId: number
+  ): Promise<{
+    lessonId: number;
+    lessonTitle: string;
+    unitId: number;
+    unitName: string;
+    currentStep: string;
+    currentStepIndex: number;
+    lastStepAt: Date;
+    progressPercentage: number;
+  } | null> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT
+         ulp.lesson_id,
+         ul.title as lesson_title,
+         mu.id as unit_id,
+         mu.title as unit_name,
+         ulp.current_step,
+         ulp.current_step_index,
+         ulp.last_step_at,
+         ulp.content_progress_percentage
+       FROM user_lesson_progress ulp
+       JOIN unit_lessons ul ON ulp.lesson_id = ul.id
+       JOIN map_units mu ON ul.unit_id = mu.id
+       WHERE ulp.user_id = ?
+         AND mu.map_id = ?
+         AND ulp.can_continue = TRUE
+       ORDER BY ulp.last_step_at DESC
+       LIMIT 1`,
+      [userId, mapId]
+    );
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    const row = rows[0];
+    return {
+      lessonId: row.lesson_id as number,
+      lessonTitle: row.lesson_title as string,
+      unitId: row.unit_id as number,
+      unitName: row.unit_name as string,
+      currentStep: row.current_step as string,
+      currentStepIndex: row.current_step_index as number,
+      lastStepAt: row.last_step_at as Date,
+      progressPercentage: Number(row.content_progress_percentage) || 0,
+    };
+  }
+
+  /**
+   * Mark lesson study as complete and disable can_continue
+   */
+  async markLessonStudyComplete(
+    userId: number,
+    lessonId: number
+  ): Promise<void> {
+    await pool.execute(
+      `UPDATE user_lesson_progress
+       SET current_step = 'complete',
+           can_continue = FALSE,
+           step_progress = NULL,
+           study_completed_at = COALESCE(study_completed_at, NOW()),
+           last_step_at = NOW()
+       WHERE user_id = ? AND lesson_id = ?`,
+      [userId, lessonId]
+    );
+  }
 }
 
 export const userProgressService = new UserProgressService();
-// trigger reload Mon, Jan 12, 2026 11:58:45 PM

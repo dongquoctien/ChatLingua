@@ -1,12 +1,15 @@
-import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import {
   WordMapService,
   LessonContentDetail,
   VocabularyContent,
   GrammarContent,
-  ExerciseContent
+  ExerciseContent,
+  LessonStepProgress,
+  StepProgressData
 } from '../word-map.service';
 import { PronunciationService } from '../../../core/services/pronunciation.service';
 
@@ -25,11 +28,16 @@ interface VocabularyCardState {
   templateUrl: './lesson-study.component.html',
   styleUrls: ['./lesson-study.component.scss']
 })
-export class LessonStudyComponent implements OnInit {
+export class LessonStudyComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private wordMapService = inject(WordMapService);
   private pronunciationService = inject(PronunciationService);
+
+  // Auto-save
+  private destroy$ = new Subject<void>();
+  private saveProgress$ = new Subject<void>();
+  private autoSaveEnabled = signal(true);
 
   // Pronunciation state
   get speakingAccent() {
@@ -54,6 +62,10 @@ export class LessonStudyComponent implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   completing = signal(false);
+
+  // Replay mode
+  isReplayMode = signal(false);
+  savedProgress = signal<LessonStepProgress | null>(null);
 
   // Study state
   currentSection = signal<StudySection>('overview');
@@ -144,15 +156,44 @@ export class LessonStudyComponent implements OnInit {
         this.lastInitializedExerciseId.set(exercise.id);
       }
     }, { allowSignalWrites: true });
+
+    // Setup auto-save with debounce (save at most once per second)
+    this.saveProgress$.pipe(
+      debounceTime(1000),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.doAutoSave();
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Save progress before leaving
+    if (this.autoSaveEnabled() && !this.isReplayMode()) {
+      this.doAutoSave();
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngOnInit(): void {
     const mapId = this.route.snapshot.paramMap.get('mapId');
     const lessonId = this.route.snapshot.paramMap.get('lessonId');
+    const isReplay = this.route.snapshot.queryParamMap.get('replay') === 'true';
+
+    this.isReplayMode.set(isReplay);
 
     if (mapId && lessonId) {
       this.mapId.set(+mapId);
       this.lessonId.set(+lessonId);
+
+      if (isReplay) {
+        // Reset progress for replay, then load content
+        this.resetForReplay(+lessonId);
+      } else {
+        // Load saved progress first, then load content
+        this.loadSavedProgress(+lessonId);
+      }
+
       this.loadLessonContent(+lessonId);
     }
 
@@ -197,6 +238,9 @@ export class LessonStudyComponent implements OnInit {
             this.currentExerciseIndex.set(this.startAtExerciseIndex);
           }
         }
+
+        // Restore saved progress after content loads
+        this.restoreSavedState();
       },
       error: (err) => {
         this.error.set('Failed to load lesson content.');
@@ -206,19 +250,150 @@ export class LessonStudyComponent implements OnInit {
     });
   }
 
+  // ============================================================
+  // Step Progress Tracking
+  // ============================================================
+
+  private loadSavedProgress(lessonId: number): void {
+    this.wordMapService.getLessonStepProgress(lessonId).subscribe({
+      next: (progress) => {
+        if (progress.canContinue) {
+          this.savedProgress.set(progress);
+        }
+      },
+      error: (err) => console.error('Error loading saved progress:', err)
+    });
+  }
+
+  private restoreSavedState(): void {
+    const progress = this.savedProgress();
+    if (!progress || !progress.canContinue || this.isReplayMode()) return;
+
+    // Restore current section
+    const validSections: StudySection[] = ['overview', 'vocabulary', 'grammar', 'exercises', 'complete'];
+    if (validSections.includes(progress.currentStep as StudySection)) {
+      this.currentSection.set(progress.currentStep as StudySection);
+    }
+
+    // Restore step indices and states
+    if (progress.stepProgress?.vocabulary) {
+      const vocabProgress = progress.stepProgress.vocabulary;
+      this.currentVocabIndex.set(vocabProgress.currentIndex || 0);
+
+      // Mark previously studied vocab as studied
+      const cards = this.vocabCards();
+      const studiedIds = vocabProgress.studied || [];
+      studiedIds.forEach(id => {
+        const cardIndex = cards.findIndex(c => c.vocabulary.id === id);
+        if (cardIndex >= 0) {
+          cards[cardIndex].isStudied = true;
+        }
+      });
+      this.vocabCards.set([...cards]);
+    }
+
+    if (progress.stepProgress?.grammar) {
+      this.currentGrammarIndex.set(progress.stepProgress.grammar.currentIndex || 0);
+    }
+
+    if (progress.stepProgress?.exercises) {
+      const exerciseProgress = progress.stepProgress.exercises;
+      this.currentExerciseIndex.set(exerciseProgress.currentIndex || 0);
+
+      // Restore exercise results
+      const answered = exerciseProgress.answered || [];
+      const correct = exerciseProgress.correct || [];
+      const results = new Map<number, boolean>();
+
+      answered.forEach(exerciseId => {
+        results.set(exerciseId, correct.includes(exerciseId));
+      });
+
+      this.exerciseResults.set(results);
+    }
+
+    console.log('Restored progress:', progress.currentStep, progress.currentStepIndex);
+  }
+
+  private resetForReplay(lessonId: number): void {
+    this.wordMapService.resetLessonForReplay(lessonId).subscribe({
+      next: () => {
+        console.log('Lesson reset for replay');
+        this.autoSaveEnabled.set(false); // Disable auto-save in replay mode
+      },
+      error: (err) => console.error('Reset failed:', err)
+    });
+  }
+
+  private triggerAutoSave(): void {
+    if (!this.autoSaveEnabled() || this.isReplayMode()) return;
+    this.saveProgress$.next();
+  }
+
+  private doAutoSave(): void {
+    if (!this.autoSaveEnabled() || this.isReplayMode()) return;
+
+    const stepProgress: StepProgressData = {
+      vocabulary: {
+        studied: this.vocabCards()
+          .filter(c => c.isStudied)
+          .map(c => c.vocabulary.id),
+        total: this.vocabCards().length,
+        currentIndex: this.currentVocabIndex(),
+        completed: this.vocabProgress() === 100
+      },
+      grammar: {
+        viewed: Array.from({ length: this.currentGrammarIndex() + 1 }, (_, i) => i),
+        total: this.grammarList().length,
+        currentIndex: this.currentGrammarIndex(),
+        completed: this.currentGrammarIndex() >= this.grammarList().length - 1 && this.grammarList().length > 0
+      },
+      exercises: {
+        answered: Array.from(this.exerciseResults().keys()),
+        correct: Array.from(this.exerciseResults().entries())
+          .filter(([_, isCorrect]) => isCorrect)
+          .map(([id]) => id),
+        total: this.exerciseList().length,
+        currentIndex: this.currentExerciseIndex(),
+        completed: this.exerciseResults().size === this.exerciseList().length && this.exerciseList().length > 0
+      }
+    };
+
+    this.wordMapService.saveLessonStepProgress(this.lessonId(), {
+      currentStep: this.currentSection(),
+      currentStepIndex: this.getCurrentStepIndex(),
+      stepProgress
+    }).subscribe({
+      next: () => console.log('Progress auto-saved'),
+      error: (err) => console.error('Auto-save failed:', err)
+    });
+  }
+
+  private getCurrentStepIndex(): number {
+    switch (this.currentSection()) {
+      case 'vocabulary': return this.currentVocabIndex();
+      case 'grammar': return this.currentGrammarIndex();
+      case 'exercises': return this.currentExerciseIndex();
+      default: return 0;
+    }
+  }
+
   // Navigation
   goToSection(section: StudySection): void {
     this.currentSection.set(section);
+    this.triggerAutoSave();
   }
 
   startVocabulary(): void {
     this.currentVocabIndex.set(0);
     this.currentSection.set('vocabulary');
+    this.triggerAutoSave();
   }
 
   startGrammar(): void {
     this.currentGrammarIndex.set(0);
     this.currentSection.set('grammar');
+    this.triggerAutoSave();
   }
 
   startExercises(): void {
@@ -226,6 +401,7 @@ export class LessonStudyComponent implements OnInit {
     this.exerciseAnswers.set(new Map());
     this.exerciseResults.set(new Map());
     this.currentSection.set('exercises');
+    this.triggerAutoSave();
   }
 
   // Vocabulary
@@ -256,6 +432,7 @@ export class LessonStudyComponent implements OnInit {
       cards[index + 1].isFlipped = false;
       this.vocabCards.set([...cards]);
       this.currentVocabIndex.set(index + 1);
+      this.triggerAutoSave();
     } else {
       // All vocab studied, move to next section
       if (this.grammarList().length > 0) {
@@ -264,6 +441,7 @@ export class LessonStudyComponent implements OnInit {
         this.startExercises();
       } else {
         this.currentSection.set('complete');
+        this.triggerAutoSave();
       }
     }
   }
@@ -281,12 +459,14 @@ export class LessonStudyComponent implements OnInit {
     const index = this.currentGrammarIndex();
     if (index < list.length - 1) {
       this.currentGrammarIndex.set(index + 1);
+      this.triggerAutoSave();
     } else {
       // All grammar studied
       if (this.exerciseList().length > 0) {
         this.startExercises();
       } else {
         this.currentSection.set('complete');
+        this.triggerAutoSave();
       }
     }
   }
@@ -319,6 +499,7 @@ export class LessonStudyComponent implements OnInit {
     const results = new Map(this.exerciseResults());
     results.set(exercise.id, isCorrect);
     this.exerciseResults.set(results);
+    this.triggerAutoSave();
   }
 
   nextExercise(): void {
@@ -326,8 +507,10 @@ export class LessonStudyComponent implements OnInit {
     const index = this.currentExerciseIndex();
     if (index < list.length - 1) {
       this.currentExerciseIndex.set(index + 1);
+      this.triggerAutoSave();
     } else {
       this.currentSection.set('complete');
+      this.triggerAutoSave();
     }
   }
 

@@ -23,6 +23,38 @@
   }
 
   @if (!loading() && map()) {
+    <!-- Continue Learning Banner -->
+    @if (continuableLesson()) {
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+              <i class="fa-solid fa-bookmark text-blue-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900">Continue where you left off</h3>
+              <p class="text-sm text-gray-600">
+                {{ continuableLesson()?.lessonTitle }}
+                <span class="text-gray-400 mx-1">·</span>
+                <span class="capitalize">{{ continuableLesson()?.currentStep }}</span>
+                @if (continuableLesson()?.progressPercentage) {
+                  <span class="text-gray-400 mx-1">·</span>
+                  <span>{{ continuableLesson()?.progressPercentage }}% complete</span>
+                }
+              </p>
+            </div>
+          </div>
+          <button
+            (click)="continueLearning()"
+            class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <i class="fa-solid fa-play"></i>
+            <span>Continue</span>
+          </button>
+        </div>
+      </div>
+    }
+
     <!-- Map Header -->
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
       <div class="md:flex">
@@ -236,6 +268,18 @@
                       <span class="text-xs text-gray-400">
                         +{{ lesson.studyXp + lesson.examXp }} XP
                       </span>
+
+                      <!-- Replay Button (for completed lessons) -->
+                      @if (isLessonCompleted(lesson)) {
+                        <button
+                          (click)="navigateToLessonForReplay(lesson, $event)"
+                          class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition-colors flex items-center gap-1"
+                          title="Replay lesson"
+                        >
+                          <i class="fa-solid fa-rotate-left"></i>
+                          <span class="hidden sm:inline">Replay</span>
+                        </button>
+                      }
 
                       <!-- Status Icon -->
                       <i [class]="getStatusIcon(getLessonStatus(lesson))"></i>

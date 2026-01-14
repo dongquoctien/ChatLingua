@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+// Force rebuild - timestamp: 2026-01-14T15:30:00
 // ============================================================
 // Word Map Types (V3)
 // ============================================================
@@ -868,4 +869,93 @@ export class WordMapService {
       xpEarned: number;
     }>(`${this.baseUrl}/progress/grammar/${userGrammarId}/review`, { quality });
   }
+
+  // ============================================================
+  // Step Progress Tracking (Continue Learning & Replay)
+  // ============================================================
+
+  /**
+   * Get lesson step progress for continuation
+   */
+  getLessonStepProgress(lessonId: number): Observable<LessonStepProgress> {
+    return this.http.get<LessonStepProgress>(`${this.baseUrl}/word-maps/lessons/${lessonId}/step-progress`);
+  }
+
+  /**
+   * Save lesson step progress (auto-save)
+   */
+  saveLessonStepProgress(lessonId: number, progress: {
+    currentStep: string;
+    currentStepIndex: number;
+    stepProgress: StepProgressData;
+  }): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.baseUrl}/word-maps/lessons/${lessonId}/step-progress`, progress);
+  }
+
+  /**
+   * Reset lesson for replay
+   */
+  resetLessonForReplay(lessonId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/word-maps/lessons/${lessonId}/reset-for-replay`, {});
+  }
+
+  /**
+   * Check if user can access a lesson
+   */
+  canAccessLesson(lessonId: number): Observable<{ canAccess: boolean; reason: string; status: string }> {
+    return this.http.get<{ canAccess: boolean; reason: string; status: string }>(`${this.baseUrl}/word-maps/lessons/${lessonId}/can-access`);
+  }
+
+  /**
+   * Get lesson that can be continued for a map
+   */
+  getContinuableLesson(mapId: number): Observable<{ lesson: ContinuableLesson | null }> {
+    return this.http.get<{ lesson: ContinuableLesson | null }>(`${this.baseUrl}/word-maps/${mapId}/continue-lesson`);
+  }
+}
+
+// ============================================================
+// Step Progress Types
+// ============================================================
+
+export interface StepProgressData {
+  vocabulary?: {
+    studied: number[];
+    total: number;
+    currentIndex: number;
+    completed: boolean;
+  };
+  grammar?: {
+    viewed: number[];
+    total: number;
+    currentIndex: number;
+    completed: boolean;
+  };
+  exercises?: {
+    answered: number[];
+    correct: number[];
+    total: number;
+    currentIndex: number;
+    completed: boolean;
+  };
+}
+
+export interface LessonStepProgress {
+  canContinue: boolean;
+  currentStep: 'overview' | 'vocabulary' | 'grammar' | 'exercises' | 'exam' | 'complete';
+  currentStepIndex: number;
+  stepProgress: StepProgressData | null;
+  lastStepAt: string | null;
+  status: string;
+}
+
+export interface ContinuableLesson {
+  lessonId: number;
+  lessonTitle: string;
+  unitId: number;
+  unitName: string;
+  currentStep: string;
+  currentStepIndex: number;
+  lastStepAt: string;
+  progressPercentage: number;
 }

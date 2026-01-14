@@ -6,7 +6,8 @@ import {
   WordMapWithProgress,
   UnitWithProgress,
   LessonWithProgress,
-  CEFRLevel
+  CEFRLevel,
+  ContinuableLesson
 } from '../word-map.service';
 
 @Component({
@@ -29,6 +30,10 @@ export class WordMapDetailComponent implements OnInit {
   error = signal<string | null>(null);
   expandedUnitId = signal<number | null>(null);
 
+  // Continue Learning state
+  continuableLesson = signal<ContinuableLesson | null>(null);
+  loadingContinuable = signal(false);
+
   // Computed
   isActivated = computed(() => this.map()?.userProgress?.isActivated ?? false);
   currentUnitId = computed(() => this.map()?.userProgress?.currentUnitId);
@@ -41,6 +46,7 @@ export class WordMapDetailComponent implements OnInit {
     const mapId = this.route.snapshot.paramMap.get('mapId');
     if (mapId) {
       this.loadMapDetail(+mapId);
+      this.loadContinuableLesson(+mapId);
     }
   }
 
@@ -133,6 +139,42 @@ export class WordMapDetailComponent implements OnInit {
     if (!mapData) return;
 
     this.router.navigate(['/word-maps', mapData.id, 'lesson', lesson.id]);
+  }
+
+  navigateToLessonForReplay(lesson: LessonWithProgress, event: Event): void {
+    event.stopPropagation();
+    const mapData = this.map();
+    if (!mapData) return;
+
+    this.router.navigate(['/word-maps', mapData.id, 'lesson', lesson.id], {
+      queryParams: { replay: 'true' }
+    });
+  }
+
+  loadContinuableLesson(mapId: number): void {
+    this.loadingContinuable.set(true);
+    this.wordMapService.getContinuableLesson(mapId).subscribe({
+      next: (response) => {
+        this.continuableLesson.set(response.lesson);
+        this.loadingContinuable.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading continuable lesson:', err);
+        this.loadingContinuable.set(false);
+      }
+    });
+  }
+
+  continueLearning(): void {
+    const lesson = this.continuableLesson();
+    const mapData = this.map();
+    if (!lesson || !mapData) return;
+
+    this.router.navigate(['/word-maps', mapData.id, 'lesson', lesson.lessonId]);
+  }
+
+  isLessonCompleted(lesson: LessonWithProgress): boolean {
+    return lesson.userProgress?.status === 'completed';
   }
 
   getCefrColor(level: CEFRLevel): string {
