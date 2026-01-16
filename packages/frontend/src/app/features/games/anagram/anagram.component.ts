@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
+import { CommonModule, Location } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
+import { ApiService, GameVocabulary, EndGameResponse, StartGameOptions } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
 import { GameHeaderComponent } from '../shared/game-header/game-header.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
@@ -105,9 +105,12 @@ export class AnagramComponent implements OnInit, OnDestroy {
   // Vocabulary for generating puzzle
   private vocabulary: GameVocabulary[] = [];
 
+  private location = inject(Location);
+
   constructor(
     private apiService: ApiService,
     private router: Router,
+    private route: ActivatedRoute,
     private audioService: AudioService
   ) {}
 
@@ -129,7 +132,20 @@ export class AnagramComponent implements OnInit, OnDestroy {
     this.currentWordIndex.set(0);
     this.stopTimer();
 
-    this.apiService.startGame('anagram').subscribe({
+    // Get query params for vocabulary filtering
+    const queryParams = this.route.snapshot.queryParams;
+    const options: StartGameOptions = {};
+    if (queryParams['sourceType']) {
+      options.sourceType = queryParams['sourceType'] as 'all' | 'conversation' | 'word_map';
+    }
+    if (queryParams['mapId']) {
+      options.mapId = parseInt(queryParams['mapId'], 10);
+    }
+    if (queryParams['prioritizeLowMastery'] !== undefined) {
+      options.prioritizeLowMastery = queryParams['prioritizeLowMastery'] === 'true';
+    }
+
+    this.apiService.startGame('anagram', options).subscribe({
       next: (response) => {
         this.sessionId.set(response.sessionId);
         // Set active boosters in GameStateService for the widget
@@ -417,6 +433,6 @@ export class AnagramComponent implements OnInit, OnDestroy {
   }
 
   onBackToHub(): void {
-    this.router.navigate(['/games']);
+    this.location.back();
   }
 }

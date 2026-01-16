@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
@@ -335,8 +335,10 @@ export class MemoryMatchComponent implements OnInit, OnDestroy {
     this.startNewGame();
   }
 
+  private location = inject(Location);
+
   onBackToHub(): void {
-    this.router.navigate(['/games']);
+    this.location.back();
   }
 
   getCardClass(card: MemoryCard): string {

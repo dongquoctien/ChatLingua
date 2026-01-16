@@ -1274,7 +1274,18 @@ class PetService {
 
   async onLearningActivity(userId: number, activityType: string, xpEarned: number): Promise<void> {
     const pet = await this.getActivePet(userId);
-    if (!pet) return;
+
+    if (!pet) {
+      // No active pet - check if user has an egg and add hatch XP instead
+      try {
+        const eggXp = Math.max(1, Math.floor(xpEarned * 0.5)); // 50% of XP goes to egg hatching
+        await this.addHatchXpToActiveEgg(userId, eggXp, activityType);
+        console.log(`[Pet XP] No active pet, added ${eggXp} hatch XP to egg from ${activityType}`);
+      } catch (error) {
+        // No egg either, silently ignore
+      }
+      return;
+    }
 
     // Pet gains XP when user learns (3% of user XP - reduced for harder progression)
     const petXpGain = Math.floor(xpEarned * 0.03);
@@ -2529,6 +2540,58 @@ class PetService {
     }
   }
 
+  /**
+   * Gift a free egg to a user (used for welcome gifts, achievements, etc.)
+   * Does not deduct any currency
+   */
+  async giftEgg(userId: number, eggTypeId: number, reason: string = 'gift'): Promise<UserPet | null> {
+    try {
+      // Verify egg type exists
+      const [eggTypes] = await pool.query<RowDataPacket[]>(
+        `SELECT * FROM pet_types WHERE id = ? AND is_egg = TRUE`,
+        [eggTypeId]
+      );
+
+      if (eggTypes.length === 0) {
+        console.error(`[Pet Gift] Egg type ${eggTypeId} not found`);
+        return null;
+      }
+
+      const eggType = eggTypes[0];
+
+      // Create egg in user_pets
+      const [result] = await pool.query<ResultSetHeader>(`
+        INSERT INTO user_pets (user_id, pet_type_id, is_active, is_hatched, hatch_xp_progress, hatch_started_at, hp)
+        VALUES (?, ?, FALSE, FALSE, 0, NOW(), 100)
+      `, [userId, eggTypeId]);
+
+      // Record as a gift transaction (0 cost)
+      await pool.query(`
+        INSERT INTO currency_transactions
+        (user_id, currency_type, amount, balance_after, transaction_type, reference_type, reference_id, description)
+        VALUES (?, 'coins', 0, 0, 'gift', 'pet_egg', ?, ?)
+      `, [userId, result.insertId, `Gift: ${eggType.name} (${reason})`]);
+
+      console.log(`[Pet Gift] Gifted ${eggType.name} to user ${userId} (reason: ${reason})`);
+
+      const egg = await this.getUserPetById(userId, result.insertId);
+      petEvents.emit('egg:gifted', { userId, egg, reason });
+
+      return egg;
+    } catch (error) {
+      console.error(`[Pet Gift] Failed to gift egg to user ${userId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Gift the default welcome egg (Common Egg) to new users
+   */
+  async giftWelcomeEgg(userId: number): Promise<UserPet | null> {
+    const COMMON_EGG_ID = 43; // Common Egg
+    return this.giftEgg(userId, COMMON_EGG_ID, 'welcome_gift');
+  }
+
   async addHatchXp(userId: number, userPetId: number, xpAmount: number, source: string): Promise<UserPet> {
     const connection = await pool.getConnection();
     try {
@@ -2963,13 +3026,14 @@ class PetService {
     sourceType: 'exercise' | 'game' | 'review',
     score: number,
     sourceId?: number
-  ): Promise<CareResult> {
+  ): Promise<CareResult | null> {
     console.log(`[Pet Care START] userId=${userId}, careType=${careType}, sourceType=${sourceType}, score=${score}`);
 
     const pet = await this.getActivePet(userId);
     if (!pet) {
-      console.log(`[Pet Care] No active pet for user ${userId}`);
-      throw new Error('NO_ACTIVE_PET');
+      // No active pet (user might have egg only or no pet) - silently skip
+      console.log(`[Pet Care] No active pet for user ${userId}, skipping care processing`);
+      return null;
     }
 
     console.log(`[Pet Care] Found pet: id=${pet.id}, energy=${pet.energy}, happiness=${pet.happiness}`);
@@ -3776,6 +3840,80 @@ class PetService {
       totalCoinsAvailable: summary.total_coins_available || 0,
       totalXpAvailable: summary.total_xp_available || 0
     };
+  }
+
+  // Helper method to record Word Map activities for pet tasks
+  async recordWordMapActivityForTasks(
+    userId: number,
+    activityType: 'lesson_study' | 'vocabulary' | 'grammar' | 'exam' | 'review' | 'daily',
+    data: {
+      count?: number;
+      scorePercent?: number;
+      timeMinutes?: number;
+    }
+  ): Promise<void> {
+    switch (activityType) {
+      case 'lesson_study':
+        // word_map_study: Complete 1 lesson, word_map_study_3: Complete 3 lessons
+        await this.updateTaskProgress(userId, 'word_map_study', data.count || 1);
+        await this.updateTaskProgress(userId, 'word_map_study_3', data.count || 1);
+        // Also counts for daily activity
+        await this.updateTaskProgress(userId, 'word_map_daily', 1);
+        break;
+
+      case 'vocabulary':
+        // word_map_vocab_10: Study 10 vocab, word_map_vocab_25: Study 25 vocab
+        if (data.count) {
+          await this.updateTaskProgress(userId, 'word_map_vocab_10', data.count);
+          await this.updateTaskProgress(userId, 'word_map_vocab_25', data.count);
+        }
+        break;
+
+      case 'grammar':
+        // word_map_grammar_5: Study 5 grammar points
+        if (data.count) {
+          await this.updateTaskProgress(userId, 'word_map_grammar_5', data.count);
+        }
+        break;
+
+      case 'exam':
+        // word_map_exam: Pass any exam
+        await this.updateTaskProgress(userId, 'word_map_exam', 1);
+        // word_map_exam_perfect: Score 100% on exam
+        if (data.scorePercent === 100) {
+          await this.updateTaskProgress(userId, 'word_map_exam_perfect', undefined, 1);
+        }
+        // Also counts for daily activity
+        await this.updateTaskProgress(userId, 'word_map_daily', 1);
+        break;
+
+      case 'review':
+        // word_map_review_20: Review 20 items, word_map_review_50: Review 50 items
+        if (data.count) {
+          await this.updateTaskProgress(userId, 'word_map_review_20', data.count);
+          await this.updateTaskProgress(userId, 'word_map_review_50', data.count);
+        }
+        // Also counts for daily activity
+        await this.updateTaskProgress(userId, 'word_map_daily', 1);
+        break;
+
+      case 'daily':
+        // Just mark daily activity
+        await this.updateTaskProgress(userId, 'word_map_daily', 1);
+        break;
+    }
+
+    // Handle learning time for all Word Map activities
+    if (data.timeMinutes !== undefined && data.timeMinutes >= 10) {
+      await this.updateTaskProgress(userId, 'learning_10min', undefined, 1);
+    }
+
+    // Check if all tasks completed for "complete_all_daily" task
+    const summary = await this.getDailyTasksSummary(userId);
+    // Exclude the "complete_all_daily" task itself from the count
+    if (summary.completedTasks >= summary.totalTasks - 1) {
+      await this.updateTaskProgress(userId, 'complete_all_daily', undefined, 1);
+    }
   }
 
   // Helper method to update task progress based on activity type

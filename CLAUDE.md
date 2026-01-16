@@ -9,13 +9,15 @@ ChatLingua is a Vietnamese-to-English language learning platform with gamificati
 - **Backend**: Express.js with MySQL database, JWT authentication
 - **MCP Server**: Model Context Protocol server for Claude Desktop integration
 
+**Prerequisites**: Node.js 18+, Docker (for MySQL)
+
 ## Monorepo Structure
 
 This is an npm workspaces monorepo with packages in `packages/`:
 - `frontend` - Angular SPA (port 4200)
 - `backend` - Express API server (port 3000)
 - `mcp-server` - MCP server for Claude Desktop
-- `shared` - Shared types/utilities
+- `shared` - Shared TypeScript types (user, vocabulary, grammar, quiz, game, gamification, word-map)
 
 ## Commands
 
@@ -95,7 +97,7 @@ Each component needs three files:
 - `games/` - 15 vocabulary games (word rush, memory match, hangman, spelling bee, falling words, crossword, word search, anagram, word duel, pop quiz blitz, translation race, vocabulary quest, word cards, language island)
 - `shop/` - Virtual shop with coins/gems currency, items, inventory, wishlist, gifts
 - `pets/` - Virtual pet system with care mechanics and daily tasks
-- `chat/` - Real-time messaging with Socket.io
+- `chat/` - Real-time messaging with Socket.io (uses `socket.io-client`)
 - `sync-requests/` - Collaborative learning requests
 - `reports/` - Learning analytics
 - `mcp-auth/` - OAuth2 device flow for MCP
@@ -148,7 +150,7 @@ The V3 architecture separates content from user progress, enabling curriculum-ba
 - `user_vocabulary` - User's learning progress for vocabulary (links to master)
 - `user_grammar` - User's learning progress for grammar
 - `word_maps` - Curriculum courses with CEFR levels
-- `word_map_units` - Units within a Word Map
+- `map_units` - Units within a Word Map
 - `unit_lessons` - Lessons within a unit
 - `lesson_content` - Links lessons to master content
 - `exam_attempts` - User exam history
@@ -164,11 +166,14 @@ The V3 architecture separates content from user progress, enabling curriculum-ba
 - `exam.service.ts` - Exam attempts and scoring
 
 **Feature Flags** (`config/features.ts`):
-Controls gradual V3 migration:
-- `USE_V3_TABLES` - Read from V3 tables
-- `DUAL_WRITE_ENABLED` - Write to both V2 and V3
-- `DEPRECATE_V2_TABLES` - Stop writing to V2
-- `WORD_MAP_ENABLED` - Enable Word Map features
+Controls gradual V3 migration via environment variables:
+- `USE_V3_TABLES` - Read from V3 tables (default: false)
+- `DUAL_WRITE_ENABLED` - Write to both V2 and V3 (default: true)
+- `DEPRECATE_V2_TABLES` - Stop writing to V2 (default: false)
+- `WORD_MAP_ENABLED` - Enable Word Map features (default: true)
+- `V3_SPACED_REPETITION` - Use V3 tables for SM2 (default: false)
+- `V3_EXERCISES` - Use V3 exercise system (default: false)
+- `LOG_DUAL_WRITE` - Debug logging for dual-write operations (default: false)
 
 **Frontend** (`features/word-maps/`):
 - `word-map-list/` - Browse available Word Maps
@@ -192,6 +197,17 @@ Connection: `localhost:3306`, user: `chatlingua`, password: `chatlingua_pass`, d
 
 - Development API: `http://localhost:3000/api` (defined in `src/environments/environment.ts`)
 - Production: uses `environment.prod.ts` file replacement
+
+**Environment Variables** (`.env` in backend):
+```bash
+DB_HOST=localhost
+DB_USER=chatlingua
+DB_PASSWORD=chatlingua_pass
+DB_NAME=chatlingua
+PORT=3000
+JWT_SECRET=your_jwt_secret
+CORS_ORIGIN=http://localhost:4200
+```
 
 ## Common Patterns
 
@@ -301,24 +317,17 @@ For consistency in header buttons, use emoji symbols:
 Run tests with:
 ```bash
 cd packages/backend
-npm test              # Run all tests
-npm run test:watch    # Watch mode
-npm run test:coverage # With coverage report
+npm test                                    # Run all tests
+npm run test:watch                          # Watch mode
+npm run test:coverage                       # With coverage report
+npx vitest run tests/utils/sm2-algorithm    # Run single test file
+npx vitest run -t "quality 3"               # Run tests matching pattern
 ```
 
 **Test Structure**:
 - `tests/utils/` - Algorithm and utility tests (SM2, feature flags)
 - `tests/services/` - Service business logic tests
 - `tests/integration/` - API route and data migration tests
-
-**Key Test Files**:
-- `sm2-algorithm.test.ts` - Spaced repetition algorithm tests
-- `feature-flags.test.ts` - Migration feature flag tests
-- `user-vocabulary.service.test.ts` - Vocabulary SM2 integration
-- `user-grammar.service.test.ts` - Grammar SM2 integration
-- `word-map.service.test.ts` - XP, progress, exam scoring
-- `api-routes.test.ts` - Request/response validation
-- `data-migration.test.ts` - V2 to V3 migration logic
 
 Tests use Vitest and don't require database connection (pure business logic tests).
 

@@ -22,7 +22,10 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       partOfSpeech: req.query.partOfSpeech as string,
       reviewStatus: req.query.reviewStatus as 'new' | 'learning' | 'reviewing' | 'mastered',
       sourceType: req.query.sourceType as 'conversation' | 'word_map' | 'manual' | 'import',
-      isFavorited: req.query.isFavorited === 'true' ? true : undefined,
+      searchTerm: req.query.search as string,
+      mapId: req.query.mapId ? parseInt(req.query.mapId as string) : undefined,
+      unitId: req.query.unitId ? parseInt(req.query.unitId as string) : undefined,
+      lessonId: req.query.lessonId ? parseInt(req.query.lessonId as string) : undefined,
     };
 
     const result = await userVocabularyService.getUserVocabulary(
@@ -38,11 +41,35 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/v3/user/vocabulary/filters - Get available filter options
+router.get('/filters', async (req: AuthRequest, res: Response) => {
+  try {
+    const filters = await userVocabularyService.getAvailableFilters(req.userId!);
+    res.json(filters);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get filters';
+    res.status(500).json({ error: message });
+  }
+});
+
 // GET /api/v3/user/vocabulary/review - Get vocabulary due for review
 router.get('/review', async (req: AuthRequest, res: Response) => {
   try {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
-    const vocabulary = await userVocabularyService.getDueForReview(req.userId!, limit);
+
+    const options: {
+      sourceType?: 'conversation' | 'word_map' | 'manual' | 'import';
+      mapId?: number;
+    } = {};
+
+    if (req.query.sourceType) {
+      options.sourceType = req.query.sourceType as 'conversation' | 'word_map' | 'manual' | 'import';
+    }
+    if (req.query.mapId) {
+      options.mapId = parseInt(req.query.mapId as string);
+    }
+
+    const vocabulary = await userVocabularyService.getDueForReview(req.userId!, limit, options);
     res.json({ vocabulary, count: vocabulary.length });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get review vocabulary';

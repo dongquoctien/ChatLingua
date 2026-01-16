@@ -161,6 +161,59 @@ export interface RelatedWords {
   seeAlso: Vocabulary[];
 }
 
+// V3 Vocabulary Types
+export type ReviewStatusV3 = 'new' | 'learning' | 'reviewing' | 'mastered';
+export type VocabularySourceTypeV3 = 'conversation' | 'word_map' | 'manual' | 'import';
+
+export interface UserVocabularyV3 {
+  id: number;
+  userId: number;
+  masterVocabularyId: number;
+  sourceType: VocabularySourceTypeV3;
+  sourceId: number | null;
+  masteryLevel: number;
+  timesPracticed: number;
+  lastPracticedAt: string | null;
+  nextReviewAt: string | null;
+  reviewInterval: number;
+  easeFactor: number;
+  repetitionCount: number;
+  lapseCount: number;
+  reviewStatus: ReviewStatusV3;
+  createdAt: string;
+  updatedAt: string;
+  // Joined master vocabulary fields
+  englishWord: string;
+  vietnameseWord: string;
+  phonetic: string | null;
+  partOfSpeech: string;
+  cefrLevel: string;
+  // Source info for review display
+  sourceName?: string;
+  unitName?: string;
+  lessonTitle?: string;
+}
+
+export interface VocabularyFiltersV3 {
+  reviewStatus?: ReviewStatusV3;
+  sourceType?: VocabularySourceTypeV3;
+  cefrLevel?: string;
+  partOfSpeech?: string;
+  search?: string;
+  mapId?: number;
+  unitId?: number;
+  lessonId?: number;
+}
+
+export interface VocabularyAvailableFilters {
+  maps: Array<{ id: number; name: string; vocabularyCount: number }>;
+  units: Array<{ id: number; name: string; mapId: number; vocabularyCount: number }>;
+  lessons: Array<{ id: number; title: string; unitId: number; mapId: number; vocabularyCount: number }>;
+  cefrLevels: Array<{ level: string; count: number }>;
+  sourceTypes: Array<{ type: VocabularySourceTypeV3; count: number }>;
+  reviewStatuses: Array<{ status: ReviewStatusV3; count: number }>;
+}
+
 export interface GrammarPoint {
   id: number;
   rule: string;
@@ -353,6 +406,10 @@ export interface QueueItem {
   reviewInterval: number;
   nextReviewAt: Date | null;
   priority: QueuePriority;
+  // Source info
+  sourceType?: 'conversation' | 'word_map';
+  sourceName?: string | null;
+  conversationId?: number | null;
 }
 
 export interface QueueStats {
@@ -540,6 +597,57 @@ export class ApiService {
 
   reviewVocabulary(id: number, correct: boolean): Observable<Vocabulary> {
     return this.http.post<Vocabulary>(`${this.baseUrl}/vocabulary/${id}/review`, { correct });
+  }
+
+  // V3 User Vocabulary (with advanced filters)
+  getUserVocabularyV3(page = 1, limit = 20, filters?: VocabularyFiltersV3): Observable<PaginatedResponse<UserVocabularyV3>> {
+    let params = new HttpParams().set('page', page).set('limit', limit);
+    if (filters?.reviewStatus) params = params.set('reviewStatus', filters.reviewStatus);
+    if (filters?.sourceType) params = params.set('sourceType', filters.sourceType);
+    if (filters?.cefrLevel) params = params.set('cefrLevel', filters.cefrLevel);
+    if (filters?.partOfSpeech) params = params.set('partOfSpeech', filters.partOfSpeech);
+    if (filters?.search) params = params.set('search', filters.search);
+    if (filters?.mapId) params = params.set('mapId', filters.mapId.toString());
+    if (filters?.unitId) params = params.set('unitId', filters.unitId.toString());
+    if (filters?.lessonId) params = params.set('lessonId', filters.lessonId.toString());
+    return this.http.get<PaginatedResponse<UserVocabularyV3>>(`${this.baseUrl}/v3/user/vocabulary`, { params });
+  }
+
+  getVocabularyFiltersV3(): Observable<VocabularyAvailableFilters> {
+    return this.http.get<VocabularyAvailableFilters>(`${this.baseUrl}/v3/user/vocabulary/filters`);
+  }
+
+  // V3 Review Queue (with source info)
+  getReviewQueueV3(options?: {
+    limit?: number;
+    sourceType?: VocabularySourceTypeV3;
+    mapId?: number;
+  }): Observable<{ vocabulary: UserVocabularyV3[]; count: number }> {
+    let params = new HttpParams();
+    if (options?.limit) params = params.set('limit', options.limit.toString());
+    if (options?.sourceType) params = params.set('sourceType', options.sourceType);
+    if (options?.mapId) params = params.set('mapId', options.mapId.toString());
+    return this.http.get<{ vocabulary: UserVocabularyV3[]; count: number }>(
+      `${this.baseUrl}/v3/user/vocabulary/review`,
+      { params }
+    );
+  }
+
+  // V3 Submit Review
+  submitReviewV3(userVocabularyId: number, quality: number): Observable<{
+    success: boolean;
+    nextReviewAt: string | null;
+    newInterval: number;
+    newEaseFactor: number;
+    newStatus: ReviewStatusV3;
+  }> {
+    return this.http.post<{
+      success: boolean;
+      nextReviewAt: string | null;
+      newInterval: number;
+      newEaseFactor: number;
+      newStatus: ReviewStatusV3;
+    }>(`${this.baseUrl}/v3/user/vocabulary/${userVocabularyId}/review`, { quality });
   }
 
   // Exercises
@@ -944,8 +1052,13 @@ export class ApiService {
   }
 
   // Start a new game session
-  startGame(gameCode: string, options?: { difficulty?: string; gridSize?: number }): Observable<StartGameResponse> {
+  startGame(gameCode: string, options?: StartGameOptions): Observable<StartGameResponse> {
     return this.http.post<StartGameResponse>(`${this.baseUrl}/games/${gameCode}/start`, options || {});
+  }
+
+  // Get vocabulary sources for games
+  getGameVocabularySources(): Observable<GameVocabularySources> {
+    return this.http.get<GameVocabularySources>(`${this.baseUrl}/games/vocabulary-sources`);
   }
 
   // End a game session
@@ -1376,12 +1489,30 @@ export interface GameActiveBooster {
   remainingMinutes: number;
 }
 
+export type GameSourceType = 'all' | 'conversation' | 'word_map';
+
+export interface StartGameOptions {
+  difficulty?: string;
+  gridSize?: number;
+  sourceType?: GameSourceType;
+  mapId?: number;
+  prioritizeLowMastery?: boolean;
+}
+
+export interface GameVocabularySources {
+  conversationCount: number;
+  wordMapCount: number;
+  maps: Array<{ id: number; name: string; vocabularyCount: number }>;
+}
+
 export interface StartGameResponse {
   sessionId: number;
   game: GameInfo;
   vocabulary: GameVocabulary[];
   config: GameConfig;
   activeBoosters?: GameActiveBooster[];
+  petEnergyConsumed?: number;
+  petEnergy?: { current: number; max: number };
 }
 
 export interface EndGameRequest {

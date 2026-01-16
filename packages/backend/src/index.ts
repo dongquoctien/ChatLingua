@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import * as compressionModule from 'compression';
 import path from 'path';
+
+const compression = (compressionModule as any).default || compressionModule;
 import { createServer } from 'http';
 import cron from 'node-cron';
 import routes from './routes/index.js';
@@ -24,13 +27,37 @@ initializeSocket(httpServer).catch(err => {
 app.set('etag', false);
 
 // Middleware
+app.use(compression()); // Enable gzip compression for all responses
+
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
   credentials: true,
 }));
 app.use(express.json());
 
-// Serve static files from public folder (TTS audio files, etc.)
+// Serve static media files with optimized caching
+// Audio files - 7 days cache
+app.use('/audio', express.static(path.join(process.cwd(), 'public/audio'), {
+  maxAge: '7d',
+  immutable: true,
+  etag: true,
+}));
+
+// Image files - 30 days cache
+app.use('/images', express.static(path.join(process.cwd(), 'public/images'), {
+  maxAge: '30d',
+  immutable: true,
+  etag: true,
+}));
+
+// Video files - 7 days cache
+app.use('/videos', express.static(path.join(process.cwd(), 'public/videos'), {
+  maxAge: '7d',
+  immutable: true,
+  etag: true,
+}));
+
+// Serve other static files from public folder (TTS audio files, etc.)
 app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Health check

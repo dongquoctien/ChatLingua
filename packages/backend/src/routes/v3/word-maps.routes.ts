@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../../middleware/auth.js';
-import { wordMapService, userProgressService, examService, masterVocabularyService, masterGrammarService, masterExercisesService } from '../../services/v3/index.js';
+import { wordMapService, userProgressService, examService, masterVocabularyService, masterGrammarService, masterExercisesService, userVocabularyService, userGrammarService, studyPageService } from '../../services/v3/index.js';
 import { gamificationService } from '../../services/gamification.service.js';
 import { challengeService } from '../../services/challenge.service.js';
 import { petService } from '../../services/pet.service.js';
@@ -347,6 +347,36 @@ router.get('/lessons/:lessonId/content', async (req: AuthRequest, res: Response)
       points: e!.points,
     }));
 
+    // Build unified content array with all content types
+    // This includes vocab/grammar/exercises with their section info, plus custom content
+    const allContent = result.content.map(contentItem => {
+      let resolvedContent: Record<string, unknown> | null = null;
+
+      if (contentItem.contentType === 'vocabulary' && contentItem.masterVocabularyId) {
+        const vocab = vocabulary.find(v => v.id === contentItem.masterVocabularyId);
+        resolvedContent = vocab ? { ...vocab } : null;
+      } else if (contentItem.contentType === 'grammar' && contentItem.masterGrammarId) {
+        const gram = grammar.find(g => g.id === contentItem.masterGrammarId);
+        resolvedContent = gram ? { ...gram } : null;
+      } else if (contentItem.contentType === 'exercise' && contentItem.masterExerciseId) {
+        const ex = exercises.find(e => e.id === contentItem.masterExerciseId);
+        resolvedContent = ex ? { ...ex } : null;
+      } else if (contentItem.customContent) {
+        // For audio, video, image, text content types
+        resolvedContent = contentItem.customContent;
+      }
+
+      return {
+        id: contentItem.id,
+        lessonId: contentItem.lessonId,
+        contentType: contentItem.contentType,
+        section: contentItem.section,
+        displayOrder: contentItem.displayOrder,
+        customInstructions: contentItem.customInstructions,
+        data: resolvedContent,
+      };
+    });
+
     // Build response in format frontend expects
     const responseData = {
       lesson: result.lesson,
@@ -354,6 +384,7 @@ router.get('/lessons/:lessonId/content', async (req: AuthRequest, res: Response)
       grammar,
       exercises,
       customContent,
+      content: allContent, // New unified content array with section info
     };
 
     // Include user progress if authenticated
@@ -462,6 +493,47 @@ router.post('/lessons/:lessonId/complete', async (req: AuthRequest, res: Respons
       return;
     }
 
+    // === VOCABULARY & GRAMMAR SYNC TO USER TABLES ===
+    // This syncs master vocabulary/grammar from the lesson to the user's personal learning list
+    try {
+      // Get lesson content to find vocabulary and grammar IDs
+      const lessonContent = await wordMapService.getLessonWithContent(lessonId);
+      if (lessonContent) {
+        // Sync vocabulary to user_vocabulary
+        const vocabularyIds = lessonContent.content
+          .filter(c => c.contentType === 'vocabulary' && c.masterVocabularyId)
+          .map(c => c.masterVocabularyId!);
+
+        if (vocabularyIds.length > 0) {
+          const vocabSynced = await userVocabularyService.bulkAddVocabulary(
+            req.userId!,
+            vocabularyIds,
+            'word_map',
+            lessonId
+          );
+          console.log(`[WordMap] Synced ${vocabSynced} vocabulary items to user ${req.userId} from lesson ${lessonId}`);
+        }
+
+        // Sync grammar to user_grammar
+        const grammarIds = lessonContent.content
+          .filter(c => c.contentType === 'grammar' && c.masterGrammarId)
+          .map(c => c.masterGrammarId!);
+
+        if (grammarIds.length > 0) {
+          const grammarSynced = await userGrammarService.bulkAddGrammar(
+            req.userId!,
+            grammarIds,
+            'word_map',
+            lessonId
+          );
+          console.log(`[WordMap] Synced ${grammarSynced} grammar items to user ${req.userId} from lesson ${lessonId}`);
+        }
+      }
+    } catch (error) {
+      console.error('[WordMap] Failed to sync vocabulary/grammar to user tables:', error);
+      // Don't fail the request, just log the error
+    }
+
     // End study session if provided
     if (sessionId) {
       await userProgressService.endStudySession(sessionId, {
@@ -470,8 +542,12 @@ router.post('/lessons/:lessonId/complete', async (req: AuthRequest, res: Respons
       });
     }
 
-    // Complete lesson and unlock next
-    const result = await userProgressService.completeLesson(req.userId!, lessonId, xpEarned);
+    // Complete lesson and unlock next (includes Word Map specific achievements)
+    const result = await userProgressService.completeLesson(req.userId!, lessonId, xpEarned, {
+      vocabularyMastered: vocabCount,
+      grammarMastered: grammarCount,
+      timeSpentSeconds: timeSpentSeconds || 0,
+    });
 
     // === GAMIFICATION INTEGRATION ===
     let levelUp = null;
@@ -534,16 +610,26 @@ router.post('/lessons/:lessonId/complete', async (req: AuthRequest, res: Respons
       console.error('Failed to update pet system:', error);
     }
 
+    // Merge gamification achievements with Word Map specific achievements
+    const allAchievements = [
+      ...achievements.map(a => ({
+        name: a.achievement.name,
+        icon: a.achievement.icon,
+        xpReward: a.achievement.xpReward,
+      })),
+      ...(result.achievementsUnlocked || []).map(a => ({
+        name: a.achievement.name,
+        icon: a.achievement.icon,
+        xpReward: a.achievement.xpReward,
+      })),
+    ];
+
     res.json({
       progress: result.lessonProgress,
       nextLesson: result.nextLesson,
       xpEarned,
       levelUp,
-      achievements: achievements.map(a => ({
-        name: a.achievement.name,
-        icon: a.achievement.icon,
-        xpReward: a.achievement.xpReward,
-      })),
+      achievements: allAchievements,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to complete lesson';
@@ -831,6 +917,16 @@ router.post('/exams/:attemptId/submit', async (req: AuthRequest, res: Response) 
       console.error('Failed to update pet system:', error);
     }
 
+    // Merge gamification achievements with Word Map specific achievements
+    const allAchievements = [
+      ...achievements.map(a => ({
+        name: a.achievement.name,
+        icon: a.achievement.icon,
+        xpReward: a.achievement.xpReward,
+      })),
+      ...(result.wordMapAchievements || []),
+    ];
+
     res.json({
       isPassed: result.passed,
       passed: result.passed, // For backward compatibility
@@ -846,11 +942,7 @@ router.post('/exams/:attemptId/submit', async (req: AuthRequest, res: Response) 
         userAnswer: r.userAnswer,
       })),
       levelUp,
-      achievements: achievements.map(a => ({
-        name: a.achievement.name,
-        icon: a.achievement.icon,
-        xpReward: a.achievement.xpReward,
-      })),
+      achievements: allAchievements,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to submit exam';
@@ -928,6 +1020,314 @@ router.get('/leaderboard', async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get leaderboard';
+    res.status(500).json({ error: message });
+  }
+});
+
+// ============================================================
+// Study Pages (JSON-driven textbook content)
+// ============================================================
+
+// GET /api/v3/word-maps/units/:unitId/study - Get study unit data (published)
+router.get('/units/:unitId/study', async (req: AuthRequest, res: Response) => {
+  try {
+    const unitId = parseInt(req.params.unitId);
+    if (isNaN(unitId)) {
+      res.status(400).json({ error: 'Invalid unit ID' });
+      return;
+    }
+
+    const studyData = await studyPageService.getStudyUnitByMapUnitId(unitId);
+    if (!studyData) {
+      res.status(404).json({ error: 'Study data not found for this unit' });
+      return;
+    }
+
+    res.json({
+      studyUnit: studyData.unitData,
+      version: studyData.version,
+      updatedAt: studyData.updatedAt
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get study unit data';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/v3/word-maps/units/:unitId/study/draft - Get study unit draft (admin)
+router.get('/units/:unitId/study/draft', async (req: AuthRequest, res: Response) => {
+  try {
+    const unitId = parseInt(req.params.unitId);
+    if (isNaN(unitId)) {
+      res.status(400).json({ error: 'Invalid unit ID' });
+      return;
+    }
+
+    const studyData = await studyPageService.getStudyUnitDraft(unitId);
+    if (!studyData) {
+      res.status(404).json({ error: 'No draft found for this unit' });
+      return;
+    }
+
+    res.json({
+      studyUnit: studyData.unitData,
+      version: studyData.version,
+      isPublished: studyData.isPublished,
+      updatedAt: studyData.updatedAt
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get study unit draft';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/units/:unitId/study - Save study unit data (admin)
+router.post('/units/:unitId/study', async (req: AuthRequest, res: Response) => {
+  try {
+    const unitId = parseInt(req.params.unitId);
+    if (isNaN(unitId)) {
+      res.status(400).json({ error: 'Invalid unit ID' });
+      return;
+    }
+
+    const { unitData, publish } = req.body;
+    if (!unitData) {
+      res.status(400).json({ error: 'Unit data is required' });
+      return;
+    }
+
+    const saved = await studyPageService.saveStudyUnit({
+      mapUnitId: unitId,
+      unitData,
+      createdBy: req.userId,
+      publish: publish === true,
+    });
+
+    res.json({
+      success: true,
+      studyUnit: saved.unitData,
+      version: saved.version,
+      isPublished: saved.isPublished
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to save study unit data';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/units/:unitId/study/publish - Publish study unit (admin)
+router.post('/units/:unitId/study/publish', async (req: AuthRequest, res: Response) => {
+  try {
+    const unitId = parseInt(req.params.unitId);
+    if (isNaN(unitId)) {
+      res.status(400).json({ error: 'Invalid unit ID' });
+      return;
+    }
+
+    const published = await studyPageService.publishStudyUnit(unitId);
+    if (!published) {
+      res.status(404).json({ error: 'Study unit not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      studyUnit: published.unitData,
+      version: published.version,
+      isPublished: true
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to publish study unit';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/units/:unitId/study/unpublish - Unpublish study unit (admin)
+router.post('/units/:unitId/study/unpublish', async (req: AuthRequest, res: Response) => {
+  try {
+    const unitId = parseInt(req.params.unitId);
+    if (isNaN(unitId)) {
+      res.status(400).json({ error: 'Invalid unit ID' });
+      return;
+    }
+
+    const unpublished = await studyPageService.unpublishStudyUnit(unitId);
+    if (!unpublished) {
+      res.status(404).json({ error: 'Study unit not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      isPublished: false
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to unpublish study unit';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/v3/word-maps/lessons/:lessonId/study-page - Get lesson study pages (published)
+router.get('/lessons/:lessonId/study-page', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const pageData = await studyPageService.getStudyPageByLessonId(lessonId);
+    if (!pageData) {
+      res.status(404).json({ error: 'Study pages not found for this lesson' });
+      return;
+    }
+
+    res.json({
+      pages: pageData.pageData,
+      version: pageData.version,
+      updatedAt: pageData.updatedAt
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get study pages';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/v3/word-maps/lessons/:lessonId/study-page/draft - Get lesson study page draft (admin)
+router.get('/lessons/:lessonId/study-page/draft', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const pageData = await studyPageService.getStudyPageDraft(lessonId);
+    if (!pageData) {
+      res.status(404).json({ error: 'No draft found for this lesson' });
+      return;
+    }
+
+    res.json({
+      pages: pageData.pageData,
+      version: pageData.version,
+      isPublished: pageData.isPublished,
+      updatedAt: pageData.updatedAt
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get study page draft';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/lessons/:lessonId/study-page - Save lesson study pages (admin)
+router.post('/lessons/:lessonId/study-page', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const { pages, publish } = req.body;
+    if (!pages || !Array.isArray(pages)) {
+      res.status(400).json({ error: 'Pages array is required' });
+      return;
+    }
+
+    const saved = await studyPageService.saveStudyPage({
+      lessonId,
+      pageData: pages,
+      createdBy: req.userId,
+      publish: publish === true,
+    });
+
+    res.json({
+      success: true,
+      pages: saved.pageData,
+      version: saved.version,
+      isPublished: saved.isPublished
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to save study pages';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/lessons/:lessonId/study-page/publish - Publish study pages (admin)
+router.post('/lessons/:lessonId/study-page/publish', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const published = await studyPageService.publishStudyPage(lessonId);
+    if (!published) {
+      res.status(404).json({ error: 'Study pages not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      pages: published.pageData,
+      version: published.version,
+      isPublished: true
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to publish study pages';
+    res.status(500).json({ error: message });
+  }
+});
+
+// POST /api/v3/word-maps/lessons/:lessonId/study-page/unpublish - Unpublish study pages (admin)
+router.post('/lessons/:lessonId/study-page/unpublish', async (req: AuthRequest, res: Response) => {
+  try {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+      res.status(400).json({ error: 'Invalid lesson ID' });
+      return;
+    }
+
+    const unpublished = await studyPageService.unpublishStudyPage(lessonId);
+    if (!unpublished) {
+      res.status(404).json({ error: 'Study pages not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      isPublished: false
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to unpublish study pages';
+    res.status(500).json({ error: message });
+  }
+});
+
+// GET /api/v3/word-maps/:mapId/study-units - Get all study units for a map (admin)
+router.get('/:mapId/study-units', async (req: AuthRequest, res: Response) => {
+  try {
+    const mapId = parseInt(req.params.mapId);
+    if (isNaN(mapId)) {
+      res.status(400).json({ error: 'Invalid map ID' });
+      return;
+    }
+
+    const studyUnits = await studyPageService.getStudyUnitsForMap(mapId);
+    res.json({
+      studyUnits: studyUnits.map(su => ({
+        id: su.id,
+        mapUnitId: su.mapUnitId,
+        unitData: su.unitData,
+        version: su.version,
+        isPublished: su.isPublished,
+        updatedAt: su.updatedAt
+      }))
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get study units';
     res.status(500).json({ error: message });
   }
 });

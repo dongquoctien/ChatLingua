@@ -336,6 +336,10 @@ export const routes: Routes = [
             path: ':mapId/lesson/:lessonId/exam',
             loadComponent: () => import('./features/word-maps/lesson-exam/lesson-exam.component').then(m => m.LessonExamComponent),
           },
+          {
+            path: ':mapId/unit/:unitId/study',
+            loadComponent: () => import('./features/word-maps/study-page/study-page.component').then(m => m.StudyPageComponent),
+          },
         ],
       },
     ],

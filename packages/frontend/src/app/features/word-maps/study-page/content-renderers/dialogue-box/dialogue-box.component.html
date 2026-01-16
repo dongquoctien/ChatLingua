@@ -1,0 +1,36 @@
+<div class="dialogue-box p-4 bg-gray-50 rounded-lg border border-gray-200">
+  <div class="space-y-3">
+    @for (line of content.lines; track $index; let i = $index) {
+      <div class="dialogue-line flex items-start gap-3"
+           [class.flex-row-reverse]="i % 2 === 1">
+        <!-- Speaker Avatar -->
+        <div class="speaker-avatar w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+             [class.bg-blue-500]="i % 2 === 0"
+             [class.bg-green-500]="i % 2 === 1">
+          {{ line.speaker.charAt(0) }}
+        </div>
+
+        <!-- Speech Bubble -->
+        <div class="speech-bubble p-3 rounded-lg border max-w-[80%]"
+             [class]="getSpeakerColor(line.speaker, i)">
+          <span class="speaker-name text-xs font-bold text-gray-600 block mb-1">
+            {{ line.speaker }}
+          </span>
+          <p class="text-gray-800">
+            @if (line.blanks && line.blanks.length > 0) {
+              <!-- Text with blanks -->
+              @for (part of line.text.split('___'); track $index; let j = $index) {
+                <span>{{ part }}</span>
+                @if (j < (line.blanks?.length || 0)) {
+                  <span class="inline-block w-16 border-b-2 border-dashed border-gray-400 mx-1"></span>
+                }
+              }
+            } @else {
+              {{ line.text }}
+            }
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+</div>

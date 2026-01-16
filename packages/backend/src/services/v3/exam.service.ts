@@ -4,6 +4,7 @@ import { masterExercisesService } from './master-exercises.service.js';
 import { gamificationService } from '../gamification.service.js';
 import { petService } from '../pet.service.js';
 import { challengeService } from '../challenge.service.js';
+import { userProgressService } from './user-progress.service.js';
 
 // ============================================================
 // Types
@@ -433,6 +434,7 @@ export class ExamService {
     correctCount: number;
     totalCount: number;
     detailedResults: { exerciseId: number; isCorrect: boolean; correctAnswer: string; userAnswer: string }[];
+    wordMapAchievements?: { name: string; icon: string; xpReward: number }[];
   } | { error: string }> {
     // Get attempt
     const [attemptRows] = await pool.execute<UserExamAttemptRow[]>(
@@ -516,6 +518,9 @@ export class ExamService {
     // Phase 6 Integration: Gamification, Pet Tasks, Challenges
     // ============================================================
 
+    // Store Word Map achievements to return them
+    let wordMapAchievements: { name: string; icon: string; xpReward: number }[] = [];
+
     try {
       // 1. Award XP via gamification service
       if (xpEarned > 0) {
@@ -542,12 +547,44 @@ export class ExamService {
         quizzes: 1    // Also count as quiz
       });
 
-      // 4. Pet Daily Tasks Integration
+      // 4. Pet Daily Tasks Integration (general exercise task)
       await petService.recordActivityForTasks(userId, 'exercise', {
         scorePercent: score,
         count: 1
       });
       console.log(`[Pet Tasks] Updated exercise task progress from exam: userId=${userId}, score=${score}%`);
+
+      // 4b. Word Map specific pet tasks and achievements (only for lesson exams)
+      if (exam.lessonId && passed) {
+        try {
+          // Get attempt number for first-try achievements
+          const [attemptCountRows] = await pool.execute<RowDataPacket[]>(
+            'SELECT COUNT(*) as count FROM user_exam_attempts WHERE user_id = ? AND exam_id = ?',
+            [userId, exam.id]
+          );
+          const attemptNumber = (attemptCountRows[0]?.count as number) || 1;
+
+          // Record Word Map achievements and pet tasks via userProgressService
+          const achievementsUnlocked = await userProgressService.recordExamCompletion(
+            userId,
+            exam.lessonId,
+            score,
+            attemptNumber,
+            timeSpentSeconds
+          );
+
+          if (achievementsUnlocked.length > 0) {
+            console.log(`[Exam Achievements] User ${userId} unlocked ${achievementsUnlocked.length} achievements from exam`);
+            wordMapAchievements = achievementsUnlocked.map(a => ({
+              name: a.achievement.name,
+              icon: a.achievement.icon,
+              xpReward: a.achievement.xpReward
+            }));
+          }
+        } catch (achievementError) {
+          console.error('[Exam] Achievement/Pet Task integration error:', achievementError);
+        }
+      }
 
       // 5. Daily Challenge Progress
       await challengeService.checkProgress(userId, 'exercise_complete');
@@ -582,7 +619,8 @@ export class ExamService {
       correctCount,
       totalCount,
       detailedResults,
-      coinsEarned, // Add coins to response
+      coinsEarned,
+      wordMapAchievements: wordMapAchievements.length > 0 ? wordMapAchievements : undefined,
     };
   }
 

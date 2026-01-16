@@ -17,6 +17,9 @@ export * from './user-progress.service.js';
 // Exam services
 export * from './exam.service.js';
 
+// Study Page services (JSON-driven textbook pages)
+export * from './study-page.service.js';
+
 // Re-export service instances for convenience
 export { masterVocabularyService } from './master-vocabulary.service.js';
 export { masterGrammarService } from './master-grammar.service.js';

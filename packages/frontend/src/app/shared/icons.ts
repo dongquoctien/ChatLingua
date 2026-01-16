@@ -98,6 +98,8 @@ import {
   faCheckDouble,
   faGlobe,
   faMap,
+  faAnglesLeft,
+  faAnglesRight,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -209,4 +211,6 @@ export {
   faGlobe,
   faExternalLinkAlt,
   faMap,
+  faAnglesLeft,
+  faAnglesRight,
 };

@@ -1,0 +1,14 @@
+<div
+  class="alphabet-grid grid gap-2 p-4 bg-gradient-to-br from-yellow-100 to-lime-100 rounded-lg"
+  [style.grid-template-columns]="'repeat(' + content.columns + ', 1fr)'">
+  @for (item of content.items; track item.letter) {
+    <div class="alphabet-card text-center p-2 bg-white rounded shadow-sm hover:shadow-md transition-shadow">
+      <span class="letter text-2xl font-bold" [class]="getLetterColor(item.letter)">
+        {{ item.letter }}
+      </span>
+      @if (item.phonetic) {
+        <span class="phonetic text-xs text-gray-500 block mt-1">{{ item.phonetic }}</span>
+      }
+    </div>
+  }
+</div>

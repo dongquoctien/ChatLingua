@@ -1,0 +1,59 @@
+<div class="transcript bg-white border border-gray-200 rounded-lg">
+  <!-- Header -->
+  <div class="flex items-center justify-between p-3 border-b border-gray-200">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-file-lines text-gray-400"></i>
+      <span class="font-medium text-gray-700">{{ config.title || 'Transcript' }}</span>
+    </div>
+
+    <!-- Toggle Translations -->
+    @if (hasTranslations()) {
+      <button
+        (click)="toggleTranslations()"
+        class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+      >
+        <i class="fa-solid" [class.fa-eye]="showTranslations()" [class.fa-eye-slash]="!showTranslations()"></i>
+        {{ showTranslations() ? 'Hide' : 'Show' }} Vietnamese
+      </button>
+    }
+  </div>
+
+  <!-- Transcript Lines -->
+  <div class="max-h-96 overflow-y-auto p-3 space-y-3">
+    @for (line of config.lines; track line.id || $index) {
+      <div
+        class="transcript-line group"
+        [class.current]="isCurrentLine(line)"
+        [class.cursor-pointer]="line.startTime !== undefined"
+        (click)="onLineClick(line)"
+      >
+        <!-- Timestamp + Speaker Row -->
+        @if ((config.showTimestamps !== false && line.startTime !== undefined) || line.speaker) {
+          <div class="flex items-center gap-2 mb-1">
+            @if (config.showTimestamps !== false && line.startTime !== undefined) {
+              <span class="text-xs text-gray-400 font-mono">{{ formatTime(line.startTime) }}</span>
+            }
+            @if (line.speaker) {
+              <span class="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded">{{ line.speaker }}</span>
+            }
+          </div>
+        }
+
+        <!-- Text Content -->
+        <p class="text-gray-800 leading-relaxed">{{ line.text }}</p>
+
+        <!-- Vietnamese Translation -->
+        @if (showTranslations() && config.showTranslations !== false && line.textVi) {
+          <p class="text-sm text-gray-500 italic mt-1 leading-relaxed">{{ line.textVi }}</p>
+        }
+      </div>
+    }
+
+    @if (config.lines.length === 0) {
+      <div class="text-center text-gray-400 py-8">
+        <i class="fa-solid fa-file-lines text-3xl mb-2"></i>
+        <p>No transcript available</p>
+      </div>
+    }
+  </div>
+</div>

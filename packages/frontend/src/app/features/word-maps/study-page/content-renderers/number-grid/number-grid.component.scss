@@ -1,0 +1,7 @@
+.number-grid {
+  .number-card {
+    &:hover {
+      transform: translateY(-2px);
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal, computed, HostListener, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
@@ -811,8 +811,10 @@ export class CrosswordComponent implements OnInit, OnDestroy {
     this.startNewGame();
   }
 
+  private location = inject(Location);
+
   onBackToHub(): void {
-    this.router.navigate(['/games']);
+    this.location.back();
   }
 
   formatTime(seconds: number): string {

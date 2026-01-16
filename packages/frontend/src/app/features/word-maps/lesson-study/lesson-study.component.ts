@@ -9,11 +9,23 @@ import {
   GrammarContent,
   ExerciseContent,
   LessonStepProgress,
-  StepProgressData
+  StepProgressData,
+  ResolvedContentItem,
+  CustomContentData
 } from '../word-map.service';
 import { PronunciationService } from '../../../core/services/pronunciation.service';
+import {
+  AudioPlayerComponent,
+  AudioConfig,
+  VideoPlayerComponent,
+  VideoConfig,
+  ImageViewerComponent,
+  ImageConfig,
+  TextContentComponent,
+  TextConfig
+} from '../../../shared/components';
 
-type StudySection = 'overview' | 'vocabulary' | 'grammar' | 'exercises' | 'complete';
+type StudySection = 'overview' | 'warmup' | 'vocabulary' | 'grammar' | 'exercises' | 'complete';
 
 interface VocabularyCardState {
   vocabulary: VocabularyContent;
@@ -24,7 +36,14 @@ interface VocabularyCardState {
 @Component({
   selector: 'app-lesson-study',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    RouterLink,
+    AudioPlayerComponent,
+    VideoPlayerComponent,
+    ImageViewerComponent,
+    TextContentComponent
+  ],
   templateUrl: './lesson-study.component.html',
   styleUrls: ['./lesson-study.component.scss']
 })
@@ -91,11 +110,32 @@ export class LessonStudyComponent implements OnInit, OnDestroy {
   sentenceAvailableWords = signal<string[]>([]);
   sentenceArrangedWords = signal<string[]>([]);
 
+  // Warmup content index
+  currentWarmupIndex = signal(0);
+
   // Computed
   lesson = computed(() => this.lessonContent()?.lesson);
   vocabularyList = computed(() => this.lessonContent()?.vocabulary || []);
   grammarList = computed(() => this.lessonContent()?.grammar || []);
   exerciseList = computed(() => this.lessonContent()?.exercises || []);
+
+  // Warmup content (audio, video, image, text)
+  warmupContent = computed(() => {
+    const content = this.lessonContent()?.content || [];
+    return content.filter(c =>
+      c.section === 'warmup' &&
+      ['audio', 'video', 'image', 'text'].includes(c.contentType) &&
+      c.data
+    );
+  });
+
+  hasWarmupContent = computed(() => this.warmupContent().length > 0);
+
+  currentWarmup = computed(() => {
+    const items = this.warmupContent();
+    const index = this.currentWarmupIndex();
+    return items[index] || null;
+  });
 
   vocabProgress = computed(() => {
     const cards = this.vocabCards();
@@ -270,7 +310,7 @@ export class LessonStudyComponent implements OnInit, OnDestroy {
     if (!progress || !progress.canContinue || this.isReplayMode()) return;
 
     // Restore current section
-    const validSections: StudySection[] = ['overview', 'vocabulary', 'grammar', 'exercises', 'complete'];
+    const validSections: StudySection[] = ['overview', 'warmup', 'vocabulary', 'grammar', 'exercises', 'complete'];
     if (validSections.includes(progress.currentStep as StudySection)) {
       this.currentSection.set(progress.currentStep as StudySection);
     }
@@ -371,6 +411,7 @@ export class LessonStudyComponent implements OnInit, OnDestroy {
 
   private getCurrentStepIndex(): number {
     switch (this.currentSection()) {
+      case 'warmup': return this.currentWarmupIndex();
       case 'vocabulary': return this.currentVocabIndex();
       case 'grammar': return this.currentGrammarIndex();
       case 'exercises': return this.currentExerciseIndex();
@@ -402,6 +443,87 @@ export class LessonStudyComponent implements OnInit, OnDestroy {
     this.exerciseResults.set(new Map());
     this.currentSection.set('exercises');
     this.triggerAutoSave();
+  }
+
+  // ========================================
+  // Warmup section methods
+  // ========================================
+  startWarmup(): void {
+    this.currentWarmupIndex.set(0);
+    this.currentSection.set('warmup');
+    this.triggerAutoSave();
+  }
+
+  nextWarmup(): void {
+    const items = this.warmupContent();
+    const index = this.currentWarmupIndex();
+    if (index < items.length - 1) {
+      this.currentWarmupIndex.set(index + 1);
+      this.triggerAutoSave();
+    } else {
+      // Move to next section after warmup
+      if (this.vocabularyList().length > 0) {
+        this.startVocabulary();
+      } else if (this.grammarList().length > 0) {
+        this.startGrammar();
+      } else if (this.exerciseList().length > 0) {
+        this.startExercises();
+      } else {
+        this.currentSection.set('complete');
+        this.triggerAutoSave();
+      }
+    }
+  }
+
+  prevWarmup(): void {
+    const index = this.currentWarmupIndex();
+    if (index > 0) {
+      this.currentWarmupIndex.set(index - 1);
+    }
+  }
+
+  // Config generators for media components
+  getAudioConfig(item: ResolvedContentItem): AudioConfig {
+    const data = item.data as CustomContentData;
+    return {
+      url: data?.url || '',
+      title: data?.title,
+      transcript: data?.transcript,
+      transcriptVi: data?.transcriptVi,
+      autoplay: false
+    };
+  }
+
+  getVideoConfig(item: ResolvedContentItem): VideoConfig {
+    const data = item.data as CustomContentData;
+    return {
+      url: data?.url || '',
+      title: data?.title,
+      poster: data?.poster,
+      transcript: data?.transcript,
+      transcriptVi: data?.transcriptVi,
+      autoplay: false
+    };
+  }
+
+  getImageConfig(item: ResolvedContentItem): ImageConfig {
+    const data = item.data as CustomContentData;
+    return {
+      url: data?.url || '',
+      alt: data?.alt || data?.title || 'Lesson image',
+      caption: data?.caption,
+      zoomable: true
+    };
+  }
+
+  getTextConfig(item: ResolvedContentItem): TextConfig {
+    const data = item.data as CustomContentData;
+    return {
+      title: data?.title,
+      content: data?.content || '',
+      contentVi: data?.contentVi,
+      type: data?.type || 'paragraph'
+    };
   }
 
   // Vocabulary

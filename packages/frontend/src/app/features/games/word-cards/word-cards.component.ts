@@ -1,5 +1,5 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { CountdownComponent } from '../shared/countdown/countdown.component';
 import { GameOverDialogComponent, GameResult } from '../shared/game-over-dialog/game-over-dialog.component';
@@ -274,9 +274,11 @@ export class WordCardsComponent implements OnInit {
   }
 
   // Navigation
+  private location = inject(Location);
+
   onBackToHub(): void {
     this.resetBattleAnimationState();
-    this.router.navigate(['/games']);
+    this.location.back();
   }
 
   goToMenu(): void {

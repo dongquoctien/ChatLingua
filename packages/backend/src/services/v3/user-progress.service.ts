@@ -1,5 +1,7 @@
 import pool from '../../config/database.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { wordMapAchievementsService, type AchievementUnlock } from './word-map-achievements.service.js';
+import { petService } from '../pet.service.js';
 
 // ============================================================
 // Types
@@ -607,8 +609,13 @@ export class UserProgressService {
   async completeLesson(
     userId: number,
     lessonId: number,
-    xpEarned: number
-  ): Promise<{ lessonProgress: UserLessonProgress; nextLesson: UserLessonProgress | null }> {
+    xpEarned: number,
+    options?: {
+      vocabularyMastered?: number;
+      grammarMastered?: number;
+      timeSpentSeconds?: number;
+    }
+  ): Promise<{ lessonProgress: UserLessonProgress; nextLesson: UserLessonProgress | null; achievementsUnlocked: AchievementUnlock[] }> {
     // Mark lesson as completed
     const lessonProgress = await this.updateLessonProgress(userId, lessonId, {
       status: 'completed',
@@ -621,21 +628,27 @@ export class UserProgressService {
       throw new Error('Failed to update lesson progress');
     }
 
-    // Get lesson info
+    // Get lesson info including map_id
     const [lessonInfo] = await pool.execute<RowDataPacket[]>(
-      'SELECT unit_id, lesson_number FROM unit_lessons WHERE id = ?',
+      `SELECT ul.unit_id, ul.lesson_number, mu.map_id
+       FROM unit_lessons ul
+       JOIN map_units mu ON ul.unit_id = mu.id
+       WHERE ul.id = ?`,
       [lessonId]
     );
 
     if (lessonInfo.length === 0) {
-      return { lessonProgress, nextLesson: null };
+      return { lessonProgress, nextLesson: null, achievementsUnlocked: [] };
     }
+
+    const unitId = lessonInfo[0].unit_id as number;
+    const mapId = lessonInfo[0].map_id as number;
 
     // Find next lesson
     const [nextLesson] = await pool.execute<RowDataPacket[]>(
       `SELECT id FROM unit_lessons
        WHERE unit_id = ? AND lesson_number = ? AND is_active = TRUE`,
-      [lessonInfo[0].unit_id, (lessonInfo[0].lesson_number as number) + 1]
+      [unitId, (lessonInfo[0].lesson_number as number) + 1]
     );
 
     let nextLessonProgress: UserLessonProgress | null = null;
@@ -651,9 +664,246 @@ export class UserProgressService {
     }
 
     // Update unit progress
-    await this.recalculateUnitProgress(userId, lessonInfo[0].unit_id as number);
+    await this.recalculateUnitProgress(userId, unitId);
 
-    return { lessonProgress, nextLesson: nextLessonProgress };
+    // Check and award achievements
+    const achievementsUnlocked = await this.checkLessonAchievements(userId, {
+      lessonId,
+      unitId,
+      mapId,
+      vocabularyCount: options?.vocabularyMastered,
+      grammarCount: options?.grammarMastered,
+      timeSpentSeconds: options?.timeSpentSeconds,
+    });
+
+    // Record pet task progress
+    try {
+      await petService.recordWordMapActivityForTasks(userId, 'lesson_study', {
+        count: 1,
+        timeMinutes: options?.timeSpentSeconds ? Math.floor(options.timeSpentSeconds / 60) : undefined,
+      });
+
+      // Also record vocabulary if provided
+      if (options?.vocabularyMastered && options.vocabularyMastered > 0) {
+        await petService.recordWordMapActivityForTasks(userId, 'vocabulary', {
+          count: options.vocabularyMastered,
+        });
+      }
+
+      // Record grammar if provided
+      if (options?.grammarMastered && options.grammarMastered > 0) {
+        await petService.recordWordMapActivityForTasks(userId, 'grammar', {
+          count: options.grammarMastered,
+        });
+      }
+    } catch (err) {
+      console.error('[UserProgress] Failed to record pet tasks:', err);
+    }
+
+    return { lessonProgress, nextLesson: nextLessonProgress, achievementsUnlocked };
+  }
+
+  /**
+   * Record exam completion for achievements and pet tasks
+   */
+  async recordExamCompletion(
+    userId: number,
+    lessonId: number,
+    score: number,
+    attemptNumber: number,
+    timeSpentSeconds?: number
+  ): Promise<AchievementUnlock[]> {
+    // Get lesson info including unit and map
+    const [lessonInfo] = await pool.execute<RowDataPacket[]>(
+      `SELECT ul.unit_id, mu.map_id
+       FROM unit_lessons ul
+       JOIN map_units mu ON ul.unit_id = mu.id
+       WHERE ul.id = ?`,
+      [lessonId]
+    );
+
+    if (lessonInfo.length === 0) {
+      return [];
+    }
+
+    const unitId = lessonInfo[0].unit_id as number;
+    const mapId = lessonInfo[0].map_id as number;
+    const passed = score >= 70; // Assuming 70% is passing
+
+    // Only check achievements if passed
+    let achievements: AchievementUnlock[] = [];
+    if (passed) {
+      achievements = await wordMapAchievementsService.checkAndAwardAchievements(
+        userId,
+        score === 100 ? 'exam_perfect' : 'exam_pass',
+        {
+          lessonId,
+          unitId,
+          mapId,
+          examScore: score,
+          attemptNumber,
+          timeSpentSeconds,
+        }
+      );
+
+      // Record pet task progress
+      try {
+        await petService.recordWordMapActivityForTasks(userId, 'exam', {
+          scorePercent: score,
+          timeMinutes: timeSpentSeconds ? Math.floor(timeSpentSeconds / 60) : undefined,
+        });
+      } catch (err) {
+        console.error('[UserProgress] Failed to record pet exam task:', err);
+      }
+    }
+
+    return achievements;
+  }
+
+  /**
+   * Record vocabulary review for achievements and pet tasks
+   */
+  async recordVocabularyReview(
+    userId: number,
+    count: number
+  ): Promise<AchievementUnlock[]> {
+    const achievements = await wordMapAchievementsService.checkAndAwardAchievements(
+      userId,
+      'review_complete',
+      { reviewCount: count }
+    );
+
+    // Record pet task progress
+    try {
+      await petService.recordWordMapActivityForTasks(userId, 'review', { count });
+    } catch (err) {
+      console.error('[UserProgress] Failed to record pet review task:', err);
+    }
+
+    return achievements;
+  }
+
+  /**
+   * Check lesson completion achievements
+   */
+  private async checkLessonAchievements(
+    userId: number,
+    context: {
+      lessonId: number;
+      unitId: number;
+      mapId: number;
+      vocabularyCount?: number;
+      grammarCount?: number;
+      timeSpentSeconds?: number;
+    }
+  ): Promise<AchievementUnlock[]> {
+    const achievements: AchievementUnlock[] = [];
+
+    // Check lesson completion achievements
+    const lessonAchievements = await wordMapAchievementsService.checkAndAwardAchievements(
+      userId,
+      'lesson_complete',
+      {
+        lessonId: context.lessonId,
+        unitId: context.unitId,
+        mapId: context.mapId,
+        vocabularyCount: context.vocabularyCount,
+        grammarCount: context.grammarCount,
+        timeSpentSeconds: context.timeSpentSeconds,
+      }
+    );
+    achievements.push(...lessonAchievements);
+
+    // Check if this completes a unit
+    const unitComplete = await this.checkUnitCompletion(userId, context.unitId);
+    if (unitComplete) {
+      const unitAchievements = await wordMapAchievementsService.checkAndAwardAchievements(
+        userId,
+        'unit_complete',
+        { unitId: context.unitId, mapId: context.mapId }
+      );
+      achievements.push(...unitAchievements);
+
+      // Check if this completes the map
+      const mapComplete = await this.checkMapCompletion(userId, context.mapId);
+      if (mapComplete) {
+        const mapAchievements = await wordMapAchievementsService.checkAndAwardAchievements(
+          userId,
+          'map_complete',
+          { mapId: context.mapId }
+        );
+        achievements.push(...mapAchievements);
+      }
+    }
+
+    // Check speed achievement
+    if (context.timeSpentSeconds && context.timeSpentSeconds < 300) { // Under 5 minutes
+      const speedAchievements = await wordMapAchievementsService.checkSpeedAchievements(
+        userId,
+        'lesson',
+        context.timeSpentSeconds
+      );
+      achievements.push(...speedAchievements);
+    }
+
+    // Check daily lessons achievement
+    const dailyLessons = await this.getDailyLessonCount(userId);
+    if (dailyLessons >= 5) {
+      const dailyAchievements = await wordMapAchievementsService.checkAndAwardAchievements(
+        userId,
+        'daily_activity',
+        {}
+      );
+      achievements.push(...dailyAchievements);
+    }
+
+    return achievements;
+  }
+
+  /**
+   * Check if unit is complete
+   */
+  private async checkUnitCompletion(userId: number, unitId: number): Promise<boolean> {
+    const [result] = await pool.execute<RowDataPacket[]>(
+      `SELECT
+         (SELECT COUNT(*) FROM unit_lessons WHERE unit_id = ? AND is_active = TRUE) as total,
+         (SELECT COUNT(*) FROM user_lesson_progress ulp
+          JOIN unit_lessons ul ON ulp.lesson_id = ul.id
+          WHERE ulp.user_id = ? AND ul.unit_id = ? AND ulp.status = 'completed') as completed`,
+      [unitId, userId, unitId]
+    );
+
+    return result[0].total > 0 && result[0].total === result[0].completed;
+  }
+
+  /**
+   * Check if map is complete
+   */
+  private async checkMapCompletion(userId: number, mapId: number): Promise<boolean> {
+    const [result] = await pool.execute<RowDataPacket[]>(
+      `SELECT
+         (SELECT COUNT(*) FROM map_units WHERE map_id = ? AND is_active = TRUE) as total,
+         (SELECT COUNT(*) FROM user_unit_progress uup
+          JOIN map_units mu ON uup.unit_id = mu.id
+          WHERE uup.user_id = ? AND mu.map_id = ? AND uup.status = 'completed') as completed`,
+      [mapId, userId, mapId]
+    );
+
+    return result[0].total > 0 && result[0].total === result[0].completed;
+  }
+
+  /**
+   * Get count of lessons completed today
+   */
+  private async getDailyLessonCount(userId: number): Promise<number> {
+    const [result] = await pool.execute<RowDataPacket[]>(
+      `SELECT COUNT(*) as count FROM user_lesson_progress
+       WHERE user_id = ? AND status = 'completed'
+       AND DATE(exam_passed_at) = CURDATE()`,
+      [userId]
+    );
+
+    return result[0].count as number;
   }
 
   /**

@@ -65,6 +65,16 @@ export {
   linkMediaResource,
 } from './content-import-tools.js';
 
+// Media Sync Tools (Admin)
+export {
+  syncMediaFilesTool,
+  listMediaFilesTool,
+  validateMediaUrlsTool,
+  syncMediaFiles,
+  listMediaFiles,
+  validateMediaUrls,
+} from './media-sync-tools.js';
+
 // All V3 Tool Definitions Array
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import {
@@ -98,6 +108,11 @@ import {
   parsePdfStructureTool,
   linkMediaResourceTool,
 } from './content-import-tools.js';
+import {
+  syncMediaFilesTool,
+  listMediaFilesTool,
+  validateMediaUrlsTool,
+} from './media-sync-tools.js';
 
 export const v3Tools: Tool[] = [
   // Word Map Management
@@ -130,6 +145,11 @@ export const v3Tools: Tool[] = [
   importEvolveContentTool,
   parsePdfStructureTool,
   linkMediaResourceTool,
+
+  // Media Sync (Admin)
+  syncMediaFilesTool,
+  listMediaFilesTool,
+  validateMediaUrlsTool,
 ];
 
 // V3 Tool Handler Map
@@ -165,6 +185,11 @@ import {
   parsePdfStructure,
   linkMediaResource,
 } from './content-import-tools.js';
+import {
+  syncMediaFiles,
+  listMediaFiles,
+  validateMediaUrls,
+} from './media-sync-tools.js';
 
 export type V3ToolHandler = (
   args: Record<string, unknown>,
@@ -202,4 +227,9 @@ export const v3ToolHandlers: Record<string, V3ToolHandler> = {
   import_evolve_content: importEvolveContent,
   parse_pdf_structure: parsePdfStructure,
   link_media_resource: linkMediaResource,
+
+  // Media Sync (Admin)
+  sync_media_files: syncMediaFiles,
+  list_media_files: listMediaFiles,
+  validate_media_urls: validateMediaUrls,
 };

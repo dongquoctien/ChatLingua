@@ -1,0 +1,66 @@
+<!-- Backdrop -->
+<div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" (click)="onClose()">
+  <!-- Popup Container -->
+  <div class="audio-popup bg-blue-500 rounded-xl shadow-2xl p-6 max-w-md w-full" (click)="$event.stopPropagation()">
+    <!-- Close Button -->
+    <button
+      (click)="onClose()"
+      class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors">
+      <i class="fa-solid fa-times"></i>
+    </button>
+
+    <!-- Track Number -->
+    @if (audio.trackNumber) {
+      <div class="text-center mb-4">
+        <span class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-white text-sm">
+          <i class="fa-solid fa-compact-disc"></i>
+          Track {{ audio.trackNumber }}
+        </span>
+      </div>
+    }
+
+    <!-- Hidden Audio Element -->
+    <audio #audioElement [src]="audioUrl" preload="metadata"></audio>
+
+    <!-- Player Controls -->
+    <div class="flex items-center gap-4">
+      <!-- Play/Pause Button -->
+      <button
+        (click)="togglePlay()"
+        [disabled]="isLoading()"
+        class="play-btn w-14 h-14 rounded-full bg-white text-blue-500 flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50">
+        @if (isLoading()) {
+          <i class="fa-solid fa-spinner fa-spin text-xl"></i>
+        } @else if (isPlaying()) {
+          <i class="fa-solid fa-pause text-xl"></i>
+        } @else {
+          <i class="fa-solid fa-play text-xl ml-1"></i>
+        }
+      </button>
+
+      <!-- Progress Bar -->
+      <div class="flex-1">
+        <!-- Time Display -->
+        <div class="flex justify-between text-white/80 text-sm mb-2">
+          <span>{{ formattedCurrentTime() }}</span>
+          <span>{{ formattedDuration() }}</span>
+        </div>
+
+        <!-- Progress Track -->
+        <div
+          class="progress-track h-2 bg-white/30 rounded-full cursor-pointer overflow-hidden"
+          (click)="seek($event)">
+          <div
+            class="progress-fill h-full bg-white rounded-full transition-all"
+            [style.width.%]="progress()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Volume Icon -->
+      <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
+        <i class="fa-solid fa-volume-high"></i>
+      </div>
+    </div>
+  </div>
+</div>

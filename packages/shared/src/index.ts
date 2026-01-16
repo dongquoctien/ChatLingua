@@ -127,3 +127,67 @@ export type {
   MapLeaderboardEntry,
   AchievementProgress,
 } from './types/progress';
+
+// Study Page Types (JSON-driven interactive textbook pages)
+export * as StudyPageTypes from './types/study-page';
+
+// Direct exports for Study Page types (for easier imports)
+export type {
+  // Core types
+  StudyUnit,
+  StudyPage,
+  StudySection,
+  SectionHeader,
+  VocabularySection,
+  GrammarSection,
+  SpeakingSection,
+  WritingSection,
+  // Grammar
+  GrammarBox,
+  GrammarTable,
+  // Exercise (renamed to avoid conflict with V1/V2 Exercise type)
+  StudyPageExercise,
+  StudyPageExerciseType,
+  StudyPageAudioConfig,
+  InteractiveConfig,
+  InteractiveType,
+  // Content types
+  ExerciseContent,
+  AlphabetGridContent,
+  AlphabetItem,
+  NumberGridContent,
+  NumberItem,
+  VocabularyGridContent,
+  VocabularyItem,
+  ColorCakesContent,
+  ColorItem,
+  DaysCalendarContent,
+  DayItem,
+  CountryGridContent,
+  CountryItem,
+  FamilyTreeContent,
+  FamilyMember,
+  ClassroomSceneContent,
+  SceneItem,
+  DialogueContent,
+  DialogueLine,
+  DialogueBlank,
+  WritingTemplate,
+  TextContent,
+  ImageContent,
+  // Interactive data types
+  InteractiveData,
+  FillBlanksData,
+  FillBlankSentence,
+  BlankItem,
+  StudyPageMatchingData,
+  StudyPageMatchPair,
+  OrderingData,
+  MultipleChoiceData,
+  LabelingData,
+  LabelItem,
+  TableFillData,
+  TableFillRow,
+  TableFillCell,
+  TransformationData,
+} from './types/study-page';

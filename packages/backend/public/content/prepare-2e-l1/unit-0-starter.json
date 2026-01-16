@@ -1,0 +1,497 @@
+{
+  "unitId": "unit-0-starter",
+  "unitNumber": 0,
+  "title": "In the classroom",
+  "cefrLevel": "A1",
+  "pages": [
+    {
+      "pageId": "page-7",
+      "pageNumber": 7,
+      "layout": "two-column",
+      "sections": [
+        {
+          "sectionId": "vocab-alphabet",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "The alphabet",
+            "color": "teal"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u0-ex-1",
+              "number": 1,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the letters.",
+              "audio": {
+                "trackNumber": "01",
+                "fileName": "PREPARE2_L1_SB_001.mp3"
+              },
+              "content": {
+                "type": "alphabet-grid",
+                "columns": 9,
+                "items": [
+                  {"letter": "A", "phonetic": "/eɪ/"},
+                  {"letter": "B", "phonetic": "/biː/"},
+                  {"letter": "C", "phonetic": "/siː/"},
+                  {"letter": "D", "phonetic": "/diː/"},
+                  {"letter": "E", "phonetic": "/iː/"},
+                  {"letter": "F", "phonetic": "/ef/"},
+                  {"letter": "G", "phonetic": "/dʒiː/"},
+                  {"letter": "H", "phonetic": "/eɪtʃ/"},
+                  {"letter": "I", "phonetic": "/aɪ/"},
+                  {"letter": "J", "phonetic": "/dʒeɪ/"},
+                  {"letter": "K", "phonetic": "/keɪ/"},
+                  {"letter": "L", "phonetic": "/el/"},
+                  {"letter": "M", "phonetic": "/em/"},
+                  {"letter": "N", "phonetic": "/en/"},
+                  {"letter": "O", "phonetic": "/əʊ/"},
+                  {"letter": "P", "phonetic": "/piː/"},
+                  {"letter": "Q", "phonetic": "/kjuː/"},
+                  {"letter": "R", "phonetic": "/ɑː/"},
+                  {"letter": "S", "phonetic": "/es/"},
+                  {"letter": "T", "phonetic": "/tiː/"},
+                  {"letter": "U", "phonetic": "/juː/"},
+                  {"letter": "V", "phonetic": "/viː/"},
+                  {"letter": "W", "phonetic": "/ˈdʌbljuː/"},
+                  {"letter": "X", "phonetic": "/eks/"},
+                  {"letter": "Y", "phonetic": "/waɪ/"},
+                  {"letter": "Z", "phonetic": "/zed/"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u0-ex-2",
+              "number": 2,
+              "type": "listen-write",
+              "instruction": "Listen and write the names. Then listen and check.",
+              "audio": {
+                "trackNumber": "02",
+                "fileName": "PREPARE2_L1_SB_002.mp3"
+              },
+              "content": {
+                "type": "text",
+                "text": "Write the first letter of each name you hear."
+              },
+              "interactive": {
+                "type": "fill-blanks",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "1 ___avid", "blanks": [{"position": 0, "answer": "D"}]},
+                    {"text": "2 ___olly", "blanks": [{"position": 0, "answer": "H"}]},
+                    {"text": "3 ___acob", "blanks": [{"position": 0, "answer": "J"}]},
+                    {"text": "4 ___aya", "blanks": [{"position": 0, "answer": "M"}]},
+                    {"text": "5 ___lfie", "blanks": [{"position": 0, "answer": "A"}]},
+                    {"text": "6 ___eth", "blanks": [{"position": 0, "answer": "B"}]},
+                    {"text": "7 ___erys", "blanks": [{"position": 0, "answer": "C"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "vocab-numbers",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Numbers 0-10",
+            "color": "teal"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u0-ex-3",
+              "number": 3,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the numbers.",
+              "audio": {
+                "trackNumber": "03",
+                "fileName": "PREPARE2_L1_SB_003.mp3"
+              },
+              "content": {
+                "type": "number-grid",
+                "columns": 6,
+                "items": [
+                  {"number": 0, "word": "zero"},
+                  {"number": 1, "word": "one"},
+                  {"number": 2, "word": "two"},
+                  {"number": 3, "word": "three"},
+                  {"number": 4, "word": "four"},
+                  {"number": 5, "word": "five"},
+                  {"number": 6, "word": "six"},
+                  {"number": 7, "word": "seven"},
+                  {"number": 8, "word": "eight"},
+                  {"number": 9, "word": "nine"},
+                  {"number": 10, "word": "ten"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u0-ex-4",
+              "number": 4,
+              "type": "listen-write",
+              "instruction": "Listen and write the phone numbers.",
+              "audio": {
+                "trackNumber": "04",
+                "fileName": "PREPARE2_L1_SB_004.mp3"
+              },
+              "content": {
+                "type": "text",
+                "text": "Write the phone numbers you hear."
+              },
+              "interactive": {
+                "type": "fill-blanks",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "1 07845 ______", "blanks": [{"position": 0, "answer": "329016"}]},
+                    {"text": "2 07962 ______", "blanks": [{"position": 0, "answer": "154738"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "page-8",
+      "pageNumber": 8,
+      "layout": "two-column",
+      "sections": [
+        {
+          "sectionId": "vocab-colours",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Colours",
+            "color": "orange"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u0-ex-5",
+              "number": 5,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the colours.",
+              "audio": {
+                "trackNumber": "05",
+                "fileName": "PREPARE2_L1_SB_005.mp3"
+              },
+              "content": {
+                "type": "color-cakes",
+                "items": [
+                  {"color": "red", "hexCode": "#FF0000"},
+                  {"color": "orange", "hexCode": "#FFA500"},
+                  {"color": "yellow", "hexCode": "#FFFF00"},
+                  {"color": "green", "hexCode": "#008000"},
+                  {"color": "blue", "hexCode": "#0000FF"},
+                  {"color": "purple", "hexCode": "#800080"},
+                  {"color": "pink", "hexCode": "#FFC0CB"},
+                  {"color": "brown", "hexCode": "#A52A2A"},
+                  {"color": "black", "hexCode": "#000000"},
+                  {"color": "white", "hexCode": "#FFFFFF"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u0-ex-6",
+              "number": 6,
+              "type": "speaking",
+              "instruction": "Listen to the dialogue. Then ask and answer with a partner.",
+              "audio": {
+                "trackNumber": "06",
+                "fileName": "PREPARE2_L1_SB_006.mp3"
+              },
+              "content": {
+                "type": "dialogue",
+                "lines": [
+                  {"speaker": "A", "text": "What colour is it?"},
+                  {"speaker": "B", "text": "It's red."}
+                ]
+              },
+              "interactive": {
+                "type": "matching",
+                "data": {
+                  "type": "matching",
+                  "pairs": [
+                    {"left": "cake 1", "right": "red"},
+                    {"left": "cake 2", "right": "blue"},
+                    {"left": "cake 3", "right": "green"},
+                    {"left": "cake 4", "right": "yellow"},
+                    {"left": "cake 5", "right": "pink"}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "vocab-days",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Days of the week",
+            "color": "blue"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u0-ex-7",
+              "number": 7,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the days of the week.",
+              "audio": {
+                "trackNumber": "07",
+                "fileName": "PREPARE2_L1_SB_007.mp3"
+              },
+              "content": {
+                "type": "days-calendar",
+                "items": [
+                  {"day": "Monday", "abbreviation": "Mon"},
+                  {"day": "Tuesday", "abbreviation": "Tue"},
+                  {"day": "Wednesday", "abbreviation": "Wed"},
+                  {"day": "Thursday", "abbreviation": "Thu"},
+                  {"day": "Friday", "abbreviation": "Fri"},
+                  {"day": "Saturday", "abbreviation": "Sat"},
+                  {"day": "Sunday", "abbreviation": "Sun"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u0-ex-8",
+              "number": 8,
+              "type": "speaking",
+              "instruction": "Listen to the dialogue. Then ask and answer with a partner.",
+              "audio": {
+                "trackNumber": "08",
+                "fileName": "PREPARE2_L1_SB_008.mp3"
+              },
+              "content": {
+                "type": "dialogue",
+                "lines": [
+                  {"speaker": "A", "text": "What day is it today?"},
+                  {"speaker": "B", "text": "It's Monday."}
+                ]
+              },
+              "interactive": {
+                "type": "multiple-choice",
+                "data": {
+                  "type": "multiple-choice",
+                  "question": "What day is it today?",
+                  "options": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                  "correctIndex": 0
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "page-9",
+      "pageNumber": 9,
+      "layout": "two-column",
+      "sections": [
+        {
+          "sectionId": "vocab-classroom",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Classroom objects",
+            "color": "green"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u0-ex-9",
+              "number": 9,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the classroom objects.",
+              "audio": {
+                "trackNumber": "09",
+                "fileName": "PREPARE2_L1_SB_009.mp3"
+              },
+              "content": {
+                "type": "vocabulary-grid",
+                "columns": 2,
+                "items": [
+                  {"word": "book", "image": "book.svg"},
+                  {"word": "pen", "image": "pen.svg"},
+                  {"word": "pencil", "image": "pencil.svg"},
+                  {"word": "rubber", "image": "rubber.svg"},
+                  {"word": "ruler", "image": "ruler.svg"},
+                  {"word": "bag", "image": "bag.svg"},
+                  {"word": "desk", "image": "desk.svg"},
+                  {"word": "chair", "image": "chair.svg"},
+                  {"word": "board", "image": "board.svg"},
+                  {"word": "computer", "image": "computer.svg"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u0-ex-10",
+              "number": 10,
+              "type": "match",
+              "instruction": "Match the pictures to the words.",
+              "audio": null,
+              "content": {
+                "type": "text",
+                "text": "Match the pictures to the words in Exercise 9."
+              },
+              "interactive": {
+                "type": "matching",
+                "data": {
+                  "type": "matching",
+                  "pairs": [
+                    {"left": "picture A", "right": "book", "leftImage": "classroom-a.svg"},
+                    {"left": "picture B", "right": "pen", "leftImage": "classroom-b.svg"},
+                    {"left": "picture C", "right": "pencil", "leftImage": "classroom-c.svg"},
+                    {"left": "picture D", "right": "rubber", "leftImage": "classroom-d.svg"},
+                    {"left": "picture E", "right": "ruler", "leftImage": "classroom-e.svg"}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "vocab-prepositions",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Prepositions",
+            "color": "purple"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u0-ex-11",
+              "number": 11,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the prepositions.",
+              "audio": {
+                "trackNumber": "11",
+                "fileName": "PREPARE2_L1_SB_011.mp3"
+              },
+              "content": {
+                "type": "vocabulary-grid",
+                "columns": 2,
+                "items": [
+                  {"word": "in", "image": "preposition-in.svg"},
+                  {"word": "on", "image": "preposition-on.svg"},
+                  {"word": "under", "image": "preposition-under.svg"},
+                  {"word": "next to", "image": "preposition-next-to.svg"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u0-ex-12",
+              "number": 12,
+              "type": "complete",
+              "instruction": "Look at the picture and complete the sentences.",
+              "audio": null,
+              "content": {
+                "type": "text",
+                "text": "Complete the sentences with in, on, under or next to."
+              },
+              "interactive": {
+                "type": "fill-blanks",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "The book is ___ the desk.", "blanks": [{"position": 0, "answer": "on"}]},
+                    {"text": "The pen is ___ the bag.", "blanks": [{"position": 0, "answer": "in"}]},
+                    {"text": "The chair is ___ the desk.", "blanks": [{"position": 0, "answer": "under"}]},
+                    {"text": "The computer is ___ the board.", "blanks": [{"position": 0, "answer": "next to"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "page-10",
+      "pageNumber": 10,
+      "layout": "single",
+      "sections": [
+        {
+          "sectionId": "my-classroom",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "MY CLASSROOM",
+            "subtitle": "",
+            "color": "teal"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u0-ex-13",
+              "number": 13,
+              "type": "label",
+              "instruction": "Look at the picture. Write the words.",
+              "audio": null,
+              "content": {
+                "type": "classroom-scene",
+                "image": "my-classroom-scene.svg",
+                "items": [
+                  {"name": "board", "x": 200, "y": 50},
+                  {"name": "desk", "x": 150, "y": 200},
+                  {"name": "chair", "x": 170, "y": 250},
+                  {"name": "book", "x": 160, "y": 190},
+                  {"name": "pen", "x": 180, "y": 195},
+                  {"name": "computer", "x": 300, "y": 100}
+                ]
+              },
+              "interactive": {
+                "type": "labeling",
+                "data": {
+                  "type": "labeling",
+                  "image": "my-classroom-scene.svg",
+                  "labels": [
+                    {"x": 200, "y": 50, "answer": "board"},
+                    {"x": 150, "y": 200, "answer": "desk"},
+                    {"x": 170, "y": 250, "answer": "chair"},
+                    {"x": 160, "y": 190, "answer": "book"},
+                    {"x": 180, "y": 195, "answer": "pen"},
+                    {"x": 300, "y": 100, "answer": "computer"}
+                  ]
+                }
+              }
+            },
+            {
+              "exerciseId": "u0-ex-14",
+              "number": 14,
+              "type": "speaking",
+              "instruction": "Ask and answer with a partner.",
+              "audio": null,
+              "content": {
+                "type": "dialogue",
+                "lines": [
+                  {"speaker": "A", "text": "Where is the book?"},
+                  {"speaker": "B", "text": "It's on the desk."},
+                  {"speaker": "A", "text": "Where is the pen?"},
+                  {"speaker": "B", "text": "It's in the bag."}
+                ]
+              },
+              "interactive": {
+                "type": "dialogue",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "A: Where is the ___?", "blanks": [{"position": 0, "answer": "book", "hint": "classroom object"}]},
+                    {"text": "B: It's ___ the desk.", "blanks": [{"position": 0, "answer": "on", "hint": "preposition"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

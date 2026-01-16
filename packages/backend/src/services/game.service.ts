@@ -731,7 +731,167 @@ class GameService {
   // Vocabulary for Games
   // ============================================================
 
+  /**
+   * Get available vocabulary sources for game filtering UI
+   */
+  async getVocabularySources(userId: number): Promise<{
+    conversationCount: number;
+    wordMapCount: number;
+    maps: Array<{ id: number; name: string; vocabularyCount: number }>;
+  }> {
+    // V3: Get vocabulary counts from user_vocabulary table by source_type
+    const [countResult] = await pool.query<RowDataPacket[]>(
+      `SELECT source_type, COUNT(DISTINCT id) as count
+       FROM user_vocabulary
+       WHERE user_id = ?
+       GROUP BY source_type`,
+      [userId]
+    );
+
+    let conversationCount = 0;
+    let wordMapCount = 0;
+    for (const row of countResult) {
+      if (row.source_type === 'conversation') {
+        conversationCount = row.count;
+      } else if (row.source_type === 'word_map') {
+        wordMapCount = row.count;
+      }
+    }
+
+    // Get Word Maps with vocabulary counts
+    const [maps] = await pool.query<RowDataPacket[]>(
+      `SELECT wm.id, wm.name, COUNT(DISTINCT uv.master_vocabulary_id) as vocabulary_count
+       FROM word_maps wm
+       JOIN map_units wmu ON wmu.map_id = wm.id
+       JOIN unit_lessons ul ON ul.unit_id = wmu.id
+       JOIN lesson_content lc ON lc.lesson_id = ul.id AND lc.content_type = 'vocabulary'
+       JOIN user_vocabulary uv ON uv.master_vocabulary_id = lc.master_vocabulary_id AND uv.user_id = ?
+       WHERE wm.is_active = 1
+       GROUP BY wm.id, wm.name
+       HAVING vocabulary_count > 0
+       ORDER BY wm.name`,
+      [userId]
+    );
+
+    return {
+      conversationCount,
+      wordMapCount,
+      maps: maps.map(m => ({
+        id: m.id,
+        name: m.name,
+        vocabularyCount: m.vocabulary_count,
+      })),
+    };
+  }
+
   async getVocabularyForGame(
+    userId: number,
+    count: number,
+    options?: {
+      difficulty?: string;
+      sourceType?: 'all' | 'conversation' | 'word_map';
+      mapId?: number;
+      prioritizeLowMastery?: boolean;
+    }
+  ): Promise<VocabularyRow[]> {
+    const { difficulty, sourceType = 'all', mapId, prioritizeLowMastery = true } = options || {};
+
+    // V3: All vocabulary is now in user_vocabulary table with source_type field
+    // Use V3 tables for all source types
+    return this.getVocabularyForGameV3(userId, count, {
+      difficulty,
+      mapId,
+      prioritizeLowMastery,
+      sourceType
+    });
+  }
+
+  /**
+   * Get vocabulary from V3 tables (user_vocabulary + master_vocabulary)
+   */
+  private async getVocabularyForGameV3(
+    userId: number,
+    count: number,
+    options?: {
+      difficulty?: string;
+      mapId?: number;
+      prioritizeLowMastery?: boolean;
+      sourceType?: 'all' | 'conversation' | 'word_map';
+    }
+  ): Promise<VocabularyRow[]> {
+    const { difficulty, mapId, prioritizeLowMastery = true, sourceType = 'all' } = options || {};
+    const conditions: string[] = ['uv.user_id = ?'];
+    const params: any[] = [userId];
+
+    // Build base query
+    let joinClause = `
+      JOIN master_vocabulary mv ON uv.master_vocabulary_id = mv.id
+    `;
+
+    // Add source type filter
+    if (sourceType && sourceType !== 'all') {
+      conditions.push('uv.source_type = ?');
+      params.push(sourceType);
+    }
+
+    // Add Word Map filter if specified
+    if (mapId) {
+      joinClause += `
+        JOIN lesson_content lc ON lc.master_vocabulary_id = mv.id AND lc.content_type = 'vocabulary'
+        JOIN unit_lessons ul ON ul.id = lc.lesson_id
+        JOIN map_units wmu ON wmu.id = ul.unit_id
+      `;
+      conditions.push('wmu.map_id = ?');
+      params.push(mapId);
+    }
+
+    if (difficulty) {
+      // Map difficulty to CEFR levels
+      const cefrMapping: Record<string, string[]> = {
+        beginner: ['A1', 'A2'],
+        intermediate: ['B1', 'B2'],
+        advanced: ['C1', 'C2'],
+      };
+      const cefrLevels = cefrMapping[difficulty];
+      if (cefrLevels) {
+        conditions.push(`mv.cefr_level IN (${cefrLevels.map(() => '?').join(',')})`);
+        params.push(...cefrLevels);
+      }
+    }
+
+    // Order by mastery (prioritize lower mastery for practice)
+    // Note: When using DISTINCT with ORDER BY, we need to include the ORDER BY column in SELECT
+    const orderBy = prioritizeLowMastery
+      ? 'ORDER BY mastery_level ASC, RAND()'
+      : 'ORDER BY RAND()';
+
+    const whereClause = conditions.join(' AND ');
+    params.push(count);
+
+    const [rows] = await pool.query<VocabularyRow[]>(
+      `SELECT DISTINCT mv.id, mv.english_word, mv.vietnamese_word, mv.phonetic,
+              mv.pronunciation_uk, mv.pronunciation_us, mv.part_of_speech,
+              uv.mastery_level,
+              CASE
+                WHEN mv.cefr_level IN ('A1', 'A2') THEN 'beginner'
+                WHEN mv.cefr_level IN ('B1', 'B2') THEN 'intermediate'
+                ELSE 'advanced'
+              END as difficulty_level
+       FROM user_vocabulary uv
+       ${joinClause}
+       WHERE ${whereClause}
+       ${orderBy}
+       LIMIT ?`,
+      params
+    );
+
+    return rows;
+  }
+
+  /**
+   * Legacy vocabulary getter from V2 tables (conversations)
+   */
+  private async getVocabularyForGameLegacy(
     userId: number,
     count: number,
     difficulty?: string

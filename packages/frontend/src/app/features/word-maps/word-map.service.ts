@@ -112,11 +112,41 @@ export interface LessonContent {
   customContent?: {
     title?: string;
     content?: string;
+    contentVi?: string;
     url?: string;
     transcript?: string;
+    transcriptVi?: string;
+    alt?: string;
+    caption?: string;
+    poster?: string;
+    type?: 'paragraph' | 'dialogue' | 'instructions' | 'note' | 'tip';
   };
   section: 'warmup' | 'study' | 'practice' | 'review' | 'extension';
   displayOrder: number;
+}
+
+// Unified content item returned from API with resolved data
+export interface ResolvedContentItem {
+  id: number;
+  lessonId: number;
+  contentType: 'vocabulary' | 'grammar' | 'exercise' | 'text' | 'audio' | 'video' | 'image';
+  section: 'warmup' | 'study' | 'practice' | 'review' | 'extension';
+  displayOrder: number;
+  customInstructions?: string;
+  data: VocabularyContent | GrammarContent | ExerciseContent | CustomContentData | null;
+}
+
+export interface CustomContentData {
+  title?: string;
+  content?: string;
+  contentVi?: string;
+  url?: string;
+  transcript?: string;
+  transcriptVi?: string;
+  alt?: string;
+  caption?: string;
+  poster?: string;
+  type?: 'paragraph' | 'dialogue' | 'instructions' | 'note' | 'tip';
 }
 
 export interface VocabularyContent {
@@ -181,6 +211,7 @@ export interface LessonContentDetail {
   grammar: GrammarContent[];
   exercises: ExerciseContent[];
   customContent: LessonContent[];
+  content?: ResolvedContentItem[]; // Unified content array with section info
 }
 
 export interface LessonExam {

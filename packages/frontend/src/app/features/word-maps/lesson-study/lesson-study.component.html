@@ -43,23 +43,54 @@
             <p class="text-gray-600 mb-6">{{ lesson()?.description }}</p>
           }
 
-          <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="text-center p-4 bg-gray-50 rounded-lg">
-              <div class="text-2xl font-bold text-gray-900">{{ vocabularyList().length }}</div>
-              <div class="text-sm text-gray-500">Vocabulary</div>
+          <!-- Content summary grid - show warmup if available -->
+          @if (hasWarmupContent()) {
+            <div class="grid grid-cols-4 gap-3 mb-6">
+              <div class="text-center p-3 bg-orange-50 rounded-lg">
+                <div class="text-xl font-bold text-orange-600">{{ warmupContent().length }}</div>
+                <div class="text-xs text-gray-500">Warmup</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <div class="text-xl font-bold text-gray-900">{{ vocabularyList().length }}</div>
+                <div class="text-xs text-gray-500">Vocabulary</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <div class="text-xl font-bold text-gray-900">{{ grammarList().length }}</div>
+                <div class="text-xs text-gray-500">Grammar</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <div class="text-xl font-bold text-gray-900">{{ exerciseList().length }}</div>
+                <div class="text-xs text-gray-500">Exercises</div>
+              </div>
             </div>
-            <div class="text-center p-4 bg-gray-50 rounded-lg">
-              <div class="text-2xl font-bold text-gray-900">{{ grammarList().length }}</div>
-              <div class="text-sm text-gray-500">Grammar</div>
+          } @else {
+            <div class="grid grid-cols-3 gap-4 mb-6">
+              <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-2xl font-bold text-gray-900">{{ vocabularyList().length }}</div>
+                <div class="text-sm text-gray-500">Vocabulary</div>
+              </div>
+              <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-2xl font-bold text-gray-900">{{ grammarList().length }}</div>
+                <div class="text-sm text-gray-500">Grammar</div>
+              </div>
+              <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-2xl font-bold text-gray-900">{{ exerciseList().length }}</div>
+                <div class="text-sm text-gray-500">Exercises</div>
+              </div>
             </div>
-            <div class="text-center p-4 bg-gray-50 rounded-lg">
-              <div class="text-2xl font-bold text-gray-900">{{ exerciseList().length }}</div>
-              <div class="text-sm text-gray-500">Exercises</div>
-            </div>
-          </div>
+          }
 
           <div class="space-y-3">
-            @if (vocabularyList().length > 0) {
+            <!-- Start with warmup if available -->
+            @if (hasWarmupContent()) {
+              <button
+                (click)="startWarmup()"
+                class="w-full py-3 px-4 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-play"></i>
+                Start Learning
+              </button>
+            } @else if (vocabularyList().length > 0) {
               <button
                 (click)="startVocabulary()"
                 class="w-full py-3 px-4 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 flex items-center justify-center gap-2"
@@ -85,6 +116,77 @@
               </button>
             }
           </div>
+        </div>
+      </div>
+    }
+
+    <!-- Warmup Section -->
+    @if (currentSection() === 'warmup' && currentWarmup()) {
+      <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <!-- Progress -->
+        <div class="mb-4">
+          <div class="flex justify-between text-sm text-gray-500 mb-1">
+            <span>Warmup</span>
+            <span>{{ currentWarmupIndex() + 1 }} / {{ warmupContent().length }}</span>
+          </div>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-orange-500 transition-all"
+              [style.width.%]="((currentWarmupIndex() + 1) / warmupContent().length) * 100"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Warmup Content Card -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <!-- Custom instructions if any -->
+          @if (currentWarmup()?.customInstructions) {
+            <p class="text-sm text-gray-600 mb-4 italic">
+              <i class="fa-solid fa-info-circle mr-2 text-orange-500"></i>
+              {{ currentWarmup()?.customInstructions }}
+            </p>
+          }
+
+          <!-- Audio Content -->
+          @if (currentWarmup()?.contentType === 'audio') {
+            <app-audio-player [config]="getAudioConfig(currentWarmup()!)"></app-audio-player>
+          }
+
+          <!-- Video Content -->
+          @if (currentWarmup()?.contentType === 'video') {
+            <app-video-player [config]="getVideoConfig(currentWarmup()!)"></app-video-player>
+          }
+
+          <!-- Image Content -->
+          @if (currentWarmup()?.contentType === 'image') {
+            <app-image-viewer [config]="getImageConfig(currentWarmup()!)"></app-image-viewer>
+          }
+
+          <!-- Text Content -->
+          @if (currentWarmup()?.contentType === 'text') {
+            <app-text-content [config]="getTextConfig(currentWarmup()!)"></app-text-content>
+          }
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex gap-3">
+          <button
+            (click)="prevWarmup()"
+            [disabled]="currentWarmupIndex() === 0"
+            class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid fa-arrow-left mr-2"></i>Previous
+          </button>
+          <button
+            (click)="nextWarmup()"
+            class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+          >
+            @if (currentWarmupIndex() === warmupContent().length - 1) {
+              Continue<i class="fa-solid fa-arrow-right ml-2"></i>
+            } @else {
+              Next<i class="fa-solid fa-arrow-right ml-2"></i>
+            }
+          </button>
         </div>
       </div>
     }

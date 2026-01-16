@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal, computed, ViewChild, ElementRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
@@ -398,8 +398,10 @@ export class TranslationRaceComponent implements OnInit, OnDestroy {
     this.loadGameData();
   }
 
+  private location = inject(Location);
+
   onBackToHub(): void {
-    this.router.navigate(['/games']);
+    this.location.back();
   }
 
   skipSentence(): void {

@@ -1,0 +1,17 @@
+<div
+  class="number-grid grid gap-3 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg"
+  [style.grid-template-columns]="'repeat(' + content.columns + ', 1fr)'">
+  @for (item of content.items; track item.number) {
+    <div class="number-card text-center p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer">
+      <span class="number text-3xl font-bold text-blue-600">
+        {{ item.number }}
+      </span>
+      <span class="word text-sm text-gray-600 block mt-1">
+        {{ item.word }}
+      </span>
+      @if (item.image) {
+        <img [src]="item.image" [alt]="item.word" class="w-8 h-8 mx-auto mt-2 object-contain">
+      }
+    </div>
+  }
+</div>
