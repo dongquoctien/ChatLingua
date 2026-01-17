@@ -114,3 +114,45 @@
     </p>
   </div>
 </div>
+
+<!-- Welcome Modal -->
+@if (showWelcomeModal()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-bounce-in">
+      <!-- Header -->
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <fa-icon [icon]="faGift" class="text-3xl text-gray-900"></fa-icon>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Welcome to ChatLingua!</h2>
+        <p class="text-gray-600">You've received a welcome gift!</p>
+      </div>
+
+      <!-- Gifts List -->
+      <div class="space-y-4 mb-6">
+        @for (gift of welcomeGifts(); track $index) {
+          <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border-2 border-gray-200">
+            @if (gift.imageUrl) {
+              <img [src]="gift.imageUrl" [alt]="gift.name" class="w-16 h-16 object-contain">
+            } @else {
+              <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                <span class="text-3xl">🥚</span>
+              </div>
+            }
+            <div class="flex-1">
+              <h3 class="font-semibold text-gray-900">{{ gift.name }}</h3>
+              <p class="text-sm text-gray-600">{{ gift.description }}</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Action Button -->
+      <button
+        (click)="closeWelcomeModal()"
+        class="btn btn-primary w-full h-12 text-base">
+        Start Learning!
+      </button>
+    </div>
+  </div>
+}

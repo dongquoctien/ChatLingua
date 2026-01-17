@@ -1,0 +1,306 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Back Button -->
+  <a routerLink="/word-maps" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Back to Word Maps</span>
+  </a>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex justify-center items-center py-12">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <div class="flex items-center gap-2 text-red-700">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error() }}</span>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && map()) {
+    <!-- Continue Learning Banner -->
+    @if (continuableLesson()) {
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+              <i class="fa-solid fa-bookmark text-blue-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-900">Continue where you left off</h3>
+              <p class="text-sm text-gray-600">
+                {{ continuableLesson()?.lessonTitle }}
+                <span class="text-gray-400 mx-1">·</span>
+                <span class="capitalize">{{ continuableLesson()?.currentStep }}</span>
+                @if (continuableLesson()?.progressPercentage) {
+                  <span class="text-gray-400 mx-1">·</span>
+                  <span>{{ continuableLesson()?.progressPercentage }}% complete</span>
+                }
+              </p>
+            </div>
+          </div>
+          <button
+            (click)="continueLearning()"
+            class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <i class="fa-solid fa-play"></i>
+            <span>Continue</span>
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Map Header -->
+    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+      <div class="md:flex">
+        <!-- Cover Image -->
+        <div class="md:w-1/3 h-48 md:h-auto bg-gray-100">
+          @if (map()?.coverImageUrl) {
+            <img [src]="map()?.coverImageUrl" [alt]="map()?.name" class="w-full h-full object-cover">
+          } @else {
+            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 min-h-[200px]">
+              <span class="text-6xl">📖</span>
+            </div>
+          }
+        </div>
+
+        <!-- Map Info -->
+        <div class="md:w-2/3 p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span [class]="'px-2 py-1 rounded-full text-xs font-semibold ' + getCefrColor(map()!.cefrLevel)">
+                  {{ map()?.cefrLevel }}
+                </span>
+                @if (map()?.isFeatured) {
+                  <span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                    <i class="fa-solid fa-star mr-1"></i>Featured
+                  </span>
+                }
+              </div>
+              <h1 class="text-2xl font-bold text-gray-900">{{ map()?.name }}</h1>
+              @if (map()?.publisher) {
+                <p class="text-gray-500 text-sm">by {{ map()?.publisher }}</p>
+              }
+            </div>
+          </div>
+
+          @if (map()?.description) {
+            <p class="text-gray-600 mb-4">{{ map()?.description }}</p>
+          }
+
+          <!-- Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <div class="text-lg font-bold text-gray-900">{{ map()?.totalUnits }}</div>
+              <div class="text-sm text-gray-500">Units</div>
+            </div>
+            <div>
+              <div class="text-lg font-bold text-gray-900">{{ map()?.totalLessons }}</div>
+              <div class="text-sm text-gray-500">Lessons</div>
+            </div>
+            @if (map()?.estimatedHours) {
+              <div>
+                <div class="text-lg font-bold text-gray-900">{{ map()?.estimatedHours }}h</div>
+                <div class="text-sm text-gray-500">Estimated</div>
+              </div>
+            }
+            <div>
+              @if (map()?.isFree) {
+                <div class="text-lg font-bold text-green-600">Free</div>
+              } @else {
+                <div class="text-lg font-bold text-gray-900 flex items-center gap-1">
+                  <span class="text-lg">🪙</span>{{ map()?.priceCoins }}
+                </div>
+              }
+              <div class="text-sm text-gray-500">Price</div>
+            </div>
+          </div>
+
+          <!-- Progress (if activated) -->
+          @if (isActivated()) {
+            <div class="mb-4">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-gray-500">Overall Progress</span>
+                <span class="font-medium text-gray-900">{{ map()?.userProgress?.completionPercentage }}%</span>
+              </div>
+              <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-green-500 rounded-full transition-all"
+                  [style.width.%]="map()?.userProgress?.completionPercentage || 0"
+                ></div>
+              </div>
+              <div class="flex justify-between text-xs text-gray-400 mt-1">
+                <span>{{ completedLessons() }}/{{ totalLessons() }} lessons completed</span>
+                <span>{{ map()?.userProgress?.totalXpEarned || 0 }} XP earned</span>
+              </div>
+            </div>
+          }
+
+          <!-- Action Button -->
+          @if (!isActivated()) {
+            <button
+              (click)="activateMap()"
+              [disabled]="activating()"
+              class="px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              @if (activating()) {
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i>Activating...
+              } @else {
+                <i class="fa-solid fa-play mr-2"></i>Start Learning
+              }
+            </button>
+          } @else {
+            <div class="flex gap-3">
+              @if (map()?.userProgress?.currentLessonId) {
+                <a
+                  [routerLink]="['/word-maps', map()?.id, 'lesson', map()?.userProgress?.currentLessonId]"
+                  class="px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+                >
+                  <i class="fa-solid fa-play mr-2"></i>Continue Learning
+                </a>
+              }
+              <a
+                routerLink="review"
+                class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+              >
+                <i class="fa-solid fa-rotate mr-2"></i>Review
+              </a>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Units List -->
+    <div class="space-y-4">
+      <h2 class="text-lg font-semibold text-gray-900">Curriculum</h2>
+
+      @for (unit of units(); track unit.id) {
+        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <!-- Unit Header -->
+          <button
+            (click)="toggleUnit(unit.id)"
+            class="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <span class="text-lg font-bold text-gray-500">{{ unit.unitNumber }}</span>
+              </div>
+              <div class="text-left">
+                <div class="flex items-center gap-2">
+                  <h3 class="font-medium text-gray-900">{{ unit.title }}</h3>
+                  @if (unit.isReviewUnit) {
+                    <span class="px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">Review</span>
+                  }
+                </div>
+                <div class="text-sm text-gray-500">
+                  {{ unit.totalLessons }} lessons
+                  @if (unit.userProgress) {
+                    · {{ unit.userProgress.lessonsCompleted }} completed
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <!-- Unit Progress -->
+              @if (unit.userProgress && unit.userProgress.status !== 'locked') {
+                <div class="hidden md:flex items-center gap-2">
+                  <div class="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      class="h-full bg-green-500 rounded-full"
+                      [style.width.%]="unit.userProgress.completionPercentage"
+                    ></div>
+                  </div>
+                  <span class="text-sm text-gray-500">{{ unit.userProgress.completionPercentage }}%</span>
+                </div>
+              }
+
+              <!-- Status Icon -->
+              <i [class]="getStatusIcon(getUnitStatus(unit))"></i>
+
+              <!-- Expand Icon -->
+              <i
+                class="fa-solid fa-chevron-down text-gray-400 transition-transform"
+                [class.rotate-180]="expandedUnitId() === unit.id"
+              ></i>
+            </div>
+          </button>
+
+          <!-- Lessons (Expandable) -->
+          @if (expandedUnitId() === unit.id) {
+            <div class="border-t border-gray-100">
+              @if (unit.lessons && unit.lessons.length > 0) {
+                @for (lesson of unit.lessons; track lesson.id) {
+                  <button
+                    (click)="navigateToLesson(lesson)"
+                    [disabled]="!canAccessLesson(lesson)"
+                    class="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0"
+                    [class.opacity-50]="!canAccessLesson(lesson)"
+                    [class.cursor-not-allowed]="!canAccessLesson(lesson)"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                        <i [class]="getLessonTypeIcon(lesson.lessonType) + ' text-gray-400'"></i>
+                      </div>
+                      <div class="text-left">
+                        <div class="font-medium text-gray-800">{{ lesson.title }}</div>
+                        <div class="text-xs text-gray-500 flex items-center gap-2">
+                          <span class="capitalize">{{ lesson.lessonType }}</span>
+                          @if (lesson.estimatedMinutes) {
+                            <span>· {{ lesson.estimatedMinutes }} min</span>
+                          }
+                          @if (lesson.hasBossExam) {
+                            <span class="text-purple-600">· Has Exam</span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                      <!-- XP -->
+                      <span class="text-xs text-gray-400">
+                        +{{ lesson.studyXp + lesson.examXp }} XP
+                      </span>
+
+                      <!-- Replay Button (for completed lessons) -->
+                      @if (isLessonCompleted(lesson)) {
+                        <button
+                          (click)="navigateToLessonForReplay(lesson, $event)"
+                          class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition-colors flex items-center gap-1"
+                          title="Replay lesson"
+                        >
+                          <i class="fa-solid fa-rotate-left"></i>
+                          <span class="hidden sm:inline">Replay</span>
+                        </button>
+                      }
+
+                      <!-- Status Icon -->
+                      <i [class]="getStatusIcon(getLessonStatus(lesson))"></i>
+
+                      <!-- Arrow -->
+                      @if (canAccessLesson(lesson)) {
+                        <i class="fa-solid fa-chevron-right text-gray-300"></i>
+                      }
+                    </div>
+                  </button>
+                }
+              } @else {
+                <div class="p-4 text-center text-gray-500">
+                  <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+                  Loading lessons...
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

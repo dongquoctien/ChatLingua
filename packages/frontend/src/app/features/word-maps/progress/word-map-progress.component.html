@@ -1,0 +1,258 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Learning Progress</h1>
+      <p class="text-gray-500">Track your Word Map learning journey</p>
+    </div>
+    <a routerLink="/word-maps" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">
+      <i class="fa-solid fa-book-open mr-2"></i>Word Maps
+    </a>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="flex justify-center py-12">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400"></i>
+    </div>
+  }
+
+  @if (!loading() && progress()) {
+    <!-- Overview Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="text-3xl font-bold text-gray-900">{{ progress()?.totalMapsActivated }}</div>
+        <div class="text-sm text-gray-500">Maps In Progress</div>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="text-3xl font-bold text-green-600">{{ progress()?.totalMapsCompleted }}</div>
+        <div class="text-sm text-gray-500">Maps Completed</div>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="text-3xl font-bold text-gray-900">{{ progress()?.totalLessonsCompleted }}</div>
+        <div class="text-sm text-gray-500">Lessons Done</div>
+      </div>
+      <div class="bg-white rounded-lg border border-gray-200 p-4">
+        <div class="text-3xl font-bold text-yellow-600">{{ progress()?.totalXpEarned }}</div>
+        <div class="text-sm text-gray-500">Total XP</div>
+      </div>
+    </div>
+
+    <!-- Streak & Level -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- Streak Card -->
+      <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-900">Learning Streak</h3>
+          <span class="text-4xl">🔥</span>
+        </div>
+        <div class="flex items-end gap-4">
+          <div>
+            <div class="text-4xl font-bold text-orange-500">{{ progress()?.currentStreak }}</div>
+            <div class="text-sm text-gray-500">Current Streak</div>
+          </div>
+          <div class="text-gray-300">|</div>
+          <div>
+            <div class="text-2xl font-bold text-gray-400">{{ progress()?.longestStreak }}</div>
+            <div class="text-sm text-gray-500">Best Streak</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level Card -->
+      <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-900">Current Level</h3>
+          <span class="text-4xl">⭐</span>
+        </div>
+        <div class="text-4xl font-bold text-purple-600 mb-2">Level {{ progress()?.currentLevel }}</div>
+        <div class="text-sm text-gray-500">
+          {{ progress()?.totalXpEarned }} XP earned
+        </div>
+      </div>
+    </div>
+
+    <!-- Vocabulary & Grammar Progress -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- Vocabulary Progress -->
+      <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 class="font-semibold text-gray-900 mb-4">Vocabulary Progress</h3>
+
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm text-gray-500">Mastery</span>
+          <span class="font-medium">{{ vocabularyMasteryPercent() }}%</span>
+        </div>
+        <div class="h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
+          <div class="h-full bg-green-500 rounded-full" [style.width.%]="vocabularyMasteryPercent()"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-3 bg-green-50 rounded-lg">
+            <div class="text-xl font-bold text-green-600">{{ progress()?.vocabularyStats?.mastered }}</div>
+            <div class="text-xs text-gray-500">Mastered</div>
+          </div>
+          <div class="text-center p-3 bg-blue-50 rounded-lg">
+            <div class="text-xl font-bold text-blue-600">{{ progress()?.vocabularyStats?.reviewing }}</div>
+            <div class="text-xs text-gray-500">Reviewing</div>
+          </div>
+          <div class="text-center p-3 bg-yellow-50 rounded-lg">
+            <div class="text-xl font-bold text-yellow-600">{{ progress()?.vocabularyStats?.learning }}</div>
+            <div class="text-xs text-gray-500">Learning</div>
+          </div>
+          <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-xl font-bold text-gray-600">{{ progress()?.vocabularyStats?.new }}</div>
+            <div class="text-xs text-gray-500">New</div>
+          </div>
+        </div>
+
+        @if ((progress()?.dueVocabularyCount ?? 0) > 0) {
+          <a routerLink="/word-maps/review/vocabulary" class="mt-4 block w-full py-2 text-center bg-green-100 text-green-700 rounded-lg hover:bg-green-200">
+            <i class="fa-solid fa-rotate mr-2"></i>{{ progress()?.dueVocabularyCount }} words due for review
+          </a>
+        }
+      </div>
+
+      <!-- Grammar Progress -->
+      <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 class="font-semibold text-gray-900 mb-4">Grammar Progress</h3>
+
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm text-gray-500">Mastery</span>
+          <span class="font-medium">{{ grammarMasteryPercent() }}%</span>
+        </div>
+        <div class="h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
+          <div class="h-full bg-blue-500 rounded-full" [style.width.%]="grammarMasteryPercent()"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-3 bg-green-50 rounded-lg">
+            <div class="text-xl font-bold text-green-600">{{ progress()?.grammarStats?.mastered }}</div>
+            <div class="text-xs text-gray-500">Mastered</div>
+          </div>
+          <div class="text-center p-3 bg-blue-50 rounded-lg">
+            <div class="text-xl font-bold text-blue-600">{{ progress()?.grammarStats?.reviewing }}</div>
+            <div class="text-xs text-gray-500">Reviewing</div>
+          </div>
+          <div class="text-center p-3 bg-yellow-50 rounded-lg">
+            <div class="text-xl font-bold text-yellow-600">{{ progress()?.grammarStats?.learning }}</div>
+            <div class="text-xs text-gray-500">Learning</div>
+          </div>
+          <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-xl font-bold text-gray-600">{{ progress()?.grammarStats?.new }}</div>
+            <div class="text-xs text-gray-500">New</div>
+          </div>
+        </div>
+
+        @if ((progress()?.dueGrammarCount ?? 0) > 0) {
+          <a routerLink="/word-maps/review/grammar" class="mt-4 block w-full py-2 text-center bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200">
+            <i class="fa-solid fa-rotate mr-2"></i>{{ progress()?.dueGrammarCount }} grammar due for review
+          </a>
+        }
+      </div>
+    </div>
+
+    <!-- Study Statistics -->
+    @if (stats()) {
+      <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-900">Study Statistics</h3>
+          <div class="flex gap-1">
+            @for (period of ['today', 'week', 'month', 'all']; track period) {
+              <button
+                (click)="changePeriod($any(period))"
+                class="px-3 py-1 rounded-full text-sm"
+                [class]="selectedPeriod() === period
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+              >
+                {{ period === 'all' ? 'All Time' : (period | titlecase) }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-gray-900">{{ stats()?.vocabularyReviewed }}</div>
+            <div class="text-sm text-gray-500">Vocab Reviewed</div>
+          </div>
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-gray-900">{{ stats()?.grammarReviewed }}</div>
+            <div class="text-sm text-gray-500">Grammar Reviewed</div>
+          </div>
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-gray-900">{{ stats()?.exercisesCompleted }}</div>
+            <div class="text-sm text-gray-500">Exercises</div>
+          </div>
+          <div class="text-center p-4 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-gray-900">{{ formatTime(stats()?.studyTimeMinutes ?? 0) }}</div>
+            <div class="text-sm text-gray-500">Study Time</div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500">Accuracy:</span>
+            <span class="font-medium text-gray-900">{{ stats()?.accuracy }}%</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500">XP Earned:</span>
+            <span class="font-medium text-yellow-600">+{{ stats()?.xpEarned }}</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Leaderboard Preview -->
+    @if (leaderboard() && (leaderboard()?.entries?.length ?? 0) > 0) {
+      <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-gray-900">Weekly Leaderboard</h3>
+          <a routerLink="/word-maps/leaderboard" class="text-sm text-gray-500 hover:text-gray-700">
+            View All <i class="fa-solid fa-arrow-right ml-1"></i>
+          </a>
+        </div>
+
+        <div class="space-y-2">
+          @for (entry of leaderboard()?.entries?.slice(0, 5); track entry.userId) {
+            <div class="flex items-center justify-between p-3 rounded-lg"
+              [class]="entry.rank <= 3 ? 'bg-yellow-50' : 'bg-gray-50'">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold"
+                  [class]="entry.rank === 1 ? 'bg-yellow-400 text-yellow-900' :
+                           entry.rank === 2 ? 'bg-gray-300 text-gray-700' :
+                           entry.rank === 3 ? 'bg-orange-300 text-orange-900' :
+                           'bg-gray-200 text-gray-600'">
+                  {{ entry.rank }}
+                </div>
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  @if (entry.avatarUrl) {
+                    <img [src]="entry.avatarUrl" [alt]="entry.username" class="w-full h-full object-cover">
+                  } @else {
+                    <i class="fa-solid fa-user text-gray-400"></i>
+                  }
+                </div>
+                <span class="font-medium text-gray-900">{{ entry.username }}</span>
+              </div>
+              <div class="text-sm font-medium text-yellow-600">{{ entry.value }} XP</div>
+            </div>
+          }
+        </div>
+
+        @if (leaderboard()?.userRank && (leaderboard()?.userRank?.rank ?? 0) > 5) {
+          <div class="mt-4 pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center font-bold">
+                  {{ leaderboard()?.userRank?.rank }}
+                </div>
+                <span class="font-medium text-gray-900">You</span>
+              </div>
+              <div class="text-sm font-medium text-yellow-600">{{ leaderboard()?.userRank?.value }} XP</div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

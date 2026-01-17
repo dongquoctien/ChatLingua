@@ -1,0 +1,73 @@
+<div class="exercise-block">
+  <!-- Exercise Header with Number and Icons -->
+  <div class="flex items-start gap-3 mb-3">
+    <!-- Exercise Number -->
+    <span class="exercise-number flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm">
+      {{ exercise.number }}
+    </span>
+
+    <!-- Icons Container -->
+    <div class="flex items-center gap-2">
+      <!-- Audio Icon -->
+      @if (hasAudio) {
+        <button
+          (click)="onAudioClick()"
+          class="audio-btn w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center shadow-md transition-all hover:scale-110"
+          title="Listen to audio">
+          <i class="fa-solid fa-volume-high text-sm"></i>
+        </button>
+      }
+
+      <!-- Interactive/Exercise Icon -->
+      @if (hasInteractive) {
+        <button
+          (click)="onExerciseClick()"
+          class="interactive-btn w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center shadow-md transition-all hover:scale-110"
+          title="Do exercise">
+          <i class="fa-solid fa-hand-pointer text-sm"></i>
+        </button>
+      }
+    </div>
+
+    <!-- Instruction Text -->
+    <p class="instruction text-gray-700 flex-1">
+      {{ exercise.instruction }}
+    </p>
+  </div>
+
+  <!-- Content Area -->
+  <div class="exercise-content ml-11">
+    @switch (contentType) {
+      @case ('alphabet-grid') {
+        <app-alphabet-grid [content]="getContent()"></app-alphabet-grid>
+      }
+      @case ('number-grid') {
+        <app-number-grid [content]="getContent()"></app-number-grid>
+      }
+      @case ('vocabulary-grid') {
+        <app-vocabulary-grid [content]="getContent()"></app-vocabulary-grid>
+      }
+      @case ('color-cakes') {
+        <app-color-grid [content]="getContent()"></app-color-grid>
+      }
+      @case ('days-calendar') {
+        <app-days-calendar [content]="getContent()"></app-days-calendar>
+      }
+      @case ('dialogue') {
+        <app-dialogue-box [content]="getContent()"></app-dialogue-box>
+      }
+      @case ('image') {
+        <app-image-content [content]="getContent()"></app-image-content>
+      }
+      @case ('text') {
+        <app-text-content-renderer [content]="getContent()"></app-text-content-renderer>
+      }
+      @default {
+        <!-- Default text content -->
+        <div class="text-gray-600 text-sm">
+          Content type not supported: {{ contentType }}
+        </div>
+      }
+    }
+  </div>
+</div>

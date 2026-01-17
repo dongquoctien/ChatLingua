@@ -147,3 +147,11 @@ database/init-data.sql
 database/README.md
 chatlingua_backup_2026_01_10.sql
 DEPLOYMENT.md
+
+# Media files (exclude actual media, keep .gitkeep)
+packages/backend/public/audio/word-maps/*
+!packages/backend/public/audio/word-maps/.gitkeep
+packages/backend/public/images/word-maps/*
+!packages/backend/public/images/word-maps/.gitkeep
+packages/backend/public/videos/word-maps/*
+!packages/backend/public/videos/word-maps/.gitkeep

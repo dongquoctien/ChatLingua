@@ -99,6 +99,9 @@ export class PronunciationService {
   /** Current speaking state: 'uk', 'us', or null */
   speaking = signal<'uk' | 'us' | null>(null);
 
+  /** Currently speaking word (for tracking which button to highlight) */
+  speakingWord = signal<string | null>(null);
+
   /** Currently playing audio element */
   private currentAudio: HTMLAudioElement | null = null;
 
@@ -160,6 +163,9 @@ export class PronunciationService {
     this.stop();
 
     const normalizedWord = word.toLowerCase().trim();
+
+    // Track which word is being spoken
+    this.speakingWord.set(normalizedWord);
 
     // Try to get cached or fetch new pronunciation data
     const cached = await this.getOrFetchPronunciation(normalizedWord);
@@ -362,18 +368,21 @@ export class PronunciationService {
 
       this.currentAudio.onended = () => {
         this.speaking.set(null);
+        this.speakingWord.set(null);
         this.currentAudio = null;
         resolve();
       };
 
       this.currentAudio.onerror = () => {
         this.speaking.set(null);
+        this.speakingWord.set(null);
         this.currentAudio = null;
         reject(new Error('Audio playback failed'));
       };
 
       this.currentAudio.play().catch(err => {
         this.speaking.set(null);
+        this.speakingWord.set(null);
         this.currentAudio = null;
         reject(err);
       });
@@ -399,8 +408,14 @@ export class PronunciationService {
     utterance.lang = accent === 'uk' ? 'en-GB' : 'en-US';
 
     utterance.onstart = () => this.speaking.set(accent);
-    utterance.onend = () => this.speaking.set(null);
-    utterance.onerror = () => this.speaking.set(null);
+    utterance.onend = () => {
+      this.speaking.set(null);
+      this.speakingWord.set(null);
+    };
+    utterance.onerror = () => {
+      this.speaking.set(null);
+      this.speakingWord.set(null);
+    };
 
     speechSynthesis.speak(utterance);
   }
@@ -421,6 +436,7 @@ export class PronunciationService {
     }
 
     this.speaking.set(null);
+    this.speakingWord.set(null);
   }
 
   /**

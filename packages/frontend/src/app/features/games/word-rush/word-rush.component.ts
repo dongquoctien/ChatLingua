@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed, effect, untracked, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { CommonModule, Location } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService, GameVocabulary, EndGameResponse } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
 import { DialogService } from '../../../shared/services/dialog.service';
@@ -58,6 +58,7 @@ export class WordRushComponent implements OnInit, OnDestroy {
   constructor(
     private apiService: ApiService,
     private router: Router,
+    private route: ActivatedRoute,
     private audioService: AudioService,
     public gameState: GameStateService
   ) {
@@ -88,7 +89,7 @@ export class WordRushComponent implements OnInit, OnDestroy {
     this.error.set(null);
     this.gameState.reset();
 
-    this.apiService.startGame('word_rush').subscribe({
+    this.gameState.startGameWithOptions('word_rush', this.route).subscribe({
       next: (response) => {
         this.gameState.initializeGame(response, 60, 3);
         this.gameState.shuffleVocabulary();
@@ -270,8 +271,10 @@ export class WordRushComponent implements OnInit, OnDestroy {
     this.startNewGame();
   }
 
+  private location = inject(Location);
+
   onBackToHub(): void {
-    this.router.navigate(['/games']);
+    this.location.back();
   }
 
   getOptionClass(option: WordOption): string {

@@ -1,0 +1,39 @@
+.audio-player {
+  // Custom range slider styling
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+
+    &::-webkit-slider-runnable-track {
+      background: #e5e7eb;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #111827;
+      border-radius: 50%;
+      margin-top: -4px;
+    }
+
+    &::-moz-range-track {
+      background: #e5e7eb;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      background: #111827;
+      border-radius: 50%;
+      border: none;
+    }
+  }
+}

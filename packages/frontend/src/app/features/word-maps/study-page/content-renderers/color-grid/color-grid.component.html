@@ -1,0 +1,21 @@
+<div class="color-grid flex flex-wrap gap-4 p-4 bg-gray-50 rounded-lg justify-center">
+  @for (item of content.items; track item.color) {
+    <div class="color-item text-center">
+      <!-- Color cake/circle -->
+      <div
+        class="color-cake w-16 h-16 rounded-full shadow-md mx-auto mb-2 flex items-center justify-center"
+        [style.background-color]="getColorStyle(item)">
+        @if (item.image) {
+          <img [src]="item.image" [alt]="item.color" class="w-12 h-12 object-contain">
+        } @else {
+          <!-- Cake decoration -->
+          <span class="text-2xl">🎂</span>
+        }
+      </div>
+      <!-- Color name -->
+      <span class="color-name text-sm font-medium text-gray-700">
+        {{ item.color }}
+      </span>
+    </div>
+  }
+</div>

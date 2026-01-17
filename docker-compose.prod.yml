@@ -1,5 +1,12 @@
+# ============================================================
+# ChatLingua Production Docker Compose
+# Deploy with: docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+
 services:
+  # ========================================
   # MySQL Database
+  # ========================================
   mysql:
     image: mysql:8.0
     container_name: chatlingua-mysql
@@ -22,7 +29,9 @@ services:
       start_period: 30s
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
-  # Backend API
+  # ========================================
+  # Backend API (Express.js)
+  # ========================================
   backend:
     build:
       context: .
@@ -48,7 +57,9 @@ services:
     expose:
       - "3000"
 
+  # ========================================
   # Frontend (Angular + Nginx)
+  # ========================================
   frontend:
     build:
       context: .
@@ -60,7 +71,9 @@ services:
     expose:
       - "4000"
 
+  # ========================================
   # Nginx Reverse Proxy
+  # ========================================
   nginx:
     image: nginx:alpine
     container_name: chatlingua-nginx
@@ -78,8 +91,11 @@ services:
       - frontend
     networks:
       - chatlingua-network
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
 
+  # ========================================
   # Certbot for SSL
+  # ========================================
   certbot:
     image: certbot/certbot
     container_name: chatlingua-certbot

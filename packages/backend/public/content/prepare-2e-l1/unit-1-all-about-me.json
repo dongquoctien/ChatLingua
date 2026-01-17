@@ -1,0 +1,544 @@
+{
+  "unitId": "unit-1-all-about-me",
+  "unitNumber": 1,
+  "title": "All about me",
+  "cefrLevel": "A1",
+  "pages": [
+    {
+      "pageId": "page-11",
+      "pageNumber": 11,
+      "layout": "two-column",
+      "sections": [
+        {
+          "sectionId": "vocab-countries",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Countries and nationalities",
+            "color": "blue"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u1-ex-1",
+              "number": 1,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the countries.",
+              "audio": {
+                "trackNumber": "15",
+                "fileName": "PREPARE2_L1_SB_015.mp3"
+              },
+              "content": {
+                "type": "country-grid",
+                "columns": 2,
+                "items": [
+                  {"country": "the UK", "flag": "uk-flag.svg", "nationality": "British"},
+                  {"country": "the USA", "flag": "usa-flag.svg", "nationality": "American"},
+                  {"country": "Australia", "flag": "australia-flag.svg", "nationality": "Australian"},
+                  {"country": "Spain", "flag": "spain-flag.svg", "nationality": "Spanish"},
+                  {"country": "Italy", "flag": "italy-flag.svg", "nationality": "Italian"},
+                  {"country": "France", "flag": "france-flag.svg", "nationality": "French"},
+                  {"country": "Brazil", "flag": "brazil-flag.svg", "nationality": "Brazilian"},
+                  {"country": "China", "flag": "china-flag.svg", "nationality": "Chinese"},
+                  {"country": "Japan", "flag": "japan-flag.svg", "nationality": "Japanese"},
+                  {"country": "Turkey", "flag": "turkey-flag.svg", "nationality": "Turkish"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u1-ex-2",
+              "number": 2,
+              "type": "match",
+              "instruction": "Match the countries to the nationalities.",
+              "audio": null,
+              "content": {
+                "type": "text",
+                "text": "Match the countries in Exercise 1 to the nationalities."
+              },
+              "interactive": {
+                "type": "matching",
+                "data": {
+                  "type": "matching",
+                  "pairs": [
+                    {"left": "the UK", "right": "British"},
+                    {"left": "the USA", "right": "American"},
+                    {"left": "Australia", "right": "Australian"},
+                    {"left": "Spain", "right": "Spanish"},
+                    {"left": "Italy", "right": "Italian"},
+                    {"left": "France", "right": "French"},
+                    {"left": "Brazil", "right": "Brazilian"},
+                    {"left": "China", "right": "Chinese"},
+                    {"left": "Japan", "right": "Japanese"},
+                    {"left": "Turkey", "right": "Turkish"}
+                  ]
+                }
+              }
+            },
+            {
+              "exerciseId": "u1-ex-3",
+              "number": 3,
+              "type": "speaking",
+              "instruction": "Listen to the dialogue. Then ask and answer with a partner.",
+              "audio": {
+                "trackNumber": "16",
+                "fileName": "PREPARE2_L1_SB_016.mp3"
+              },
+              "content": {
+                "type": "dialogue",
+                "lines": [
+                  {"speaker": "A", "text": "Where are you from?"},
+                  {"speaker": "B", "text": "I'm from the UK."},
+                  {"speaker": "A", "text": "What nationality are you?"},
+                  {"speaker": "B", "text": "I'm British."}
+                ]
+              },
+              "interactive": {
+                "type": "dialogue",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "A: Where are you ___?", "blanks": [{"position": 0, "answer": "from"}]},
+                    {"text": "B: I'm ___ Spain.", "blanks": [{"position": 0, "answer": "from"}]},
+                    {"text": "A: What ___ are you?", "blanks": [{"position": 0, "answer": "nationality"}]},
+                    {"text": "B: I'm ___.", "blanks": [{"position": 0, "answer": "Spanish"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "vocab-personal",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Personal information",
+            "color": "teal"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u1-ex-4",
+              "number": 4,
+              "type": "listen-write",
+              "instruction": "Listen and complete the form.",
+              "audio": {
+                "trackNumber": "17",
+                "fileName": "PREPARE2_L1_SB_017.mp3"
+              },
+              "content": {
+                "type": "text",
+                "text": "Complete the personal information form."
+              },
+              "interactive": {
+                "type": "table-fill",
+                "data": {
+                  "type": "table-fill",
+                  "headers": ["Question", "Answer"],
+                  "rows": [
+                    {"cells": [{"value": "Name:", "isBlank": false}, {"isBlank": true, "answer": "Emma"}]},
+                    {"cells": [{"value": "Age:", "isBlank": false}, {"isBlank": true, "answer": "12"}]},
+                    {"cells": [{"value": "Country:", "isBlank": false}, {"isBlank": true, "answer": "the UK"}]},
+                    {"cells": [{"value": "Nationality:", "isBlank": false}, {"isBlank": true, "answer": "British"}]}
+                  ]
+                }
+              }
+            },
+            {
+              "exerciseId": "u1-ex-5",
+              "number": 5,
+              "type": "speaking",
+              "instruction": "Ask and answer personal questions with a partner.",
+              "audio": null,
+              "content": {
+                "type": "dialogue",
+                "lines": [
+                  {"speaker": "A", "text": "What's your name?"},
+                  {"speaker": "B", "text": "My name is..."},
+                  {"speaker": "A", "text": "How old are you?"},
+                  {"speaker": "B", "text": "I'm ... years old."},
+                  {"speaker": "A", "text": "Where are you from?"},
+                  {"speaker": "B", "text": "I'm from..."}
+                ]
+              },
+              "interactive": {
+                "type": "dialogue",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "What's your ___?", "blanks": [{"position": 0, "answer": "name"}]},
+                    {"text": "How ___ are you?", "blanks": [{"position": 0, "answer": "old"}]},
+                    {"text": "___ are you from?", "blanks": [{"position": 0, "answer": "Where"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "page-12",
+      "pageNumber": 12,
+      "layout": "two-column",
+      "sections": [
+        {
+          "sectionId": "vocab-family",
+          "type": "vocabulary-section",
+          "header": {
+            "title": "VOCABULARY",
+            "subtitle": "Family",
+            "color": "orange"
+          },
+          "exercises": [
+            {
+              "exerciseId": "u1-ex-6",
+              "number": 6,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the family words.",
+              "audio": {
+                "trackNumber": "18",
+                "fileName": "PREPARE2_L1_SB_018.mp3"
+              },
+              "content": {
+                "type": "vocabulary-grid",
+                "columns": 3,
+                "items": [
+                  {"word": "mum", "image": "family-mum.svg"},
+                  {"word": "dad", "image": "family-dad.svg"},
+                  {"word": "brother", "image": "family-brother.svg"},
+                  {"word": "sister", "image": "family-sister.svg"},
+                  {"word": "grandmother", "image": "family-grandmother.svg"},
+                  {"word": "grandfather", "image": "family-grandfather.svg"},
+                  {"word": "aunt", "image": "family-aunt.svg"},
+                  {"word": "uncle", "image": "family-uncle.svg"},
+                  {"word": "cousin", "image": "family-cousin.svg"}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u1-ex-7",
+              "number": 7,
+              "type": "label",
+              "instruction": "Look at the family tree. Write the words.",
+              "audio": null,
+              "content": {
+                "type": "family-tree",
+                "members": [
+                  {"role": "grandfather", "position": "top-left", "name": "Tom"},
+                  {"role": "grandmother", "position": "top-right", "name": "Mary"},
+                  {"role": "dad", "position": "middle-left", "name": "John"},
+                  {"role": "mum", "position": "middle-center", "name": "Sarah"},
+                  {"role": "uncle", "position": "middle-right", "name": "Mike"},
+                  {"role": "me", "position": "bottom-left", "name": ""},
+                  {"role": "sister", "position": "bottom-center", "name": "Emma"},
+                  {"role": "cousin", "position": "bottom-right", "name": "Jack"}
+                ]
+              },
+              "interactive": {
+                "type": "labeling",
+                "data": {
+                  "type": "labeling",
+                  "image": "family-tree.svg",
+                  "labels": [
+                    {"x": 100, "y": 50, "answer": "grandfather"},
+                    {"x": 300, "y": 50, "answer": "grandmother"},
+                    {"x": 100, "y": 150, "answer": "dad"},
+                    {"x": 200, "y": 150, "answer": "mum"},
+                    {"x": 300, "y": 150, "answer": "uncle"},
+                    {"x": 150, "y": 250, "answer": "sister"},
+                    {"x": 300, "y": 250, "answer": "cousin"}
+                  ]
+                }
+              }
+            },
+            {
+              "exerciseId": "u1-ex-8",
+              "number": 8,
+              "type": "speaking",
+              "instruction": "Listen and answer the questions about your family.",
+              "audio": {
+                "trackNumber": "19",
+                "fileName": "PREPARE2_L1_SB_019.mp3"
+              },
+              "content": {
+                "type": "dialogue",
+                "lines": [
+                  {"speaker": "A", "text": "Have you got any brothers or sisters?"},
+                  {"speaker": "B", "text": "Yes, I've got one brother and two sisters."},
+                  {"speaker": "A", "text": "What are their names?"},
+                  {"speaker": "B", "text": "My brother's name is Tom. My sisters are Emma and Lily."}
+                ]
+              },
+              "interactive": {
+                "type": "fill-blanks",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "Have you ___ any brothers?", "blanks": [{"position": 0, "answer": "got"}]},
+                    {"text": "Yes, I've ___ one brother.", "blanks": [{"position": 0, "answer": "got"}]},
+                    {"text": "My brother's ___ is Tom.", "blanks": [{"position": 0, "answer": "name"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "page-13",
+      "pageNumber": 13,
+      "layout": "two-column",
+      "sections": [
+        {
+          "sectionId": "grammar-be",
+          "type": "grammar-section",
+          "header": {
+            "title": "GRAMMAR",
+            "subtitle": "be (present simple)",
+            "color": "purple"
+          },
+          "grammarBox": {
+            "title": "be - present simple",
+            "tables": [
+              {
+                "type": "conjugation",
+                "headers": ["Affirmative", "Negative", "Question"],
+                "rows": [
+                  ["I am / I'm", "I am not / I'm not", "Am I...?"],
+                  ["You are / You're", "You are not / You aren't", "Are you...?"],
+                  ["He is / He's", "He is not / He isn't", "Is he...?"],
+                  ["She is / She's", "She is not / She isn't", "Is she...?"],
+                  ["It is / It's", "It is not / It isn't", "Is it...?"],
+                  ["We are / We're", "We are not / We aren't", "Are we...?"],
+                  ["They are / They're", "They are not / They aren't", "Are they...?"]
+                ]
+              }
+            ],
+            "notes": [
+              "Use 'be' to talk about names, ages, nationalities, and feelings.",
+              "Short forms: I'm, you're, he's, she's, it's, we're, they're",
+              "Negative short forms: isn't, aren't"
+            ]
+          },
+          "exercises": [
+            {
+              "exerciseId": "u1-ex-9",
+              "number": 9,
+              "type": "complete",
+              "instruction": "Complete the sentences with am, is or are.",
+              "audio": null,
+              "content": {
+                "type": "text",
+                "text": "Fill in the blanks with the correct form of 'be'."
+              },
+              "interactive": {
+                "type": "fill-blanks",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "I ___ 12 years old.", "blanks": [{"position": 0, "answer": "am"}]},
+                    {"text": "She ___ from Italy.", "blanks": [{"position": 0, "answer": "is"}]},
+                    {"text": "They ___ British.", "blanks": [{"position": 0, "answer": "are"}]},
+                    {"text": "He ___ my brother.", "blanks": [{"position": 0, "answer": "is"}]},
+                    {"text": "We ___ in the classroom.", "blanks": [{"position": 0, "answer": "are"}]},
+                    {"text": "You ___ my friend.", "blanks": [{"position": 0, "answer": "are"}]}
+                  ]
+                }
+              }
+            },
+            {
+              "exerciseId": "u1-ex-10",
+              "number": 10,
+              "type": "rewrite",
+              "instruction": "Make the sentences negative.",
+              "audio": null,
+              "content": {
+                "type": "text",
+                "text": "Rewrite the sentences in the negative form."
+              },
+              "interactive": {
+                "type": "transformation",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "I am Spanish. → I ___ Spanish.", "blanks": [{"position": 0, "answer": "am not"}]},
+                    {"text": "She is from Japan. → She ___ from Japan.", "blanks": [{"position": 0, "answer": "isn't"}]},
+                    {"text": "They are my cousins. → They ___ my cousins.", "blanks": [{"position": 0, "answer": "aren't"}]},
+                    {"text": "He is 13 years old. → He ___ 13 years old.", "blanks": [{"position": 0, "answer": "isn't"}]}
+                  ]
+                }
+              }
+            },
+            {
+              "exerciseId": "u1-ex-11",
+              "number": 11,
+              "type": "write-questions",
+              "instruction": "Write questions from the prompts.",
+              "audio": null,
+              "content": {
+                "type": "text",
+                "text": "Write questions using the words given."
+              },
+              "interactive": {
+                "type": "fill-blanks",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "(you / British) ___ you British?", "blanks": [{"position": 0, "answer": "Are"}]},
+                    {"text": "(she / from Italy) ___ she from Italy?", "blanks": [{"position": 0, "answer": "Is"}]},
+                    {"text": "(they / 12 years old) ___ they 12 years old?", "blanks": [{"position": 0, "answer": "Are"}]},
+                    {"text": "(he / your brother) ___ he your brother?", "blanks": [{"position": 0, "answer": "Is"}]}
+                  ]
+                }
+              }
+            },
+            {
+              "exerciseId": "u1-ex-12",
+              "number": 12,
+              "type": "listen-write",
+              "instruction": "Listen and check your answers.",
+              "audio": {
+                "trackNumber": "20",
+                "fileName": "PREPARE2_L1_SB_020.mp3"
+              },
+              "content": {
+                "type": "text",
+                "text": "Listen to check your answers from Exercises 9-11."
+              },
+              "interactive": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "pageId": "page-14",
+      "pageNumber": 14,
+      "layout": "two-column",
+      "sections": [
+        {
+          "sectionId": "speaking-intro",
+          "type": "speaking-section",
+          "header": {
+            "title": "SPEAKING",
+            "subtitle": "Introducing yourself",
+            "color": "green"
+          },
+          "dialogue": {
+            "type": "dialogue",
+            "lines": [
+              {"speaker": "A", "text": "Hi! What's your name?"},
+              {"speaker": "B", "text": "I'm Emma. What's your name?"},
+              {"speaker": "A", "text": "My name's Tom. Where are you from?"},
+              {"speaker": "B", "text": "I'm from the UK. I'm British."},
+              {"speaker": "A", "text": "How old are you?"},
+              {"speaker": "B", "text": "I'm 12. And you?"},
+              {"speaker": "A", "text": "I'm 13."}
+            ]
+          },
+          "exercises": [
+            {
+              "exerciseId": "u1-ex-13",
+              "number": 13,
+              "type": "listen-repeat",
+              "instruction": "Listen and repeat the dialogue.",
+              "audio": {
+                "trackNumber": "21",
+                "fileName": "PREPARE2_L1_SB_021.mp3"
+              },
+              "content": {
+                "type": "dialogue",
+                "lines": [
+                  {"speaker": "A", "text": "Hi! What's your name?"},
+                  {"speaker": "B", "text": "I'm Emma. What's your name?"},
+                  {"speaker": "A", "text": "My name's Tom. Where are you from?"},
+                  {"speaker": "B", "text": "I'm from the UK. I'm British."}
+                ]
+              },
+              "interactive": null
+            },
+            {
+              "exerciseId": "u1-ex-14",
+              "number": 14,
+              "type": "role-play",
+              "instruction": "Practice the dialogue with a partner. Then change the information.",
+              "audio": null,
+              "content": {
+                "type": "text",
+                "text": "Take turns being A and B. Use your own information."
+              },
+              "interactive": {
+                "type": "dialogue",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "A: Hi! What's your ___?", "blanks": [{"position": 0, "answer": "name"}]},
+                    {"text": "B: I'm ___. What's your name?", "blanks": [{"position": 0, "answer": "", "hint": "your name"}]},
+                    {"text": "A: My name's ___. Where are you from?", "blanks": [{"position": 0, "answer": "", "hint": "your name"}]},
+                    {"text": "B: I'm from ___.", "blanks": [{"position": 0, "answer": "", "hint": "your country"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "sectionId": "writing-about-me",
+          "type": "writing-section",
+          "header": {
+            "title": "WRITING",
+            "subtitle": "About me",
+            "color": "red"
+          },
+          "template": {
+            "type": "writing-template",
+            "prompts": [
+              "My name is...",
+              "I'm ... years old.",
+              "I'm from...",
+              "I'm...",
+              "I've got..."
+            ],
+            "minWords": 30,
+            "maxWords": 80
+          },
+          "exercises": [
+            {
+              "exerciseId": "u1-ex-15",
+              "number": 15,
+              "type": "write",
+              "instruction": "Write a short paragraph about yourself. Use the prompts to help you.",
+              "audio": null,
+              "content": {
+                "type": "writing-template",
+                "prompts": [
+                  "My name is...",
+                  "I'm ... years old.",
+                  "I'm from... I'm...",
+                  "I've got ... (brothers/sisters).",
+                  "My (brother's/sister's) name is..."
+                ],
+                "minWords": 30,
+                "maxWords": 80
+              },
+              "interactive": {
+                "type": "fill-blanks",
+                "data": {
+                  "type": "fill-blanks",
+                  "sentences": [
+                    {"text": "My name is ___.", "blanks": [{"position": 0, "answer": "", "hint": "your name"}]},
+                    {"text": "I'm ___ years old.", "blanks": [{"position": 0, "answer": "", "hint": "your age"}]},
+                    {"text": "I'm from ___. I'm ___.", "blanks": [{"position": 0, "answer": "", "hint": "country"}, {"position": 1, "answer": "", "hint": "nationality"}]},
+                    {"text": "I've got ___ brothers and ___ sisters.", "blanks": [{"position": 0, "answer": "", "hint": "number"}, {"position": 1, "answer": "", "hint": "number"}]}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { vocabularyService } from '../services/vocabulary.service.js';
+import { userVocabularyService } from '../services/v3/user-vocabulary.service.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -7,20 +8,22 @@ const router = Router();
 // All routes require authentication
 router.use(authMiddleware);
 
-// GET /api/vocabulary
+// GET /api/vocabulary (V3 - uses user_vocabulary table)
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     const filters = {
-      difficultyLevel: req.query.difficulty as string | undefined,
       partOfSpeech: req.query.partOfSpeech as string | undefined,
-      masteryLevel: req.query.mastery ? parseInt(req.query.mastery as string) : undefined,
       cefrLevel: req.query.cefr as string | undefined,
       searchTerm: req.query.search as string | undefined,
+      reviewStatus: req.query.status as 'new' | 'learning' | 'reviewing' | 'mastered' | undefined,
+      sourceType: req.query.sourceType as 'conversation' | 'word_map' | 'manual' | 'import' | undefined,
+      mapId: req.query.mapId ? parseInt(req.query.mapId as string) : undefined,
     };
 
-    const result = await vocabularyService.getVocabulary(req.userId!, page, limit, filters);
+    // Use V3 service - returns user_vocabulary IDs
+    const result = await userVocabularyService.getUserVocabulary(req.userId!, page, limit, filters);
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to get vocabulary';
@@ -63,11 +66,12 @@ router.get('/review', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/vocabulary/word/:word - Get by English word
+// GET /api/vocabulary/word/:word - Get by English word (V3)
 router.get('/word/:word', async (req: AuthRequest, res: Response) => {
   try {
     const word = decodeURIComponent(req.params.word);
-    const entry = await vocabularyService.getDictionaryByWord(req.userId!, word);
+    // Use V3 service
+    const entry = await userVocabularyService.getDictionaryByWord(req.userId!, word);
 
     if (!entry) {
       res.status(404).json({ error: 'Word not found in your vocabulary' });
@@ -81,7 +85,7 @@ router.get('/word/:word', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/vocabulary/:id - Basic info
+// GET /api/vocabulary/:id - Basic info (V3 - uses user_vocabulary ID)
 router.get('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const vocabularyId = parseInt(req.params.id);
@@ -90,7 +94,8 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const vocabulary = await vocabularyService.getVocabularyById(req.userId!, vocabularyId);
+    // Use V3 service - expects user_vocabulary.id
+    const vocabulary = await userVocabularyService.getById(req.userId!, vocabularyId);
 
     if (!vocabulary) {
       res.status(404).json({ error: 'Vocabulary not found' });
@@ -104,7 +109,7 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/vocabulary/:id/detail - Full dictionary entry
+// GET /api/vocabulary/:id/detail - Full dictionary entry (V3 - uses user_vocabulary ID)
 router.get('/:id/detail', async (req: AuthRequest, res: Response) => {
   try {
     const vocabularyId = parseInt(req.params.id);
@@ -113,7 +118,8 @@ router.get('/:id/detail', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const entry = await vocabularyService.getDictionaryEntry(req.userId!, vocabularyId);
+    // Use V3 service - expects user_vocabulary.id
+    const entry = await userVocabularyService.getDictionaryEntryById(req.userId!, vocabularyId);
 
     if (!entry) {
       res.status(404).json({ error: 'Vocabulary not found' });

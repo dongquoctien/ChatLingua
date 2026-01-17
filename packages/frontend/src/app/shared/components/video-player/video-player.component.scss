@@ -1,0 +1,43 @@
+.video-player {
+  // Custom range slider styling for dark background
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+
+    &::-webkit-slider-runnable-track {
+      background: rgba(255, 255, 255, 0.3);
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #ffffff;
+      border-radius: 50%;
+      margin-top: -4px;
+    }
+
+    &::-moz-range-track {
+      background: rgba(255, 255, 255, 0.3);
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      background: #ffffff;
+      border-radius: 50%;
+      border: none;
+    }
+  }
+
+  video {
+    display: block;
+  }
+}

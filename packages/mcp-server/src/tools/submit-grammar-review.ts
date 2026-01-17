@@ -2,6 +2,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DatabaseConnection } from '../database/connection';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import { shouldWriteToV3, logDualWrite } from '../helpers/dual-write.js';
 
 export const submitGrammarReviewTool: Tool = {
   name: 'submit_grammar_review',
@@ -94,6 +95,8 @@ const inputSchema = z.object({
 interface GrammarPointRow extends RowDataPacket {
   id: number;
   user_id: number;
+  grammar_rule: string;
+  category: string;
   ease_factor: number;
   review_interval: number;
   repetition_count: number;
@@ -201,7 +204,7 @@ export async function submitGrammarReview(
   try {
     // Get current grammar point data
     const [rows] = await connection.execute<GrammarPointRow[]>(
-      `SELECT id, user_id, ease_factor, review_interval, repetition_count, lapse_count, review_status
+      `SELECT id, user_id, grammar_rule, category, ease_factor, review_interval, repetition_count, lapse_count, review_status
        FROM grammar_points WHERE id = ? AND user_id = ?`,
       [input.grammarPointId, effectiveUserId]
     );
@@ -272,6 +275,27 @@ export async function submitGrammarReview(
       [effectiveUserId, input.grammarPointId, today]
     );
 
+    // Dual-write to V3 tables if enabled
+    if (shouldWriteToV3()) {
+      await dualWriteGrammarReviewToV3(
+        db,
+        effectiveUserId,
+        grammarPoint.grammar_rule,
+        grammarPoint.category,
+        quality,
+        newEF,
+        newInterval,
+        newRepetitions,
+        newLapseCount,
+        newStatus,
+        nextReviewAt,
+        currentEF,
+        currentInterval,
+        input.reviewType,
+        input.timeSpentSeconds
+      );
+    }
+
     await connection.commit();
     connection.release();
 
@@ -287,5 +311,118 @@ export async function submitGrammarReview(
     await connection.rollback();
     connection.release();
     throw error;
+  }
+}
+
+/**
+ * Dual-write grammar review to V3 tables
+ * Updates user_grammar SM2 fields and records review history
+ */
+async function dualWriteGrammarReviewToV3(
+  db: DatabaseConnection,
+  userId: number,
+  grammarRule: string,
+  category: string,
+  quality: number,
+  newEF: number,
+  newInterval: number,
+  newRepetitions: number,
+  newLapseCount: number,
+  newStatus: 'new' | 'learning' | 'reviewing' | 'mastered',
+  nextReviewAt: Date,
+  easeFactorBefore: number,
+  intervalBefore: number,
+  reviewType: string,
+  timeSpentSeconds: number
+): Promise<void> {
+  try {
+    logDualWrite('grammar_review_v3_start', { grammarRule, quality });
+
+    // Find master_grammar entry by grammar_rule and category
+    const masterRows = await db.query<RowDataPacket[]>(
+      `SELECT id FROM master_grammar WHERE grammar_rule = ? AND category = ?`,
+      [grammarRule, category]
+    );
+
+    if (masterRows.length === 0) {
+      logDualWrite('grammar_review_v3_skip', { grammarRule, reason: 'No master_grammar found' });
+      return;
+    }
+
+    const masterGrammarId = masterRows[0].id;
+
+    // Find user_grammar entry
+    const userGrammarRows = await db.query<RowDataPacket[]>(
+      `SELECT id FROM user_grammar WHERE user_id = ? AND master_grammar_id = ?`,
+      [userId, masterGrammarId]
+    );
+
+    if (userGrammarRows.length === 0) {
+      logDualWrite('grammar_review_v3_skip', { grammarRule, reason: 'No user_grammar found' });
+      return;
+    }
+
+    const userGrammarId = userGrammarRows[0].id;
+
+    // Update user_grammar with SM2 values
+    await db.execute(
+      `UPDATE user_grammar SET
+         next_review_at = ?,
+         review_interval = ?,
+         ease_factor = ?,
+         repetition_count = ?,
+         lapse_count = ?,
+         review_status = ?,
+         times_practiced = times_practiced + 1,
+         last_practiced_at = NOW()
+       WHERE id = ?`,
+      [
+        nextReviewAt.toISOString().split('T')[0],
+        newInterval,
+        newEF,
+        newRepetitions,
+        newLapseCount,
+        newStatus,
+        userGrammarId,
+      ]
+    );
+
+    // Record review history in V3 table (grammar_reviews_v3)
+    try {
+      await db.execute(
+        `INSERT INTO grammar_reviews_v3 (
+           user_id, user_grammar_id, quality,
+           ease_factor_before, ease_factor_after,
+           interval_before, interval_after,
+           review_type, time_spent_seconds
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          userGrammarId,
+          quality,
+          easeFactorBefore,
+          newEF,
+          intervalBefore,
+          newInterval,
+          reviewType,
+          timeSpentSeconds,
+        ]
+      );
+    } catch (tableError) {
+      // Table might not exist yet, log and continue
+      logDualWrite('grammar_review_v3_table_missing', {
+        table: 'grammar_reviews_v3',
+        error: tableError instanceof Error ? tableError.message : 'Unknown error'
+      });
+    }
+
+    logDualWrite('grammar_review_v3_success', { grammarRule, userGrammarId, newStatus });
+  } catch (error) {
+    // Log error but don't fail the V2 update
+    console.error('[MCP-DUAL-WRITE] Failed to write grammar review to V3:', error);
+    logDualWrite('grammar_review_v3_error', {
+      grammarRule,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }

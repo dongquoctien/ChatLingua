@@ -1,0 +1,713 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200  top-0 z-10">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <button (click)="goBackToMap()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span class="hidden sm:inline">Back</span>
+      </button>
+
+      <div class="text-center">
+        <h1 class="font-semibold text-gray-900">{{ lesson()?.title }}</h1>
+        <p class="text-xs text-gray-500 capitalize">{{ lesson()?.lessonType }}</p>
+      </div>
+
+      <div class="w-20"></div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="flex justify-center items-center py-24">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="container mx-auto px-4 py-6">
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-red-700">{{ error() }}</p>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && !error() && lessonContent()) {
+    <!-- Overview Section -->
+    @if (currentSection() === 'overview') {
+      <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Lesson Overview</h2>
+
+          @if (lesson()?.description) {
+            <p class="text-gray-600 mb-6">{{ lesson()?.description }}</p>
+          }
+
+          <!-- Content summary grid - show warmup if available -->
+          @if (hasWarmupContent()) {
+            <div class="grid grid-cols-4 gap-3 mb-6">
+              <div class="text-center p-3 bg-orange-50 rounded-lg">
+                <div class="text-xl font-bold text-orange-600">{{ warmupContent().length }}</div>
+                <div class="text-xs text-gray-500">Warmup</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <div class="text-xl font-bold text-gray-900">{{ vocabularyList().length }}</div>
+                <div class="text-xs text-gray-500">Vocabulary</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <div class="text-xl font-bold text-gray-900">{{ grammarList().length }}</div>
+                <div class="text-xs text-gray-500">Grammar</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <div class="text-xl font-bold text-gray-900">{{ exerciseList().length }}</div>
+                <div class="text-xs text-gray-500">Exercises</div>
+              </div>
+            </div>
+          } @else {
+            <div class="grid grid-cols-3 gap-4 mb-6">
+              <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-2xl font-bold text-gray-900">{{ vocabularyList().length }}</div>
+                <div class="text-sm text-gray-500">Vocabulary</div>
+              </div>
+              <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-2xl font-bold text-gray-900">{{ grammarList().length }}</div>
+                <div class="text-sm text-gray-500">Grammar</div>
+              </div>
+              <div class="text-center p-4 bg-gray-50 rounded-lg">
+                <div class="text-2xl font-bold text-gray-900">{{ exerciseList().length }}</div>
+                <div class="text-sm text-gray-500">Exercises</div>
+              </div>
+            </div>
+          }
+
+          <div class="space-y-3">
+            <!-- Start with warmup if available -->
+            @if (hasWarmupContent()) {
+              <button
+                (click)="startWarmup()"
+                class="w-full py-3 px-4 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-play"></i>
+                Start Learning
+              </button>
+            } @else if (vocabularyList().length > 0) {
+              <button
+                (click)="startVocabulary()"
+                class="w-full py-3 px-4 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-play"></i>
+                Start Learning
+              </button>
+            } @else if (grammarList().length > 0) {
+              <button
+                (click)="startGrammar()"
+                class="w-full py-3 px-4 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-play"></i>
+                Start with Grammar
+              </button>
+            } @else if (exerciseList().length > 0) {
+              <button
+                (click)="startExercises()"
+                class="w-full py-3 px-4 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-play"></i>
+                Start Exercises
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Warmup Section -->
+    @if (currentSection() === 'warmup' && currentWarmup()) {
+      <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <!-- Progress -->
+        <div class="mb-4">
+          <div class="flex justify-between text-sm text-gray-500 mb-1">
+            <span>Warmup</span>
+            <span>{{ currentWarmupIndex() + 1 }} / {{ warmupContent().length }}</span>
+          </div>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-orange-500 transition-all"
+              [style.width.%]="((currentWarmupIndex() + 1) / warmupContent().length) * 100"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Warmup Content Card -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <!-- Custom instructions if any -->
+          @if (currentWarmup()?.customInstructions) {
+            <p class="text-sm text-gray-600 mb-4 italic">
+              <i class="fa-solid fa-info-circle mr-2 text-orange-500"></i>
+              {{ currentWarmup()?.customInstructions }}
+            </p>
+          }
+
+          <!-- Audio Content -->
+          @if (currentWarmup()?.contentType === 'audio') {
+            <app-audio-player [config]="getAudioConfig(currentWarmup()!)"></app-audio-player>
+          }
+
+          <!-- Video Content -->
+          @if (currentWarmup()?.contentType === 'video') {
+            <app-video-player [config]="getVideoConfig(currentWarmup()!)"></app-video-player>
+          }
+
+          <!-- Image Content -->
+          @if (currentWarmup()?.contentType === 'image') {
+            <app-image-viewer [config]="getImageConfig(currentWarmup()!)"></app-image-viewer>
+          }
+
+          <!-- Text Content -->
+          @if (currentWarmup()?.contentType === 'text') {
+            <app-text-content [config]="getTextConfig(currentWarmup()!)"></app-text-content>
+          }
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex gap-3">
+          <button
+            (click)="prevWarmup()"
+            [disabled]="currentWarmupIndex() === 0"
+            class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid fa-arrow-left mr-2"></i>Previous
+          </button>
+          <button
+            (click)="nextWarmup()"
+            class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+          >
+            @if (currentWarmupIndex() === warmupContent().length - 1) {
+              Continue<i class="fa-solid fa-arrow-right ml-2"></i>
+            } @else {
+              Next<i class="fa-solid fa-arrow-right ml-2"></i>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Vocabulary Section -->
+    @if (currentSection() === 'vocabulary' && currentVocab()) {
+      <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <!-- Progress -->
+        <div class="mb-4">
+          <div class="flex justify-between text-sm text-gray-500 mb-1">
+            <span>Vocabulary</span>
+            <span>{{ currentVocabIndex() + 1 }} / {{ vocabCards().length }}</span>
+          </div>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-green-500 transition-all"
+              [style.width.%]="((currentVocabIndex() + 1) / vocabCards().length) * 100"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Flashcard -->
+        <div
+          (click)="flipCard()"
+          class="bg-white rounded-xl border border-gray-200 shadow-sm cursor-pointer min-h-[300px] flex flex-col justify-center p-6 mb-6 transition-transform hover:shadow-md"
+        >
+          @if (!currentVocab()?.isFlipped) {
+            <!-- Front: English -->
+            <div class="text-center">
+              <p class="text-sm text-gray-400 mb-2">English</p>
+              <h3 class="text-3xl font-bold text-gray-900 mb-2">
+                {{ currentVocab()?.vocabulary?.englishWord }}
+              </h3>
+              @if (currentVocab()?.vocabulary?.phonetic) {
+                <p class="text-gray-500 mb-2">{{ currentVocab()?.vocabulary?.phonetic }}</p>
+              }
+              <!-- Pronunciation buttons -->
+              <div class="flex justify-center gap-2 mb-4">
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'uk', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play UK pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>UK</span>
+                </button>
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'us', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play US pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>US</span>
+                </button>
+              </div>
+              <p class="text-sm text-gray-400">
+                <span class="capitalize">{{ currentVocab()?.vocabulary?.partOfSpeech }}</span>
+                · {{ currentVocab()?.vocabulary?.cefrLevel }}
+              </p>
+              <p class="text-xs text-gray-400 mt-4">Tap to flip</p>
+            </div>
+          } @else {
+            <!-- Back: Vietnamese + Details -->
+            <div class="text-center">
+              <p class="text-sm text-gray-400 mb-2">Vietnamese</p>
+              <h3 class="text-3xl font-bold text-gray-900 mb-2">
+                {{ currentVocab()?.vocabulary?.vietnameseWord }}
+              </h3>
+              <!-- Pronunciation buttons on back -->
+              <div class="flex justify-center gap-2 mb-4">
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'uk', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play UK pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'uk')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>UK</span>
+                </button>
+                <button
+                  (click)="speak(currentVocab()?.vocabulary?.englishWord || '', 'us', $event)"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-colors"
+                  [class]="isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                  title="Play US pronunciation"
+                >
+                  @if (isSpeaking(currentVocab()?.vocabulary?.englishWord || '', 'us')) {
+                    <i class="fa-solid fa-volume-high"></i>
+                  } @else {
+                    <i class="fa-solid fa-volume-up"></i>
+                  }
+                  <span>US</span>
+                </button>
+              </div>
+
+              @if (currentVocab()?.vocabulary?.definitions?.length) {
+                <div class="text-left bg-gray-50 rounded-lg p-4 mt-4">
+                  @for (def of currentVocab()?.vocabulary?.definitions?.slice(0, 2); track $index) {
+                    <div class="mb-3 last:mb-0">
+                      <p class="text-sm text-gray-700 mb-1">{{ def.definition }}</p>
+                      <p class="text-sm text-gray-500 italic">{{ def.definitionVi }}</p>
+                      @if (def.examples && def.examples.length > 0) {
+                        <p class="text-xs text-gray-400 mt-1">
+                          "{{ def.examples[0]?.en }}"
+                        </p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex gap-3">
+          <button
+            (click)="prevVocab()"
+            [disabled]="currentVocabIndex() === 0"
+            class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid fa-arrow-left mr-2"></i>Previous
+          </button>
+          <button
+            (click)="nextVocab()"
+            class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+          >
+            @if (currentVocabIndex() === vocabCards().length - 1) {
+              Continue<i class="fa-solid fa-arrow-right ml-2"></i>
+            } @else {
+              Next<i class="fa-solid fa-arrow-right ml-2"></i>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Grammar Section -->
+    @if (currentSection() === 'grammar' && currentGrammar()) {
+      <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <!-- Progress -->
+        <div class="mb-4">
+          <div class="flex justify-between text-sm text-gray-500 mb-1">
+            <span>Grammar</span>
+            <span>{{ currentGrammarIndex() + 1 }} / {{ grammarList().length }}</span>
+          </div>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-blue-500 transition-all"
+              [style.width.%]="((currentGrammarIndex() + 1) / grammarList().length) * 100"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Grammar Card -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+              {{ currentGrammar()?.category }}
+            </span>
+            <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+              {{ currentGrammar()?.cefrLevel }}
+            </span>
+          </div>
+
+          <h3 class="text-xl font-bold text-gray-900 mb-3">
+            {{ currentGrammar()?.grammarRule }}
+          </h3>
+
+          @if (currentGrammar()?.formula) {
+            <div class="bg-gray-50 rounded-lg p-3 mb-4 font-mono text-sm">
+              {{ currentGrammar()?.formula }}
+            </div>
+          }
+
+          <p class="text-gray-700 mb-2">{{ currentGrammar()?.explanation }}</p>
+          <p class="text-gray-500 italic mb-4">{{ currentGrammar()?.explanationVi }}</p>
+
+          @if (currentGrammar()?.examples?.length) {
+            <h4 class="font-semibold text-gray-900 mb-2">Examples:</h4>
+            <div class="space-y-2">
+              @for (ex of currentGrammar()?.examples; track $index) {
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <p class="text-gray-800">{{ ex.en }}</p>
+                  <p class="text-gray-500 text-sm">{{ ex.vi }}</p>
+                </div>
+              }
+            </div>
+          }
+
+          @if (currentGrammar()?.usageTips) {
+            <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+              <p class="text-sm text-yellow-800">
+                <i class="fa-solid fa-lightbulb mr-2"></i>
+                {{ currentGrammar()?.usageTips }}
+              </p>
+            </div>
+          }
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex gap-3">
+          <button
+            (click)="prevGrammar()"
+            [disabled]="currentGrammarIndex() === 0"
+            class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid fa-arrow-left mr-2"></i>Previous
+          </button>
+          <button
+            (click)="nextGrammar()"
+            class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+          >
+            @if (currentGrammarIndex() === grammarList().length - 1) {
+              Continue<i class="fa-solid fa-arrow-right ml-2"></i>
+            } @else {
+              Next<i class="fa-solid fa-arrow-right ml-2"></i>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Exercises Section -->
+    @if (currentSection() === 'exercises' && currentExercise()) {
+      <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <!-- Progress -->
+        <div class="mb-4">
+          <div class="flex justify-between text-sm text-gray-500 mb-1">
+            <span>Exercises</span>
+            <span>{{ currentExerciseIndex() + 1 }} / {{ exerciseList().length }}</span>
+          </div>
+          <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-purple-500 transition-all"
+              [style.width.%]="((currentExerciseIndex() + 1) / exerciseList().length) * 100"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Exercise Card -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <p class="text-sm text-gray-500 mb-2 capitalize">{{ currentExercise()?.exerciseType?.replace('_', ' ') }}</p>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            {{ currentExercise()?.question }}
+          </h3>
+
+          <!-- Multiple choice options -->
+          @if (currentExercise()?.options?.length) {
+            <div class="space-y-2">
+              @for (option of currentExercise()?.options; track $index) {
+                <div class="flex items-center gap-2">
+                  <!-- Pronunciation button for option -->
+                  <button
+                    (click)="speak(option, 'us', $event)"
+                    class="shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors"
+                    [class]="isSpeaking(option, 'us') ? 'bg-gray-100 text-gray-500' : 'bg-gray-900 text-white hover:bg-gray-800'"
+                    title="Play pronunciation"
+                  >
+                    @if (isSpeaking(option, 'us')) {
+                      <i class="fa-solid fa-volume-high"></i>
+                    } @else {
+                      <i class="fa-solid fa-volume-up"></i>
+                    }
+                  </button>
+                  <!-- Answer option button -->
+                  <button
+                    (click)="selectAnswer(option)"
+                    [disabled]="isExerciseAnswered()"
+                    class="flex-1 p-4 text-left rounded-lg border-2 transition-colors"
+                    [class]="
+                      getAnswerState(option) === 'correct' ? 'border-green-500 bg-green-50 text-green-700' :
+                      getAnswerState(option) === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' :
+                      isAnswerSelected(option) ? 'border-gray-900 bg-gray-50' :
+                      'border-gray-200 hover:border-gray-300'
+                    "
+                  >
+                    <div class="flex items-center justify-between">
+                      <span>{{ option }}</span>
+                      @if (getAnswerState(option) === 'correct') {
+                        <i class="fa-solid fa-check text-green-500"></i>
+                      } @else if (getAnswerState(option) === 'incorrect') {
+                        <i class="fa-solid fa-times text-red-500"></i>
+                      }
+                    </div>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Fill blank / Translation / Text input exercises -->
+          @if (!currentExercise()?.options?.length && (currentExercise()?.exerciseType === 'fill_blank' || currentExercise()?.exerciseType === 'translation')) {
+            <div class="space-y-3">
+              <input
+                type="text"
+                [value]="exerciseAnswers().get(currentExercise()!.id) || ''"
+                (input)="onTextInput($event)"
+                [disabled]="isExerciseAnswered()"
+                placeholder="Type your answer..."
+                class="w-full p-4 text-lg border-2 rounded-lg transition-colors focus:outline-none"
+                [class]="
+                  isExerciseAnswered() && getTextAnswerState() === 'correct' ? 'border-green-500 bg-green-50 text-green-700' :
+                  isExerciseAnswered() && getTextAnswerState() === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' :
+                  'border-gray-200 focus:border-gray-900'
+                "
+              />
+              @if (isExerciseAnswered()) {
+                <div class="flex items-center gap-2 text-sm">
+                  @if (getTextAnswerState() === 'correct') {
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    <span class="text-green-700">Correct!</span>
+                  } @else {
+                    <i class="fa-solid fa-times text-red-500"></i>
+                    <span class="text-red-700">Incorrect. The answer is: <strong>{{ currentExercise()?.correctAnswer }}</strong></span>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Matching exercise -->
+          @if (currentExercise()?.exerciseType === 'matching') {
+            <div class="space-y-4">
+              <p class="text-sm text-gray-600 mb-2">Match the English words with their Vietnamese translations</p>
+              <div class="grid grid-cols-2 gap-4">
+                <!-- English column -->
+                <div class="space-y-2">
+                  <p class="text-xs font-semibold text-gray-500 uppercase mb-2">English</p>
+                  @for (pair of getMatchingPairs(); track $index) {
+                    <button
+                      (click)="selectMatchingEn($index)"
+                      [disabled]="isExerciseAnswered() || isMatchingEnMatched($index)"
+                      class="w-full p-3 text-left rounded-lg border-2 transition-all"
+                      [class]="
+                        isMatchingEnMatched($index) ? 'border-green-500 bg-green-50 text-green-700 cursor-default' :
+                        matchingSelectedEn() === $index ? 'border-gray-900 bg-gray-100' :
+                        'border-gray-200 hover:border-gray-400'
+                      "
+                    >
+                      <span class="font-medium">{{ pair.en }}</span>
+                      @if (isMatchingEnMatched($index)) {
+                        <i class="fa-solid fa-check text-green-500 ml-2"></i>
+                      }
+                    </button>
+                  }
+                </div>
+                <!-- Vietnamese column -->
+                <div class="space-y-2">
+                  <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Vietnamese</p>
+                  @for (vi of matchingShuffledVi(); track $index) {
+                    <button
+                      (click)="selectMatchingVi($index)"
+                      [disabled]="isExerciseAnswered() || isMatchingViMatched($index)"
+                      class="w-full p-3 text-left rounded-lg border-2 transition-all"
+                      [class]="
+                        isMatchingViMatched($index) ? 'border-green-500 bg-green-50 text-green-700 cursor-default' :
+                        matchingSelectedVi() === $index ? 'border-gray-900 bg-gray-100' :
+                        'border-gray-200 hover:border-gray-400'
+                      "
+                    >
+                      <span class="font-medium">{{ vi }}</span>
+                      @if (isMatchingViMatched($index)) {
+                        <i class="fa-solid fa-check text-green-500 ml-2"></i>
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+              <!-- Progress indicator -->
+              <div class="text-center text-sm text-gray-500 mt-2">
+                {{ matchingMatches().size }} / {{ getMatchingPairs().length }} matched
+              </div>
+            </div>
+          }
+
+          <!-- Sentence building exercise -->
+          @if (currentExercise()?.exerciseType === 'sentence_building') {
+            <div class="space-y-4">
+              <p class="text-sm text-gray-600 mb-2">Arrange the words to form a correct sentence</p>
+
+              <!-- Sentence area (drop zone) -->
+              <div class="min-h-[60px] p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                @if (sentenceArrangedWords().length === 0) {
+                  <p class="text-gray-400 text-center">Click words below to build the sentence</p>
+                } @else {
+                  <div class="flex flex-wrap gap-2">
+                    @for (word of sentenceArrangedWords(); track $index) {
+                      <button
+                        (click)="removeWordFromSentence($index)"
+                        [disabled]="isExerciseAnswered()"
+                        class="px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:hover:bg-gray-900 transition-colors"
+                      >
+                        {{ word }}
+                        @if (!isExerciseAnswered()) {
+                          <i class="fa-solid fa-times ml-1 text-gray-400"></i>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Word bank -->
+              <div class="space-y-2">
+                <p class="text-xs font-semibold text-gray-500 uppercase">Word Bank</p>
+                <div class="flex flex-wrap gap-2">
+                  @for (word of sentenceAvailableWords(); track $index) {
+                    <button
+                      (click)="addWordToSentence($index)"
+                      [disabled]="isExerciseAnswered()"
+                      class="px-3 py-2 bg-white border-2 border-gray-200 rounded-lg hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {{ word }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Result feedback -->
+              @if (isExerciseAnswered()) {
+                <div class="flex items-center gap-2 text-sm mt-2">
+                  @if (getTextAnswerState() === 'correct') {
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    <span class="text-green-700">Correct!</span>
+                  } @else {
+                    <i class="fa-solid fa-times text-red-500"></i>
+                    <span class="text-red-700">Incorrect. The answer is: <strong>{{ currentExercise()?.correctAnswer }}</strong></span>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (isExerciseAnswered() && currentExercise()?.explanation) {
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p class="text-sm text-gray-700">
+                <i class="fa-solid fa-info-circle mr-2 text-gray-400"></i>
+                {{ currentExercise()?.explanation }}
+              </p>
+            </div>
+          }
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3">
+          @if (!isExerciseAnswered()) {
+            <button
+              (click)="submitAnswer()"
+              [disabled]="!exerciseAnswers().has(currentExercise()!.id)"
+              class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Check Answer
+            </button>
+          } @else {
+            <button
+              (click)="nextExercise()"
+              class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800"
+            >
+              @if (currentExerciseIndex() === exerciseList().length - 1) {
+                Finish<i class="fa-solid fa-arrow-right ml-2"></i>
+              } @else {
+                Next<i class="fa-solid fa-arrow-right ml-2"></i>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Complete Section -->
+    @if (currentSection() === 'complete') {
+      <div class="container mx-auto px-4 py-6 max-w-2xl">
+        <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+          <div class="text-6xl mb-4">🎉</div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Lesson Complete!</h2>
+          <p class="text-gray-500 mb-6">Great job finishing this lesson.</p>
+
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="p-4 bg-green-50 rounded-lg">
+              <div class="text-2xl font-bold text-green-600">{{ studiedVocabCount() }}</div>
+              <div class="text-sm text-gray-500">Words Learned</div>
+            </div>
+            <div class="p-4 bg-blue-50 rounded-lg">
+              <div class="text-2xl font-bold text-blue-600">{{ grammarList().length }}</div>
+              <div class="text-sm text-gray-500">Grammar Points</div>
+            </div>
+            <div class="p-4 bg-purple-50 rounded-lg">
+              <div class="text-2xl font-bold text-purple-600">{{ correctExercises() }}/{{ exerciseList().length }}</div>
+              <div class="text-sm text-gray-500">Exercises</div>
+            </div>
+          </div>
+
+          <button
+            (click)="completeLesson()"
+            [disabled]="completing()"
+            class="w-full py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50"
+          >
+            @if (completing()) {
+              <i class="fa-solid fa-spinner fa-spin mr-2"></i>Saving...
+            } @else if (lesson()?.hasBossExam) {
+              Continue to Exam<i class="fa-solid fa-arrow-right ml-2"></i>
+            } @else {
+              Complete & Continue<i class="fa-solid fa-check ml-2"></i>
+            }
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,175 @@
+<!-- Loading State -->
+@if (loading()) {
+  <div class="min-h-screen flex items-center justify-center bg-gray-50">
+    <div class="text-center">
+      <i class="fa-solid fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+      <p class="text-gray-600">Loading study page...</p>
+    </div>
+  </div>
+}
+
+<!-- Error State -->
+@if (error()) {
+  <div class="min-h-screen flex items-center justify-center bg-gray-50">
+    <div class="text-center">
+      <i class="fa-solid fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+      <p class="text-red-600 mb-4">{{ error() }}</p>
+      <button (click)="goBack()" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">
+        Go Back
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Main Content -->
+@if (!loading() && !error() && studyUnit()) {
+  <div class="study-page-container min-h-screen bg-gray-100">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <!-- Back Button -->
+        <button (click)="goBack()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Back</span>
+        </button>
+
+        <!-- Title -->
+        <div class="text-center">
+          <h1 class="text-lg font-bold text-gray-900">{{ studyUnit()?.title }}</h1>
+          <p class="text-sm text-gray-500">Page {{ currentPageIndex() + 1 }} of {{ totalPages() }}</p>
+        </div>
+
+        <!-- Go to Exam -->
+        <button (click)="goToExam()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Take Exam</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Book-like Content Area -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      @if (currentPage(); as page) {
+        <!-- Two Column Layout (like a book) -->
+        @if (page.layout === 'two-column') {
+          <div class="book-spread bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 divide-x divide-gray-200">
+              <!-- Left Page -->
+              <div class="p-6 min-h-[600px]">
+                @for (section of leftColumnSections(); track section.sectionId) {
+                  <div class="mb-6">
+                    <!-- Section Header -->
+                    <app-section-header [header]="section.header"></app-section-header>
+
+                    <!-- Grammar Box (if grammar section) -->
+                    @if (section.type === 'grammar-section' && section.grammarBox) {
+                      <app-grammar-table [grammarBox]="section.grammarBox" class="mt-4 block"></app-grammar-table>
+                    }
+
+                    <!-- Exercises -->
+                    @for (exercise of section.exercises; track exercise.exerciseId) {
+                      <app-exercise-block
+                        [exercise]="exercise"
+                        (audioClick)="openAudioPopup($event)"
+                        (exerciseClick)="openExercisePopup($event)"
+                        class="mt-4 block">
+                      </app-exercise-block>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Right Page -->
+              <div class="p-6 min-h-[600px] bg-gray-50/30">
+                @for (section of rightColumnSections(); track section.sectionId) {
+                  <div class="mb-6">
+                    <!-- Section Header -->
+                    <app-section-header [header]="section.header"></app-section-header>
+
+                    <!-- Grammar Box (if grammar section) -->
+                    @if (section.type === 'grammar-section' && section.grammarBox) {
+                      <app-grammar-table [grammarBox]="section.grammarBox" class="mt-4 block"></app-grammar-table>
+                    }
+
+                    <!-- Exercises -->
+                    @for (exercise of section.exercises; track exercise.exerciseId) {
+                      <app-exercise-block
+                        [exercise]="exercise"
+                        (audioClick)="openAudioPopup($event)"
+                        (exerciseClick)="openExercisePopup($event)"
+                        class="mt-4 block">
+                      </app-exercise-block>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        } @else {
+          <!-- Single Column Layout -->
+          <div class="single-page bg-white rounded-xl shadow-lg p-6">
+            @for (section of currentPage()?.sections || []; track section.sectionId) {
+              <div class="mb-6">
+                <app-section-header [header]="section.header"></app-section-header>
+
+                @if (section.type === 'grammar-section' && section.grammarBox) {
+                  <app-grammar-table [grammarBox]="section.grammarBox" class="mt-4 block"></app-grammar-table>
+                }
+
+                @for (exercise of section.exercises; track exercise.exerciseId) {
+                  <app-exercise-block
+                    [exercise]="exercise"
+                    (audioClick)="openAudioPopup($event)"
+                    (exerciseClick)="openExercisePopup($event)"
+                    class="mt-4 block">
+                  </app-exercise-block>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </main>
+
+    <!-- Page Navigation -->
+    <footer class="bg-white border-t border-gray-200 sticky bottom-0">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-center gap-4">
+        <button
+          (click)="prevPage()"
+          [disabled]="currentPageIndex() === 0"
+          class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          <i class="fa-solid fa-chevron-left"></i>
+          <span>Previous</span>
+        </button>
+
+        <span class="text-gray-600">
+          Page {{ currentPageIndex() + 1 }} of {{ totalPages() }}
+        </span>
+
+        <button
+          (click)="nextPage()"
+          [disabled]="currentPageIndex() >= totalPages() - 1"
+          class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          <span>Next</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </footer>
+  </div>
+}
+
+<!-- Audio Popup -->
+@if (showAudioPopup() && currentAudio()) {
+  <app-audio-popup
+    [audio]="currentAudio()!"
+    (close)="closeAudioPopup()">
+  </app-audio-popup>
+}
+
+<!-- Exercise Popup -->
+@if (showExercisePopup() && currentExercise()) {
+  <app-exercise-popup
+    [exercise]="currentExercise()!"
+    (close)="closeExercisePopup()">
+  </app-exercise-popup>
+}

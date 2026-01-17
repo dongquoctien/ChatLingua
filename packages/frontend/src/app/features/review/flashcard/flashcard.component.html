@@ -82,9 +82,17 @@
       <div class="flashcard" [class.flipped]="currentCard()!.isFlipped">
         <!-- Front Side -->
         <div class="card-face front">
-          <span class="inline-block self-start bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded-full">
-            {{ currentCard()!.direction === 'vi_to_en' ? 'VI → EN' : 'EN → VI' }}
-          </span>
+          <div class="flex items-center justify-between w-full mb-2">
+            <span class="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded-full">
+              {{ currentCard()!.direction === 'vi_to_en' ? 'VI → EN' : 'EN → VI' }}
+            </span>
+            @if (getSourceLabel()) {
+              <span class="inline-flex items-center gap-1 text-xs text-gray-500">
+                <span>{{ getSourceIcon() }}</span>
+                <span class="max-w-[120px] truncate">{{ getSourceLabel() }}</span>
+              </span>
+            }
+          </div>
 
           <div class="flex-1 flex flex-col justify-center items-center text-center">
             <h2 class="text-4xl font-medium text-gray-800 mb-3">{{ getFrontText() }}</h2>

@@ -103,7 +103,7 @@ router.get('/items', async (req: AuthRequest, res: Response) => {
         const searchLower = (search as string).toLowerCase();
         filteredEggs = filteredEggs.filter(e =>
           e.name.toLowerCase().includes(searchLower) ||
-          e.description?.toLowerCase().includes(searchLower)
+          (e.description?.toLowerCase().includes(searchLower) ?? false)
         );
       }
 
@@ -111,10 +111,10 @@ router.get('/items', async (req: AuthRequest, res: Response) => {
       const sortBy = sort as string || 'popularity';
       switch (sortBy) {
         case 'price_asc':
-          filteredEggs.sort((a, b) => a.shopPriceCoins  - b.shopPriceCoins );
+          filteredEggs.sort((a, b) => a.shopPriceCoins - b.shopPriceCoins);
           break;
         case 'price_desc':
-          filteredEggs.sort((a, b) => b.shopPriceCoins  - a.shopPriceCoins );
+          filteredEggs.sort((a, b) => b.shopPriceCoins - a.shopPriceCoins);
           break;
         case 'newest':
           // Eggs don't have created_at in response, keep original order

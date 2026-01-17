@@ -1,0 +1,53 @@
+<div class="grammar-box p-4 bg-purple-50 rounded-lg border-2 border-purple-200">
+  <!-- Title -->
+  @if (grammarBox.title) {
+    <h3 class="text-lg font-bold text-purple-800 mb-4">
+      {{ grammarBox.title }}
+    </h3>
+  }
+
+  <!-- Tables -->
+  @for (table of grammarBox.tables; track $index) {
+    <div class="grammar-table mb-4 overflow-x-auto">
+      <table class="w-full border-collapse">
+        <thead>
+          <tr>
+            @for (header of table.headers; track $index) {
+              <th class="border border-purple-300 px-4 py-2 bg-purple-100 text-left font-semibold text-purple-800">
+                {{ header }}
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of table.rows; track $index) {
+            <tr class="hover:bg-purple-50/50">
+              @for (cell of row; track $index; let cellIndex = $index) {
+                <td class="border border-purple-200 px-4 py-2"
+                    [class.font-medium]="cellIndex === 0"
+                    [class.text-purple-700]="cellIndex === 0">
+                  {{ cell }}
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Notes -->
+  @if (grammarBox.notes && grammarBox.notes.length > 0) {
+    <div class="grammar-notes mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+      <span class="text-yellow-700 font-semibold text-sm flex items-center gap-2 mb-2">
+        <i class="fa-solid fa-lightbulb"></i>
+        Notes
+      </span>
+      <ul class="list-disc list-inside text-sm text-gray-700 space-y-1">
+        @for (note of grammarBox.notes; track $index) {
+          <li>{{ note }}</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

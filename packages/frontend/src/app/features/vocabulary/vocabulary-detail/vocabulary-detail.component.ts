@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
@@ -32,6 +32,7 @@ import { PronunciationService, CachedDictionaryData, FreeDictionaryMeaning } fro
 export class VocabularyDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private location = inject(Location);
   private apiService = inject(ApiService);
   private pronunciationService = inject(PronunciationService);
 
@@ -124,7 +125,8 @@ export class VocabularyDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/vocabulary']);
+    // Use Location.back() to preserve query params from previous page
+    this.location.back();
   }
 
   navigateToWord(vocab: Vocabulary) {

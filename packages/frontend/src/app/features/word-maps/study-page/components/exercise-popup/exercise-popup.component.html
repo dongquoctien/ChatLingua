@@ -1,0 +1,217 @@
+<!-- Backdrop -->
+<div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" (click)="onClose()">
+  <!-- Popup Container -->
+  <div class="exercise-popup bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="header bg-blue-500 text-white px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button (click)="prevActivity()" class="text-white/80 hover:text-white">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span class="ml-2">Previous activity</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button (click)="nextActivity()" class="text-white/80 hover:text-white">
+          <span class="mr-2">Next activity</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <button (click)="onClose()" class="w-8 h-8 rounded-full hover:bg-white/20 flex items-center justify-center">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Exercise Info -->
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div>
+        <span class="text-blue-600 font-bold text-lg mr-3">{{ exercise.number }}</span>
+        <span class="text-gray-700">{{ exercise.instruction }}</span>
+      </div>
+      <button class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-sm hover:bg-blue-200">
+        Text
+      </button>
+    </div>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto p-6">
+      @switch (interactiveType) {
+        @case ('fill-blanks') {
+          @if (getFillBlanksData(); as data) {
+            <div class="fill-blanks-exercise">
+              @for (sentence of data.sentences; track $index; let i = $index) {
+                <div class="sentence mb-4">
+                  <p class="text-gray-700">
+                    @for (part of sentence.text.split('___'); track $index; let j = $index) {
+                      <span>{{ part }}</span>
+                      @if (j < sentence.blanks.length) {
+                        <input
+                          type="text"
+                          class="inline-block w-24 mx-1 px-2 py-1 border-b-2 border-blue-400 focus:border-blue-600 outline-none text-center"
+                          [class.border-green-500]="showResults() && getFillBlankAnswer(i, j).toLowerCase() === sentence.blanks[j].answer.toLowerCase()"
+                          [class.border-red-500]="showResults() && getFillBlankAnswer(i, j) && getFillBlankAnswer(i, j).toLowerCase() !== sentence.blanks[j].answer.toLowerCase()"
+                          [value]="getFillBlankAnswer(i, j)"
+                          (input)="onFillBlankInput(i, j, $any($event.target).value)"
+                          [placeholder]="sentence.blanks[j].hint || ''"
+                          [disabled]="showResults()">
+                        @if (showResults() && getFillBlankAnswer(i, j).toLowerCase() !== sentence.blanks[j].answer.toLowerCase()) {
+                          <span class="text-green-600 text-sm ml-1">({{ sentence.blanks[j].answer }})</span>
+                        }
+                      }
+                    }
+                  </p>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        @case ('table-fill') {
+          @if (getTableFillData(); as data) {
+            <div class="table-fill-exercise overflow-x-auto">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr>
+                    @for (header of data.headers; track $index) {
+                      <th class="border border-gray-300 px-4 py-2 bg-gray-100 text-left font-medium">
+                        {{ header }}
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of data.rows; track $index; let rowIndex = $index) {
+                    <tr>
+                      @for (cell of row.cells; track $index; let cellIndex = $index) {
+                        <td class="border border-gray-300 px-4 py-2">
+                          @if (cell.isBlank) {
+                            <input
+                              type="text"
+                              class="w-full px-2 py-1 border-b-2 border-gray-300 focus:border-blue-500 outline-none"
+                              [class.border-green-500]="showResults() && getTableCellAnswer(rowIndex, cellIndex).toLowerCase() === cell.answer?.toLowerCase()"
+                              [class.border-red-500]="showResults() && getTableCellAnswer(rowIndex, cellIndex) && getTableCellAnswer(rowIndex, cellIndex).toLowerCase() !== cell.answer?.toLowerCase()"
+                              [value]="getTableCellAnswer(rowIndex, cellIndex)"
+                              (input)="onTableCellInput(rowIndex, cellIndex, $any($event.target).value)"
+                              [disabled]="showResults()">
+                            @if (showResults() && cell.answer && getTableCellAnswer(rowIndex, cellIndex).toLowerCase() !== cell.answer.toLowerCase()) {
+                              <span class="text-green-600 text-sm">({{ cell.answer }})</span>
+                            }
+                          } @else {
+                            {{ cell.value }}
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        @case ('matching') {
+          @if (getMatchingData(); as data) {
+            <div class="matching-exercise grid grid-cols-2 gap-8">
+              <!-- Left Column -->
+              <div class="space-y-2">
+                @for (pair of data.pairs; track $index; let i = $index) {
+                  <button
+                    (click)="selectMatchingLeft(i)"
+                    [disabled]="isMatchingLeftMatched(i) || showResults()"
+                    class="w-full px-4 py-3 text-left rounded-lg border-2 transition-all"
+                    [class.border-blue-500]="matchingSelectedLeft() === i"
+                    [class.border-green-500]="isMatchingLeftMatched(i)"
+                    [class.border-gray-200]="matchingSelectedLeft() !== i && !isMatchingLeftMatched(i)"
+                    [class.bg-green-50]="isMatchingLeftMatched(i)"
+                    [class.opacity-50]="isMatchingLeftMatched(i)">
+                    {{ pair.left }}
+                  </button>
+                }
+              </div>
+
+              <!-- Right Column -->
+              <div class="space-y-2">
+                @for (pair of data.pairs; track $index; let i = $index) {
+                  <button
+                    (click)="selectMatchingRight(i)"
+                    [disabled]="isMatchingRightMatched(i) || showResults()"
+                    class="w-full px-4 py-3 text-left rounded-lg border-2 transition-all"
+                    [class.border-blue-500]="matchingSelectedRight() === i"
+                    [class.border-green-500]="isMatchingRightMatched(i)"
+                    [class.border-gray-200]="matchingSelectedRight() !== i && !isMatchingRightMatched(i)"
+                    [class.bg-green-50]="isMatchingRightMatched(i)"
+                    [class.opacity-50]="isMatchingRightMatched(i)">
+                    {{ pair.right }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        }
+
+        @case ('multiple-choice') {
+          @if (getMultipleChoiceData(); as data) {
+            <div class="multiple-choice-exercise">
+              <p class="text-lg mb-4">{{ data.question }}</p>
+              @if (data.image) {
+                <img [src]="data.image" alt="Question image" class="max-w-full h-auto mb-4 rounded-lg">
+              }
+              <div class="space-y-2">
+                @for (option of data.options; track $index; let i = $index) {
+                  <button
+                    (click)="selectOption(i)"
+                    [disabled]="showResults()"
+                    class="w-full px-4 py-3 text-left rounded-lg border-2 transition-all"
+                    [class.border-blue-500]="isOptionSelected(i)"
+                    [class.bg-blue-50]="isOptionSelected(i)"
+                    [class.border-green-500]="showResults() && i === data.correctIndex"
+                    [class.bg-green-50]="showResults() && i === data.correctIndex"
+                    [class.border-red-500]="showResults() && isOptionSelected(i) && i !== data.correctIndex"
+                    [class.bg-red-50]="showResults() && isOptionSelected(i) && i !== data.correctIndex"
+                    [class.border-gray-200]="!isOptionSelected(i) && !(showResults() && i === data.correctIndex)">
+                    <span class="font-medium mr-2">{{ ['A', 'B', 'C', 'D'][i] }}.</span>
+                    {{ option }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        }
+
+        @default {
+          <div class="text-center text-gray-500 py-8">
+            <i class="fa-solid fa-question-circle text-4xl mb-4"></i>
+            <p>Exercise type "{{ interactiveType }}" is not supported yet.</p>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="footer border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+      <div class="text-sm text-gray-500">
+        <i class="fa-regular fa-copyright mr-1"></i>
+        Cambridge
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button
+          (click)="showNextAnswer()"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          Show next answer
+        </button>
+        <button
+          (click)="showAllAnswers()"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          Show all answers
+        </button>
+        <button
+          (click)="startAgain()"
+          class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2">
+          <i class="fa-solid fa-rotate-right"></i>
+          Start again
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faShoppingBag } from '../../../shared/icons';
-import { ApiService, GameWithStats, UserCurrency, GameSessionInfo, GamesHubData } from '../../../core/services/api.service';
+import { ApiService, GameWithStats, UserCurrency, GameSessionInfo, GamesHubData, GameVocabularySources, GameSourceType } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
 import { AudioControlComponent } from '../shared/audio-control/audio-control.component';
 import { ShopService, ActiveBooster } from '../../shop/shop.service';
@@ -11,7 +12,7 @@ import { ShopService, ActiveBooster } from '../../shop/shop.service';
 @Component({
   selector: 'app-games-hub',
   standalone: true,
-  imports: [CommonModule, RouterModule, FontAwesomeModule, AudioControlComponent],
+  imports: [CommonModule, FormsModule, RouterModule, FontAwesomeModule, AudioControlComponent],
   templateUrl: './games-hub.component.html',
   styleUrls: ['./games-hub.component.scss']
 })
@@ -25,6 +26,13 @@ export class GamesHubComponent implements OnInit, OnDestroy {
   activeBoosters = signal<ActiveBooster[]>([]);
   isLoading = signal(true);
   error = signal<string | null>(null);
+
+  // Vocabulary source filter state
+  vocabSources = signal<GameVocabularySources | null>(null);
+  selectedSourceType = signal<GameSourceType>('all');
+  selectedMapId = signal<number | null>(null);
+  prioritizeLowMastery = signal(true);
+  showVocabFilter = signal(false);
 
   // Icon map for FA names to emojis
   private iconMap: Record<string, string> = {
@@ -74,15 +82,45 @@ export class GamesHubComponent implements OnInit, OnDestroy {
   constructor(
     private apiService: ApiService,
     private router: Router,
+    private route: ActivatedRoute,
     private audioService: AudioService,
     private shopService: ShopService
   ) {}
 
   ngOnInit(): void {
+    // Restore filters from URL query params
+    this.restoreFiltersFromUrl();
     this.loadHubData();
     this.loadActiveBoosters();
+    this.loadVocabSources();
     // Start background music when entering Game Hub
     this.audioService.playMusic();
+  }
+
+  private restoreFiltersFromUrl(): void {
+    const params = this.route.snapshot.queryParams;
+    if (params['category']) this.selectedCategory.set(params['category']);
+    if (params['source']) this.selectedSourceType.set(params['source'] as GameSourceType);
+    if (params['mapId']) this.selectedMapId.set(parseInt(params['mapId'], 10));
+    if (params['lowMastery'] !== undefined) this.prioritizeLowMastery.set(params['lowMastery'] === 'true');
+    // Show vocab filter panel if any filter is active
+    if (params['source'] || params['mapId']) {
+      this.showVocabFilter.set(true);
+    }
+  }
+
+  private updateUrlWithFilters(): void {
+    const queryParams: Record<string, string | number | boolean | null> = {};
+    if (this.selectedCategory() !== 'all') queryParams['category'] = this.selectedCategory();
+    if (this.selectedSourceType() !== 'all') queryParams['source'] = this.selectedSourceType();
+    if (this.selectedMapId()) queryParams['mapId'] = this.selectedMapId()!;
+    if (!this.prioritizeLowMastery()) queryParams['lowMastery'] = 'false';
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      replaceUrl: true
+    });
   }
 
   ngOnDestroy(): void {
@@ -111,12 +149,28 @@ export class GamesHubComponent implements OnInit, OnDestroy {
 
   selectCategory(categoryId: string): void {
     this.selectedCategory.set(categoryId);
+    this.updateUrlWithFilters();
     this.audioService.playSound('click');
   }
 
   playGame(gameCode: string): void {
     this.audioService.playSound('select');
-    this.router.navigate(['/games', gameCode]);
+    // Pass vocabulary source options as query params for the game component to use
+    const queryParams: Record<string, string | number | boolean> = {};
+
+    if (this.selectedSourceType() !== 'all') {
+      queryParams['sourceType'] = this.selectedSourceType();
+    }
+    if (this.selectedMapId()) {
+      queryParams['mapId'] = this.selectedMapId()!;
+    }
+    if (!this.prioritizeLowMastery()) {
+      queryParams['prioritizeLowMastery'] = false;
+    }
+
+    this.router.navigate(['/games', gameCode], {
+      queryParams: Object.keys(queryParams).length > 0 ? queryParams : undefined
+    });
   }
 
   viewLeaderboard(gameCode: string): void {
@@ -200,5 +254,86 @@ export class GamesHubComponent implements OnInit, OnDestroy {
       return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     }
     return `${minutes}m`;
+  }
+
+  // Vocabulary source filter methods
+  loadVocabSources(): void {
+    this.apiService.getGameVocabularySources().subscribe({
+      next: (sources) => {
+        this.vocabSources.set(sources);
+      },
+      error: (err) => {
+        console.error('Error loading vocabulary sources:', err);
+      }
+    });
+  }
+
+  toggleVocabFilter(): void {
+    this.showVocabFilter.update(v => !v);
+    this.audioService.playSound('click');
+  }
+
+  onSourceTypeChange(sourceType: GameSourceType): void {
+    this.selectedSourceType.set(sourceType);
+    // Reset mapId if not word_map
+    if (sourceType !== 'word_map') {
+      this.selectedMapId.set(null);
+    }
+    this.updateUrlWithFilters();
+    this.audioService.playSound('click');
+  }
+
+  onMapChange(mapId: number | null): void {
+    this.selectedMapId.set(mapId);
+    this.updateUrlWithFilters();
+    this.audioService.playSound('click');
+  }
+
+  togglePrioritizeLowMastery(): void {
+    this.prioritizeLowMastery.update(v => !v);
+    this.updateUrlWithFilters();
+    this.audioService.playSound('click');
+  }
+
+  getTotalVocabCount(): number {
+    const sources = this.vocabSources();
+    if (!sources) return 0;
+
+    const sourceType = this.selectedSourceType();
+    const mapId = this.selectedMapId();
+
+    if (mapId) {
+      const map = sources.maps.find(m => m.id === mapId);
+      return map?.vocabularyCount || 0;
+    }
+
+    switch (sourceType) {
+      case 'conversation':
+        return sources.conversationCount;
+      case 'word_map':
+        return sources.wordMapCount;
+      default:
+        return sources.conversationCount + sources.wordMapCount;
+    }
+  }
+
+  getVocabSourceLabel(): string {
+    const sourceType = this.selectedSourceType();
+    const mapId = this.selectedMapId();
+
+    if (mapId) {
+      const sources = this.vocabSources();
+      const map = sources?.maps.find(m => m.id === mapId);
+      return map?.name || 'Word Map';
+    }
+
+    switch (sourceType) {
+      case 'conversation':
+        return 'Conversations';
+      case 'word_map':
+        return 'Word Maps';
+      default:
+        return 'All Sources';
+    }
   }
 }

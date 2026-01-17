@@ -9,13 +9,15 @@ ChatLingua is a Vietnamese-to-English language learning platform with gamificati
 - **Backend**: Express.js with MySQL database, JWT authentication
 - **MCP Server**: Model Context Protocol server for Claude Desktop integration
 
+**Prerequisites**: Node.js 18+, Docker (for MySQL)
+
 ## Monorepo Structure
 
 This is an npm workspaces monorepo with packages in `packages/`:
 - `frontend` - Angular SPA (port 4200)
 - `backend` - Express API server (port 3000)
 - `mcp-server` - MCP server for Claude Desktop
-- `shared` - Shared types/utilities
+- `shared` - Shared TypeScript types (user, vocabulary, grammar, quiz, game, gamification, word-map)
 
 ## Commands
 
@@ -95,7 +97,7 @@ Each component needs three files:
 - `games/` - 15 vocabulary games (word rush, memory match, hangman, spelling bee, falling words, crossword, word search, anagram, word duel, pop quiz blitz, translation race, vocabulary quest, word cards, language island)
 - `shop/` - Virtual shop with coins/gems currency, items, inventory, wishlist, gifts
 - `pets/` - Virtual pet system with care mechanics and daily tasks
-- `chat/` - Real-time messaging with Socket.io
+- `chat/` - Real-time messaging with Socket.io (uses `socket.io-client`)
 - `sync-requests/` - Collaborative learning requests
 - `reports/` - Learning analytics
 - `mcp-auth/` - OAuth2 device flow for MCP
@@ -137,6 +139,49 @@ All API types are defined in `core/services/api.service.ts`. Key types:
 - `features/shop/shop.service.ts` - Shop items, purchases, inventory, wishlist, gifts
 - `features/pets/services/pet.service.ts` - Pet care, feeding, training, daily tasks
 
+### V3 Architecture (Word Map System)
+
+The V3 architecture separates content from user progress, enabling curriculum-based learning:
+
+**Database Schema (V3 Tables)**:
+- `master_vocabulary` - Canonical vocabulary definitions (not user-specific)
+- `master_grammar` - Canonical grammar rules
+- `master_exercises` - Reusable exercise templates
+- `user_vocabulary` - User's learning progress for vocabulary (links to master)
+- `user_grammar` - User's learning progress for grammar
+- `word_maps` - Curriculum courses with CEFR levels
+- `map_units` - Units within a Word Map
+- `unit_lessons` - Lessons within a unit
+- `lesson_content` - Links lessons to master content
+- `exam_attempts` - User exam history
+
+**V3 Services** (`services/v3/`):
+- `master-vocabulary.service.ts` - CRUD for master vocabulary
+- `master-grammar.service.ts` - CRUD for master grammar
+- `master-exercises.service.ts` - CRUD for master exercises
+- `user-vocabulary.service.ts` - User vocabulary with SM2 spaced repetition
+- `user-grammar.service.ts` - User grammar with SM2 spaced repetition
+- `word-map.service.ts` - Word Map curriculum management
+- `user-progress.service.ts` - XP, streaks, overall progress
+- `exam.service.ts` - Exam attempts and scoring
+
+**Feature Flags** (`config/features.ts`):
+Controls gradual V3 migration via environment variables:
+- `USE_V3_TABLES` - Read from V3 tables (default: false)
+- `DUAL_WRITE_ENABLED` - Write to both V2 and V3 (default: true)
+- `DEPRECATE_V2_TABLES` - Stop writing to V2 (default: false)
+- `WORD_MAP_ENABLED` - Enable Word Map features (default: true)
+- `V3_SPACED_REPETITION` - Use V3 tables for SM2 (default: false)
+- `V3_EXERCISES` - Use V3 exercise system (default: false)
+- `LOG_DUAL_WRITE` - Debug logging for dual-write operations (default: false)
+
+**Frontend** (`features/word-maps/`):
+- `word-map-list/` - Browse available Word Maps
+- `word-map-detail/` - View units and progress
+- `lesson-study/` - Study lesson content
+- `lesson-exam/` - Take lesson exams
+- `review/` - Spaced repetition review queue
+
 ### Database
 
 MySQL 8.0 via Docker. Migrations in `database/migrations/` run automatically on container init.
@@ -152,6 +197,17 @@ Connection: `localhost:3306`, user: `chatlingua`, password: `chatlingua_pass`, d
 
 - Development API: `http://localhost:3000/api` (defined in `src/environments/environment.ts`)
 - Production: uses `environment.prod.ts` file replacement
+
+**Environment Variables** (`.env` in backend):
+```bash
+DB_HOST=localhost
+DB_USER=chatlingua
+DB_PASSWORD=chatlingua_pass
+DB_NAME=chatlingua
+PORT=3000
+JWT_SECRET=your_jwt_secret
+CORS_ORIGIN=http://localhost:4200
+```
 
 ## Common Patterns
 
@@ -253,6 +309,27 @@ For consistency in header buttons, use emoji symbols:
   - User-generated content (conversations, vocabulary examples)
   - Learning content translations
   - Explanatory text for Vietnamese learners where contextually appropriate
+
+## Testing
+
+### Backend Tests (`packages/backend/tests/`)
+
+Run tests with:
+```bash
+cd packages/backend
+npm test                                    # Run all tests
+npm run test:watch                          # Watch mode
+npm run test:coverage                       # With coverage report
+npx vitest run tests/utils/sm2-algorithm    # Run single test file
+npx vitest run -t "quality 3"               # Run tests matching pattern
+```
+
+**Test Structure**:
+- `tests/utils/` - Algorithm and utility tests (SM2, feature flags)
+- `tests/services/` - Service business logic tests
+- `tests/integration/` - API route and data migration tests
+
+Tests use Vitest and don't require database connection (pure business logic tests).
 
 ## Screenshots
 

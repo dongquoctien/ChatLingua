@@ -45,23 +45,25 @@ export class StatusService {
 
   /**
    * Force all users offline. Used on server startup to clean stale online statuses.
+   * Also resets status_type to 'offline' if it was 'online' (preserves custom statuses).
    */
   async cleanupStaleOnlineUsers(): Promise<number> {
     const [result] = await pool.execute<ResultSetHeader>(
       `UPDATE user_status
        SET is_online = FALSE,
+           status_type = CASE WHEN status_type = 'online' THEN 'offline' ELSE status_type END,
            socket_id = NULL,
            last_seen_at = NOW(),
            current_activity = 'none',
            activity_metadata = NULL
-       WHERE is_online = TRUE`
+       WHERE is_online = TRUE OR (socket_id IS NULL AND status_type = 'online')`
     );
     return result.affectedRows;
   }
 
   async setOffline(userId: number, socketId?: string): Promise<boolean> {
-    // Don't reset status_type - preserve user's custom status (busy, studying, etc.)
-    // When they reconnect, they'll have their previous status
+    // Preserve CUSTOM statuses (busy, studying, away, etc.) but reset 'online' to 'offline'
+    // When they reconnect, they'll have their previous custom status preserved
     //
     // If socketId is provided, only mark offline if it matches the current socket_id
     // This prevents a race condition when user refreshes (F5):
@@ -70,24 +72,31 @@ export class StatusService {
 
     // First, check current state for debugging
     const [currentRows] = await pool.execute<UserStatusRow[]>(
-      `SELECT socket_id, is_online FROM user_status WHERE user_id = ?`,
+      `SELECT socket_id, is_online, status_type FROM user_status WHERE user_id = ?`,
       [userId]
     );
     const currentSocketId = currentRows[0]?.socket_id;
     const isCurrentlyOnline = currentRows[0]?.is_online;
+    const currentStatusType = currentRows[0]?.status_type;
 
     console.log(`[Status] setOffline called for user ${userId}:`);
     console.log(`  - Disconnecting socket: ${socketId}`);
     console.log(`  - Current DB socket_id: ${currentSocketId}`);
     console.log(`  - Currently online: ${isCurrentlyOnline}`);
+    console.log(`  - Current status_type: ${currentStatusType}`);
 
     let result: ResultSetHeader;
+
+    // Reset status_type to 'offline' only if it was 'online' (default)
+    // Preserve custom statuses like 'busy', 'studying', 'away'
+    const statusTypeUpdate = currentStatusType === 'online' ? `status_type = 'offline',` : '';
 
     if (socketId) {
       // Only set offline if the disconnecting socket matches the stored socket_id
       [result] = await pool.execute<ResultSetHeader>(
         `UPDATE user_status
          SET is_online = FALSE,
+             ${statusTypeUpdate}
              last_seen_at = NOW(),
              socket_id = NULL,
              current_activity = 'none',
@@ -108,6 +117,7 @@ export class StatusService {
           [result] = await pool.execute<ResultSetHeader>(
             `UPDATE user_status
              SET is_online = FALSE,
+                 ${statusTypeUpdate}
                  last_seen_at = NOW(),
                  socket_id = NULL,
                  current_activity = 'none',
@@ -125,6 +135,7 @@ export class StatusService {
       [result] = await pool.execute<ResultSetHeader>(
         `UPDATE user_status
          SET is_online = FALSE,
+             ${statusTypeUpdate}
              last_seen_at = NOW(),
              socket_id = NULL,
              current_activity = 'none',

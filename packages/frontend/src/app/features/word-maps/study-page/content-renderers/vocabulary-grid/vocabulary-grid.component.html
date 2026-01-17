@@ -1,0 +1,19 @@
+<div
+  class="vocabulary-grid grid gap-3 p-4 bg-white rounded-lg border border-gray-200"
+  [style.grid-template-columns]="'repeat(' + content.columns + ', 1fr)'">
+  @for (item of content.items; track item.word) {
+    <div class="vocab-card text-center p-3 rounded-lg bg-gray-50 hover:bg-blue-50 transition-colors cursor-pointer border border-gray-100 hover:border-blue-200">
+      @if (item.image) {
+        <img [src]="item.image" [alt]="item.word" class="w-16 h-16 mx-auto mb-2 object-contain rounded">
+      }
+      <span class="word text-sm font-medium text-gray-800 block">
+        {{ item.word }}
+      </span>
+      @if (item.translation) {
+        <span class="translation text-xs text-gray-500 block mt-1">
+          {{ item.translation }}
+        </span>
+      }
+    </div>
+  }
+</div>

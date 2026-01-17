@@ -2,6 +2,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DatabaseConnection } from '../database/connection';
 import { RowDataPacket } from 'mysql2/promise';
+import { shouldWriteToV3, logDualWrite } from '../helpers/dual-write.js';
 
 export const submitReviewTool: Tool = {
   name: 'submit_review',
@@ -80,6 +81,7 @@ interface VocabularyRow extends RowDataPacket {
   user_id: number;
   english_word: string;
   vietnamese_word: string;
+  part_of_speech: string;
   review_interval: number;
   ease_factor: number;
   repetition_count: number;
@@ -352,6 +354,23 @@ export async function submitReview(
     ]
   );
 
+  // Dual-write to V3 tables if enabled
+  if (shouldWriteToV3()) {
+    await dualWriteReviewToV3(
+      db,
+      effectiveUserId,
+      vocab.english_word,
+      vocab.part_of_speech || 'noun',
+      input.quality,
+      result,
+      vocab.ease_factor,
+      vocab.review_interval,
+      input.reviewType,
+      input.direction,
+      input.timeSpentSeconds
+    );
+  }
+
   // Mark as completed in today's queue
   const today = new Date().toISOString().split('T')[0];
   await db.execute(
@@ -393,4 +412,115 @@ export async function submitReview(
     nextReviewAt: nextReviewStr,
     message: `Review recorded (${qualityLabel}). "${vocab.english_word}" will be reviewed again in ${result.newInterval} day${result.newInterval > 1 ? 's' : ''} (${nextReviewStr}).`,
   };
+}
+
+/**
+ * Dual-write review to V3 tables
+ * Updates user_vocabulary SM2 fields and records review history
+ */
+async function dualWriteReviewToV3(
+  db: DatabaseConnection,
+  userId: number,
+  englishWord: string,
+  partOfSpeech: string,
+  quality: number,
+  result: SM2Result,
+  easeFactorBefore: number,
+  intervalBefore: number,
+  reviewType: string,
+  direction: string,
+  timeSpentSeconds: number
+): Promise<void> {
+  try {
+    logDualWrite('review_v3_start', { englishWord, quality });
+
+    // Find master_vocabulary entry
+    const masterRows = await db.query<RowDataPacket[]>(
+      `SELECT id FROM master_vocabulary WHERE english_word = ? AND part_of_speech = ?`,
+      [englishWord, partOfSpeech]
+    );
+
+    if (masterRows.length === 0) {
+      logDualWrite('review_v3_skip', { englishWord, reason: 'No master_vocabulary found' });
+      return;
+    }
+
+    const masterVocabId = masterRows[0].id;
+
+    // Find user_vocabulary entry
+    const userVocabRows = await db.query<RowDataPacket[]>(
+      `SELECT id FROM user_vocabulary WHERE user_id = ? AND master_vocabulary_id = ?`,
+      [userId, masterVocabId]
+    );
+
+    if (userVocabRows.length === 0) {
+      logDualWrite('review_v3_skip', { englishWord, reason: 'No user_vocabulary found' });
+      return;
+    }
+
+    const userVocabId = userVocabRows[0].id;
+
+    // Update user_vocabulary with SM2 values
+    await db.execute(
+      `UPDATE user_vocabulary SET
+         next_review_at = ?,
+         review_interval = ?,
+         ease_factor = ?,
+         repetition_count = ?,
+         lapse_count = ?,
+         review_status = ?,
+         times_practiced = times_practiced + 1,
+         last_practiced_at = NOW(),
+         mastery_level = ?
+       WHERE id = ?`,
+      [
+        result.nextReviewAt.toISOString().split('T')[0],
+        result.newInterval,
+        result.newEaseFactor,
+        result.newRepetitionCount,
+        result.newLapseCount,
+        result.newStatus,
+        calculateMasteryLevel(result.newStatus, result.newRepetitionCount),
+        userVocabId,
+      ]
+    );
+
+    // Record review history in V3 table (vocabulary_reviews_v3)
+    // Check if table exists first, if not skip this step
+    try {
+      await db.execute(
+        `INSERT INTO vocabulary_reviews_v3
+           (user_id, user_vocabulary_id, quality, ease_factor_before, ease_factor_after,
+            interval_before, interval_after, review_type, direction, time_spent_seconds)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          userId,
+          userVocabId,
+          quality,
+          easeFactorBefore,
+          result.newEaseFactor,
+          intervalBefore,
+          result.newInterval,
+          reviewType,
+          direction,
+          timeSpentSeconds,
+        ]
+      );
+    } catch (tableError) {
+      // Table might not exist yet, log and continue
+      logDualWrite('review_v3_table_missing', {
+        table: 'vocabulary_reviews_v3',
+        error: tableError instanceof Error ? tableError.message : 'Unknown error'
+      });
+    }
+
+    logDualWrite('review_v3_success', { englishWord, userVocabId, newStatus: result.newStatus });
+  } catch (error) {
+    // Log error but don't fail the V2 update
+    console.error('[MCP-DUAL-WRITE] Failed to write review to V3:', error);
+    logDualWrite('review_v3_error', {
+      englishWord,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
 }

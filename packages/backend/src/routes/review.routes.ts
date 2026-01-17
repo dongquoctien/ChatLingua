@@ -61,6 +61,10 @@ router.get('/queue', async (req: AuthRequest, res: Response) => {
         nextReviewAt: item.next_review_at,
         // Queue info
         priority: item.priority,
+        // Source info
+        sourceType: item.source_type || 'conversation',
+        sourceName: item.source_name || null,
+        conversationId: item.conversation_id || null,
       };
     });
 

@@ -1,0 +1,39 @@
+.exercise-popup {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fill-blanks-exercise {
+  input {
+    background: transparent;
+    transition: border-color 0.2s;
+  }
+}
+
+.table-fill-exercise {
+  table {
+    min-width: 400px;
+  }
+
+  input {
+    background: transparent;
+  }
+}
+
+.matching-exercise {
+  button {
+    &:hover:not(:disabled) {
+      transform: translateX(4px);
+    }
+  }
+}

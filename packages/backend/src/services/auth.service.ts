@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/database.js';
 import { jwtConfig } from '../config/jwt.js';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { petService } from './pet.service.js';
 
 interface UserRow extends RowDataPacket {
   id: number;
@@ -53,6 +54,13 @@ export interface LoginInput {
   password: string;
 }
 
+export interface WelcomeGift {
+  type: 'egg';
+  name: string;
+  description: string;
+  imageUrl?: string;
+}
+
 export interface AuthResult {
   user: {
     id: number;
@@ -60,6 +68,8 @@ export interface AuthResult {
     email: string;
   };
   token: string;
+  welcomeGifts?: WelcomeGift[];
+  isNewUser?: boolean;
 }
 
 export class AuthService {
@@ -103,12 +113,36 @@ export class AuthService {
       [userId]
     );
 
+    // Initialize user currency (for shop system)
+    await pool.execute(
+      'INSERT INTO user_currency (user_id, coins, gems) VALUES (?, 100, 0)',
+      [userId]
+    );
+
+    // Gift welcome egg to new user
+    const welcomeGifts: WelcomeGift[] = [];
+    try {
+      const egg = await petService.giftWelcomeEgg(userId);
+      if (egg) {
+        welcomeGifts.push({
+          type: 'egg',
+          name: 'Common Egg',
+          description: 'A mysterious egg that will hatch into a companion pet! Earn XP by learning to help it hatch faster.',
+          imageUrl: '/images/pets/eggs/common-egg.png'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to gift welcome egg:', error);
+    }
+
     // Generate token
     const token = this.generateToken(userId, username, email);
 
     return {
       user: { id: userId, username, email },
       token,
+      welcomeGifts: welcomeGifts.length > 0 ? welcomeGifts : undefined,
+      isNewUser: true,
     };
   }
 

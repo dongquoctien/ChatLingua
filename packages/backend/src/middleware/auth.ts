@@ -1,10 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt.js';
+import pool from '../config/database.js';
+import { RowDataPacket } from 'mysql2';
+
+export type UserRole = 'user' | 'moderator' | 'admin';
 
 export interface AuthRequest extends Request {
   userId?: number;
   user?: { id: number; username: string; email: string };
+  userRole?: UserRole;
 }
 
 export interface JwtPayload {
@@ -97,4 +102,88 @@ export const requireValidUserId = (
     return;
   }
   next();
+};
+
+interface UserRoleRow extends RowDataPacket {
+  role: UserRole;
+}
+
+/**
+ * Middleware that checks if user has admin role.
+ * Must be used after authMiddleware.
+ */
+export const adminMiddleware = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!hasValidUserId(req)) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  try {
+    const [rows] = await pool.execute<UserRoleRow[]>(
+      'SELECT role FROM users WHERE id = ?',
+      [req.userId]
+    );
+
+    if (rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const userRole = rows[0].role;
+    req.userRole = userRole;
+
+    if (userRole !== 'admin') {
+      res.status(403).json({ error: 'Admin access required' });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Admin middleware error:', error);
+    res.status(500).json({ error: 'Failed to verify admin access' });
+  }
+};
+
+/**
+ * Middleware that checks if user has moderator or admin role.
+ * Must be used after authMiddleware.
+ */
+export const moderatorMiddleware = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!hasValidUserId(req)) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  try {
+    const [rows] = await pool.execute<UserRoleRow[]>(
+      'SELECT role FROM users WHERE id = ?',
+      [req.userId]
+    );
+
+    if (rows.length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const userRole = rows[0].role;
+    req.userRole = userRole;
+
+    if (userRole !== 'admin' && userRole !== 'moderator') {
+      res.status(403).json({ error: 'Moderator or admin access required' });
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Moderator middleware error:', error);
+    res.status(500).json({ error: 'Failed to verify moderator access' });
+  }
 };

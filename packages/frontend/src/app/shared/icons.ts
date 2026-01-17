@@ -97,6 +97,9 @@ import {
   faShoppingBag,
   faCheckDouble,
   faGlobe,
+  faMap,
+  faAnglesLeft,
+  faAnglesRight,
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -207,4 +210,7 @@ export {
   faCheckDouble,
   faGlobe,
   faExternalLinkAlt,
+  faMap,
+  faAnglesLeft,
+  faAnglesRight,
 };

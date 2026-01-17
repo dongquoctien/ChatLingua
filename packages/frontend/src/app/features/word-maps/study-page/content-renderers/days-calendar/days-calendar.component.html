@@ -1,0 +1,15 @@
+<div class="days-calendar p-4 bg-white rounded-lg border border-gray-200">
+  <div class="grid grid-cols-7 gap-2">
+    @for (item of content.items; track item.day; let i = $index) {
+      <div class="day-card text-center p-3 rounded-lg cursor-pointer transition-all hover:scale-105"
+           [class]="getDayColor(i)">
+        <span class="abbreviation text-white font-bold text-lg block">
+          {{ item.abbreviation }}
+        </span>
+        <span class="day text-white/80 text-xs block mt-1">
+          {{ item.day }}
+        </span>
+      </div>
+    }
+  </div>
+</div>

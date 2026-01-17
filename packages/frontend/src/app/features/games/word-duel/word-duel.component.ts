@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal, computed, effect, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse } from '../../../core/services/api.service';
 import { AudioService } from '../../../core/services/audio.service';
@@ -506,8 +506,10 @@ export class WordDuelComponent implements OnInit, OnDestroy {
     this.loadGameData();
   }
 
+  private location = inject(Location);
+
   onBackToHub(): void {
-    this.router.navigate(['/games']);
+    this.location.back();
   }
 
   getOptionClass(option: WordOption): string {

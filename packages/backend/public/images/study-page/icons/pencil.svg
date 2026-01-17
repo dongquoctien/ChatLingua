@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <!-- Pencil/Write Icon -->
+  <circle cx="20" cy="20" r="18" fill="#EF4444" stroke="#DC2626" stroke-width="2"/>
+  <!-- Pencil shape -->
+  <path d="M12 28 L14 22 L26 10 L30 14 L18 26 Z" fill="white"/>
+  <path d="M26 10 L30 14" stroke="#EF4444" stroke-width="1"/>
+  <path d="M14 22 L18 26" stroke="#EF4444" stroke-width="1"/>
+  <!-- Eraser -->
+  <path d="M26 10 L28 8 L32 12 L30 14 Z" fill="#FECACA"/>
+  <!-- Tip -->
+  <path d="M12 28 L14 22 L14 28 Z" fill="#FCD34D"/>
+</svg>

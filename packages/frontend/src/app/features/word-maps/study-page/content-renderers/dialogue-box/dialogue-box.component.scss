@@ -1,0 +1,14 @@
+.dialogue-box {
+  .speech-bubble {
+    position: relative;
+
+    // Speech bubble tail (optional)
+    // &::before {
+    //   content: '';
+    //   position: absolute;
+    //   width: 0;
+    //   height: 0;
+    //   border: 8px solid transparent;
+    // }
+  }
+}

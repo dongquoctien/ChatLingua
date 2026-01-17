@@ -1,0 +1,229 @@
+<div class="container mx-auto px-4 py-6">
+  <!-- Back Button -->
+  <a [routerLink]="['/word-maps', mapId()]" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+    <i class="fa-solid fa-arrow-left"></i>
+    <span>Back to Word Map</span>
+  </a>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex justify-center items-center py-12">
+      <i class="fa-solid fa-spinner fa-spin text-3xl text-gray-400"></i>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <div class="flex items-center gap-2 text-red-700">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error() }}</span>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && unit()) {
+    <!-- Unit Header -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center">
+            <span class="text-2xl font-bold text-gray-500">{{ unit()?.unitNumber }}</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h1 class="text-2xl font-bold text-gray-900">{{ unit()?.title }}</h1>
+              @if (unit()?.isReviewUnit) {
+                <span class="px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">Review Unit</span>
+              }
+            </div>
+            @if (unit()?.description) {
+              <p class="text-gray-600">{{ unit()?.description }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- Unit Status Badge -->
+        @if (unit()?.userProgress) {
+          <span [class]="'px-3 py-1 rounded-full text-sm font-medium ' + getStatusClass(unit()!.userProgress!.status)">
+            {{ getStatusLabel(unit()!.userProgress!.status) }}
+          </span>
+        }
+      </div>
+
+      <!-- Unit Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6 pt-4 border-t border-gray-100">
+        <div>
+          <div class="text-lg font-bold text-gray-900">{{ unit()?.totalLessons }}</div>
+          <div class="text-sm text-gray-500">Lessons</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-gray-900">{{ unit()?.totalVocabulary }}</div>
+          <div class="text-sm text-gray-500">Vocabulary</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-gray-900">{{ unit()?.totalGrammar }}</div>
+          <div class="text-sm text-gray-500">Grammar</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-gray-900">{{ unit()?.bossExamCount || 0 }}</div>
+          <div class="text-sm text-gray-500">Exams</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-gray-900">+{{ unit()?.completionXp || 0 }}</div>
+          <div class="text-sm text-gray-500">XP Reward</div>
+        </div>
+      </div>
+
+      <!-- Progress Bar (if not locked) -->
+      @if (!isLocked() && unit()?.userProgress) {
+        <div class="mt-4">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-500">Unit Progress</span>
+            <span class="font-medium text-gray-900">{{ progressPercentage() }}%</span>
+          </div>
+          <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-green-500 rounded-full transition-all"
+              [style.width.%]="progressPercentage()"
+            ></div>
+          </div>
+          <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span>{{ completedLessons() }}/{{ lessons().length }} lessons completed</span>
+            <span>{{ unit()?.userProgress?.xpEarned || 0 }} XP earned</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Lessons List -->
+    <div class="space-y-3">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Lessons</h2>
+
+      @for (lesson of lessons(); track lesson.id; let i = $index) {
+        <button
+          (click)="navigateToLesson(lesson)"
+          [disabled]="!canAccessLesson(lesson)"
+          class="w-full bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          [class.opacity-60]="!canAccessLesson(lesson)"
+          [class.cursor-not-allowed]="!canAccessLesson(lesson)"
+        >
+          <div class="flex items-center gap-4">
+            <!-- Lesson Number -->
+            <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+              <span class="text-lg font-bold text-gray-500">{{ i + 1 }}</span>
+            </div>
+
+            <!-- Lesson Type Icon -->
+            <div class="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center">
+              <i [class]="getLessonTypeIcon(lesson.lessonType) + ' text-gray-400 text-lg'"></i>
+            </div>
+
+            <!-- Lesson Info -->
+            <div class="text-left">
+              <div class="flex items-center gap-2">
+                <h3 class="font-medium text-gray-900">{{ lesson.title }}</h3>
+                @if (lesson.hasBossExam) {
+                  <span class="px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">
+                    <i class="fa-solid fa-trophy mr-1"></i>Exam
+                  </span>
+                }
+              </div>
+              <div class="text-sm text-gray-500 flex items-center gap-3 mt-1">
+                <span class="capitalize">{{ lesson.lessonType }}</span>
+                @if (lesson.estimatedMinutes) {
+                  <span class="flex items-center gap-1">
+                    <i class="fa-solid fa-clock text-xs"></i>
+                    {{ lesson.estimatedMinutes }} min
+                  </span>
+                }
+                @if (lesson.totalVocabulary > 0) {
+                  <span>{{ lesson.totalVocabulary }} words</span>
+                }
+                @if (lesson.totalGrammar > 0) {
+                  <span>{{ lesson.totalGrammar }} grammar</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <!-- Lesson Progress -->
+            @if (lesson.userProgress && lesson.userProgress.status !== 'locked') {
+              <div class="hidden md:flex flex-col items-end">
+                @if (lesson.userProgress.status === 'completed') {
+                  <span class="text-sm text-green-600 font-medium">
+                    <i class="fa-solid fa-check mr-1"></i>Complete
+                  </span>
+                  @if (lesson.userProgress.bestExamScore > 0) {
+                    <span class="text-xs text-gray-400">Best: {{ lesson.userProgress.bestExamScore }}%</span>
+                  }
+                } @else if (lesson.userProgress.status === 'exam_ready') {
+                  <span class="text-sm text-blue-600 font-medium">Ready for Exam</span>
+                } @else if (lesson.userProgress.contentProgressPercentage > 0) {
+                  <span class="text-sm text-gray-600">{{ lesson.userProgress.contentProgressPercentage }}% studied</span>
+                }
+              </div>
+            }
+
+            <!-- XP -->
+            <span class="text-sm text-gray-400">
+              +{{ lesson.studyXp + lesson.examXp }} XP
+            </span>
+
+            <!-- Status Icon -->
+            <i [class]="getStatusIcon(getLessonStatus(lesson)) + ' text-lg'"></i>
+
+            <!-- Arrow -->
+            @if (canAccessLesson(lesson)) {
+              <i class="fa-solid fa-chevron-right text-gray-300"></i>
+            }
+          </div>
+        </button>
+      }
+
+      @empty {
+        <div class="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <i class="fa-solid fa-book-open text-4xl text-gray-300 mb-3"></i>
+          <p class="text-gray-500">No lessons available in this unit yet.</p>
+        </div>
+      }
+    </div>
+
+    <!-- Boss Exam Section (if unit has exams) -->
+    @if (unit()?.bossExamCount && unit()!.bossExamCount > 0) {
+      <div class="mt-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Unit Exam</h2>
+        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100 p-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center">
+                <i class="fa-solid fa-trophy text-2xl text-purple-600"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-900">Unit {{ unit()?.unitNumber }} Final Exam</h3>
+                <p class="text-sm text-gray-600">
+                  Complete all lessons to unlock the unit exam.
+                  Pass with {{ unit()?.bossPassingScore }}% to complete the unit.
+                </p>
+              </div>
+            </div>
+
+            @if (unit()?.userProgress?.bestBossExamScore && unit()!.userProgress!.bestBossExamScore > 0) {
+              <div class="text-right">
+                <div class="text-2xl font-bold text-purple-600">{{ unit()!.userProgress!.bestBossExamScore }}%</div>
+                <div class="text-sm text-gray-500">Best Score</div>
+              </div>
+            } @else {
+              <div class="text-right">
+                <span class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-500">
+                  <i class="fa-solid fa-lock mr-2"></i>Locked
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

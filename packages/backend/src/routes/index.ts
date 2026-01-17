@@ -16,8 +16,12 @@ import chatRoutes from './chat.routes.js';
 import shopRoutes from './shop.routes.js';
 import petRoutes from './pet.routes.js';
 
+// V3 Routes - Word Map System
+import v3Routes from './v3/index.js';
+
 const router = Router();
 
+// V1/V2 Routes (Original)
 router.use('/auth', authRoutes);
 router.use('/conversations', conversationsRoutes);
 router.use('/vocabulary', vocabularyRoutes);
@@ -34,5 +38,8 @@ router.use('/sync-requests', syncRequestsRoutes);
 router.use('/chat', chatRoutes);
 router.use('/shop', shopRoutes);
 router.use('/pets', petRoutes);
+
+// V3 Routes - Word Map System
+router.use('/v3', v3Routes);
 
 export default router;

@@ -61,6 +61,25 @@ router.get('/hub', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// ============================================================
+// Vocabulary Source Options
+// ============================================================
+
+/**
+ * GET /api/games/vocabulary-sources
+ * Get available vocabulary sources for game filtering
+ */
+router.get('/vocabulary-sources', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+    const sources = await gameService.getVocabularySources(userId);
+    res.json(sources);
+  } catch (error) {
+    console.error('Error fetching vocabulary sources:', error);
+    res.status(500).json({ error: 'Failed to fetch vocabulary sources' });
+  }
+});
+
 /**
  * GET /api/games/:gameCode
  * Get specific game details and user stats
@@ -108,7 +127,7 @@ router.get('/:gameCode', async (req: AuthRequest, res: Response) => {
 router.post('/:gameCode/start', async (req: AuthRequest, res: Response) => {
   try {
     const { gameCode } = req.params;
-    const { difficulty, gridSize } = req.body;
+    const { difficulty, gridSize, sourceType, mapId, prioritizeLowMastery } = req.body;
     const userId = req.userId!;
 
     const game = await gameService.getGameByCode(gameCode);
@@ -126,7 +145,20 @@ router.post('/:gameCode/start', async (req: AuthRequest, res: Response) => {
       vocabCount = 15;
     }
 
-    const vocabulary = await gameService.getVocabularyForGame(userId, vocabCount, difficulty);
+    // Build vocabulary options with source filtering
+    const vocabOptions: {
+      difficulty?: string;
+      sourceType?: 'all' | 'conversation' | 'word_map';
+      mapId?: number;
+      prioritizeLowMastery?: boolean;
+    } = {};
+
+    if (difficulty) vocabOptions.difficulty = difficulty;
+    if (sourceType) vocabOptions.sourceType = sourceType;
+    if (mapId) vocabOptions.mapId = mapId;
+    if (prioritizeLowMastery !== undefined) vocabOptions.prioritizeLowMastery = prioritizeLowMastery;
+
+    const vocabulary = await gameService.getVocabularyForGame(userId, vocabCount, vocabOptions);
 
     if (vocabulary.length < 4) {
       return res.status(400).json({

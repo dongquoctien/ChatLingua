@@ -28,9 +28,18 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+export interface WelcomeGift {
+  type: 'egg';
+  name: string;
+  description: string;
+  imageUrl?: string;
+}
+
 export interface AuthResponse {
   user: User;
   token: string;
+  welcomeGifts?: WelcomeGift[];
+  isNewUser?: boolean;
 }
 
 export interface LoginRequest {

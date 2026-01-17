@@ -2,6 +2,8 @@ import pool from '../config/database.js';
 import type { RowDataPacket } from 'mysql2';
 import { gamificationService } from './gamification.service.js';
 import { challengeService } from './challenge.service.js';
+import { shouldWriteToV3, logDualWrite } from '../config/features.js';
+import { masterVocabularyService, userVocabularyService } from './v3/index.js';
 
 interface VocabularyRow extends RowDataPacket {
   id: number;
@@ -592,7 +594,106 @@ export class VocabularyService {
           data.extraExamples ? JSON.stringify(data.extraExamples) : null,
         ]
       );
-      return (result as { insertId: number }).insertId;
+      const vocabId = (result as { insertId: number }).insertId;
+
+      // Dual-write to V3 tables if enabled
+      await this.dualWriteToV3(userId, englishWord, partOfSpeech, data);
+
+      return vocabId;
+    }
+  }
+
+  /**
+   * Dual-write vocabulary to V3 tables (master_vocabulary + user_vocabulary)
+   * This is called after V2 write to maintain consistency
+   */
+  private async dualWriteToV3(
+    userId: number,
+    englishWord: string,
+    partOfSpeech: string,
+    data: {
+      vietnameseWord: string;
+      phonetic?: string | null;
+      difficultyLevel?: string;
+      pronunciationUk?: string | null;
+      pronunciationUs?: string | null;
+      wordForms?: Record<string, string> | null;
+      definitions?: unknown[] | null;
+      wordFamily?: Record<string, string[]> | null;
+      synonyms?: string[] | null;
+      antonyms?: string[] | null;
+      collocations?: Record<string, string[]> | null;
+      grammarInfo?: Record<string, unknown> | null;
+      register?: string | null;
+      usageNotes?: string | null;
+      cefrLevel?: string | null;
+      topics?: unknown[] | null;
+      extraExamples?: unknown[] | null;
+    }
+  ): Promise<void> {
+    if (!shouldWriteToV3()) {
+      return;
+    }
+
+    try {
+      logDualWrite('vocabulary_v3', { englishWord, userId });
+
+      // Step 1: Get or create master vocabulary
+      let masterVocab = await masterVocabularyService.getByWordAndPos(
+        englishWord,
+        partOfSpeech
+      );
+
+      if (!masterVocab) {
+        // Note: Convert null to undefined for V3 service compatibility
+        masterVocab = await masterVocabularyService.create({
+          englishWord,
+          vietnameseWord: data.vietnameseWord,
+          partOfSpeech: partOfSpeech as any,
+          phonetic: data.phonetic || data.pronunciationUk || '',
+          pronunciationUk: data.pronunciationUk ?? undefined,
+          pronunciationUs: data.pronunciationUs ?? undefined,
+          cefrLevel: (data.cefrLevel as any) || 'B1',
+          difficultyLevel: data.difficultyLevel || 'intermediate',
+          definitions: data.definitions as any ?? undefined,
+          wordFamily: data.wordFamily ?? undefined,
+          synonyms: data.synonyms ?? undefined,
+          antonyms: data.antonyms ?? undefined,
+          collocations: data.collocations ?? undefined,
+          grammarInfo: data.grammarInfo ?? undefined,
+          usageNotes: data.usageNotes ?? undefined,
+          extraExamples: data.extraExamples as any ?? undefined,
+          topics: data.topics as any ?? undefined,
+          wordForms: data.wordForms ?? undefined,
+        });
+      }
+
+      // Step 2: Link to user's vocabulary (if not already linked)
+      const existingUserVocab = await userVocabularyService.getByMasterVocabularyId(
+        userId,
+        masterVocab.id
+      );
+
+      if (!existingUserVocab) {
+        await userVocabularyService.addVocabulary(
+          userId,
+          masterVocab.id,
+          'manual',
+          undefined
+        );
+      }
+
+      logDualWrite('vocabulary_v3_success', {
+        englishWord,
+        masterId: masterVocab.id,
+      });
+    } catch (error) {
+      // Log error but don't fail the V2 write
+      console.error('[DUAL-WRITE] Failed to write vocabulary to V3:', error);
+      logDualWrite('vocabulary_v3_error', {
+        englishWord,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 

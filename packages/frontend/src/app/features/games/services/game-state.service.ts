@@ -1,5 +1,7 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse, GameActiveBooster } from '../../../core/services/api.service';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { ApiService, GameVocabulary, StartGameResponse, EndGameResponse, GameActiveBooster, StartGameOptions, GameSourceType } from '../../../core/services/api.service';
+import { Observable } from 'rxjs';
 
 export interface GameState {
   sessionId: number | null;
@@ -287,5 +289,34 @@ export class GameStateService {
   // Set active boosters (for games that don't use full initializeGame)
   setActiveBoosters(boosters: GameActiveBooster[]): void {
     this.state.update(s => ({ ...s, activeBoosters: boosters || [] }));
+  }
+
+  /**
+   * Start a game with vocabulary source options from query params
+   * Components can call this instead of apiService.startGame directly
+   */
+  startGameWithOptions(
+    gameCode: string,
+    route: ActivatedRoute,
+    additionalOptions?: Partial<StartGameOptions>
+  ): Observable<StartGameResponse> {
+    const queryParams = route.snapshot.queryParams;
+
+    const options: StartGameOptions = {
+      ...additionalOptions,
+    };
+
+    // Read vocabulary source options from query params
+    if (queryParams['sourceType']) {
+      options.sourceType = queryParams['sourceType'] as GameSourceType;
+    }
+    if (queryParams['mapId']) {
+      options.mapId = parseInt(queryParams['mapId'], 10);
+    }
+    if (queryParams['prioritizeLowMastery'] !== undefined) {
+      options.prioritizeLowMastery = queryParams['prioritizeLowMastery'] === 'true';
+    }
+
+    return this.apiService.startGame(gameCode, options);
   }
 }

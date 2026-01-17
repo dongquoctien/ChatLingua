@@ -305,4 +305,22 @@ export class FlashcardComponent implements OnInit, OnDestroy {
   getCefrColorClass(level: string | null | undefined): string {
     return level ? this.cefrColors[level] || 'bg-gray-400' : 'bg-gray-400';
   }
+
+  getSourceLabel(): string | null {
+    const card = this.currentCard();
+    if (!card) return null;
+    if (card.item.sourceType === 'word_map') {
+      return card.item.sourceName || 'Word Map';
+    }
+    if (card.item.sourceType === 'conversation' && card.item.sourceName) {
+      return card.item.sourceName;
+    }
+    return null;
+  }
+
+  getSourceIcon(): string {
+    const card = this.currentCard();
+    if (!card) return '💬';
+    return card.item.sourceType === 'word_map' ? '📚' : '💬';
+  }
 }

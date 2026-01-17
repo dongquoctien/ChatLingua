@@ -44,6 +44,11 @@ export interface VocabularyWithReview extends RowDataPacket {
   // Queue info (when fetched from queue)
   priority?: QueuePriority;
   queue_order?: number;
+  // Source info
+  source_type?: 'conversation' | 'word_map';
+  source_name?: string | null;
+  conversation_id?: number | null;
+  word_map_id?: number | null;
 }
 
 export interface ReviewStats {
@@ -231,6 +236,7 @@ export class SpacedRepetitionService {
   /**
    * Build daily review queue for a user
    * Includes: overdue items, due today, and new items up to daily limit
+   * Uses V3 tables (user_vocabulary + master_vocabulary) for unified vocabulary source
    */
   async buildDailyQueue(userId: number, date: Date = new Date()): Promise<void> {
     const dateStr = date.toISOString().split('T')[0];
@@ -246,40 +252,41 @@ export class SpacedRepetitionService {
       [userId, dateStr]
     );
 
+    // V3: Use user_vocabulary table which contains both conversation and word_map vocabulary
     // 1. Add overdue items (past due date, not yet reviewed)
     await pool.execute(
       `INSERT IGNORE INTO daily_review_queue (user_id, vocabulary_id, queue_date, priority, queue_order)
-       SELECT ?, id, ?, 'overdue',
-              DATEDIFF(?, next_review_at) -- More overdue = higher priority
-       FROM vocabulary
-       WHERE user_id = ?
-         AND review_status != 'new'
-         AND next_review_at < ?
-       ORDER BY next_review_at ASC`,
+       SELECT ?, uv.id, ?, 'overdue',
+              DATEDIFF(?, uv.next_review_at)
+       FROM user_vocabulary uv
+       WHERE uv.user_id = ?
+         AND uv.review_status != 'new'
+         AND uv.next_review_at < ?
+       ORDER BY uv.next_review_at ASC`,
       [userId, dateStr, dateStr, userId, dateStr]
     );
 
     // 2. Add due today items
     await pool.execute(
       `INSERT IGNORE INTO daily_review_queue (user_id, vocabulary_id, queue_date, priority, queue_order)
-       SELECT ?, id, ?, 'due',
-              UNIX_TIMESTAMP(next_review_at) -- Earlier scheduled = higher priority
-       FROM vocabulary
-       WHERE user_id = ?
-         AND review_status != 'new'
-         AND DATE(next_review_at) = ?
-       ORDER BY next_review_at ASC`,
+       SELECT ?, uv.id, ?, 'due',
+              UNIX_TIMESTAMP(uv.next_review_at)
+       FROM user_vocabulary uv
+       WHERE uv.user_id = ?
+         AND uv.review_status != 'new'
+         AND DATE(uv.next_review_at) = ?
+       ORDER BY uv.next_review_at ASC`,
       [userId, dateStr, userId, dateStr]
     );
 
     // 3. Add new items up to daily limit
     await pool.query(
       `INSERT IGNORE INTO daily_review_queue (user_id, vocabulary_id, queue_date, priority, queue_order)
-       SELECT ?, id, ?, 'new', id
-       FROM vocabulary
-       WHERE user_id = ?
-         AND review_status = 'new'
-       ORDER BY created_at ASC
+       SELECT ?, uv.id, ?, 'new', uv.id
+       FROM user_vocabulary uv
+       WHERE uv.user_id = ?
+         AND uv.review_status = 'new'
+       ORDER BY uv.created_at ASC
        LIMIT ${Number(dailyNewLimit)}`,
       [userId, dateStr, userId]
     );
@@ -287,6 +294,7 @@ export class SpacedRepetitionService {
 
   /**
    * Get today's review queue for a user
+   * Uses V3 tables (user_vocabulary + master_vocabulary) for unified vocabulary source
    */
   async getDailyQueue(
     userId: number,
@@ -299,10 +307,39 @@ export class SpacedRepetitionService {
 
     const completedCondition = includeCompleted ? '' : 'AND q.is_completed = FALSE';
 
+    // V3: Query from user_vocabulary + master_vocabulary with source info
     const [rows] = await pool.execute<VocabularyWithReview[]>(
-      `SELECT v.*, q.priority, q.queue_order
+      `SELECT
+         uv.id,
+         uv.user_id,
+         mv.english_word,
+         mv.vietnamese_word,
+         mv.phonetic,
+         mv.pronunciation_uk,
+         mv.pronunciation_us,
+         mv.part_of_speech,
+         mv.cefr_level,
+         mv.definitions,
+         'intermediate' as difficulty_level,
+         uv.next_review_at,
+         uv.review_interval,
+         uv.ease_factor,
+         uv.repetition_count,
+         uv.lapse_count,
+         uv.review_status,
+         q.priority,
+         q.queue_order,
+         uv.source_type,
+         uv.source_id,
+         CASE
+           WHEN uv.source_type = 'conversation' THEN (SELECT topic FROM conversations WHERE id = uv.source_id LIMIT 1)
+           WHEN uv.source_type = 'word_map' THEN (SELECT name FROM word_maps WHERE id = (SELECT map_id FROM map_units WHERE id = (SELECT unit_id FROM unit_lessons WHERE id = uv.source_id LIMIT 1) LIMIT 1) LIMIT 1)
+           ELSE NULL
+         END as source_name,
+         CASE WHEN uv.source_type = 'conversation' THEN uv.source_id ELSE NULL END as conversation_id
        FROM daily_review_queue q
-       JOIN vocabulary v ON q.vocabulary_id = v.id
+       JOIN user_vocabulary uv ON q.vocabulary_id = uv.id
+       JOIN master_vocabulary mv ON uv.master_vocabulary_id = mv.id
        WHERE q.user_id = ? AND q.queue_date = ? ${completedCondition}
        ORDER BY
          FIELD(q.priority, 'overdue', 'due', 'new'),
@@ -359,9 +396,12 @@ export class SpacedRepetitionService {
     direction: 'vi_to_en' | 'en_to_vi' = 'vi_to_en',
     timeSpentSeconds: number = 0
   ): Promise<SM2Result> {
-    // Get current vocabulary state
+    // V3: Get current vocabulary state from user_vocabulary
     const [vocabRows] = await pool.execute<VocabularyWithReview[]>(
-      `SELECT * FROM vocabulary WHERE id = ? AND user_id = ?`,
+      `SELECT uv.*, mv.english_word, mv.vietnamese_word
+       FROM user_vocabulary uv
+       JOIN master_vocabulary mv ON uv.master_vocabulary_id = mv.id
+       WHERE uv.id = ? AND uv.user_id = ?`,
       [vocabularyId, userId]
     );
 
@@ -380,9 +420,9 @@ export class SpacedRepetitionService {
       vocab.lapse_count
     );
 
-    // Update vocabulary with new SM2 values
+    // V3: Update user_vocabulary with new SM2 values
     await pool.execute(
-      `UPDATE vocabulary SET
+      `UPDATE user_vocabulary SET
          next_review_at = ?,
          review_interval = ?,
          ease_factor = ?,
@@ -531,13 +571,13 @@ export class SpacedRepetitionService {
     // Get queue stats
     const queueStats = await this.getQueueStats(userId);
 
-    // Get vocabulary counts by status
+    // V3: Get vocabulary counts by status from user_vocabulary
     const [statusCounts] = await pool.execute<RowDataPacket[]>(
       `SELECT
          SUM(CASE WHEN review_status = 'mastered' THEN 1 ELSE 0 END) as mastered,
          SUM(CASE WHEN review_status = 'learning' THEN 1 ELSE 0 END) as learning,
          SUM(CASE WHEN review_status = 'reviewing' THEN 1 ELSE 0 END) as reviewing
-       FROM vocabulary
+       FROM user_vocabulary
        WHERE user_id = ?`,
       [userId]
     );
@@ -548,16 +588,16 @@ export class SpacedRepetitionService {
       [userId]
     );
 
-    // Get average ease factor
+    // V3: Get average ease factor from user_vocabulary
     const [avgResult] = await pool.execute<AvgRow[]>(
-      `SELECT AVG(ease_factor) as avg_ef FROM vocabulary
+      `SELECT AVG(ease_factor) as avg_ef FROM user_vocabulary
        WHERE user_id = ? AND review_status != 'new'`,
       [userId]
     );
 
-    // Count new vocabulary available
+    // V3: Count new vocabulary available from user_vocabulary
     const [newCount] = await pool.execute<CountRow[]>(
-      `SELECT COUNT(*) as count FROM vocabulary
+      `SELECT COUNT(*) as count FROM user_vocabulary
        WHERE user_id = ? AND review_status = 'new'`,
       [userId]
     );
@@ -592,10 +632,12 @@ export class SpacedRepetitionService {
       [userId]
     );
 
+    // V3: Join with user_vocabulary and master_vocabulary
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT vr.*, v.english_word, v.vietnamese_word
+      `SELECT vr.*, mv.english_word, mv.vietnamese_word
        FROM vocabulary_reviews vr
-       JOIN vocabulary v ON vr.vocabulary_id = v.id
+       JOIN user_vocabulary uv ON vr.vocabulary_id = uv.id
+       JOIN master_vocabulary mv ON uv.master_vocabulary_id = mv.id
        WHERE vr.user_id = ?
        ORDER BY vr.reviewed_at DESC
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,

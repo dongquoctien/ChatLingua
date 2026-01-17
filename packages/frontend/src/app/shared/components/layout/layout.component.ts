@@ -35,6 +35,7 @@ import {
   faRefresh,
   faSpinner,
   faTrash,
+  faMap,
 } from '../../icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService, GamificationNotification } from '../../../core/services/api.service';
@@ -110,11 +111,13 @@ export class LayoutComponent implements OnInit, OnDestroy {
   faSpinner = faSpinner;
   faSync = faRefresh;
   faCheckCircle = faCheckCircle;
+  faMap = faMap;
 
   // Navigation items
   // Note: Chat menu removed - accessible via chat widget expand button
   navItems = [
     { path: '/dashboard', icon: this.faHome, label: 'Dashboard' },
+    { path: '/word-maps', icon: this.faMap, label: 'Word Maps' },
     { path: '/conversations', icon: this.faComments, label: 'Conversations' },
     { path: '/vocabulary', icon: this.faLanguage, label: 'Vocabulary' },
     { path: '/review', icon: this.faBrain, label: 'Daily Review' },
